@@ -1,0 +1,17 @@
+.layoutbox {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 70px 50px;
+    max-width: auto;
+    background: #F1F2F4;
+
+
+}
+.linrrow{
+    border-bottom: 1px solid #e8e5e5;
+}
+.linrcol{
+    border-right: 1px solid #d8d7d7;
+    padding: 20px;
+}
