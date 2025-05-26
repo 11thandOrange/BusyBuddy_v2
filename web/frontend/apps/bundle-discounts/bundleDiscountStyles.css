@@ -251,7 +251,8 @@ color: #616161;
 .previewbox{
     background: white;
 }
-.previewbox:hover {
+.previewbox:hover,
+.previewbox.active {
     display: flex;
     flex-direction: column;
     gap: 0px;

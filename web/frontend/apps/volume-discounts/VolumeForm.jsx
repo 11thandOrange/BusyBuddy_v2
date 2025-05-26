@@ -5,7 +5,7 @@ import DiscountModal from "../../pages/DiscountModal";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 
-export default function VolumeForm() {
+export default function VolumeForm({goBack, setActiveAction}) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false); 
@@ -35,7 +35,7 @@ export default function VolumeForm() {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => console.log("Go back")}
+                onClick={() => {goBack(true); setActiveAction(null)}}
               >
                 <ArrowLeft size={24} />
               </div>

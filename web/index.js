@@ -8,6 +8,10 @@ import PrivacyWebhookHandlers from "./privacy.js";
 import morgan from "morgan";
 import router from "./backend/routes/index.js";
 import conditional from "express-conditional-middleware";
+import mongoose from "mongoose";
+import * as dotenv from "dotenv";
+import shopData from "./middleware/shopData.js";
+dotenv.config();
 const PORT = parseInt(
   process.env.BACKEND_PORT || process.env.PORT || "3000",
   10
@@ -24,11 +28,23 @@ app.get("/api/test", (req, res) => {
     res.status(200).send("Hello world");
 });
 app.use(morgan("tiny"));
+let db = process.env.DB_CONNECTION || "";
+// mongodb setup
+mongoose.set("strictQuery", true);
+mongoose.connect(db).then(
+  function (value) {
+    console.log("mongodb successfully connected***********************************");
+  },
+  function (error) {
+    console.log("mongodb failed to connect : ", error);
+  }
+);
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
+  shopData.shopData,
   shopify.redirectToShopifyOrAppRoot()
 );
 app.post(
@@ -39,7 +55,7 @@ app.post(
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
-// app.use("/api/*", shopify.validateAuthenticatedSession());
+// app.use("/api/*", shopify.validateAuthenticatedSession());  
 app.use(
   "/api/*",
   conditional(

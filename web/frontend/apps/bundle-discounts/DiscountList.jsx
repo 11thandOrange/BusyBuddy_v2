@@ -47,7 +47,6 @@ export default function DiscountList({ onMakeBundleClick }) {
       fluid
       className="bg-white"
       style={{
-        maxWidth: "1500px",
         margin: "50px auto",
         padding: "10px !important",
         borderRadius: "15px",

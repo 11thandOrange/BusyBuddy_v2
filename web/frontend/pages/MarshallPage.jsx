@@ -199,13 +199,13 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
 
   // Render the selected action component
   if (activeAction === "bundleDiscount") {
-    return <BundleForm />;
+    return <BundleForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
   } else if (activeAction === "bogo") {
-    return <BuyonegetoneForm />;
+    return <BuyonegetoneForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
   } else if (activeAction === "volumeDiscount") {
-    return <VolumeForm />;
+    return <VolumeForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
   } else if (activeAction === "mixMatch") {
-    return <MixMatchForm />;
+    return <MixMatchForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
   } else if (activeAction === "announcementBar") {
     return <AnnouncementBarForm />;
   } else if (activeAction === "inactiveTabMessage") {

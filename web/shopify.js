@@ -1,10 +1,11 @@
 import { BillingInterval, LATEST_API_VERSION } from "@shopify/shopify-api";
 import { shopifyApp } from "@shopify/shopify-app-express";
-import { SQLiteSessionStorage } from "@shopify/shopify-app-session-storage-sqlite";
+// import { SQLiteSessionStorage } from "@shopify/shopify-app-session-storage-sqlite";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-10";
-
-const DB_PATH = `${process.cwd()}/database.sqlite`;
-
+import { MongoDBSessionStorage } from "./customeMongoSession.js";
+// const DB_PATH = `${process.cwd()}/database.sqlite`;
+import * as dotenv from "dotenv";
+dotenv.config();
 // The transactions with Shopify will always be marked as test transactions, unless NODE_ENV is production.
 // See the ensureBilling helper to learn more about billing in this template.
 const billingConfig = {
@@ -15,7 +16,8 @@ const billingConfig = {
     interval: BillingInterval.OneTime,
   },
 };
-
+// console.log("process.env.DB_CONNECTION----", process.env.DB_CONNECTION);
+// console.log("process.env.DB_NAME----", process.env.DB_NAME);
 const shopify = shopifyApp({
   api: {
     apiVersion: LATEST_API_VERSION,
@@ -35,7 +37,8 @@ const shopify = shopifyApp({
     path: "/api/webhooks",
   },
   // This should be replaced with your preferred storage strategy
-  sessionStorage: new SQLiteSessionStorage(DB_PATH),
+  // sessionStorage: new SQLiteSessionStorage(DB_PATH),
+  sessionStorage: new MongoDBSessionStorage(process.env.DB_CONNECTION, process.env.DB_NAME),
 });
 
 export default shopify;

@@ -20,8 +20,8 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState("Bundle Discount");
   const [showContent, setShowContent] = useState(true); // Controls visibility of index content
   
-  const handleMakeBundleNowClick = () => {
-    setShowContent(false);
+  const handleMakeBundleNowClick = (val = false) => {
+    setShowContent(val);
   };
 
   async function getProducts() {

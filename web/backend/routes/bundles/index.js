@@ -1,5 +1,8 @@
 import express from 'express';
 const router = express.Router();
-import{ createProductBundleV2 } from '../../controller/bundles/index.js';
+import{ createProductBundleV2, getActiveBundles} from '../../controller/bundles/index.js';
+
 router.post('/', createProductBundleV2);
-export default router; 
+router.get('/activeBundles', getActiveBundles);
+
+export default router;

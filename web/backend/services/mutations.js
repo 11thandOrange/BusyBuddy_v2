@@ -64,9 +64,10 @@ export const getBundleStatusMutation = (productBundelId) => {
       product {
         id
         title
-        variants(first: 10) {
+        variants(first: 100) {
           nodes {
             id
+            title
             price
           }
         }
@@ -97,7 +98,7 @@ export const getUpdatedBundleMutation = (productId) => {
   return `{
           product(id: "${productId}") {
             title
-            variants(first: 10) {
+            variants(first: 100) {
               nodes {
                 id
                 price
