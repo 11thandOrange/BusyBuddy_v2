@@ -1,6 +1,8 @@
 # Environment Configuration
 .env
 .env.*
+# allow .env.example to be committed
+!.env.example
 
 # Dependency directory
 node_modules
