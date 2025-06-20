@@ -428,6 +428,212 @@ async function createProductBundleV2(req, res) {
 }
 
 /**
+ * Creates a product bundle with optional discounting
+ * @param {Object} req - Request object containing bundle details
+ * @param {Object} res - Response object
+ * @returns {Promise<Object>} - Response with bundle creation status
+ */
+async function createMixAndMatchBundle(req, res) {
+    try {
+        const session = res.locals.shopify.session;
+        console.log(" createMixAndMatchBundle | session:", session)
+        const client = new shopify.api.clients.Graphql({
+            session: session,
+            apiVersion: "2024-10", // Ensure this is a valid and supported API version
+        });
+        let {
+            title,
+            products, // General products array, may not be used for BOGO if productsX/Y are present
+            discountType,
+            quantityBreaks, // for Volume Discount
+            discountValue,
+            status, // boolean: true for ACTIVE, false for DRAFT
+            internalName,
+            type, // "Bundle Discount", "Volume Discount", "Buy One Get One"
+            bundlePriority,
+            widgetAppearance,
+            startDate,
+            endDate,
+            // BOGO specific product arrays
+            productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
+            productsY,  // same structure as productsX
+            originalVariantPrices // Array of {productId, title, price} from frontend
+        } = req.body;
+
+        /*
+        
+        mutation mixMatchProductCreate {
+    productCreate(
+      input: {title: "mix and match", metafields: [
+        {key: "bundle_discount_type", namespace: "busy-buddy", value: "percentage", type: "single_line_text_field"}, // type of discount, can be percentage or fixed
+        {key: "bundle_discount_value", namespace: "busy-buddy", value: "10,20", type: "single_line_text_field"}, // in value , will be used for percentage discount based on number of products in bundle
+        {key: "bundle_discount_products", namespace: "busy-buddy", value: "51011200123156:10.00,51011200123156:20.00", type: "single_line_text_field"}, // productId: productPrice, productId: productPrice
+    ], status: ACTIVE, productPublications: {channelHandle: "online_store"}}
+    ) {
+      product {
+        id
+        variants(first: 10) {
+          nodes {
+            id
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+
+mutation setPriceForMixAndMatchProduct {
+    productVariantsBulkUpdate(
+        productId: "gid://shopify/Product/9833549201684"
+    variants: [
+        {
+            id: "gid://shopify/ProductVariant/50396722888980",
+            price: "1000"
+        }
+    ]
+    ) {
+    product {
+            id
+        }
+    }
+}
+        */
+
+        // fetch variantIds and price for each variant for products
+        const productIds = products.map(p => p.productId);
+        const fetchedProductDetailsMap = await fetchProductDetailsByIds(client, session, productIds);
+
+        // 1. Create the bundle
+        const bundleProductCreateMutation = `
+            mutation mixMatchProductCreate($input: ProductInput!) {
+                productCreate(input: $input) {
+                    product {
+                        id
+                        variants(first: 10) {
+                            nodes {
+                                id
+                            }
+                        }
+                    }
+                    userErrors {
+                        field
+                        message
+                    }
+                }
+            }`;
+        const bundleInput = {
+            title,
+            metafields: [
+                {
+                    key: "bundle_discount_type",
+                    namespace: "busy-buddy",
+                    value: discountType || "percentage", // Default to percentage if not provided
+                    type: "single_line_text_field",
+                },
+                {
+                    key: "bundle_discount_value",
+                    namespace: "busy-buddy",
+                    value: discountValue || "10,20", // Default values for example
+                    type: "single_line_text_field",
+                },
+                {
+                    key: "bundle_discount_products",
+                    namespace: "busy-buddy",
+                    // get all variant Id and price for products
+                    value: products.map(p => {
+                        const productDetail = fetchedProductDetailsMap[p.productId];
+                        if (!productDetail || !productDetail.variants || productDetail.variants.nodes.length === 0) {
+                            console.warn(`Product ${p.productId} has no variants or details.`);
+                            return `${p.productId}:0`; // Default to 0 if no variants found
+                        }
+                        const variants = productDetail.variants.nodes;
+                        return variants.map(v => `${v.id.split("gid://shopify/ProductVariant/")[1]}:${v.price}`).join(","); // Format as "variantId:price"
+                    }).join(","),
+                    type: "single_line_text_field",
+                },
+            ],
+            status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
+            productPublications: {
+                channelHandle: "online_store", // Assuming you want to publish to online store
+            }
+        };
+        const result = await client.request(bundleProductCreateMutation, {
+            session,
+            variables: { input: bundleInput },
+        });
+
+        console.log("Mix and Match Bundle creation initiated:", JSON.stringify(result, null, 2));
+
+        if (result?.data?.productCreate?.userErrors?.length > 0) {
+            console.error("User errors on bundle creation:", result.data.productCreate.userErrors);
+            throw new Error(`Shopify User Errors: ${result.data.productCreate.userErrors.map(e => e.message).join(", ")}`);
+        }
+
+        if (!result?.data?.productCreate?.product?.id) {
+            console.error("Failed to get product ID from bundle creation:", result);
+            throw new Error("Failed to initiate Mix and Match bundle creation on Shopify.");
+        }
+
+        const productId = result.data.productCreate.product.id;
+        const bundleProductVariants = result.data.productCreate.product.variants.nodes;
+        console.log("Mix and Match Bundle product variants:", JSON.stringify(bundleProductVariants, null, 2));
+
+        // 2. Update prices and set it to 1000 for default variant of mix and match product
+        let priceUpdateResult = null;
+        const bundleProductPriceUpdateMutation = `
+            mutation setPriceForMixAndMatchProduct($productId: ID!, $variants: [ProductVariantInput!]!) {
+                productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+                    product {
+                        id
+                    }
+                    userErrors {
+                        field
+                        message
+                    }
+                }
+            }`;
+        const variantUpdates = bundleProductVariants.map(variant => ({
+            id: variant.id, // This is the variant ID
+            price: "1000" // Set to 1000 as per your requirement
+        }));
+        priceUpdateResult = await client.request(bundleProductPriceUpdateMutation, {
+            session,
+            variables: {
+                productId: productId,
+                variants: variantUpdates.map(v => ({
+                    id: v.id,
+                    price: v.price
+                }))
+            },
+        });
+        console.log("Mix and Match Bundle price update result:", JSON.stringify(priceUpdateResult, null, 2));
+        if (priceUpdateResult?.data?.productVariantsBulkUpdate?.userErrors?.length > 0) {
+            console.error("User errors on price update:", priceUpdateResult.data.productVariantsBulkUpdate.userErrors);
+            throw new Error(`Shopify User Errors: ${priceUpdateResult.data.productVariantsBulkUpdate.userErrors.map(e => e.message).join(", ")}`);
+        }
+        if (!priceUpdateResult?.data?.productVariantsBulkUpdate?.product?.id) {
+            console.error("Failed to update product price:", priceUpdateResult);
+            throw new Error("Failed to update Mix and Match bundle prices on Shopify.");
+        }
+
+        return res.status(201).json({
+            status: true,
+            message: "Mix and Match Bundle created successfully.",
+            bundleId: productId, // Shopify's bundle product ID
+        });
+    } catch (error) {
+        console.error("Error creating Mix and Match bundle:", error);
+        return res.status(500).json({
+            status: false,
+            error: error.message,
+        });
+    }
+}
+
+/**
  * Creates the initial bundle
  * @param {Object} client - GraphQL client
  * @param {Object} session - Shopify session
@@ -800,5 +1006,22 @@ async function getActiveBundles(req, res) {
         return res.status(500).json({ status: false, message: error.message });
     }
 }
+async function getShopBundles(req, res) {
+    try {
+        const shopDomain = res.locals.shopify.session.shop;
+        console.log("shopDomain", shopDomain);
+        let shopData = await Shop.findOne({ shopDomain });
+        if (!shopData) {
+            return res.status(400).json({ status: false, message: "Shop not found" });
+        }
+        let findBundles = await Bundle.find({ shopId: shopData._id });
+        console.log("findBundles", findBundles.length);
+        return res.status(200).json({ status: true, data: findBundles });
+    } catch (error) {
+        console.error("Error getting updated product data:", error);
+        return res.status(500).json({ status: false, message: error.message });
+    }
+}
 
-export { createProductBundleV2, getActiveBundles };
+export { createProductBundleV2, getActiveBundles, getShopBundles, createMixAndMatchBundle };
+

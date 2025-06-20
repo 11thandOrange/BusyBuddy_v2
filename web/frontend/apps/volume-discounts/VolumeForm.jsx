@@ -1,14 +1,16 @@
 import React, { useState } from "react";
-import { Container, Row, Col} from "react-bootstrap";
+import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-import DiscountModal from "../../pages/DiscountModal";
-import DiscountList from "./DiscountList";
+// import DiscountModal from "../../pages/DiscountModal";
+// import DiscountList from "./DiscountList";
+import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
+import DiscountModal from "../../components/Modals/GlobalDisountModal";
 
-export default function VolumeForm({goBack, setActiveAction}) {
+export default function VolumeForm({ goBack, setActiveAction }) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
-  const [resetDiscountList, setResetDiscountList] = useState(false); 
+  const [resetDiscountList, setResetDiscountList] = useState(false);
   const handleOpenDiscountModal = () => {
     setShowDiscountModal(true);
   };
@@ -18,7 +20,7 @@ export default function VolumeForm({goBack, setActiveAction}) {
   };
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList(prev => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev); // Toggle to force re-render
   };
   return (
     <div>
@@ -35,7 +37,10 @@ export default function VolumeForm({goBack, setActiveAction}) {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => {goBack(true); setActiveAction(null)}}
+                onClick={() => {
+                  goBack(true);
+                  setActiveAction(null);
+                }}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -61,24 +66,19 @@ export default function VolumeForm({goBack, setActiveAction}) {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed?
-              Announcement Bar lets you display important alerts right at the
-              top of your store. Whether it's a sale, promotion, or update, it's
-              impossible to ignore!
+              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar lets you
+              display important alerts right at the top of your store. Whether it's a sale, promotion, or
+              update, it's impossible to ignore!
             </p>
           </Col>
 
           {fromDiscountPage ? (
-            <Col
-              xs="auto"
-              className="d-flex align-items-center"
-              style={{ maxWidth: "300px", width: "100%" }}
-            >
-             <Button
+            <Col xs="auto" className="d-flex align-items-center" style={{ maxWidth: "300px", width: "100%" }}>
+              <Button
                 text="Discard"
-                onClick={handleDiscard} 
+                onClick={handleDiscard}
                 style={{
-                  background:"white",
+                  background: "white",
                   border: "1px solid #dee2e6",
                   height: "45px",
                   fontWeight: 500,
@@ -126,14 +126,16 @@ export default function VolumeForm({goBack, setActiveAction}) {
           )}
         </Row>
 
-        <DiscountModal
-          show={showDiscountModal}
-          onHide={handleCloseDiscountModal}
-        />
+        <DiscountModal show={showDiscountModal} onHide={handleCloseDiscountModal} />
       </Container>
-      <DiscountList 
+      {/* <DiscountList 
         key={resetDiscountList ? 'reset' : 'normal'} 
         onMakeBundleClick={() => setFromDiscountPage(true)} 
+      /> */}
+      <DiscountList
+        key={resetDiscountList ? "reset" : "normal"}
+        onMakeBundleClick={() => setFromDiscountPage(true)}
+        discountType="Volume Discount"
       />
     </div>
   );
@@ -147,11 +149,7 @@ const ToggleSwitch = () => {
   };
 
   return (
-    <div
-      className="d-flex align-items-center"
-      style={{ cursor: "pointer" }}
-      onClick={toggleSwitch}
-    >
+    <div className="d-flex align-items-center" style={{ cursor: "pointer" }} onClick={toggleSwitch}>
       <div
         className={`position-relative ${active ? "bg-success" : "bg-danger"}`}
         style={{

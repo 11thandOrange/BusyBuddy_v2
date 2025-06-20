@@ -1,0 +1,42 @@
+query RunInput {
+	presentmentCurrencyRate
+	cart {
+		lines {
+			id
+			quantity
+            bundleVariantIds: attribute(key: "_bundle_product_variant_ids") {
+                value
+            }
+			merchandise {
+				__typename
+				... on ProductVariant {
+					id
+					title
+					product {
+						bundledDiscountType: metafield(
+							namespace: "busy-buddy"
+							key: "bundle_discount_type"
+						) {
+							type
+							value
+						}
+                        bundledDiscountValue: metafield(
+							namespace: "busy-buddy"
+							key: "bundle_discount_value"
+						) {
+							type
+							value
+						}
+                        bundledProducts: metafield(
+							namespace: "busy-buddy"
+							key: "bundle_discount_products"
+						) {
+							type
+							value
+						}
+					}
+				}
+			}
+		}
+	}
+}

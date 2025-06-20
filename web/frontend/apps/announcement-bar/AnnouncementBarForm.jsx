@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-import DiscountModal from "../../pages/DiscountModal";
+// import DiscountModal from "../../pages/DiscountModal";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
+import DiscountModal from "../../components/Modals/GlobalDisountModal";
 
 export default function AnnouncementBarForm() {
   const [showDiscountModal, setShowDiscountModal] = useState(false);

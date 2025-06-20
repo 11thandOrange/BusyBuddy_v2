@@ -31,6 +31,7 @@ const bundleSchema = new mongoose.Schema(
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     shopId: { type: Schema.Types.ObjectId, required: true },
+    shopifyBundleId: { type: String,  },
   },
   { timestamps: true }
 );

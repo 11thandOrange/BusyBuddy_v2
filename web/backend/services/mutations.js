@@ -35,6 +35,40 @@ export const GET_PRODUCTS = `
   }
 }`;
 
+export const GET_PRODUCT_BY_IDS = (ids) => {
+    return `
+        {
+  products(first: 10, sortKey: CREATED_AT, reverse: true, query: "(bundles:false) AND (${ids.join(' OR ')})") {
+    edges {
+      node {
+        id
+        title
+        handle
+        featuredMedia {
+          ... on MediaImage {
+            id
+            image {
+              url
+            }
+          }
+        }
+        options(first: 100) {
+          id
+          name
+          values
+        }
+        variants(first: 100) {
+          nodes {
+            price
+            title
+          }
+        }
+      }
+    }
+  }
+}`
+};
+
 // services/mutations.js
 export const getCreateBundlesMutation = (title, components) => {
   return `
@@ -51,6 +85,10 @@ export const getCreateBundlesMutation = (title, components) => {
           product {
             id
           }
+        }
+        userErrors{
+          field
+          message
         }
       }
     }

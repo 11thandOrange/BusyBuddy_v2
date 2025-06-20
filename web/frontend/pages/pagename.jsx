@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, ListGroup, Badge } from "react-bootstrap";
-import DiscountModal from "./DiscountModal";
-
+// import DiscountModal from "./DiscountModal";
+import DiscountModal from "../components/Modals/GlobalDisountModal";
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
