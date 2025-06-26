@@ -6,10 +6,10 @@ import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 
-export default function InactiveTabMessageForm() {
+export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
-  const [resetDiscountList, setResetDiscountList] = useState(false); 
+  const [resetDiscountList, setResetDiscountList] = useState(false);
   const handleOpenDiscountModal = () => {
     setShowDiscountModal(true);
   };
@@ -19,8 +19,9 @@ export default function InactiveTabMessageForm() {
   };
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList(prev => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev); // Toggle to force re-render
   };
+
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
@@ -36,7 +37,10 @@ export default function InactiveTabMessageForm() {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => console.log("Go back")}
+                onClick={() => {
+                  goBack(true);
+                  setActiveAction(null);
+                }}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -51,7 +55,7 @@ export default function InactiveTabMessageForm() {
                 lineHeight: "1",
               }}
             >
-              Bundle Discount
+              Inactive Tab Message
             </h5>
             <p
               className="mb-0"
@@ -62,10 +66,10 @@ export default function InactiveTabMessageForm() {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed?
-              Announcement Bar lets you display important alerts right at the
-              top of your store. Whether it's a sale, promotion, or update, it's
-              impossible to ignore!
+              Don’t Let Them Forget! 🔖 Keep your store top-of-mind – even when
+              customers switch tabs! Inactive Tab Message displays a custom
+              alert in the title of their browser tab, so they’ll remember their
+              cart, discounts, or promotions!
             </p>
           </Col>
 
@@ -77,9 +81,9 @@ export default function InactiveTabMessageForm() {
             >
               <Button
                 text="Discard"
-                onClick={handleDiscard} 
+                onClick={handleDiscard}
                 style={{
-                  background:"white",
+                  background: "white",
                   border: "1px solid #dee2e6",
                   height: "45px",
                   fontWeight: 500,
@@ -132,9 +136,9 @@ export default function InactiveTabMessageForm() {
           onHide={handleCloseDiscountModal}
         />
       </Container>
-      <DiscountList 
-        key={resetDiscountList ? 'reset' : 'normal'} 
-        onMakeBundleClick={() => setFromDiscountPage(true)} 
+      <DiscountList
+        key={resetDiscountList ? "reset" : "normal"}
+        onMakeBundleClick={() => setFromDiscountPage(true)}
       />
     </div>
   );

@@ -6,7 +6,7 @@ import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 
-export default function AnnouncementBarForm() {
+export default function AnnouncementBarForm({ goBack, setActiveAction }) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false); 
@@ -36,7 +36,10 @@ export default function AnnouncementBarForm() {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => console.log("Go back")}
+                onClick={() => {
+                    goBack(true);
+                    setActiveAction(null);
+                  }}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -51,7 +54,7 @@ export default function AnnouncementBarForm() {
                 lineHeight: "1",
               }}
             >
-              Bundle Discount
+              Announcement Bar
             </h5>
             <p
               className="mb-0"
@@ -62,10 +65,7 @@ export default function AnnouncementBarForm() {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed?
-              Announcement Bar lets you display important alerts right at the
-              top of your store. Whether it's a sale, promotion, or update, it's
-              impossible to ignore!
+              Get Noticed! 🔔 Want to make sure your message doesn’t get missed? Announcement Bar lets you display important alerts right at the top of your store. Whether it’s a sale, promotion, or update, it’s impossible to ignore!
             </p>
           </Col>
 

@@ -18,7 +18,7 @@ import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 
 export default function DiscountList({ onMakeBundleClick }) {
-  const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
+  const tabs = ["Overview", "Setting"];
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [bundles, setBundles] = useState({ bundle1: false, bundle2: false });
   const [showBundleAction, setShowBundleAction] = useState(false);
@@ -62,15 +62,14 @@ export default function DiscountList({ onMakeBundleClick }) {
             style={{
               marginLeft: "0",
               marginRight: "0",
-             
-                padding: "0px",
-                boxShadow: "1px 1px 4px 0px #0000001A inset",
-                backgroundColor: "#F1F2F4",
-                borderRadius: "15px",
-                marginBottom: "8px",
-                height: "51px",
-                width:"100%"
-              
+
+              padding: "0px",
+              boxShadow: "1px 1px 4px 0px #0000001A inset",
+              backgroundColor: "#F1F2F4",
+              borderRadius: "15px",
+              marginBottom: "8px",
+              height: "51px",
+              width: "100%",
             }}
           >
             {/* Left-aligned Toggle Buttons */}
@@ -198,9 +197,10 @@ export default function DiscountList({ onMakeBundleClick }) {
       >
         {selectedTab === "Overview" && (
           <>
-           {/* Video Display */}
-           <Col
-              lg={6} md={12}
+            {/* Video Display */}
+            <Col
+              lg={6}
+              md={12}
               style={{
                 padding: "50px",
               }}
@@ -245,7 +245,8 @@ export default function DiscountList({ onMakeBundleClick }) {
 
             {/* Side Features */}
             <Col
-              lg={6} md={12}
+              lg={6}
+              md={12}
               style={{
                 padding: "50px 0",
               }}
@@ -391,28 +392,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                   </div>
                 </div>
                 <div className="d-flex align-items-start flex-column">
-                  <Button
-                    variant="dark"
-                    className="mb-3 d-flex align-items-center justify-content-center"
-                    text=" Make your Bundle Now!"
-                    style={{
-                      maxWidth: "220px",
-                      borderRadius: "40px",
-                      height: "45px",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                      letterSpacing: "0",
-                      backgroundColor: "black",
-                      borderColor: "black",
-                      color: "white",
-                      padding: "15px 25px",
-                    }}
-                    onClick={() => {
-                      setShowBundleAction(true);
-                      onMakeBundleClick();
-                    }}
-                  />
-
+                
                   <div>
                     <span
                       className="text-secondary"
@@ -445,89 +425,46 @@ export default function DiscountList({ onMakeBundleClick }) {
           </>
         )}
 
-        {selectedTab === "Discounts" && (
+        {selectedTab === "Setting" && (
           <div className="d-flex flex-column gap-3 ">
             {" "}
-            {checkboxes.map((isChecked, index) => (
-              <>
-                <Row key={index} className="g-0 linrrow">
-                  {" "}
-                  {/* Each bundle in a separate row */}
-                  <Card
-                    className="border-0 w-150"
-                    style={{ background: "rgb(241, 242, 244)" }}
-                  >
-                    <Card.Body className="d-flex align-items-center justify-content-between">
-                      {/* Left side - Checkbox and Bundle Name */}
-                      <div className="d-flex align-items-center">
-                        <Form.Check
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleCheckboxChange(index)}
-                          className="custom-checkbox me-2"
+            <>
+              <Row className="g-0 linrrow">
+                {" "}
+                {/* Each bundle in a separate row */}
+                <Card
+                  className="border-0 w-full"
+                  style={{ background: "rgb(241, 242, 244)" }}
+                >
+                  <Card.Body className="d-flex align-items-center justify-content-between">
+                    <div className="d-flex flex-column gap-[10px]">
+                      <Form.Group>
+                        <Form.Label className="inputtitle">Message</Form.Label>
+                        <Form.Control
+                          className="inputbox"
+                          type="text"
+                          placeholder="Enter message"
                         />
-
-                        <img
-                          src={tshirt}
-                          alt="T-Shirt"
-                          width={80}
-                          height={80}
-                          className="me-2"
-                        />
-                        <div className="bundlebox">
-                          <div className="bundletxxtb1">
-                            <span className="bundletext">
-                              Bundle #{index + 1}
-                            </span>
-                            <div className="previewbtn">
-                              <img src={view} width={13} height={13} />
-                              Preview
-                            </div>
-                          </div>
-                          <p className="buymorebtn">Buy More, Save More!</p>
-                          <div className="bundletxtb2">
-                            <p>Product 1</p>
-                            <p>Product 3</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="d-flex align-items-center justify-content-between gap-2"
-                        style={{ width: "25%" }}
-                      >
-                        <Form.Group className="mt-1 d-flex align-items-center gap-2">
-                          <Form.Label className="inputtitle mt-1">
-                            Priority
-                          </Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder=""
-                            style={{
-                              background: "white",
-                              width: "80px",
-                              height: "29px",
-                            }}
-                            className="inputbox"
-                          />
-                        </Form.Group>
-
-                        <div className="togglebox">
-                          <p className="datetext mt-2">Feb 13 at 12:59pm</p>
-                          <Form.Check
-                            type="switch"
-                            id={`bundle-toggle-${index}`}
-                            checked={toggles[index]}
-                            onChange={() => handleToggleChange(index)}
-                            className="custom-switch-toggle"
-                            style={{ width: "41px", height: "21px" }}
-                          />
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Row>
-              </>
-            ))}
+                        <p
+                          style={{
+                            fontFamily: "Inter",
+                            fontStyle: "normal",
+                            fontWeight: "500",
+                            fontSize: "13px",
+                            lineHeight: "100%",
+                            color: "#616161",
+                          }}
+                          className="mt-2"
+                        >
+                          The message that will show in the browser tab's title
+                          when the visitor changes to another tab.
+                        </p>
+                      </Form.Group>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Row>
+            </>
           </div>
         )}
       </Row>

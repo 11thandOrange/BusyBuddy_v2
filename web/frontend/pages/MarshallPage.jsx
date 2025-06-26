@@ -36,32 +36,36 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
 
   const tabData = {
     "Announcement Bar": {
-      title: "T-Shirt",
-      description: "$885.90 USD",
+      title: "Announcement Bar",
+      description:
+        "Bundle products together and sell them at a discount price.",
       features: [
         {
-          title: "Quantity (1 in cart)",
-          description: "1",
+          title: "Customizable",
+          description: "Discount, Display style & Priority.",
         },
-        { title: "Sales End in", description: "0d 19h 51m 0s" },
+        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Buy More, Save More!",
-          description: "Buy 1 for $885.85",
+          title: "Attention grabbing",
+          description:
+            "Keep your customers informed without disrupting their shopping.",
         },
       ],
     },
     "Inactive Tab Message": {
-      title: "T-Shirt",
-      description: "$885.90 USD",
+      title: "Inactive Tab Message",
+      description:
+        "Bundle products together and sell them at a discount price.",
       features: [
         {
-          title: "Quantity (1 in cart)",
-          description: "1",
+          title: "Customizable",
+          description: "Discount, Display style & Priority.",
         },
-        { title: "Sales End in", description: "0d 19h 51m 0s" },
+        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Buy More, Save More!",
-          description: "Buy 1 for $885.85",
+          title: "Attention grabbing",
+          description:
+            "Keep your customers informed without disrupting their shopping.",
         },
       ],
     },
@@ -199,17 +203,47 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
 
   // Render the selected action component
   if (activeAction === "bundleDiscount") {
-    return <BundleForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
+    return (
+      <BundleForm
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "bogo") {
-    return <BuyonegetoneForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
+    return (
+      <BuyonegetoneForm
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "volumeDiscount") {
-    return <VolumeForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
+    return (
+      <VolumeForm
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "mixMatch") {
-    return <MixMatchForm setActiveAction={setActiveAction} goBack={onMakeBundleNowClick} />;
+    return (
+      <MixMatchForm
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "announcementBar") {
-    return <AnnouncementBarForm />;
+    return (
+      <AnnouncementBarForm 
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "inactiveTabMessage") {
-    return <InactiveTabMessageForm />;
+    return (
+      <InactiveTabMessageForm 
+        setActiveAction={setActiveAction}
+        goBack={onMakeBundleNowClick}
+      />
+    );
   } else if (activeAction === "cartNotice") {
     return <CarNoticeForm />;
   } else if (activeAction === "countdownTimer") {
@@ -347,11 +381,15 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                                           display: "flex",
                                           alignItems: "start",
                                           justifyContent: "center",
-                                          border:'1px solid red'
+                                          border: "1px solid red",
                                         }}
                                       >
                                         <Card.Body className="ms-2 p-0 d-flex justify-content-center align-items-center">
-                                        <input type="radio" defaultChecked  style={{ accentColor: 'red' }}/>
+                                          <input
+                                            type="radio"
+                                            defaultChecked
+                                            style={{ accentColor: "red" }}
+                                          />
                                           <p
                                             className="small text-muted ms-1"
                                             style={{
@@ -437,48 +475,50 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                   </Card>
                   <hr />
                   <ListGroup variant="flush">
-                    {cartItems.length>0 ? cartItems.map((item) => (
-                      <ListGroup.Item key={item.id}>
-                        <Row className="align-items-center justify-content-between">
-                          <Col md={2}>
-                            <img
-                              src={item.image}
-                              className="rounded fluid"
-                              width={50}
-                              height={50}
-                            />
-                            <span className="ms-2">{item.title}</span>
-                          </Col>
-                          {/* <Col md={4}>{item.title}</Col> */}
-                          <Col md={2}>
-                            <Button
-                              variant="light"
-                              size="sm"
-                              onClick={() => updateQuantity(item.id, -1)}
-                            >
-                              -
-                            </Button>
-                            <span className="mx-2">{item.quantity}</span>
-                            <Button
-                              variant="light"
-                              size="sm"
-                              onClick={() => updateQuantity(item.id, 1)}
-                            >
-                              +
-                            </Button>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => removeItem(item.id)}
-                              className="ms-3"
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
-                          </Col>
-                          <Col md={2}>${item.price.toFixed(2)}</Col>
-                        </Row>
-                      </ListGroup.Item>
-                    )) : (
+                    {cartItems.length > 0 ? (
+                      cartItems.map((item) => (
+                        <ListGroup.Item key={item.id}>
+                          <Row className="align-items-center justify-content-between">
+                            <Col md={2}>
+                              <img
+                                src={item.image}
+                                className="rounded fluid"
+                                width={50}
+                                height={50}
+                              />
+                              <span className="ms-2">{item.title}</span>
+                            </Col>
+                            {/* <Col md={4}>{item.title}</Col> */}
+                            <Col md={2}>
+                              <Button
+                                variant="light"
+                                size="sm"
+                                onClick={() => updateQuantity(item.id, -1)}
+                              >
+                                -
+                              </Button>
+                              <span className="mx-2">{item.quantity}</span>
+                              <Button
+                                variant="light"
+                                size="sm"
+                                onClick={() => updateQuantity(item.id, 1)}
+                              >
+                                +
+                              </Button>
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                onClick={() => removeItem(item.id)}
+                                className="ms-3"
+                              >
+                                <i className="bi bi-trash"></i>
+                              </Button>
+                            </Col>
+                            <Col md={2}>${item.price.toFixed(2)}</Col>
+                          </Row>
+                        </ListGroup.Item>
+                      ))
+                    ) : (
                       <ListGroup.Item>
                         <p className="text-center">Your cart is empty.</p>
                       </ListGroup.Item>
@@ -488,7 +528,9 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                   <Row className="justify-content-end">
                     <Col md={4}>
                       <h4>Estimated Total: ${total}</h4>
-                      <p className="text-muted small mt-3">Tax and shipping calculated at checkout</p>
+                      <p className="text-muted small mt-3">
+                        Tax and shipping calculated at checkout
+                      </p>
                     </Col>
                   </Row>
                 </Container>
@@ -652,8 +694,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                         </span>
                       </div>
                     </Card.Body>
-                  </Card>  
-                   
+                  </Card>
                 </Col>
               </>
             )}

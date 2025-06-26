@@ -21,21 +21,62 @@ import customize from "../../assets/customize.png";
 import { Copy, CaretDownFill } from "react-bootstrap-icons";
 import tshirtp from "../../assets/tshirt.png";
 import learnmore from "../../assets/help-square.png";
+import video1 from "../../assets/Activate_App-DkqU7myX.mov";
+import video2 from "../../assets/App_Install-DQeOwnkF.mov";
 
-export default function BundleDiscountActions() {
+export default function BundleDiscountActions({ onMakeBundleClick }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState(["Bundle 1"]);
   const [isBundleActive, setIsBundleActive] = useState(true);
+  const [message, setMessage] = useState("");
+  const [barPosition, setBarPosition] = useState("top");
+
+  const themeOptions = [
+    { name: "Solid Color", value: "solid" },
+    {
+      name: "Sunshine",
+      value: "sunshine",
+      image: "https://getbusybuddy.com/assets/Sunshine-BrfoRMEz.svg",
+    },
+    {
+      name: "Watercolor",
+      value: "watercolor",
+      image: "https://getbusybuddy.com/assets/Watercolor-2HbVdo2j.svg",
+    },
+    {
+      name: "Abstract",
+      value: "abstract",
+      image: "https://getbusybuddy.com/assets/Abstract-CSBeGGwo.svg",
+    },
+    {
+      name: "Christmas",
+      value: "christmas",
+      image: "https://getbusybuddy.com/assets/Christmas-D4wXR0LX.svg",
+    },
+    {
+      name: "Circles",
+      value: "circles",
+      image: "https://getbusybuddy.com/assets/Circles-uk8TMdjp.svg",
+    },
+    {
+      name: "Holidays",
+      value: "holidays",
+      image: "https://getbusybuddy.com/assets/Holidays-Dd-XSFt_.svg",
+    },
+    {
+      name: "Squares",
+      value: "squares",
+      image: "https://getbusybuddy.com/assets/Squares-Db9SlI8F.svg",
+    },
+  ];
+
   const [colorSettings, setColorSettings] = useState({
-    "Primary Text Color": "#ff0000",
-    "Secondary Text Color": "#000000",
-    "Primary Background Color": "#cccccc",
-    "Secondary Background Color": "#f1f2f4",
-    "Border Color": "#FFFFFF",
-    "Button Color": "#000000",
-    "Offer Tag Background Color": "#C4290E",
-    "Offer Tag Background Color": "#FFFFFF",
+    "Background Color": "#a18c8c",
+    "Text Color": "#000000",
   });
+
+  const [selectedTheme, setSelectedTheme] = useState("solid");
+
   const [count, setCount] = useState(50);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
@@ -43,14 +84,14 @@ export default function BundleDiscountActions() {
   const [endDate, setEndDate] = useState(new Date());
   const [timezone, setTimezone] = useState("GMT");
   const tabs = [
-    "Select Products",
-    "Discount Settings",
-    "Bundle Settings",
-    "Display Settings",
+    "Customize Appearance",
+    "Activate",
+    "Complete BustyBuddy Install",
     "Review Settings",
   ];
   const [selectedType, setSelectedType] = useState("");
   const [inputValue, setInputValue] = useState("");
+  const [showBundleAction, setShowBundleAction] = useState(false);
 
   const handleSelectChange = (e) => {
     const value = e.target.value;
@@ -216,606 +257,41 @@ export default function BundleDiscountActions() {
             {selectedIndex === 0 && (
               <Card className="border-0">
                 <CardBody>
-                  <div className="d-flex justify-content-between  mb-3">
-                    <Button
-                      text="+ Add to Products"
-                      onClick={() => console.log("+ Add to Products")}
-                      style={{
-                        backgroundColor: "white",
-                        color: "#5169DD",
-                        border: "1px solid #5169DD",
-                        borderRadius: "8px",
-                        padding: "7px 10px 7px 7px",
-                      }}
-                    />
-
-                    <Button
-                      text={
-                        <>
-                          <Trash style={{ marginRight: "6px" }} />
-                          Clear All
-                        </>
-                      }
-                      onClick={clearAllProducts}
-                      style={{
-                        backgroundColor: "white",
-                        color: "#C4290E",
-                        border: "1px solid #C4290E",
-                        borderRadius: "8px",
-                        padding: "7px 10px 7px 7px",
-                      }}
-                    />
-                  </div>
-
-                  {/* Selected Products */}
-                  {selectedProducts.map((product, idx) => (
-                    <Card
-                      className="border-0 mb-2"
-                      key={idx}
-                      style={{
-                        background: "rgb(241, 242, 244)",
-                        borderRadius: "16px",
-                      }}
-                    >
-                      <CardBody className="d-flex align-items-center justify-content-between linrrow">
-                        <div className="d-flex align-items-center">
-                          <img
-                            src={verticalicon}
-                            alt="T-Shirt"
-                            width={20}
-                            height={20}
-                            className="me-2"
-                          />
-                          <img
-                            src={tshirt}
-                            alt="T-Shirt"
-                            width={60}
-                            height={60}
-                            className="me-2"
-                          />
-                          <div className="bundlebox">
-                            <span className="productname">
-                              Earth Tone brown men’s shirt
-                            </span>
-                            <div className="bundletxtb2">
-                              <p>1 Option</p>
-                              <p>3 Varients</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
-                          <div className="d-flex align-items-center gap-2">
-                            <p
-                              className="mb-1"
-                              style={{
-                                fontSize: "13px",
-                                fontWeight: "normal",
-                                fontWeight: "500",
-                                color: "#616161",
-                              }}
-                            >
-                              Available Quantity
-                            </p>
-                            <div className="d-flex align-items-center gap-2">
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: 500,
-                                  color: "#222222",
-                                }}
-                              >
-                                50 /{" "}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: "500",
-                                  color: "#222222",
-                                  opacity: 0.5,
-                                }}
-                              >
-                                100
-                              </span>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "10px",
-                              gap: "10px",
-                              width: "100px",
-                              height: "35px",
-                              background: "#FFFFFF",
-                              border: "1px solid rgba(34, 34, 34, 0.1)",
-                              borderRadius: "8px",
-                            }}
-                          >
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleDecrement}
-                            >
-                              -
-                            </button>
-                            <span
-                              style={{ fontSize: "14px", fontWeight: "500" }}
-                            >
-                              {count}
-                            </span>
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleIncrement}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <Button
-                            text={<X className="crossicon" />}
-                            variant="link"
-                            className="border-0 p-0 d-flex justify-content-center align-items-center"
-                            onClick={() => removeProduct(product)}
-                            style={{
-                              color: "black",
-                              width: "18px",
-                              height: "18px",
-                            }}
-                          />
-                        </div>
-                      </CardBody>
-                      <CardBody className="d-flex align-items-center justify-content-between linrrow">
-                        <div className="d-flex align-items-center">
-                          <img
-                            src={verticalicon}
-                            alt="T-Shirt"
-                            width={20}
-                            height={20}
-                            className="me-2"
-                          />
-                          <img
-                            src={tshirt}
-                            alt="T-Shirt"
-                            width={60}
-                            height={60}
-                            className="me-2"
-                          />
-                          <div className="bundlebox">
-                            <span className="productname">
-                              Earth Tone brown men’s shirt
-                            </span>
-                            <div className="bundletxtb2">
-                              <p>1 Option</p>
-                              <p>3 Varients</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
-                          <div className="d-flex align-items-center gap-2">
-                            <p
-                              className="mb-1"
-                              style={{
-                                fontSize: "13px",
-                                fontWeight: "normal",
-                                fontWeight: "500",
-                                color: "#616161",
-                              }}
-                            >
-                              Available Quantity
-                            </p>
-                            <div className="d-flex align-items-center gap-2">
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: "500",
-                                  color: "#222222",
-                                }}
-                              >
-                                50 /{" "}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: "500",
-                                  color: "#222222",
-                                  opacity: 0.5,
-                                }}
-                              >
-                                100
-                              </span>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "10px",
-                              gap: "10px",
-                              width: "100px",
-                              height: "35px",
-                              background: "#FFFFFF",
-                              border: "1px solid rgba(34, 34, 34, 0.1)",
-                              borderRadius: "8px",
-                            }}
-                          >
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleDecrement}
-                            >
-                              -
-                            </button>
-                            <span
-                              style={{ fontSize: "14px", fontWeight: "500" }}
-                            >
-                              {count}
-                            </span>
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleIncrement}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <Button
-                            text={<X className="crossicon" />}
-                            variant="link"
-                            className="border-0 p-0 d-flex justify-content-center align-items-center"
-                            onClick={() => removeProduct(product)}
-                            style={{
-                              color: "black",
-                              width: "18px",
-                              height: "18px",
-                            }}
-                          />
-                        </div>
-                      </CardBody>
-                      <CardBody className="d-flex align-items-center justify-content-between linrrow">
-                        <div className="d-flex align-items-center">
-                          <img
-                            src={verticalicon}
-                            alt="T-Shirt"
-                            width={20}
-                            height={20}
-                            className="me-2"
-                          />
-                          <img
-                            src={tshirt}
-                            alt="T-Shirt"
-                            width={60}
-                            height={60}
-                            className="me-2"
-                          />
-                          <div className="bundlebox">
-                            <span className="productname">
-                              Earth Tone brown men’s shirt
-                            </span>
-                            <div className="bundletxtb2">
-                              <p>1 Option</p>
-                              <p>3 Varients</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
-                          <div className="d-flex align-items-center gap-2">
-                            <p
-                              className="mb-1"
-                              style={{
-                                fontSize: "13px",
-                                fontWeight: "normal",
-                                fontWeight: "500",
-                                color: "#616161",
-                              }}
-                            >
-                              Available Quantity
-                            </p>
-                            <div className="d-flex align-items-center gap-2">
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: "500",
-                                  color: "#222222",
-                                }}
-                              >
-                                50 /{" "}
-                              </span>
-                              <span
-                                style={{
-                                  fontSize: "13px",
-                                  fontWeight: "normal",
-                                  fontWeight: "500",
-                                  color: "#222222",
-                                  opacity: 0.5,
-                                }}
-                              >
-                                100
-                              </span>
-                            </div>
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              padding: "10px",
-                              gap: "10px",
-                              width: "100px",
-                              height: "35px",
-                              background: "#FFFFFF",
-                              border: "1px solid rgba(34, 34, 34, 0.1)",
-                              borderRadius: "8px",
-                            }}
-                          >
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleDecrement}
-                            >
-                              -
-                            </button>
-                            <span
-                              style={{ fontSize: "14px", fontWeight: "500" }}
-                            >
-                              {count}
-                            </span>
-                            <button
-                              style={{
-                                border: "none",
-                                background: "transparent",
-                                cursor: "pointer",
-                                padding: 0,
-                                fontSize: "15px",
-                                fontWeight: "normal",
-                                lineHeight: "1",
-                                color: "#4A4A4A",
-                              }}
-                              onClick={handleIncrement}
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <Button
-                            text={<X className="crossicon" />}
-                            variant="link"
-                            className="border-0 p-0 d-flex justify-content-center align-items-center"
-                            onClick={() => removeProduct(product)}
-                            style={{
-                              color: "black",
-                              width: "18px",
-                              height: "18px",
-                            }}
-                          />
-                        </div>
-                      </CardBody>
-                    </Card>
-                  ))}
-                </CardBody>
-              </Card>
-            )}
-
-            {/* Discount Settings Step */}
-            {selectedIndex === 1 && (
-              <Card className="border-0">
-                <CardBody>
-                  <Form.Group
-                    controlId="discountSelect"
-                    className="discountdropdown position-relative d-flex justify-content-between gap-[1px]"
-                  >
-                    <div style={{ width: "80%" }}>
-                      <Form.Label className="inputtitle mb-1">
-                        Discount Type
-                      </Form.Label>
-                      <div className="position-relative">
-                        <Form.Select
-                          value={selectedType}
-                          onChange={handleSelectChange}
-                          className="discountdropdownselect custom-dropdown"
-                        >
-                          <option value="">Select Discount Setting</option>
-                          <option value="Percentage">Percentage</option>
-                          <option value="Fixed Amount">Fixed Discount</option>
-                          <option value="Free Gift">Free Gift</option>
-                        </Form.Select>
-
-                        {/* Dropdown icon */}
-                        <span className="dropdown-icon">
-                          <img src={dropdown} alt="dropdown icon" />
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Right Input */}
-                    <div style={{ width: "20%" }}>
-                      <Form.Label className="inputtitle mb-1 invisible">
-                        Value
-                      </Form.Label>{" "}
-                      {/* keeps height aligned */}
-                      <Form.Control
-                        type="text"
-                        value={inputValue}
-                        readOnly
-                        className="discountdropdownselect custom-dropdown"
-                        style={{
-                          fontFamily: "Inter",
-                          fontWeight: "600",
-                          fontSize: "15px",
-                          lineHeight: "100%",
-                        }}
-                      />
-                    </div>
-                  </Form.Group>
-
-                  <p
-                    style={{
-                      fontFamily: "Inter",
-                      fontStyle: "normal",
-                      fontWeight: 500,
-                      fontSize: "13px",
-                      lineHeight: "100%",
-                      color: "#616161",
-                    }}
-                    className="linrrow"
-                  >
-                    A ‘Percentage’ discount reduces the bundle products prices.
-                  </p>
-                  <div className="d-flex flex-nowrap gap-1 align-items-center justify-content-start px-2 py-2 mt-2">
-                    <Form.Check
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={showCountdown}
-                      onChange={() => setShowCountdown(!showCountdown)}
-                      label={
-                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
-                          Free Shipping
-                        </span>
-                      }
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "bold",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        color: "#303030",
-                        whiteSpace: "nowrap",
-                      }}
-                    />
-
-                    <p
-                      style={{
-                        width: "1.5px",
-                        height: "10px",
-                        background: "#222222",
-                        opacity: 0.1,
-                        margin: "0 4px",
-                      }}
-                    ></p>
-                    <p
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                        color: "#616161",
-                        margin: 0,
-                        whiteSpace: "wrap",
-
-                        textOverflow: "ellipsis",
-                        maxWidth: "800px", // Adjust as needed
-                      }}
-                    >
-                      Customers are eligible for complimentary shipping on all
-                      orders placed within this bundled discount offer.
-                    </p>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {selectedIndex === 2 && (
-              <Card className="border-0">
-                <CardBody>
                   {/* Bundle Status Section */}
                   <Form
                     className="mt-3 p-3"
                     style={{ background: "#F1F2F4", borderRadius: "10px" }}
                   >
-                    <div className="d-flex justify-content-between align-items-center mb-3 linewhite">
-                      <div className="d-flex flex-column gap-2">
-                        <h2
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "600",
-                            fontSize: "15px",
-                            lineHeight: "100%",
-                            color: "#303030",
-                          }}
+                    <div className="d-flex flex-column gap-4">
+                      <Form.Group>
+                        <Form.Label className="inputtitle">Status</Form.Label>
+                        <Form.Select
+                          className="inputbox"
+                          style={{ background: "white" }}
+                          defaultValue="active" // or "inactive" if that's your default
                         >
-                          Bundle Status
-                        </h2>
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </Form.Select>
+
                         <p
                           style={{
-                            maxWidth: "778.87px",
                             fontFamily: "Inter",
                             fontStyle: "normal",
                             fontWeight: "500",
-                            fontSize: "14px",
+                            fontSize: "13px",
                             lineHeight: "100%",
                             color: "#616161",
                           }}
+                          className="mt-2"
                         >
-                          Get Noticed! Want to make sure your message doesn't
-                          get missed? Announcement Bar lets you display
-                          important alerts right at the top of your store.
-                          Whether it's a sale, promotion, or update, it's
-                          impossible to ignore!
+                          Only one announcement bar will be displayed at the
+                          time
                         </p>
-                      </div>
+                      </Form.Group>
 
-                      <Form.Check
-                        type="switch"
-                        id={`bundle-toggle`}
-                        checked={toggles}
-                        onChange={() => handleToggleChange()}
-                        className="custom-switch-toggle"
-                      />
-                    </div>
-                    <div className="d-flex flex-column gap-4">
                       <Form.Group>
-                        <Form.Label className="inputtitle">Title</Form.Label>
+                        <Form.Label className="inputtitle">Name</Form.Label>
                         <Form.Control
                           className="inputbox"
                           type="text"
@@ -832,57 +308,37 @@ export default function BundleDiscountActions() {
                           }}
                           className="mt-2"
                         >
-                          Show at the top of the bundle.
+                          The private name of this smart bar. Only you will see
+                          this.
                         </p>
                       </Form.Group>
-                      <Form.Group>
-                        <Form.Label className="inputtitle">
-                          Internal Name
-                        </Form.Label>
-                        <Form.Control
-                          className="inputbox"
-                          type="text"
-                          placeholder="Enter internal name"
-                          style={{ background: "white" }}
-                        />
-                        <p
+                      <div className="d-flex flex-column gap-2">
+                        <h2
                           style={{
                             fontFamily: "Inter",
                             fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
+                            fontWeight: "600",
+                            fontSize: "15px",
                             lineHeight: "100%",
-                            color: "#616161",
+                            color: "#303030",
                           }}
-                          className="mt-2"
                         >
-                          Used internally to identify the bundle.
-                        </p>
-                      </Form.Group>
-                      <Form.Group>
-                        <Form.Label className="inputtitle">
-                          Bundle Priority
-                        </Form.Label>
-                        <Form.Control
-                          className="inputbox"
-                          type="number"
-                          placeholder="Priority"
-                          style={{ background: "white" }}
-                        />
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                          className="mt-2"
-                        >
-                          Used internally to identify the bundle.
-                        </p>
-                      </Form.Group>
+                          General Settings
+                        </h2>
+                        <Form.Group>
+                          <Form.Label className="inputtitle">
+                            Message
+                          </Form.Label>
+                          <Form.Control
+                            className="inputbox"
+                            type="text"
+                            placeholder="Enter message"
+                            style={{ background: "white" }}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                          />
+                        </Form.Group>
+                      </div>
                     </div>
                   </Form>
 
@@ -902,42 +358,271 @@ export default function BundleDiscountActions() {
                           color: "#303030",
                         }}
                       >
-                        Appearance Settings
+                        Theme Style
                       </h2>
                     </div>
 
-                    <div className="py-3">
-                      <div className="colorgrid">
-                        {Object.keys(colorSettings).map((key) => (
-                          <Form.Group className="colorbox" key={key}>
-                            <Form.Label>
-                              {key.replace(/([A-Z])/g, " $1")}
-                            </Form.Label>
-                            <div className="colorinputbox">
-                              <input
-                                type="color"
-                                value={colorSettings[key]}
-                                onChange={(e) =>
-                                  setColorSettings({
-                                    ...colorSettings,
-                                    [key]: e.target.value,
-                                  })
-                                }
-                                className="colorinput"
-                              />
-                              <Form.Control
-                                type="text"
-                                className="inputbox"
-                                value={colorSettings[key]}
-                                readOnly
-                                style={{ background: "white" }}
-                              />
+                    <div className="py-3 d-flex flex-wrap gap-3">
+                      {themeOptions.map((theme, index) => (
+                        <div
+                          key={index}
+                          className={`theme-option ${selectedTheme === theme.name ? "active" : ""}`}
+                          style={{
+                            cursor: "pointer",
+                            border:
+                              selectedTheme === theme.name
+                                ? "2px solid #000"
+                                : "1px solid #ccc",
+                            borderRadius: "8px",
+                            padding: "5px",
+                            textAlign: "center",
+                            width: "100px",
+                          }}
+                          onClick={() => setSelectedTheme(theme.value)}
+                        >
+                          {theme.value === "solid" ? (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "60px",
+                                background: "#ccc",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Solid
                             </div>
-                          </Form.Group>
-                        ))}
-                      </div>
+                          ) : (
+                            <img
+                              src={theme.image}
+                              alt={theme.name}
+                              style={{
+                                width: "100%",
+                                height: "60px",
+                                objectFit: "cover",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          )}
+                          <div style={{ marginTop: "5px", fontSize: "12px" }}>
+                            {theme.name}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="d-flex align-items-center gap-2">
+
+                    {selectedTheme === "solid" && (
+                      <div className="py-3">
+                        <div className="colorgrid">
+                          {Object.keys(colorSettings).map((key) => (
+                            <Form.Group className="colorbox" key={key}>
+                              <Form.Label>
+                                {key.replace(/([A-Z])/g, " $1")}
+                              </Form.Label>
+                              <div className="colorinputbox">
+                                <input
+                                  type="color"
+                                  value={colorSettings[key]}
+                                  onChange={(e) =>
+                                    setColorSettings({
+                                      ...colorSettings,
+                                      [key]: e.target.value,
+                                    })
+                                  }
+                                  className="colorinput"
+                                />
+                                <Form.Control
+                                  type="text"
+                                  className="inputbox"
+                                  value={colorSettings[key]}
+                                  readOnly
+                                  style={{ background: "white" }}
+                                />
+                              </div>
+                            </Form.Group>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Form>
+
+                  {/* Margin Settings Section */}
+                  <Form
+                    className="mt-3 p-3"
+                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
+                  >
+                    <h2
+                      className="linewhite"
+                      style={{
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        lineHeight: "100%",
+                        color: "#303030",
+                      }}
+                    >
+                      Theme Settings
+                    </h2>
+                    <div className="mt-3">
+                      <Form.Group className="d-flex flex-column gap-2">
+                        <Form.Label className="inputtitle">Status</Form.Label>
+                        <Form.Select
+                          className="inputbox"
+                          style={{ background: "white" }}
+                          value={barPosition}
+                          onChange={(e) => setBarPosition(e.target.value)}
+                        >
+                          <option value="top">Top Relative</option>
+                          <option value="top-fixed">Top Fixed</option>
+                          <option value="bottom">Bottom</option>
+                        </Form.Select>
+
+                        <p
+                          style={{
+                            fontFamily: "Inter",
+                            fontStyle: "normal",
+                            fontWeight: "500",
+                            fontSize: "13px",
+                            lineHeight: "100%",
+                            color: "#616161",
+                          }}
+                          className="mt-2"
+                        >
+                          The announcement bar is displayed before/above the
+                          page content. When scrolling down, the announcement
+                          bar will not be visible anymore.
+                        </p>
+                      </Form.Group>
+                    </div>
+                  </Form>
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Discount Settings Step */}
+            {selectedIndex === 1 && (
+              <Card className="border-0">
+                <CardBody>
+                  <div className="d-flex flex-column gap-2">
+                    <h2
+                      style={{
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "15px",
+                        lineHeight: "100%",
+                        color: "#303030",
+                      }}
+                    >
+                      The Announcement Bar app is currently inactive
+                    </h2>
+                  </div>
+                  <div className="d-flex flex-nowrap gap-5 align-items-center justify-content-start p-3 mt-2">
+                    <Form.Check
+                      type="checkbox"
+                      className="custom-checkbox"
+                      checked={showCountdown}
+                      onChange={() => setShowCountdown(!showCountdown)}
+                      label={
+                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
+                          Activate Now
+                        </span>
+                      }
+                      style={{
+                        fontFamily: "Inter",
+                        fontStyle: "bold",
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        color: "#303030",
+                        whiteSpace: "nowrap",
+                      }}
+                    />
+                    <Form.Check
+                      type="checkbox"
+                      className="custom-checkbox"
+                      checked={showCountdown}
+                      onChange={() => setShowCountdown(!showCountdown)}
+                      label={
+                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
+                          Activate Later
+                        </span>
+                      }
+                      style={{
+                        fontFamily: "Inter",
+                        fontStyle: "bold",
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        color: "#303030",
+                        whiteSpace: "nowrap",
+                      }}
+                    />
+                  </div>
+
+                  <div className="d-flex align-items-center justify-content-center">
+                    <video controls className="video-player">
+                      <source src={video1} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+                  </div>
+                </CardBody>
+              </Card>
+            )}
+
+            {selectedIndex === 2 && (
+              <Card className="border-0">
+                <CardBody>
+                  {/* Bundle Status Section */}
+                  <Form
+                    className="mt-3 p-3"
+                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
+                  >
+                    <div className="d-flex flex-column gap-4 justify-content-between align-items-center mb-3 linewhite">
+                      <div className="d-flex flex-column gap-2">
+                        <h2
+                          style={{
+                            fontFamily: "Inter",
+                            fontStyle: "normal",
+                            fontWeight: "600",
+                            fontSize: "15px",
+                            lineHeight: "100%",
+                            color: "#303030",
+                          }}
+                        >
+                          Your Announcement Bar Won’t Show Up In Your Store Yet!
+                        </h2>
+                        <p
+                          style={{
+                            maxWidth: "778.87px",
+                            fontFamily: "Inter",
+                            fontStyle: "normal",
+                            fontWeight: "500",
+                            fontSize: "14px",
+                            lineHeight: "100%",
+                            color: "#616161",
+                          }}
+                        >
+                          Complete Install & Your BusyBuddy Apps Will Show On
+                          Your Store. You will only need to complete this step
+                          once
+                        </p>
+                      </div>
+
+                      <video controls className="video-player">
+                        <source src={video2} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    </div>
+                  </Form>
+
+                  {/* Appearance Settings Section */}
+                  <Form
+                    className="mt-3 p-3"
+                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
+                  >
+                    <div className="options-container">
                       {/* Countdown Timer and Emoji Options */}
                       <Form.Check
                         type="checkbox"
@@ -946,7 +631,7 @@ export default function BundleDiscountActions() {
                         onChange={() => setShowCountdown(!showCountdown)}
                         label={
                           <span style={{ marginLeft: "6px" }}>
-                            Show Countdown Timer
+                            Enable Later
                           </span>
                         }
                         style={{
@@ -966,481 +651,20 @@ export default function BundleDiscountActions() {
                           fontWeight: 500,
                           fontSize: "13px",
                           lineHeight: "100%",
-                          color: "#616161",
+                          color: "rgba(81, 192, 255, 1)",
                           width: "90%",
                         }}
                       >
-                        Show countdown timer this will include a ((counter)) tag
-                        in the Secondary text. can reposition the countdown
-                        timer anywhere in the Secondary text by moving the tag
+                        How To Enable BusyBuddy In Your Shopify Store
                       </p>
                     </div>
-                    <div className="d-flex align-items-center justify-content-between gap-2">
-                      <Form.Check
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={showCountdown}
-                        onChange={() => setShowCountdown(!showCountdown)}
-                        label={
-                          <span style={{ marginLeft: "6px" }}>
-                            Add an Emoji 🔥
-                          </span>
-                        }
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          color: "#303030",
-                          whiteSpace: "nowrap",
-                        }}
-                      />
-
-                      <Button
-                        text="+ Select an Emoji"
-                        onClick={() => console.log("+ Select an Emoji")}
-                        style={{
-                          backgroundColor: "rgba(81, 105, 221, 0.1)",
-                          color: "#5169DD",
-                          border: "1px solid #5169DD",
-                          borderRadius: "8px",
-                          padding: "7px 10px 7px 7px",
-                        }}
-                      />
-                    </div>
-                  </Form>
-
-                  {/* Margin Settings Section */}
-                  <Form
-                    className="mt-3 p-3"
-                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
-                  >
-                    <h2
-                      className="linewhite"
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        lineHeight: "100%",
-                        color: "#303030",
-                      }}
-                    >
-                      Margin Settings
-                    </h2>
-                    <div className="colorgrid mt-3">
-                      {["Top Margin", "Bottom Margin"].map((margin) => (
-                        <Form.Group className="mb-3" key={margin}>
-                          <Form.Label className="inputtitle">
-                            {margin}
-                          </Form.Label>
-                          <Form.Control
-                            className="inputbox"
-                            type="number"
-                            placeholder="20"
-                            style={{ background: "white" }}
-                          />
-                        </Form.Group>
-                      ))}
-                    </div>
-                  </Form>
-
-                  {/* Card Settings Section */}
-                  <Form
-                    className="mt-3 p-3"
-                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
-                  >
-                    <h2
-                      className="linewhite"
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        lineHeight: "100%",
-                        color: "#303030",
-                      }}
-                    >
-                      Card Settings
-                    </h2>
-
-                    <Form.Group className="mt-3 mb-3">
-                      <Form.Label className="inputtitle">
-                        Corner Radius
-                      </Form.Label>
-                      <Form.Control
-                        type="text"
-                        className="inputbox"
-                        placeholder="20"
-                        style={{ background: "white" }}
-                      />
-                    </Form.Group>
-                  </Form>
-                </CardBody>
-              </Card>
-            )}
-
-            {selectedIndex === 3 && (
-              <Card className="border-0">
-                <CardBody className="d-flex flex-column gap-2">
-                  <Form.Group
-                    className=" position-relative"
-                    style={{
-                      background: "#F1F2F4",
-                      borderRadius: "10px",
-                      padding: "10px 20px",
-                      border: "none",
-                    }}
-                  >
-                    <div className="d-flex flex-column gap-2 linewhite">
-                      <h2
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "15px",
-                          lineHeight: "100%",
-                          color: "#303030",
-                        }}
-                      >
-                        Placements
-                      </h2>
-                      <p
-                        style={{
-                          maxWidth: "778.87px",
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "500",
-                          fontSize: "14px",
-                          lineHeight: "100%",
-                          color: "#616161",
-                        }}
-                      >
-                        Choose where to display this bundle.
-                      </p>
-                    </div>
-                    <Form.Label className="inputtitle mt-3">
-                      Select Variation
-                    </Form.Label>
-                    <div className="position-relative">
-                      <Form.Control
-                        as="select"
-                        className=" pe-5"
-                        style={{
-                          backgroundColor: "#ffffff",
-                          border: "1px solid #ccc",
-                          borderRadius: "8px",
-                          paddingRight: "40px",
-                          border: "none",
-                          padding: "15px 10px",
-                        }}
-                      >
-                        <option>Select the bundle on the product pages</option>
-                        <option>Fixed Discount</option>
-                        <option>Buy X Get Y</option>
-                      </Form.Control>
-                      <span
-                        className="dropdown-icon position-absolute"
-                        style={{
-                          right: "10px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                        }}
-                      >
-                        <img src={dropdown} alt="Dropdown Icon" />
-                      </span>
-                    </div>
-                  </Form.Group>
-                  <Form.Group
-                    className=" position-relative"
-                    style={{
-                      background: "#F1F2F4",
-                      borderRadius: "10px",
-                      padding: "10px 20px",
-                      border: "none",
-                    }}
-                  >
-                    <div className="d-flex flex-column gap-2 linewhite">
-                      <h2
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "15px",
-                          lineHeight: "100%",
-                          color: "#303030",
-                        }}
-                      >
-                        Embed the bundle anywhere
-                      </h2>
-                    </div>
-                    <Form.Label className="inputtitle mt-3">
-                      Display this bundle anywhere by placing this HTML Tag in
-                      your theme file.
-                    </Form.Label>
-
-                    <div className="position-relative mt-3">
-                      <Form.Control
-                        type="text"
-                        value='<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                        readOnly
-                        className="pe-5"
-                        style={{
-                          backgroundColor: "#ffffff",
-                          border: "none",
-                          borderRadius: "8px",
-                          paddingRight: "40px",
-                          padding: "15px 10px",
-                          fontFamily: "Inter",
-                          fontSize: "13px",
-                        }}
-                      />
-                      <span
-                        className="dropdown-icon position-absolute"
-                        style={{
-                          right: "10px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          fontFamily: "Inter",
-                          fontWeight: 600,
-                          fontSize: "15px",
-                          color: "#222222",
-                          cursor: "pointer",
-                        }}
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            '<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                          );
-                        }}
-                      >
-                        Copy{" "}
-                        <Copy
-                          style={{
-                            width: "12.5px",
-                            height: "12.5px",
-                            color: "#222222",
-                            fontWeight: "bold",
-                          }}
-                        />
-                      </span>
-                    </div>
-                    <p
-                      className="mt-3"
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "500",
-                        fontSize: "13px",
-                        lineHeight: "100%",
-                        color: "#616161",
-                      }}
-                    >
-                      Bundle ID. Se030243-1265-4010-122-e13bcca82421
-                    </p>
-
-                    <p
-                      className="mt-3"
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "500",
-                        fontSize: "13px",
-                        lineHeight: "100%",
-                        color: "#616161",
-                        display: "flex",
-                        gap: "2px",
-                      }}
-                    >
-                      <img src={learnmore} width={15} height={15} />
-                      Learn More about embed in specific pages
-                    </p>
-                  </Form.Group>
-
-                  {/* Date and Time Configuration */}
-                  <Form
-                    style={{
-                      background: "#F1F2F4",
-                      borderRadius: "10px",
-                      padding: "10px 10px",
-                    }}
-                  >
-                    {" "}
-                    <Form.Group
-                      className=" position-relative"
-                      style={{
-                        background: "#F1F2F4",
-                        borderRadius: "10px",
-                        padding: "0px 10px",
-                        border: "none",
-                      }}
-                    >
-                      <div className="d-flex flex-column gap-2 linewhite">
-                        <h2
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "600",
-                            fontSize: "15px",
-                            lineHeight: "100%",
-                            color: "#303030",
-                          }}
-                        >
-                          Plan Bundle
-                        </h2>
-                        <p
-                          style={{
-                            maxWidth: "778.87px",
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "14px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                        >
-                          Fixed bundles deactivate ar a designated time |
-                          Evergreen bundles are available indefinitely
-                        </p>
-                      </div>
-                      <div className="position-relative mt-3">
-                        <Form.Control
-                          type="text"
-                          value="Make it available for Long time"
-                          readOnly
-                          className="pe-5"
-                          style={{
-                            backgroundColor: "#ffffff",
-                            border: "none",
-                            borderRadius: "8px",
-                            paddingRight: "40px",
-                            padding: "15px 10px",
-                            fontFamily: "Inter",
-                            fontSize: "13px",
-                          }}
-                        />
-                        <span
-                          className="dropdown-icon position-absolute"
-                          style={{
-                            right: "10px",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            fontFamily: "Inter",
-                            fontWeight: 600,
-                            fontSize: "15px",
-                            color: "#222222",
-                            cursor: "pointer",
-                          }}
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              "Make it available for Long time"
-                            );
-                          }}
-                        >
-                          <Form.Check
-                            type="switch"
-                            id={`bundle-toggle`}
-                            checked={toggles}
-                            onChange={() => handleToggleChange()}
-                            className="custom-switch-toggle"
-                          />
-                        </span>
-                      </div>
-                    </Form.Group>
-                    <Row
-                      style={{
-                        background: "#fff",
-                        borderRadius: "10px",
-                        padding: "30px 8px",
-                        margin: "15px",
-                      }}
-                    >
-                      {/* Start Date Calendar */}
-                      <Col md={7}>
-                        <Form.Group>
-                          <Calendar
-                            onChange={setStartDate}
-                            value={startDate}
-                            className="border-0"
-                            showDoubleView
-                          />
-                        </Form.Group>
-                      </Col>
-
-                      {/* Inputs Section */}
-                      <Col md={5}>
-                        <Form.Group>
-                          <Form.Label className="inputtitle">
-                            Start Date
-                          </Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={startDate?.toLocaleDateString() || ""}
-                            readOnly
-                            style={{ backgroundColor: "#f5f5f5" }}
-                            className="inputbox2"
-                          />
-                        </Form.Group>
-
-                        <Form.Group className="mt-3">
-                          <Form.Label className="inputtitle">
-                            End Date
-                          </Form.Label>
-                          <Form.Control
-                            type="text"
-                            value={endDate?.toLocaleDateString() || ""}
-                            onChange={(e) =>
-                              setEndDate(new Date(e.target.value))
-                            }
-                            style={{ backgroundColor: "#f5f5f5" }}
-                            className="inputbox2"
-                          />
-                        </Form.Group>
-
-                        <Form.Group className="mt-3">
-                          <Form.Label className="inputtitle">
-                            Timezone
-                          </Form.Label>
-                          <Form.Select
-                            value={timezone}
-                            onChange={(e) => setTimezone(e.target.value)}
-                            style={{ backgroundColor: "#f5f5f5" }}
-                            className="inputbox2"
-                          >
-                            <option value="">Select Timezone</option>
-                            <option value="America/New_York">
-                              America/New_York
-                            </option>
-                            <option value="Europe/London">Europe/London</option>
-                            <option value="Asia/Kolkata">Asia/Kolkata</option>
-                            <option value="Asia/Tokyo">Asia/Tokyo</option>
-                            <option value="Australia/Sydney">
-                              Australia/Sydney
-                            </option>
-                          </Form.Select>
-                        </Form.Group>
-
-                        <div className="mt-4 d-flex gap-2">
-                          <Button
-                            text="Cancel"
-                            onClick={() => console.log("Cancel")}
-                            className="cancelbtn ms-2"
-                          />
-
-                          <Button
-                            text="Save Changes"
-                            onClick={() => console.log("Save Changes")}
-                            className="savebtn"
-                          />
-                        </div>
-                      </Col>
-                    </Row>
                   </Form>
                 </CardBody>
               </Card>
             )}
 
             {/* Step 5: Summary */}
-            {selectedIndex === 4 && (
+            {selectedIndex === 3 && (
               <Card className="border-0">
                 <CardBody>
                   <h2 className="cardtitle">Review Settings</h2>
@@ -1775,42 +999,60 @@ export default function BundleDiscountActions() {
                   padding: "15px",
                   borderRadius: "18px",
                   position: "relative",
+                 
+                  
                 }}
               >
-                <h2 className="cardtitle">Bought together and save more!🔥</h2>
                 <div
+                  className="themetitle"
                   style={{
-                    boxSizing: "border-box",
+                    position:
+                      barPosition === "top-fixed" || barPosition === "bottom"
+                        ? "absolute"
+                        : "relative",
+                    top: barPosition === "top-fixed" ? 0 : "auto",
+                    bottom: barPosition === "bottom" ? 0 : "auto",
+                    left: 0,
+                    width: "100%",
+                    zIndex: 2,
+                    background:
+                      selectedTheme === "solid"
+                        ? colorSettings["Background Color"]
+                        : `url(${themeOptions.find((t) => t.value === selectedTheme)?.image})`,
+                    color:
+                      selectedTheme === "solid"
+                        ? colorSettings["Text Color"]
+                        : "#ffffff",
+                    backgroundSize:
+                      selectedTheme === "solid" ? "auto" : "cover",
+                    backgroundPosition: "center",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    minHeight: "60px",
                     display: "flex",
-                    flexDirection: "row",
                     alignItems: "center",
-                    padding: "8px 10px 8px 8px",
-                    gap: "5px",
-                    position: "absolute",
-                    width: "144.5px",
-                    height: "29px",
-                    right: "0px",
-                    top: "0.5px",
-                    background: "#C4290E",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    borderRadius: "8px 18px 8px 8px",
-                    color: "white",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    zIndex: 3,
+                    justifyContent: "center",
+                    marginTop: barPosition === "top-fixed" ? 0 : "20px",
+                    transition: "all 0.3s ease",
                   }}
                 >
-                  Ends In 23 10 10
+                  <h2
+                    className="cardtitle"
+                    style={{ margin: 0, fontSize: "18px" }}
+                  >
+                    {message || "Type text here"}
+                  </h2>
                 </div>
+
+               
                 {/* Main Product Item */}
                 <div
                   style={{
-                   
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",
                   }}
-                  className="previewbox"
+                  className="previewbox mt-3"
                 >
                   <div className="d-flex flex-column">
                     <div className="d-flex align-items-center">
@@ -1902,269 +1144,7 @@ export default function BundleDiscountActions() {
                     </div>
                   </div>
                 </div>
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginTop: "-25px", // pulls into top card
-                    marginBottom: "-10px", // pulls into bottom card
-                    zIndex: 1,
-                  }}
-                  
-                >
-                  <div
-                    style={{
-                      width: "29.9px",
-                      height: "29.9px",
-                      background: "#2A353D",
-                      color: "white",
-                      fontSize: "20px",
-                      fontWeight: "bold",
-                      borderRadius: "8px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      border: "2px solid white",
-                      padding: "15px",
-                      boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    +
-                  </div>
-                </div>
-                {/* Additional Product Item */}
-                <div
-                  style={{
-                    
-                    padding: "15px",
-                    borderRadius: "18px",
-                    marginBottom: "15px",
-                  }}
-                  className="previewbox"
-                >
-                  <div className="d-flex flex-column">
-                    <div className="d-flex align-items-center">
-                      <img
-                        src={tshirtp}
-                        alt="T-Shirt"
-                        width={100}
-                        height={100}
-                        style={{
-                          borderRadius: "10px",
-                          marginRight: "15px",
-                        }}
-                      />
-                      <div className="w-100">
-                        <p
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            marginBottom: "5px",
-                          }}
-                        >
-                          Earth Tone brown men's shirt
-                        </p>
 
-                        <div className="d-flex align-items-center justify-content-start gap-2">
-                          <p
-                            style={{
-                              fontWeight: 600,
-                              fontSize: "14px",
-                              margin: 0,
-                            }}
-                          >
-                            Rs.199.00
-                          </p>
-                          <p
-                            style={{
-                              width: "1.5px",
-                              height: "10px",
-                              background: "#222222",
-                              opacity: 0.1,
-                            }}
-                          ></p>
-                          <p
-                            style={{
-                              color: "#999",
-                              fontSize: "12px",
-                              textDecoration: "line-through",
-                              margin: 0,
-                            }}
-                          >
-                            Rs.998.00
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: "10px", position: "relative" }}>
-                      <select
-                        className="form-select"
-                        style={{
-                          fontSize: "12px",
-                          background: "#F1F1F1",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          width: "100%",
-                          appearance: "none", // Hides default arrow
-                          WebkitAppearance: "none",
-                          MozAppearance: "none",
-                        }}
-                      >
-                        <option>Variant 1</option>
-                        <option>Variant 2</option>
-                        <option>Variant 3</option>
-                      </select>
-
-                      {/* Custom Dropdown Arrow */}
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "15px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          pointerEvents: "none",
-                          fontSize: "10px",
-                        }}
-                      >
-                        <CaretDownFill />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    marginTop: "-25px", // pulls into top card
-                    marginBottom: "-10px", // pulls into bottom card
-                    zIndex: 1,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "29.9px",
-                      height: "29.9px",
-                      background: "#2A353D",
-                      color: "white",
-                      fontSize: "20px",
-                      fontWeight: "bold",
-                      borderRadius: "8px",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      border: "2px solid white",
-                      padding: "15px",
-                      boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    +
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                   
-                    padding: "15px",
-                    borderRadius: "18px",
-                    marginBottom: "15px",
-                  }}
-                  className="previewbox linrrow d-flex flex-column gap-2"
-                >
-                  <div className="d-flex flex-column">
-                    <div className="d-flex align-items-center">
-                      <img
-                        src={tshirtp}
-                        alt="T-Shirt"
-                        width={100}
-                        height={100}
-                        style={{
-                          borderRadius: "10px",
-                          marginRight: "15px",
-                        }}
-                      />
-                      <div className="w-100">
-                        <p
-                          style={{
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            marginBottom: "5px",
-                          }}
-                        >
-                          Earth Tone brown men's shirt
-                        </p>
-
-                        <div className="d-flex align-items-center justify-content-start gap-2">
-                          <p
-                            style={{
-                              fontWeight: 600,
-                              fontSize: "14px",
-                              margin: 0,
-                            }}
-                          >
-                            Rs.199.00
-                          </p>
-                          <p
-                            style={{
-                              width: "1.5px",
-                              height: "10px",
-                              background: "#222222",
-                              opacity: 0.1,
-                            }}
-                          ></p>
-                          <p
-                            style={{
-                              color: "#999",
-                              fontSize: "12px",
-                              textDecoration: "line-through",
-                              margin: 0,
-                            }}
-                          >
-                            Rs.998.00
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: "10px", position: "relative" }}>
-                      <select
-                        className="form-select"
-                        style={{
-                          fontSize: "12px",
-                          background: "#F1F1F1",
-                          padding: "8px 12px",
-                          borderRadius: "8px",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          width: "100%",
-                          appearance: "none", // Hides default arrow
-                          WebkitAppearance: "none",
-                          MozAppearance: "none",
-                        }}
-                      >
-                        <option>Variant 1</option>
-                        <option>Variant 2</option>
-                        <option>Variant 3</option>
-                      </select>
-
-                      {/* Custom Dropdown Arrow */}
-                      <span
-                        style={{
-                          position: "absolute",
-                          right: "15px",
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          pointerEvents: "none",
-                          fontSize: "10px",
-                        }}
-                      >
-                        <CaretDownFill />
-                      </span>
-                    </div>
-                  </div>
-                </div>
                 {/* Buttons */}
                 <div className="d-flex flex-column gap-2">
                   <div

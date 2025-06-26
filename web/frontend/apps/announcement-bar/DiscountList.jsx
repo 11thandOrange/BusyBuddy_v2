@@ -16,9 +16,10 @@ import Button from "../../components/Button";
 import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
+import dropdown from "../../assets/Vector.png";
 
 export default function DiscountList({ onMakeBundleClick }) {
-  const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
+  const tabs = ["Overview", "Announcement Bars", "Setting", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [bundles, setBundles] = useState({ bundle1: false, bundle2: false });
   const [showBundleAction, setShowBundleAction] = useState(false);
@@ -26,6 +27,8 @@ export default function DiscountList({ onMakeBundleClick }) {
   const [isToggled, setIsToggled] = useState(true); // Toggle button in active state
   const [checkboxes, setCheckboxes] = useState([false, false, false, false]);
   const [toggles, setToggles] = useState([true, true, true, true]);
+  const [showCountdown, setShowCountdown] = useState(false);
+
   const handleCheckboxChange = (index) => {
     setCheckboxes((prev) =>
       prev.map((checked, i) => (i === index ? !checked : checked))
@@ -62,15 +65,14 @@ export default function DiscountList({ onMakeBundleClick }) {
             style={{
               marginLeft: "0",
               marginRight: "0",
-             
-                padding: "0px",
-                boxShadow: "1px 1px 4px 0px #0000001A inset",
-                backgroundColor: "#F1F2F4",
-                borderRadius: "15px",
-                marginBottom: "8px",
-                height: "51px",
-                width:"100%"
-              
+
+              padding: "0px",
+              boxShadow: "1px 1px 4px 0px #0000001A inset",
+              backgroundColor: "#F1F2F4",
+              borderRadius: "15px",
+              marginBottom: "8px",
+              height: "51px",
+              width: "100%",
             }}
           >
             {/* Left-aligned Toggle Buttons */}
@@ -94,7 +96,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           backgroundColor: "black",
                           borderColor: "black",
                           borderRadius: "15px",
-                          width: "130px",
+                          width: "180px",
                           // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
@@ -107,7 +109,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                         }
                       : {
                           borderRadius: "15px",
-                          width: "130px",
+                          width: "180px",
                           // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
@@ -198,9 +200,10 @@ export default function DiscountList({ onMakeBundleClick }) {
       >
         {selectedTab === "Overview" && (
           <>
-           {/* Video Display */}
-           <Col
-              lg={6} md={12}
+            {/* Video Display */}
+            <Col
+              lg={6}
+              md={12}
               style={{
                 padding: "50px",
               }}
@@ -245,7 +248,8 @@ export default function DiscountList({ onMakeBundleClick }) {
 
             {/* Side Features */}
             <Col
-              lg={6} md={12}
+              lg={6}
+              md={12}
               style={{
                 padding: "50px 0",
               }}
@@ -390,7 +394,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                     </div>
                   </div>
                 </div>
-                <div className="d-flex align-items-start flex-column">
+                {/* <div className="d-flex align-items-start flex-column">
                   <Button
                     variant="dark"
                     className="mb-3 d-flex align-items-center justify-content-center"
@@ -439,95 +443,140 @@ export default function DiscountList({ onMakeBundleClick }) {
                       How to create bundle?
                     </a>
                   </div>
-                </div>
+                </div> */}
               </div>
             </Col>
           </>
         )}
 
-        {selectedTab === "Discounts" && (
+        {selectedTab === "Announcement Bars" && (
           <div className="d-flex flex-column gap-3 ">
             {" "}
-            {checkboxes.map((isChecked, index) => (
-              <>
-                <Row key={index} className="g-0 linrrow">
-                  {" "}
-                  {/* Each bundle in a separate row */}
-                  <Card
-                    className="border-0 w-150"
-                    style={{ background: "rgb(241, 242, 244)" }}
-                  >
-                    <Card.Body className="d-flex align-items-center justify-content-between">
-                      {/* Left side - Checkbox and Bundle Name */}
-                      <div className="d-flex align-items-center">
+            <>
+              <Row className="g-0 linrrow">
+                {" "}
+                {/* Each bundle in a separate row */}
+                <Card
+                  className="border-0 w-150"
+                  style={{
+                    backgroundColor: "#F1F2F4",
+                    padding: "20px",
+                  }}
+                >
+                  <Card.Body className="d-flex align-items-center justify-content-center">
+                    {/* Left side - Checkbox and Bundle Name */}
+                    <div className="d-flex align-items-center">
+                      <div className="announcementbox">
+                        <div className="bundletxxtb1">
+                          <span className="bundletext">
+                            Create your first Announcement Bar
+                          </span>
+                        </div>
+                        <p
+                          className="buymorebtn"
+                          style={{
+                            maxWidth: "500px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignContent: "center",
+                          }}
+                        >
+                          Display an interactive Free Shipping message, capture
+                          leads, or build trust using any of the 5 types of
+                          Announcement Bars.
+                        </p>
+                        <div style={{ width: "80%" }}>
+                          <div className="position-relative">
+                            <Form.Select
+                              className="discountdropdownselect custom-dropdown"
+                              style={{
+                                backgroundColor: "#000",
+                                padding: "20px",
+                              }}
+                              onChange={(e) => {
+                                setShowBundleAction(true);
+                                onMakeBundleClick();
+                              }}
+                            >
+                              <option value="">Create</option>
+                              <option value="Percentage">Text</option>
+                              <option value="Fixed Amount">
+                                Countdown Timer
+                              </option>
+                              <option value="Free Gift">Free Shipping</option>
+                              <option value="Fixed Amount">
+                                Orders Counter
+                              </option>
+                            </Form.Select>
+
+                            {/* Dropdown icon */}
+                            <span className="dropdown-icon">
+                              <img src={dropdown} alt="dropdown icon" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Row>
+            </>
+          </div>
+        )}
+        {selectedTab === "Setting" && (
+          <div className="d-flex flex-column gap-3 ">
+            {" "}
+            <>
+              <Row className="g-0 linrrow">
+                {" "}
+                {/* Each bundle in a separate row */}
+                <Card
+                  className="border-0 w-full"
+                  style={{ background: "rgb(241, 242, 244)" }}
+                >
+                  <Card.Body className="d-flex align-items-center justify-content-between">
+                    <div className="d-flex flex-column gap-[10px]">
+                      <Form.Group>
                         <Form.Check
                           type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleCheckboxChange(index)}
-                          className="custom-checkbox me-2"
-                        />
-
-                        <img
-                          src={tshirt}
-                          alt="T-Shirt"
-                          width={80}
-                          height={80}
-                          className="me-2"
-                        />
-                        <div className="bundlebox">
-                          <div className="bundletxxtb1">
-                            <span className="bundletext">
-                              Bundle #{index + 1}
+                          className="custom-checkbox"
+                          checked={showCountdown}
+                          onChange={() => setShowCountdown(!showCountdown)}
+                          label={
+                            <span
+                              style={{ marginLeft: "6px", marginTop: "5px" }}
+                            >
+                              Enable close button
                             </span>
-                            <div className="previewbtn">
-                              <img src={view} width={13} height={13} />
-                              Preview
-                            </div>
-                          </div>
-                          <p className="buymorebtn">Buy More, Save More!</p>
-                          <div className="bundletxtb2">
-                            <p>Product 1</p>
-                            <p>Product 3</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="d-flex align-items-center justify-content-between gap-2"
-                        style={{ width: "25%" }}
-                      >
-                        <Form.Group className="mt-1 d-flex align-items-center gap-2">
-                          <Form.Label className="inputtitle mt-1">
-                            Priority
-                          </Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder=""
-                            style={{
-                              background: "white",
-                              width: "80px",
-                              height: "29px",
-                            }}
-                            className="inputbox"
-                          />
-                        </Form.Group>
-
-                        <div className="togglebox">
-                          <p className="datetext mt-2">Feb 13 at 12:59pm</p>
-                          <Form.Check
-                            type="switch"
-                            id={`bundle-toggle-${index}`}
-                            checked={toggles[index]}
-                            onChange={() => handleToggleChange(index)}
-                            className="custom-switch-toggle"
-                            style={{ width: "41px", height: "21px" }}
-                          />
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Row>
-              </>
-            ))}
+                          }
+                          style={{
+                            fontFamily: "Inter",
+                            fontStyle: "bold",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            color: "#303030",
+                            whiteSpace: "nowrap",
+                          }}
+                        />
+                        <p
+                          style={{
+                            fontFamily: "Inter",
+                            fontStyle: "normal",
+                            fontWeight: "500",
+                            fontSize: "13px",
+                            lineHeight: "100%",
+                            color: "#616161",
+                          }}
+                          className="mt-2"
+                        >
+                          Enable this setting if you want to allow your customers to be able to close the bar while navigating the store.
+                        </p>
+                      </Form.Group>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Row>
+            </>
           </div>
         )}
       </Row>
