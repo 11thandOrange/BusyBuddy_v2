@@ -8,8 +8,6 @@ import busyBuddy from "../assets/busyBuddy.png";
 const tabsList = [
   "Announcement Bar",
   "Inactive Tab Message",
-  "Cart Notice",
-  "Countdown Timer",
   "Bundle Discount",
   "Buy One Get One",
   "Volume Discounts",

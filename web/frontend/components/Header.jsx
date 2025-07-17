@@ -19,6 +19,8 @@ const Header = ({ tabs, defaultActiveTab, setActiveTab }) => {
                             padding: "8px 5px",
                             borderRadius: "15px",
                             alignItems: "center",
+                            display:"flex",
+                            justifyContent:"space-between"
                         }}
                         className="bg-white w-100"
                     >

@@ -36,8 +36,8 @@ export default function volumeDiscountActions() {
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+   const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null); 
   const [timezone, setTimezone] = useState("GMT");
   const tabs = [
     "Select Products",
@@ -76,6 +76,19 @@ export default function volumeDiscountActions() {
     // } else {
     //   setInputValue("");
     // }
+  };
+  const handleCalendarChange = (value) => {
+    if (Array.isArray(value)) {
+      setStartDate(value[0]);
+      setEndDate(value[1]);
+    } else {
+      if (!startDate || value < startDate) {
+        setStartDate(value);
+        setEndDate(null);
+      } else {
+        setEndDate(value);
+      }
+    }
   };
   const handleVariationChange = (event) => {
     setSelectedVariation(event.target.value);
@@ -1387,7 +1400,7 @@ export default function volumeDiscountActions() {
                             </span>
                           </div>
                         </Form.Group>
-                        <Row
+                        {/* <Row
                           style={{
                             background: "#fff",
                             borderRadius: "10px",
@@ -1395,19 +1408,17 @@ export default function volumeDiscountActions() {
                             margin: "15px",
                           }}
                         >
-                          {/* Start Date Calendar */}
                           <Col md={7}>
                             <Form.Group>
                               <Calendar
                                 onChange={setStartDate}
                                 value={startDate}
                                 className="border-0"
-                                showDoubleView
+                                
                               />
                             </Form.Group>
                           </Col>
 
-                          {/* Inputs Section */}
                           <Col md={5}>
                             <Form.Group>
                               <Form.Label className="inputtitle">Start Date</Form.Label>
@@ -1462,7 +1473,86 @@ export default function volumeDiscountActions() {
                               />
                             </div>
                           </Col>
-                        </Row>
+                        </Row> */}
+                         <Row
+      style={{
+        background: "#fff",
+        borderRadius: "10px",
+        padding: "30px 8px",
+        margin: "15px",
+      }}
+    >
+      {/* Start Date Calendar */}
+      <Col md={7}>
+        <Form.Group>
+          <Calendar
+            onChange={handleCalendarChange} // Use the new handler
+            value={startDate && endDate ? [startDate, endDate] : startDate} // Display range if both are set, else just start
+            className="border-0"
+            // Remove showDoubleView to display one month at a time
+            selectRange={true} // Enable range selection
+          />
+        </Form.Group>
+      </Col>
+
+      {/* Inputs Section */}
+      <Col md={5}>
+        <Form.Group>
+          <Form.Label className="inputtitle">Start Date</Form.Label>
+          <Form.Control
+            type="text"
+            value={startDate?.toLocaleDateString() || ""}
+            readOnly
+            style={{ backgroundColor: "#f5f5f5" }}
+            className="inputbox2"
+          />
+        </Form.Group>
+
+        <Form.Group className="mt-3">
+          <Form.Label className="inputtitle">End Date</Form.Label>
+          <Form.Control
+            type="text"
+            value={endDate?.toLocaleDateString() || ""}
+            readOnly // Make this readOnly as well, as the calendar updates it
+            style={{ backgroundColor: "#f5f5f5" }}
+            className="inputbox2"
+          />
+        </Form.Group>
+
+        <Form.Group className="mt-3">
+          <Form.Label className="inputtitle">Timezone</Form.Label>
+          <Form.Select
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            style={{ backgroundColor: "#f5f5f5" }}
+            className="inputbox2"
+          >
+            <option value="">Select Timezone</option>
+            <option value="America/New_York">America/New_York</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="Asia/Kolkata">Asia/Kolkata</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Australia/Sydney">Australia/Sydney</option>
+          </Form.Select>
+        </Form.Group>
+
+        <div className="mt-4 d-flex gap-2">
+          <Button
+            text="Cancel"
+            onClick={() => console.log("Cancel")}
+            className="cancelbtn ms-2"
+          />
+
+          <Button
+            text="Save Changes"
+            onClick={() =>
+              console.log("Save Changes", { startDate, endDate, timezone })
+            }
+            className="savebtn"
+          />
+        </div>
+      </Col>
+    </Row>
                       </Form>
                     </CardBody>
                   </Card>

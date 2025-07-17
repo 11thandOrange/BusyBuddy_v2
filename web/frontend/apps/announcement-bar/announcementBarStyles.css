@@ -717,3 +717,43 @@ label {
     gap: 0.5rem;
     /* roughly gap-2 in Bootstrap */
 }
+/* Animation for scrolling text */
+@keyframes scrollText {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Animation for shaky button */
+@keyframes shaky {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+.shop-now-button.shaky {
+  animation: shaky 0.2s infinite alternate; /* Adjust duration and iteration as needed */
+}
+
+.message-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 600px;
+}
+
+.announcement-bar{
+    
+}
+
+.announcement-bar .cardtitle {
+  flex-shrink: 0; /* Prevent cardtitle from shrinking if it's not animated */
+}
+
+.announcement-bar .message-container {
+  flex-grow: 1; 
+}

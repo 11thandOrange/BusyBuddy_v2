@@ -69,36 +69,6 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         },
       ],
     },
-    "Cart Notice": {
-      title: "T-Shirt",
-      description: "$885.90 USD",
-      features: [
-        {
-          title: "Quantity (1 in cart)",
-          description: "1",
-        },
-        { title: "Sales End in", description: "0d 19h 51m 0s" },
-        {
-          title: "Buy More, Save More!",
-          description: "Buy 1 for $885.85",
-        },
-      ],
-    },
-    "Countdown Timer": {
-      title: "T-Shirt",
-      description: "$885.90 USD",
-      features: [
-        {
-          title: "Quantity (1 in cart)",
-          description: "1",
-        },
-        { title: "Sales End in", description: "0d 19h 51m 0s" },
-        {
-          title: "Buy More, Save More!",
-          description: "Buy 1 for $885.85",
-        },
-      ],
-    },
     "Bundle Discount": {
       title: "Bundle Discount",
       description:
@@ -176,12 +146,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
       case "Inactive Tab Message":
         setActiveAction("inactiveTabMessage");
         break;
-      case "Cart Notice":
-        setActiveAction("cartNotice");
-        break;
-      case "Countdown Timer":
-        setActiveAction("countdownTimer");
-        break;
+     
       case "Bundle Discount":
         setActiveAction("bundleDiscount");
         break;
@@ -244,11 +209,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         goBack={onMakeBundleNowClick}
       />
     );
-  } else if (activeAction === "cartNotice") {
-    return <CarNoticeForm />;
-  } else if (activeAction === "countdownTimer") {
-    return <CountdownTimerForm />;
-  }
+  } 
 
   const updateQuantity = (id, amount) => {
     setCartItems((prev) =>

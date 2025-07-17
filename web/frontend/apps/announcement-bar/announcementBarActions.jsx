@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Container,
   Row,
@@ -8,14 +8,12 @@ import {
   Card,
   CardBody,
   Form,
+  InputGroup,
 } from "react-bootstrap";
-import { X, Trash } from "react-bootstrap-icons";
-import tshirt from "./tshirt.png";
 import Calendar from "react-calendar";
+import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 import "react-calendar/dist/Calendar.css";
 import Button from "../../components/Button";
-import verticalicon from "../../assets/vertical-drag-&-drop.png";
-import dropdown from "../../assets/Vector.png";
 import edit from "../../assets/elements.png";
 import customize from "../../assets/customize.png";
 import { Copy, CaretDownFill } from "react-bootstrap-icons";
@@ -23,14 +21,24 @@ import tshirtp from "../../assets/tshirt.png";
 import learnmore from "../../assets/help-square.png";
 import video1 from "../../assets/Activate_App-DkqU7myX.mov";
 import video2 from "../../assets/App_Install-DQeOwnkF.mov";
+import EmojiPicker from "emoji-picker-react";
 
 export default function BundleDiscountActions({ onMakeBundleClick }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [selectedProducts, setSelectedProducts] = useState(["Bundle 1"]);
-  const [isBundleActive, setIsBundleActive] = useState(true);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("Text is ticking");
   const [barPosition, setBarPosition] = useState("top");
+  const [customCSS, setCustomCSS] = useState("");
+  const [barWidth, setBarWidth] = useState(100); // Percentage or pixel value
+  const [barHeight, setBarHeight] = useState(180);
 
+  const [messageAnimationSpeed, setMessageAnimationSpeed] = useState(20);
+
+  const [generalColorSettings, setGeneralColorSettings] = useState({
+    "Background Color": "#007bff",
+    "Message Font Color": "#ffffff",
+  });
+ 
+  const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
   const themeOptions = [
     { name: "Solid Color", value: "solid" },
     {
@@ -68,81 +76,412 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
       value: "squares",
       image: "https://getbusybuddy.com/assets/Squares-Db9SlI8F.svg",
     },
+    { name: "Upload Image", value: "image-upload", icon: "➕" },
   ];
 
   const [colorSettings, setColorSettings] = useState({
     "Background Color": "#a18c8c",
-    "Text Color": "#000000",
   });
 
   const [selectedTheme, setSelectedTheme] = useState("solid");
-
-  const [count, setCount] = useState(50);
+  const [uploadedImage, setUploadedImage] = useState(null);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [timezone, setTimezone] = useState("GMT");
-  const tabs = [
-    "Customize Appearance",
-    "Activate",
-    "Complete BustyBuddy Install",
-    "Review Settings",
+  const [isCustomCSSEnabled, setIsCustomCSSEnabled] = useState(false);
+  const tabs = ["Customize Appearance", "Review Settings"];
+  const [timerColorSettings, setTimerColorSettings] = useState({
+    "Timer Numbers Font Color": "#ffffff",
+    "Timer Labels Font Color": "#ffffff",
+    "Timer Separator Color": "#ffffff",
+    "Timer Block Background Color": "transparent",
+    "Timer Block Border Color": "transparent",
+  });
+  const [desktopMessageFontSettings, setDesktopMessageFontSettings] = useState({
+    fontSize: "18px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+  const [mobileMessageFontSettings, setMobileMessageFontSettings] = useState({
+    fontSize: "16px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+
+  const [showMessage, setShowMessage] = useState(true); // New: State for message visibility
+  const [showMessageOptions, setShowMessageOptions] = useState(false);
+  const [showsaveOptions, setSaveOptions] = useState(false); // Renamed
+  const [showendsaleOptions, setEndsaleOptions] = useState(false); // Renamed
+
+  const [messageDesktopFontSettings, setMessageDesktopFontSettings] = useState({
+    // Renamed
+    fontSize: "18px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+  const [messageMobileFontSettings, setMessageMobileFontSettings] = useState({
+    // Renamed
+    fontSize: "16px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+  // New states for text styling
+  const [desktopFontSettings, setDesktopFontSettings] = useState({
+    fontSize: "18px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+
+  const [mobileFontSettings, setMobileFontSettings] = useState({
+    fontSize: "16px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+
+  // Example font families - you can expand this list
+  const fontFamilies = [
+    "Inter",
+    "Arial",
+    "Verdana",
+    "Helvetica",
+    "Times New Roman",
+    "Georgia",
+    "Courier New",
+    "Roboto",
+    "Open Sans",
   ];
-  const [selectedType, setSelectedType] = useState("");
-  const [inputValue, setInputValue] = useState("");
-  const [showBundleAction, setShowBundleAction] = useState(false);
+  const fontWeights = [
+    "normal",
+    "bold",
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+  ];
+  const fontCases = ["uppercase", "lowercase", "capitalize", "none"];
 
-  const handleSelectChange = (e) => {
-    const value = e.target.value;
-    setSelectedType(value);
+  const [showTimer, setShowTimer] = useState(true);
+  const fixedTimerDisplay = "00:00:00:00";
+  const [showTimerOptions, setShowTimerOptions] = useState(false);
+  const [timerDesktopFontSettings, setTimerDesktopFontSettings] = useState({
+    fontSize: "32px",
+    fontFamily: "Inter",
+    fontWeight: "700",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+  const [timerMobileFontSettings, setTimerMobileFontSettings] = useState({
+    fontSize: "24px",
+    fontFamily: "Inter",
+    fontWeight: "700",
+    letterSpacing: "0px",
+    lineHeight: "1.2",
+  });
+  // Timer Label Settings
+  const [timerLabelSettings, setTimerLabelSettings] = useState({
+    showDaysLabel: true,
+    showHoursLabel: true,
+    showMinutesLabel: true,
+    showSecondsLabel: true,
+    fontSize: "10px",
+    fontFamily: "Inter",
+    fontWeight: "400",
+    fontCase: "uppercase",
+  });
+  const [timerBlockSettings, setTimerBlockSettings] = useState({
+    showSeparators: true,
+    roundedCorners: "4px",
+    spacing: "10px",
+  });
 
-    if (value === "Percentage") {
-      setInputValue("%");
-    } else if (value === "Fixed Amount") {
-      setInputValue("499");
-    } else if (value === "Free Gift") {
-      setInputValue("Rs 0");
+  // --- New State for Scheduling ---
+  const [targetDate, setTargetDate] = useState(""); // Stores the selected date (e.g., 'YYYY-MM-DD')
+  const [targetTime, setTargetTime] = useState(""); // Stores the selected time (e.g., 'HH:MM')
+  const [countdown, setCountdown] = useState({
+    days: "00",
+    hours: "00",
+    minutes: "00",
+    seconds: "00",
+  });
+  const [timerIntervalId, setTimerIntervalId] = useState(null); // To store the interval ID for cleanup
+
+  // --- Functions for Scheduling Logic ---
+
+  const calculateCountdown = () => {
+    if (!targetDate || !targetTime) {
+      setCountdown({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+      return;
+    }
+
+    const targetDateTime = new Date(`${targetDate}T${targetTime}:00`);
+    const now = new Date();
+    const difference = targetDateTime.getTime() - now.getTime();
+
+    if (difference <= 0) {
+      clearInterval(timerIntervalId);
+      setCountdown({ days: "00", hours: "00", minutes: "00", seconds: "00" });
+      setShowCountdown(false); // Stop showing countdown when time is up
+      return;
+    }
+
+    const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+    setCountdown({
+      days: String(days).padStart(2, "0"),
+      hours: String(hours).padStart(2, "0"),
+      minutes: String(minutes).padStart(2, "0"),
+      seconds: String(seconds).padStart(2, "0"),
+    });
+    setShowCountdown(true); // Show countdown once target date/time is set
+  };
+
+  // Effect to start and clear the countdown interval
+  useEffect(() => {
+    if (showCountdown && targetDate && targetTime) {
+      // Clear any existing interval before setting a new one
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+      }
+      const interval = setInterval(calculateCountdown, 1000);
+      setTimerIntervalId(interval);
+      // Initial calculation immediately
+      calculateCountdown();
     } else {
-      setInputValue("");
+      // Clear interval if countdown is not active or target is not set
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+        setTimerIntervalId(null);
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+      }
+    };
+  }, [showCountdown, targetDate, targetTime]); // Re-run effect when these dependencies change
+
+  const handleSetTimer = () => {
+    if (targetDate && targetTime) {
+      const targetDateTime = new Date(`${targetDate}T${targetTime}:00`);
+      const now = new Date();
+      if (targetDateTime.getTime() <= now.getTime()) {
+        alert("Please select a future date and time for the timer.");
+        return;
+      }
+      setIsTimerActive(true); // Activate the timer
+      // The useEffect will pick this up and start the interval
+    } else {
+      alert("Please select both a date and a time to set the timer.");
     }
   };
 
-  const [toggles, setToggles] = useState([true, true, true, true]);
+  const handleStopTimer = () => {
+    setIsTimerActive(false); // Deactivate the timer
+    clearInterval(timerIntervalId); // Ensure interval is cleared immediately
+    setTimerIntervalId(null);
+    setCountdown({ days: "00", hours: "00", minutes: "00", seconds: "00" }); // Reset display
+    setTargetDate(""); // Clear inputs
+    setTargetTime(""); // Clear inputs
+  };
+  const renderTimerBlock = (value, label, showLabel = true) => {
+    // Determine if we should show the label based on settings
+    const shouldShowLabel =
+      {
+        Days: timerLabelSettings.showDaysLabel,
+        Hours: timerLabelSettings.showHoursLabel,
+        Minutes: timerLabelSettings.showMinutesLabel,
+        Seconds: timerLabelSettings.showSecondsLabel,
+      }[label] ?? showLabel;
 
-  const handleToggleChange = (index) => {
-    setToggles((prev) =>
-      prev.map((toggled, i) => (i === index ? !toggled : toggled))
+    // Apply text case transformation if needed (uppercase, lowercase, etc.)
+    const formattedLabel =
+      timerLabelSettings.fontCase === "uppercase"
+        ? label.toUpperCase()
+        : timerLabelSettings.fontCase === "lowercase"
+          ? label.toLowerCase()
+          : timerLabelSettings.fontCase === "capitalize"
+            ? `${label.charAt(0).toUpperCase()}${label.slice(1).toLowerCase()}`
+            : label;
+
+    return (
+      <div
+        className="timer-block"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          margin: "0 5px",
+          padding: "5px 10px",
+          background: showTimerBlockBackground
+            ? timerColorSettings["Timer Block Background Color"]
+            : "transparent",
+          border: showTimerBlockBorder
+            ? `1px solid ${timerColorSettings["Timer Block Border Color"]}`
+            : "none",
+          borderRadius: timerBlockSettings.roundedCorners,
+        }}
+      >
+        {/* Timer Numbers */}
+        <div
+          className="timer-number"
+          style={{
+            color: timerColorSettings["Timer Numbers Font Color"],
+            fontFamily: timerDesktopFontSettings.fontFamily,
+            fontWeight: timerDesktopFontSettings.fontWeight,
+            fontSize: timerDesktopFontSettings.fontSize,
+            letterSpacing: timerDesktopFontSettings.letterSpacing,
+            lineHeight: timerDesktopFontSettings.lineHeight,
+          }}
+        >
+          {value}
+        </div>
+
+        {/* Timer Label (Days, Hours, etc.) */}
+        {shouldShowLabel && (
+          <div
+            className="timer-label"
+            style={{
+              color: timerColorSettings["Timer Labels Font Color"],
+              fontFamily: timerLabelSettings.fontFamily,
+              fontWeight: timerLabelSettings.fontWeight,
+              fontSize: timerLabelSettings.fontSize,
+              marginTop: "5px",
+              textAlign: "center",
+            }}
+          >
+            {formattedLabel}
+          </div>
+        )}
+      </div>
     );
   };
 
-  const handleIncrement = () => {
-    if (count < 100) setCount((prev) => prev + 1);
+  // NEW: "End Sale" Message State
+  const [endSaleMessage, setEndSaleMessage] = useState("End Sale in");
+  const [showEndSaleMessage, setShowEndSaleMessage] = useState(false);
+  const [endSaleMessageSettings, setEndSaleMessageSettings] = useState({
+    backgroundColor: "#FF0000",
+    fontColor: "#FFFFFF",
+    fontSize: "16px",
+    fontFamily: "Inter",
+    fontWeight: "700",
+  });
+
+  const [animateMessage, setAnimateMessage] = useState(true);
+
+  const [showTimerBlockBackground, setShowTimerBlockBackground] =
+    useState(false);
+  const [showTimerBlockBorder, setShowTimerBlockBorder] = useState(false);
+
+  const [showShopNowButton, setShowShopNowButton] = useState(false);
+  const [shopNowButtonText, setShopNowButtonText] = useState("Shop Now");
+  const [animateShopNowButton, setAnimateShopNowButton] = useState(false);
+  const [shopNowButtonSettings, setShopNowButtonSettings] = useState({
+    backgroundColor: "#000000", // Default Black
+    fontColor: "#FFFFFF", // Default White
+    fontSize: "14px",
+    fontFamily: "Inter",
+    fontWeight: "600",
+    padding: "8px 15px",
+    borderRadius: "5px",
+    borderColor: "#000000",
+  });
+
+  const [showSaveBox, setShowSaveBox] = useState(false);
+  const [saveBoxText, setSaveBoxText] = useState("SAVE 30%");
+  const [saveBoxSettings, setSaveBoxSettings] = useState({
+    backgroundColor: "#FFFF00", // Default Yellow
+    fontColor: "#000000", // Default Black
+    fontSize: "14px",
+    fontFamily: "Inter",
+    fontWeight: "700",
+    padding: "5px 10px",
+    borderRadius: "3px",
+    borderColor: "#FFFF00",
+  });
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result);
+        setSelectedTheme("image-upload");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleDecrement = () => {
-    if (count > 0) setCount((prev) => prev - 1);
+  const getBackgroundStyle = () => {
+    if (selectedTheme === "solid") {
+      return colorSettings["Background Color"];
+    } else if (selectedTheme === "image-upload" && uploadedImage) {
+      return `url(${uploadedImage})`;
+    } else {
+      const selectedThemeOption = themeOptions.find(
+        (t) => t.value === selectedTheme
+      );
+      return selectedThemeOption ? `url(${selectedThemeOption.image})` : "none";
+    }
+  };
+  const onEmojiClickMessage = (emojiObject) => {
+    setMessage((prevMsg) => prevMsg + emojiObject.emoji);
   };
   const handleNext = () => {
     if (selectedIndex < tabs.length - 1) {
       setSelectedIndex(selectedIndex + 1);
     }
   };
-
   const handleBack = () => {
     if (selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1);
     }
   };
-
-  const removeProduct = (product) => {
-    setSelectedProducts(selectedProducts.filter((item) => item !== product));
+  const handleCSSToggle = () => {
+    setIsCustomCSSEnabled(!isCustomCSSEnabled);
+  };
+ const extractGradientColors = () => {
+    const gradientString = getBackgroundStyle();
+    // Extract hex colors from the gradient string
+    const colorMatches = gradientString.match(/#[0-9a-fA-F]{6}/g);
+    if (colorMatches && colorMatches.length >= 2) {
+      return {
+        startColor: getBackgroundStyle(), // #667eea
+        endColor: getBackgroundStyle()    // #764ba2
+      };
+    }
+    // Fallback colors
+    return {
+      startColor: getBackgroundStyle(),
+      endColor: getBackgroundStyle()
+    };
   };
 
-  const clearAllProducts = () => {
-    setSelectedProducts([]);
-  };
-
+  const waveColors = extractGradientColors();
   return (
     <Container
       fluid
@@ -289,7 +628,6 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                           time
                         </p>
                       </Form.Group>
-
                       <Form.Group>
                         <Form.Label className="inputtitle">Name</Form.Label>
                         <Form.Control
@@ -312,7 +650,8 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                           this.
                         </p>
                       </Form.Group>
-                      <div className="d-flex flex-column gap-2">
+
+                      <div className="linewhite mt-4">
                         <h2
                           style={{
                             fontFamily: "Inter",
@@ -325,28 +664,1955 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                         >
                           General Settings
                         </h2>
-                        <Form.Group>
+                      </div>
+                      <div className="d-flex flex-column gap-2 py-3">
+                        <Form.Group className="mb-3">
                           <Form.Label className="inputtitle">
-                            Message
+                            Message Text
                           </Form.Label>
-                          <Form.Control
-                            className="inputbox"
-                            type="text"
-                            placeholder="Enter message"
-                            style={{ background: "white" }}
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                          />
+                          <div style={{ position: "relative" }}>
+                            <InputGroup className="position-relative">
+                              <Form.Control
+                                className="inputbox pe-7"
+                                type="text"
+                                placeholder="Enter message"
+                                style={{ background: "white" }}
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                              />
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  right: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  display: "flex",
+                                  gap: "8px",
+                                  zIndex: 3,
+                                }}
+                              >
+                                <span
+                                  onClick={() =>
+                                    setShowEmojiPickerMessage((prev) => !prev)
+                                  }
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "#6c757d",
+                                    fontSize: "1.2rem",
+                                  }}
+                                >
+                                  😀
+                                </span>
+                                <span
+                                  onClick={() => setShowMessage(!showMessage)}
+                                  style={{
+                                    cursor: "pointer",
+                                    color: "#6c757d",
+                                    fontSize: "1.2rem",
+                                  }}
+                                >
+                                  {showMessage ? <EyeFill /> : <EyeSlashFill />}
+                                </span>
+                              </div>
+                            </InputGroup>
+                            {showEmojiPickerMessage && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  top: "100%",
+                                  left: "0",
+                                  zIndex: 1001,
+                                  marginTop: "5px",
+                                  width: "100%",
+                                }}
+                              >
+                                <EmojiPicker
+                                  onEmojiClick={onEmojiClickMessage}
+                                  width="100%"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </Form.Group>
+                        {/* Message Styling Options Toggle */}
+                        <div
+                          className="linewhite mt-2"
+                          onClick={() =>
+                            setShowMessageOptions(!showMessageOptions)
+                          }
+                          style={{ cursor: "pointer" }}
+                        >
+                          <h2
+                            style={{
+                              fontFamily: "Inter",
+                              fontStyle: "normal",
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              lineHeight: "100%",
+                              color: "#303030",
+                            }}
+                          >
+                            Message Styling Options{" "}
+                            {showMessageOptions ? "▲" : "▼"}
+                          </h2>
+                        </div>
+                        {/* Message Styling Options Content */}
+                        {showMessageOptions && (
+                          <div className="py-3">
+                            <Form.Group className="colorbox mb-3">
+                              <Form.Label>Font Color</Form.Label>
+                              <div className="colorinputbox">
+                                <input
+                                  type="color"
+                                  value={
+                                    generalColorSettings["Message Font Color"]
+                                  }
+                                  onChange={(e) =>
+                                    setGeneralColorSettings({
+                                      ...generalColorSettings,
+                                      "Message Font Color": e.target.value,
+                                    })
+                                  }
+                                  className="colorinput"
+                                />
+                                <Form.Control
+                                  type="text"
+                                  className="inputbox"
+                                  value={
+                                    generalColorSettings["Message Font Color"]
+                                  }
+                                  readOnly
+                                  style={{ background: "white" }}
+                                />
+                              </div>
+                            </Form.Group>
+
+                            <Form.Group className="mb-3">
+                              <Form.Label>
+                                Animate Message (Scrolling & Wave)
+                              </Form.Label>
+                              <Form.Check
+                                type="switch"
+                                id="animateMessageSwitch"
+                                checked={animateMessage}
+                                onChange={(e) =>
+                                  setAnimateMessage(e.target.checked)
+                                }
+                              />
+                            </Form.Group>
+                            {animateMessage && (
+                              <Form.Group className="mb-3">
+                                <Form.Label>
+                                  Animation Speed (seconds per cycle)
+                                </Form.Label>
+                                <Form.Range
+                                  min={5} // Faster
+                                  max={60} // Slower
+                                  step={1}
+                                  value={messageAnimationSpeed}
+                                  onChange={(e) =>
+                                    setMessageAnimationSpeed(
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                />
+                                <small>{messageAnimationSpeed} seconds</small>
+                              </Form.Group>
+                            )}
+                            {/* Desktop Message Styling */}
+                            <h4
+                              className="mt-4 mb-3"
+                              style={{ fontSize: "14px", fontWeight: "bold" }}
+                            >
+                              Desktop Message Styles
+                            </h4>
+                            <div className="d-flex flex-wrap gap-3">
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Size</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageDesktopFontSettings.fontSize}
+                                  onChange={(e) =>
+                                    setMessageDesktopFontSettings({
+                                      ...messageDesktopFontSettings,
+                                      fontSize: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {[...Array(30).keys()].map((i) => (
+                                    <option
+                                      key={`dmsg-fs-${i}`}
+                                      value={`${10 + i}px`}
+                                    >
+                                      {10 + i}px
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Family</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageDesktopFontSettings.fontFamily}
+                                  onChange={(e) =>
+                                    setMessageDesktopFontSettings({
+                                      ...messageDesktopFontSettings,
+                                      fontFamily: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontFamilies.map((font, i) => (
+                                    <option key={`dmsg-ff-${i}`} value={font}>
+                                      {font}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Weight</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageDesktopFontSettings.fontWeight}
+                                  onChange={(e) =>
+                                    setMessageDesktopFontSettings({
+                                      ...messageDesktopFontSettings,
+                                      fontWeight: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontWeights.map((weight, i) => (
+                                    <option key={`dmsg-fw-${i}`} value={weight}>
+                                      {weight}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Letter Spacing</Form.Label>
+                                <Form.Control
+                                  type="range"
+                                  min="-2"
+                                  max="10"
+                                  step="0.5"
+                                  value={parseFloat(
+                                    messageDesktopFontSettings.letterSpacing
+                                  )}
+                                  onChange={(e) =>
+                                    setMessageDesktopFontSettings({
+                                      ...messageDesktopFontSettings,
+                                      letterSpacing: `${e.target.value}px`,
+                                    })
+                                  }
+                                  style={{ width: "100%" }}
+                                />
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {messageDesktopFontSettings.letterSpacing}
+                                </span>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Line Height</Form.Label>
+                                <Form.Control
+                                  type="range"
+                                  min="0.8"
+                                  max="2.5"
+                                  step="0.1"
+                                  value={parseFloat(
+                                    messageDesktopFontSettings.lineHeight
+                                  )}
+                                  onChange={(e) =>
+                                    setMessageDesktopFontSettings({
+                                      ...messageDesktopFontSettings,
+                                      lineHeight: e.target.value,
+                                    })
+                                  }
+                                  style={{ width: "100%" }}
+                                />
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {messageDesktopFontSettings.lineHeight}
+                                </span>
+                              </Form.Group>
+                            </div>
+
+                            {/* Mobile Message Styling */}
+                            <h4
+                              className="mt-4 mb-3"
+                              style={{ fontSize: "14px", fontWeight: "bold" }}
+                            >
+                              Mobile Message Styles
+                            </h4>
+                            <div className="d-flex flex-wrap gap-3">
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Size</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageMobileFontSettings.fontSize}
+                                  onChange={(e) =>
+                                    setMessageMobileFontSettings({
+                                      ...messageMobileFontSettings,
+                                      fontSize: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {[...Array(20).keys()].map((i) => (
+                                    <option
+                                      key={`mmsg-fs-${i}`}
+                                      value={`${8 + i}px`}
+                                    >
+                                      {8 + i}px
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Family</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageMobileFontSettings.fontFamily}
+                                  onChange={(e) =>
+                                    setMessageMobileFontSettings({
+                                      ...messageMobileFontSettings,
+                                      fontFamily: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontFamilies.map((font, i) => (
+                                    <option key={`mmsg-ff-${i}`} value={font}>
+                                      {font}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Weight</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={messageMobileFontSettings.fontWeight}
+                                  onChange={(e) =>
+                                    setMessageMobileFontSettings({
+                                      ...messageMobileFontSettings,
+                                      fontWeight: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontWeights.map((weight, i) => (
+                                    <option key={`mmsg-fw-${i}`} value={weight}>
+                                      {weight}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Letter Spacing</Form.Label>
+                                <Form.Control
+                                  type="range"
+                                  min="-1"
+                                  max="5"
+                                  step="0.2"
+                                  value={parseFloat(
+                                    mobileMessageFontSettings.letterSpacing
+                                  )}
+                                  onChange={(e) =>
+                                    setMessageMobileFontSettings({
+                                      ...mobileMessageFontSettings,
+                                      letterSpacing: `${e.target.value}px`,
+                                    })
+                                  }
+                                  style={{ width: "100%" }}
+                                />
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {mobileMessageFontSettings.letterSpacing}
+                                </span>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Line Height</Form.Label>
+                                <Form.Control
+                                  type="range"
+                                  min="0.8"
+                                  max="2.0"
+                                  step="0.1"
+                                  value={parseFloat(
+                                    mobileMessageFontSettings.lineHeight
+                                  )}
+                                  onChange={(e) =>
+                                    setMessageMobileFontSettings({
+                                      ...mobileMessageFontSettings,
+                                      lineHeight: e.target.value,
+                                    })
+                                  }
+                                  style={{ width: "100%" }}
+                                />
+                                <span
+                                  className="text-muted"
+                                  style={{ fontSize: "10px" }}
+                                >
+                                  {mobileMessageFontSettings.lineHeight}
+                                </span>
+                              </Form.Group>
+                            </div>
+                          </div>
+                        )}
+                        {/* --- End Sale Message Section --- */}
+
+                        <div className="d-flex flex-column gap-2 py-3">
+                          <Form.Group>
+                            <Form.Label className="inputtitle">
+                              "End Sale" Message Text
+                            </Form.Label>
+                            <InputGroup className="position-relative">
+                              <Form.Control
+                                className="inputbox pe-5"
+                                type="text"
+                                placeholder="Enter end sale message"
+                                style={{ background: "white" }}
+                                value={endSaleMessage}
+                                onChange={(e) =>
+                                  setEndSaleMessage(e.target.value)
+                                }
+                              />
+                              <div
+                                onClick={() =>
+                                  setShowEndSaleMessage(!showEndSaleMessage)
+                                }
+                                style={{
+                                  position: "absolute",
+                                  right: "10px",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  cursor: "pointer",
+                                  zIndex: 3,
+                                  color: "#6c757d",
+                                }}
+                              >
+                                {showEndSaleMessage ? (
+                                  <EyeFill />
+                                ) : (
+                                  <EyeSlashFill />
+                                )}
+                              </div>
+                            </InputGroup>
+                          </Form.Group>
+                          <div className="linewhite mt-3">
+                            <h2
+                              style={{
+                                fontFamily: "Inter",
+                                fontStyle: "normal",
+                                fontWeight: "600",
+                                fontSize: "15px",
+                                lineHeight: "100%",
+                                color: "#303030",
+                                cursor: "pointer",
+                              }}
+                              onClick={() =>
+                                setEndsaleOptions(!showendsaleOptions)
+                              }
+                            >
+                              "End Sale" Message Settings
+                              {showendsaleOptions ? "▲" : "▼"}
+                            </h2>
+                          </div>
+                          {showendsaleOptions && (
+                            <div className="d-flex flex-wrap gap-3">
+                              <Form.Group className="colorbox flex-grow-1">
+                                <Form.Label>Background Color</Form.Label>
+                                <div className="colorinputbox">
+                                  <input
+                                    type="color"
+                                    value={
+                                      endSaleMessageSettings.backgroundColor
+                                    }
+                                    onChange={(e) =>
+                                      setEndSaleMessageSettings({
+                                        ...endSaleMessageSettings,
+                                        backgroundColor: e.target.value,
+                                      })
+                                    }
+                                    className="colorinput"
+                                  />
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={
+                                      endSaleMessageSettings.backgroundColor
+                                    }
+                                    readOnly
+                                    style={{ background: "white" }}
+                                  />
+                                </div>
+                              </Form.Group>
+                              <Form.Group className="colorbox flex-grow-1">
+                                <Form.Label>Font Color</Form.Label>
+                                <div className="colorinputbox">
+                                  <input
+                                    type="color"
+                                    value={endSaleMessageSettings.fontColor}
+                                    onChange={(e) =>
+                                      setEndSaleMessageSettings({
+                                        ...endSaleMessageSettings,
+                                        fontColor: e.target.value,
+                                      })
+                                    }
+                                    className="colorinput"
+                                  />
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={endSaleMessageSettings.fontColor}
+                                    readOnly
+                                    style={{ background: "white" }}
+                                  />
+                                </div>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Size</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={endSaleMessageSettings.fontSize}
+                                  onChange={(e) =>
+                                    setEndSaleMessageSettings({
+                                      ...endSaleMessageSettings,
+                                      fontSize: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {[...Array(20).keys()].map((i) => (
+                                    <option
+                                      key={`esmsg-fs-${i}`}
+                                      value={`${10 + i}px`}
+                                    >
+                                      {10 + i}px
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Family</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={endSaleMessageSettings.fontFamily}
+                                  onChange={(e) =>
+                                    setEndSaleMessageSettings({
+                                      ...endSaleMessageSettings,
+                                      fontFamily: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontFamilies.map((font, i) => (
+                                    <option key={`esmsg-ff-${i}`} value={font}>
+                                      {font}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Font Weight</Form.Label>
+                                <Form.Control
+                                  as="select"
+                                  className="inputbox"
+                                  value={endSaleMessageSettings.fontWeight}
+                                  onChange={(e) =>
+                                    setEndSaleMessageSettings({
+                                      ...endSaleMessageSettings,
+                                      fontWeight: e.target.value,
+                                    })
+                                  }
+                                  style={{
+                                    background: "white",
+                                    maxHeight: "150px",
+                                    overflowY: "auto",
+                                  }}
+                                >
+                                  {fontWeights.map((weight, i) => (
+                                    <option
+                                      key={`esmsg-fw-${i}`}
+                                      value={weight}
+                                    >
+                                      {weight}
+                                    </option>
+                                  ))}
+                                </Form.Control>
+                              </Form.Group>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* --- Timer Section --- */}
+                        <div className="d-flex justify-content-between linewhite mt-4">
+                          <div
+                            className=""
+                            onClick={() =>
+                              setShowTimerOptions(!showTimerOptions)
+                            }
+                            style={{ cursor: "pointer" }}
+                          >
+                            <h2
+                              style={{
+                                fontFamily: "Inter",
+                                fontStyle: "normal",
+                                fontWeight: "600",
+                                fontSize: "15px",
+                                lineHeight: "100%",
+                                color: "#303030",
+                              }}
+                            >
+                              Timer Styling Options{" "}
+                              {showTimerOptions ? "▲" : "▼"}
+                            </h2>
+                          </div>
+
+                          <div onClick={() => setShowTimer(!showTimer)}>
+                            {showTimer ? <EyeFill /> : <EyeSlashFill />}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column">
+                          {showTimerOptions && (
+                            <div className="py-3">
+                              <div className="mt-4">
+                                <h3>Set Countdown Target</h3>
+                                <div className="d-flex flex-column mb-3">
+                                  <label htmlFor="targetDate">Date:</label>
+                                  <input
+                                    type="date"
+                                    id="targetDate"
+                                    value={targetDate}
+                                    onChange={(e) =>
+                                      setTargetDate(e.target.value)
+                                    }
+                                    className="form-control"
+                                  />
+                                </div>
+                                <div className="d-flex flex-column mb-3">
+                                  <label htmlFor="targetTime">Time:</label>
+                                  <input
+                                    type="time"
+                                    id="targetTime"
+                                    value={targetTime}
+                                    onChange={(e) =>
+                                      setTargetTime(e.target.value)
+                                    }
+                                    className="form-control"
+                                  />
+                                </div>
+                                {/* You can add a button here to explicitly start/stop the countdown if needed,
+            or rely on the useEffect to start it when targetDate and targetTime are set. */}
+                                <button
+                                  onClick={handleSetTimer}
+                                  className="btn btn-primary"
+                                >
+                                  Start Countdown
+                                </button>
+                              </div>
+
+                              {/* Timer Font Color */}
+                              <Form.Group className="colorbox mb-3">
+                                <Form.Label>
+                                  Timer Numbers Font Color
+                                </Form.Label>
+                                <div className="colorinputbox">
+                                  <input
+                                    type="color"
+                                    value={
+                                      timerColorSettings[
+                                        "Timer Numbers Font Color"
+                                      ]
+                                    }
+                                    onChange={(e) =>
+                                      setTimerColorSettings({
+                                        ...timerColorSettings,
+                                        "Timer Numbers Font Color":
+                                          e.target.value,
+                                      })
+                                    }
+                                    className="colorinput"
+                                  />
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={
+                                      timerColorSettings[
+                                        "Timer Numbers Font Color"
+                                      ]
+                                    }
+                                    readOnly
+                                    style={{ background: "white" }}
+                                  />
+                                </div>
+                              </Form.Group>
+
+                              {/* Desktop Timer Styling */}
+                              <h4
+                                className="mt-4 mb-3"
+                                style={{ fontSize: "14px", fontWeight: "bold" }}
+                              >
+                                Desktop Timer Styles (Numbers)
+                              </h4>
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Size</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerDesktopFontSettings.fontSize}
+                                    onChange={(e) =>
+                                      setTimerDesktopFontSettings({
+                                        ...timerDesktopFontSettings,
+                                        fontSize: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {[...Array(50).keys()].map((i) => (
+                                      <option
+                                        key={`dtimer-fs-${i}`}
+                                        value={`${16 + i}px`}
+                                      >
+                                        {16 + i}px
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Family</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerDesktopFontSettings.fontFamily}
+                                    onChange={(e) =>
+                                      setTimerDesktopFontSettings({
+                                        ...timerDesktopFontSettings,
+                                        fontFamily: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontFamilies.map((font, i) => (
+                                      <option
+                                        key={`dtimer-ff-${i}`}
+                                        value={font}
+                                      >
+                                        {font}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Weight</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerDesktopFontSettings.fontWeight}
+                                    onChange={(e) =>
+                                      setTimerDesktopFontSettings({
+                                        ...timerDesktopFontSettings,
+                                        fontWeight: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontWeights.map((weight, i) => (
+                                      <option
+                                        key={`dtimer-fw-${i}`}
+                                        value={weight}
+                                      >
+                                        {weight}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Letter Spacing</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="-2"
+                                    max="10"
+                                    step="0.5"
+                                    value={parseFloat(
+                                      timerDesktopFontSettings.letterSpacing
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerDesktopFontSettings({
+                                        ...timerDesktopFontSettings,
+                                        letterSpacing: `${e.target.value}px`,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerDesktopFontSettings.letterSpacing}
+                                  </span>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Line Height</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="0.8"
+                                    max="2.5"
+                                    step="0.1"
+                                    value={parseFloat(
+                                      timerDesktopFontSettings.lineHeight
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerDesktopFontSettings({
+                                        ...timerDesktopFontSettings,
+                                        lineHeight: e.target.value,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerDesktopFontSettings.lineHeight}
+                                  </span>
+                                </Form.Group>
+                              </div>
+
+                              {/* Mobile Timer Styling */}
+                              <h4
+                                className="mt-4 mb-3"
+                                style={{ fontSize: "14px", fontWeight: "bold" }}
+                              >
+                                Mobile Timer Styles (Numbers)
+                              </h4>
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Size</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerMobileFontSettings.fontSize}
+                                    onChange={(e) =>
+                                      setTimerMobileFontSettings({
+                                        ...timerMobileFontSettings,
+                                        fontSize: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {[...Array(30).keys()].map((i) => (
+                                      <option
+                                        key={`mtimer-fs-${i}`}
+                                        value={`${10 + i}px`}
+                                      >
+                                        {10 + i}px
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Family</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerMobileFontSettings.fontFamily}
+                                    onChange={(e) =>
+                                      setTimerMobileFontSettings({
+                                        ...timerMobileFontSettings,
+                                        fontFamily: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontFamilies.map((font, i) => (
+                                      <option
+                                        key={`mtimer-ff-${i}`}
+                                        value={font}
+                                      >
+                                        {font}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Weight</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerMobileFontSettings.fontWeight}
+                                    onChange={(e) =>
+                                      setTimerMobileFontSettings({
+                                        ...timerMobileFontSettings,
+                                        fontWeight: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontWeights.map((weight, i) => (
+                                      <option
+                                        key={`mtimer-fw-${i}`}
+                                        value={weight}
+                                      >
+                                        {weight}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Letter Spacing</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="-1"
+                                    max="5"
+                                    step="0.2"
+                                    value={parseFloat(
+                                      timerMobileFontSettings.letterSpacing
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerMobileFontSettings({
+                                        ...timerMobileFontSettings,
+                                        letterSpacing: `${e.target.value}px`,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerMobileFontSettings.letterSpacing}
+                                  </span>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Line Height</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="0.8"
+                                    max="2.0"
+                                    step="0.1"
+                                    value={parseFloat(
+                                      timerMobileFontSettings.lineHeight
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerMobileFontSettings({
+                                        ...timerMobileFontSettings,
+                                        lineHeight: e.target.value,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerMobileFontSettings.lineHeight}
+                                  </span>
+                                </Form.Group>
+                              </div>
+
+                              {/* --- Timer Labels --- */}
+                              <h4
+                                className="mt-4 mb-3"
+                                style={{ fontSize: "14px", fontWeight: "bold" }}
+                              >
+                                Timer Labels (Days, Hours etc.)
+                              </h4>
+                              <Form.Group className="flex-grow-1 mb-3">
+                                <Form.Label>Show Labels</Form.Label>
+                                <div className="d-flex flex-column gap-2">
+                                  <Form.Check
+                                    type="switch"
+                                    id="showDaysLabelSwitch"
+                                    label="Days"
+                                    checked={timerLabelSettings.showDaysLabel}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        showDaysLabel: e.target.checked,
+                                      })
+                                    }
+                                  />
+                                  <Form.Check
+                                    type="switch"
+                                    id="showHoursLabelSwitch"
+                                    label="Hours"
+                                    checked={timerLabelSettings.showHoursLabel}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        showHoursLabel: e.target.checked,
+                                      })
+                                    }
+                                  />
+                                  <Form.Check
+                                    type="switch"
+                                    id="showMinutesLabelSwitch"
+                                    label="Minutes"
+                                    checked={
+                                      timerLabelSettings.showMinutesLabel
+                                    }
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        showMinutesLabel: e.target.checked,
+                                      })
+                                    }
+                                  />
+                                  <Form.Check
+                                    type="switch"
+                                    id="showSecondsLabelSwitch"
+                                    label="Seconds"
+                                    checked={
+                                      timerLabelSettings.showSecondsLabel
+                                    }
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        showSecondsLabel: e.target.checked,
+                                      })
+                                    }
+                                  />
+                                </div>
+                              </Form.Group>
+
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Size</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerLabelSettings.fontSize}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        fontSize: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {[...Array(20).keys()].map((i) => (
+                                      <option
+                                        key={`label-fs-${i}`}
+                                        value={`${8 + i}px`}
+                                      >
+                                        {8 + i}px
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Family</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerLabelSettings.fontFamily}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        fontFamily: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontFamilies.map((font, i) => (
+                                      <option
+                                        key={`label-ff-${i}`}
+                                        value={font}
+                                      >
+                                        {font}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Weight</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerLabelSettings.fontWeight}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        fontWeight: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontWeights.map((weight, i) => (
+                                      <option
+                                        key={`label-fw-${i}`}
+                                        value={weight}
+                                      >
+                                        {weight}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Case</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={timerLabelSettings.fontCase}
+                                    onChange={(e) =>
+                                      setTimerLabelSettings({
+                                        ...timerLabelSettings,
+                                        fontCase: e.target.value,
+                                      })
+                                    }
+                                    style={{ background: "white" }}
+                                  >
+                                    {fontCases.map((fcase, i) => (
+                                      <option
+                                        key={`label-fc-${i}`}
+                                        value={fcase}
+                                      >
+                                        {fcase}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Font Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Labels Font Color"
+                                        ]
+                                      }
+                                      onChange={(e) =>
+                                        setTimerColorSettings({
+                                          ...timerColorSettings,
+                                          "Timer Labels Font Color":
+                                            e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Labels Font Color"
+                                        ]
+                                      }
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              </div>
+
+                              {/* --- Separators --- */}
+                              <h4
+                                className="mt-4 mb-3"
+                                style={{ fontSize: "14px", fontWeight: "bold" }}
+                              >
+                                Separators
+                              </h4>
+                              <Form.Group className="colorbox mb-3">
+                                <Form.Label>Color</Form.Label>
+                                <div className="colorinputbox">
+                                  <input
+                                    type="color"
+                                    value={
+                                      timerColorSettings[
+                                        "Timer Separator Color"
+                                      ]
+                                    }
+                                    onChange={(e) =>
+                                      setTimerColorSettings({
+                                        ...timerColorSettings,
+                                        "Timer Separator Color": e.target.value,
+                                      })
+                                    }
+                                    className="colorinput"
+                                  />
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={
+                                      timerColorSettings[
+                                        "Timer Separator Color"
+                                      ]
+                                    }
+                                    readOnly
+                                    style={{ background: "white" }}
+                                  />
+                                </div>
+                              </Form.Group>
+                              <Form.Group className="flex-grow-1">
+                                <Form.Label>Show Separators</Form.Label>
+                                <Form.Check
+                                  type="switch"
+                                  id="showSeparatorsSwitch"
+                                  checked={timerBlockSettings.showSeparators}
+                                  onChange={(e) =>
+                                    setTimerBlockSettings({
+                                      ...timerBlockSettings,
+                                      showSeparators: e.target.checked,
+                                    })
+                                  }
+                                />
+                              </Form.Group>
+
+                              {/* --- Background, Border, Rounded Corners, Spacing --- */}
+                              <h4
+                                className="mt-4 mb-3"
+                                style={{ fontSize: "14px", fontWeight: "bold" }}
+                              >
+                                Timer Block Styles
+                              </h4>
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Show Background</Form.Label>
+                                  <Form.Check
+                                    type="switch"
+                                    id="showTimerBlockBackgroundSwitch"
+                                    checked={showTimerBlockBackground}
+                                    onChange={(e) =>
+                                      setShowTimerBlockBackground(
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Show Border</Form.Label>
+                                  <Form.Check
+                                    type="switch"
+                                    id="showTimerBlockBorderSwitch"
+                                    checked={showTimerBlockBorder}
+                                    onChange={(e) =>
+                                      setShowTimerBlockBorder(e.target.checked)
+                                    }
+                                  />
+                                </Form.Group>
+                              </div>
+                              {showTimerBlockBackground && (
+                                <Form.Group className="colorbox flex-grow-1 mt-3">
+                                  <Form.Label>Background Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Block Background Color"
+                                        ]
+                                      }
+                                      onChange={(e) =>
+                                        setTimerColorSettings({
+                                          ...timerColorSettings,
+                                          "Timer Block Background Color":
+                                            e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Block Background Color"
+                                        ]
+                                      }
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              )}
+                              {showTimerBlockBorder && (
+                                <Form.Group className="colorbox flex-grow-1 mt-3">
+                                  <Form.Label>Border Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Block Border Color"
+                                        ]
+                                      }
+                                      onChange={(e) =>
+                                        setTimerColorSettings({
+                                          ...timerColorSettings,
+                                          "Timer Block Border Color":
+                                            e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={
+                                        timerColorSettings[
+                                          "Timer Block Border Color"
+                                        ]
+                                      }
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              )}
+
+                              <div className="d-flex flex-wrap gap-3 mt-3">
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Rounded Corners</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="0"
+                                    max="50"
+                                    step="1"
+                                    value={parseFloat(
+                                      timerBlockSettings.roundedCorners
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerBlockSettings({
+                                        ...timerBlockSettings,
+                                        roundedCorners: `${e.target.value}px`,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerBlockSettings.roundedCorners}
+                                  </span>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Spacing</Form.Label>
+                                  <Form.Control
+                                    type="range"
+                                    min="0"
+                                    max="30"
+                                    step="1"
+                                    value={parseFloat(
+                                      timerBlockSettings.spacing
+                                    )}
+                                    onChange={(e) =>
+                                      setTimerBlockSettings({
+                                        ...timerBlockSettings,
+                                        spacing: `${e.target.value}px`,
+                                      })
+                                    }
+                                    style={{ width: "100%" }}
+                                  />
+                                  <span
+                                    className="text-muted"
+                                    style={{ fontSize: "10px" }}
+                                  >
+                                    {timerBlockSettings.spacing}
+                                  </span>
+                                </Form.Group>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="d-flex justify-content-between linewhite mt-4">
+                          <h2
+                            style={{
+                              fontFamily: "Inter",
+                              fontStyle: "normal",
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              lineHeight: "100%",
+                              color: "#303030",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setSaveOptions(!showsaveOptions)}
+                          >
+                            "Shop Now" Button Settings
+                            {showsaveOptions ? "▲" : "▼"}
+                          </h2>
+
+                          <div
+                            onClick={() =>
+                              setShowShopNowButton(!showShopNowButton)
+                            }
+                          >
+                            {showShopNowButton ? <EyeFill /> : <EyeSlashFill />}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column">
+                          {showsaveOptions && (
+                            <>
+                              <Form.Group className="mb-3">
+                                <Form.Label>Button Text</Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  className="inputbox"
+                                  value={shopNowButtonText}
+                                  onChange={(e) =>
+                                    setShopNowButtonText(e.target.value)
+                                  }
+                                  style={{ background: "white" }}
+                                />
+                              </Form.Group>
+
+                              <Form.Group className="mb-3">
+                                <Form.Label>Enable Shaky Animation</Form.Label>
+                                <Form.Check
+                                  type="switch"
+                                  id="animateShopNowButtonSwitch"
+                                  checked={animateShopNowButton}
+                                  onChange={(e) =>
+                                    setAnimateShopNowButton(e.target.checked)
+                                  }
+                                />
+                              </Form.Group>
+
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Background Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={
+                                        shopNowButtonSettings.backgroundColor
+                                      }
+                                      onChange={(e) =>
+                                        setShopNowButtonSettings({
+                                          ...shopNowButtonSettings,
+                                          backgroundColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={
+                                        shopNowButtonSettings.backgroundColor
+                                      }
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Font Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={shopNowButtonSettings.fontColor}
+                                      onChange={(e) =>
+                                        setShopNowButtonSettings({
+                                          ...shopNowButtonSettings,
+                                          fontColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={shopNowButtonSettings.fontColor}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Size</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={shopNowButtonSettings.fontSize}
+                                    onChange={(e) =>
+                                      setShopNowButtonSettings({
+                                        ...shopNowButtonSettings,
+                                        fontSize: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {[...Array(15).keys()].map((i) => (
+                                      <option
+                                        key={`shop-fs-${i}`}
+                                        value={`${10 + i}px`}
+                                      >
+                                        {10 + i}px
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Family</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={shopNowButtonSettings.fontFamily}
+                                    onChange={(e) =>
+                                      setShopNowButtonSettings({
+                                        ...shopNowButtonSettings,
+                                        fontFamily: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontFamilies.map((font, i) => (
+                                      <option key={`shop-ff-${i}`} value={font}>
+                                        {font}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Weight</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={shopNowButtonSettings.fontWeight}
+                                    onChange={(e) =>
+                                      setShopNowButtonSettings({
+                                        ...shopNowButtonSettings,
+                                        fontWeight: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontWeights.map((weight, i) => (
+                                      <option
+                                        key={`shop-fw-${i}`}
+                                        value={weight}
+                                      >
+                                        {weight}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Padding</Form.Label>
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={shopNowButtonSettings.padding}
+                                    onChange={(e) =>
+                                      setShopNowButtonSettings({
+                                        ...shopNowButtonSettings,
+                                        padding: e.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g., 8px 15px"
+                                    style={{ background: "white" }}
+                                  />
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Border Radius</Form.Label>
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={shopNowButtonSettings.borderRadius}
+                                    onChange={(e) =>
+                                      setShopNowButtonSettings({
+                                        ...shopNowButtonSettings,
+                                        borderRadius: e.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g., 5px"
+                                    style={{ background: "white" }}
+                                  />
+                                </Form.Group>
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Border Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={shopNowButtonSettings.borderColor}
+                                      onChange={(e) =>
+                                        setShopNowButtonSettings({
+                                          ...shopNowButtonSettings,
+                                          borderColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={shopNowButtonSettings.borderColor}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="d-flex justify-content-between linewhite mt-4">
+                          <h2
+                            style={{
+                              fontFamily: "Inter",
+                              fontStyle: "normal",
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              lineHeight: "100%",
+                              color: "#303030",
+                              cursor: "pointer",
+                            }}
+                            onClick={() => setShowSaveBox(!showSaveBox)}
+                          >
+                            "Save 30%" Box Settings
+                            {showSaveBox ? "▲" : "▼"}
+                          </h2>
+                          <div onClick={() => setShowSaveBox(!showSaveBox)}>
+                            {showSaveBox ? <EyeFill /> : <EyeSlashFill />}
+                          </div>
+                        </div>
+                        <div className="d-flex flex-column gap-2 py-3">
+                          {showSaveBox && (
+                            <>
+                              <Form.Group className="mb-3">
+                                <Form.Label>Box Text</Form.Label>
+                                <Form.Control
+                                  type="text"
+                                  className="inputbox"
+                                  value={saveBoxText}
+                                  onChange={(e) =>
+                                    setSaveBoxText(e.target.value)
+                                  }
+                                  style={{ background: "white" }}
+                                />
+                              </Form.Group>
+
+                              <div className="d-flex flex-wrap gap-3">
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Background Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={saveBoxSettings.backgroundColor}
+                                      onChange={(e) =>
+                                        setSaveBoxSettings({
+                                          ...saveBoxSettings,
+                                          backgroundColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={saveBoxSettings.backgroundColor}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Font Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={saveBoxSettings.fontColor}
+                                      onChange={(e) =>
+                                        setSaveBoxSettings({
+                                          ...saveBoxSettings,
+                                          fontColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={saveBoxSettings.fontColor}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Size</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={saveBoxSettings.fontSize}
+                                    onChange={(e) =>
+                                      setSaveBoxSettings({
+                                        ...saveBoxSettings,
+                                        fontSize: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {[...Array(15).keys()].map((i) => (
+                                      <option
+                                        key={`savebox-fs-${i}`}
+                                        value={`${10 + i}px`}
+                                      >
+                                        {10 + i}px
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Family</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={saveBoxSettings.fontFamily}
+                                    onChange={(e) =>
+                                      setSaveBoxSettings({
+                                        ...saveBoxSettings,
+                                        fontFamily: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontFamilies.map((font, i) => (
+                                      <option
+                                        key={`savebox-ff-${i}`}
+                                        value={font}
+                                      >
+                                        {font}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Font Weight</Form.Label>
+                                  <Form.Control
+                                    as="select"
+                                    className="inputbox"
+                                    value={saveBoxSettings.fontWeight}
+                                    onChange={(e) =>
+                                      setSaveBoxSettings({
+                                        ...saveBoxSettings,
+                                        fontWeight: e.target.value,
+                                      })
+                                    }
+                                    style={{
+                                      background: "white",
+                                      maxHeight: "150px",
+                                      overflowY: "auto",
+                                    }}
+                                  >
+                                    {fontWeights.map((weight, i) => (
+                                      <option
+                                        key={`savebox-fw-${i}`}
+                                        value={weight}
+                                      >
+                                        {weight}
+                                      </option>
+                                    ))}
+                                  </Form.Control>
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Padding</Form.Label>
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={saveBoxSettings.padding}
+                                    onChange={(e) =>
+                                      setSaveBoxSettings({
+                                        ...saveBoxSettings,
+                                        padding: e.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g., 5px 10px"
+                                    style={{ background: "white" }}
+                                  />
+                                </Form.Group>
+                                <Form.Group className="flex-grow-1">
+                                  <Form.Label>Border Radius</Form.Label>
+                                  <Form.Control
+                                    type="text"
+                                    className="inputbox"
+                                    value={saveBoxSettings.borderRadius}
+                                    onChange={(e) =>
+                                      setSaveBoxSettings({
+                                        ...saveBoxSettings,
+                                        borderRadius: e.target.value,
+                                      })
+                                    }
+                                    placeholder="e.g., 3px"
+                                    style={{ background: "white" }}
+                                  />
+                                </Form.Group>
+                                <Form.Group className="colorbox flex-grow-1">
+                                  <Form.Label>Border Color</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={saveBoxSettings.borderColor}
+                                      onChange={(e) =>
+                                        setSaveBoxSettings({
+                                          ...saveBoxSettings,
+                                          borderColor: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={saveBoxSettings.borderColor}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="mt-4">
+                          <h5 className="mb-2">Bar Dimensions</h5>
+                          <Row className="mb-3">
+                            <Col>
+                              <Form.Label>Bar Width (%)</Form.Label>
+                              <Form.Range
+                                min={50} 
+                                max={100} 
+                                step={1}
+                                value={barWidth}
+                                onChange={(e) =>
+                                  setBarWidth(Number(e.target.value))
+                                }
+                              />
+                              <small>{barWidth}%</small>
+                            </Col>
+                            <Col>
+                              <Form.Label>Bar Height</Form.Label>
+                              <Form.Range
+                                min={50} 
+                                max={230} 
+                                step={1}
+                                value={barHeight}
+                                onChange={(e) =>
+                                  setBarHeight(Number(e.target.value))
+                                }
+                              />
+                              <small>{barHeight}px</small>
+                            </Col>
+                          </Row>
+                        </div>
                       </div>
                     </div>
                   </Form>
 
-                  {/* Appearance Settings Section */}
                   <Form
                     className="mt-3 p-3"
                     style={{ background: "#F1F2F4", borderRadius: "10px" }}
                   >
+                    {/* --- Theme Style Section --- */}
                     <div className="linewhite">
                       <h2
                         style={{
@@ -361,16 +2627,15 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                         Theme Style
                       </h2>
                     </div>
-
                     <div className="py-3 d-flex flex-wrap gap-3">
                       {themeOptions.map((theme, index) => (
                         <div
                           key={index}
-                          className={`theme-option ${selectedTheme === theme.name ? "active" : ""}`}
+                          className={`theme-option ${selectedTheme === theme.value ? "active" : ""}`}
                           style={{
                             cursor: "pointer",
                             border:
-                              selectedTheme === theme.name
+                              selectedTheme === theme.value
                                 ? "2px solid #000"
                                 : "1px solid #ccc",
                             borderRadius: "8px",
@@ -394,6 +2659,37 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                             >
                               Solid
                             </div>
+                          ) : theme.value === "image-upload" ? (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "60px",
+                                background: uploadedImage
+                                  ? `url(${uploadedImage}) no-repeat center center / cover`
+                                  : "#e0e0e0",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: "bold",
+                                fontSize: "24px",
+                                color: uploadedImage ? "transparent" : "#555",
+                              }}
+                            >
+                              {!uploadedImage && (
+                                <>
+                                  {theme.icon}
+                                  <span
+                                    style={{
+                                      fontSize: "12px",
+                                      marginTop: "5px",
+                                    }}
+                                  >
+                                    Upload
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           ) : (
                             <img
                               src={theme.image}
@@ -413,37 +2709,16 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                       ))}
                     </div>
 
-                    {selectedTheme === "solid" && (
+                    {selectedTheme === "image-upload" && (
                       <div className="py-3">
-                        <div className="colorgrid">
-                          {Object.keys(colorSettings).map((key) => (
-                            <Form.Group className="colorbox" key={key}>
-                              <Form.Label>
-                                {key.replace(/([A-Z])/g, " $1")}
-                              </Form.Label>
-                              <div className="colorinputbox">
-                                <input
-                                  type="color"
-                                  value={colorSettings[key]}
-                                  onChange={(e) =>
-                                    setColorSettings({
-                                      ...colorSettings,
-                                      [key]: e.target.value,
-                                    })
-                                  }
-                                  className="colorinput"
-                                />
-                                <Form.Control
-                                  type="text"
-                                  className="inputbox"
-                                  value={colorSettings[key]}
-                                  readOnly
-                                  style={{ background: "white" }}
-                                />
-                              </div>
-                            </Form.Group>
-                          ))}
-                        </div>
+                        <Form.Group controlId="formFile" className="mb-3">
+                          <Form.Label>Select your background image</Form.Label>
+                          <Form.Control
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                          />
+                        </Form.Group>
                       </div>
                     )}
                   </Form>
@@ -466,6 +2741,8 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                     >
                       Theme Settings
                     </h2>
+
+                    {/* Bar Position */}
                     <div className="mt-3">
                       <Form.Group className="d-flex flex-column gap-2">
                         <Form.Label className="inputtitle">Status</Form.Label>
@@ -497,174 +2774,64 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                         </p>
                       </Form.Group>
                     </div>
-                  </Form>
-                </CardBody>
-              </Card>
-            )}
 
-            {/* Discount Settings Step */}
-            {selectedIndex === 1 && (
-              <Card className="border-0">
-                <CardBody>
-                  <div className="d-flex flex-column gap-2">
-                    <h2
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "600",
-                        fontSize: "15px",
-                        lineHeight: "100%",
-                        color: "#303030",
-                      }}
-                    >
-                      The Announcement Bar app is currently inactive
-                    </h2>
-                  </div>
-                  <div className="d-flex flex-nowrap gap-5 align-items-center justify-content-start p-3 mt-2">
-                    <Form.Check
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={showCountdown}
-                      onChange={() => setShowCountdown(!showCountdown)}
-                      label={
-                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
-                          Activate Now
-                        </span>
-                      }
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "bold",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        color: "#303030",
-                        whiteSpace: "nowrap",
-                      }}
-                    />
-                    <Form.Check
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={showCountdown}
-                      onChange={() => setShowCountdown(!showCountdown)}
-                      label={
-                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
-                          Activate Later
-                        </span>
-                      }
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "bold",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        color: "#303030",
-                        whiteSpace: "nowrap",
-                      }}
-                    />
-                  </div>
-
-                  <div className="d-flex align-items-center justify-content-center">
-                    <video controls className="video-player">
-                      <source src={video1} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                </CardBody>
-              </Card>
-            )}
-
-            {selectedIndex === 2 && (
-              <Card className="border-0">
-                <CardBody>
-                  {/* Bundle Status Section */}
-                  <Form
-                    className="mt-3 p-3"
-                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
-                  >
-                    <div className="d-flex flex-column gap-4 justify-content-between align-items-center mb-3 linewhite">
-                      <div className="d-flex flex-column gap-2">
-                        <h2
+                    {/* Custom CSS Field */}
+                    <div className="mt-4">
+                      <Form.Group className="d-flex flex-column gap-2">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <Form.Label className="inputtitle mb-0">
+                            Custom CSS
+                          </Form.Label>
+                          {/* Custom CSS Toggle Button */}
+                          <Form.Check
+                            type="switch"
+                            id="custom-css-switch"
+                            checked={isCustomCSSEnabled}
+                            onChange={handleCSSToggle}
+                          />
+                        </div>
+                        <Form.Control
+                          as="textarea"
+                          rows={4} // This sets an initial height based on rows
+                          placeholder="Enter custom CSS here..."
+                          className="inputbox"
                           style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "600",
-                            fontSize: "15px",
-                            lineHeight: "100%",
-                            color: "#303030",
+                            background: "white",
+                            fontFamily: "monospace",
+                            fontSize: "13px",
+                            // --- Crucial for user-resizable box with scrollbars ---
+                            overflow: "auto", // Adds scrollbars if content overflows
+                            resize: "both", // Allows user to drag to resize both height and width
+                            // ---
+                            opacity: isCustomCSSEnabled ? 1 : 0.6,
+                            cursor: isCustomCSSEnabled ? "text" : "not-allowed",
                           }}
-                        >
-                          Your Announcement Bar Won’t Show Up In Your Store Yet!
-                        </h2>
+                          value={customCSS}
+                          onChange={(e) => setCustomCSS(e.target.value)}
+                          disabled={!isCustomCSSEnabled} // Disable textarea if toggle is off
+                        />
                         <p
                           style={{
-                            maxWidth: "778.87px",
                             fontFamily: "Inter",
                             fontStyle: "normal",
                             fontWeight: "500",
-                            fontSize: "14px",
+                            fontSize: "13px",
                             lineHeight: "100%",
                             color: "#616161",
                           }}
+                          className="mt-2"
                         >
-                          Complete Install & Your BusyBuddy Apps Will Show On
-                          Your Store. You will only need to complete this step
-                          once
+                          Paste any valid CSS to override or customize the
+                          appearance of the announcement bar or other elements.
                         </p>
-                      </div>
-
-                      <video controls className="video-player">
-                        <source src={video2} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  </Form>
-
-                  {/* Appearance Settings Section */}
-                  <Form
-                    className="mt-3 p-3"
-                    style={{ background: "#F1F2F4", borderRadius: "10px" }}
-                  >
-                    <div className="options-container">
-                      {/* Countdown Timer and Emoji Options */}
-                      <Form.Check
-                        type="checkbox"
-                        className="custom-checkbox"
-                        checked={showCountdown}
-                        onChange={() => setShowCountdown(!showCountdown)}
-                        label={
-                          <span style={{ marginLeft: "6px" }}>
-                            Enable Later
-                          </span>
-                        }
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: 600,
-                          fontSize: "14px",
-                          color: "#303030",
-                          whiteSpace: "nowrap",
-                        }}
-                      />
-
-                      <p
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: 500,
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "rgba(81, 192, 255, 1)",
-                          width: "90%",
-                        }}
-                      >
-                        How To Enable BusyBuddy In Your Shopify Store
-                      </p>
+                      </Form.Group>
                     </div>
                   </Form>
                 </CardBody>
               </Card>
             )}
-
             {/* Step 5: Summary */}
-            {selectedIndex === 3 && (
+            {selectedIndex === 1 && (
               <Card className="border-0">
                 <CardBody>
                   <h2 className="cardtitle">Review Settings</h2>
@@ -999,52 +3166,284 @@ export default function BundleDiscountActions({ onMakeBundleClick }) {
                   padding: "15px",
                   borderRadius: "18px",
                   position: "relative",
-                 
-                  
                 }}
               >
-                <div
-                  className="themetitle"
-                  style={{
-                    position:
-                      barPosition === "top-fixed" || barPosition === "bottom"
-                        ? "absolute"
-                        : "relative",
-                    top: barPosition === "top-fixed" ? 0 : "auto",
-                    bottom: barPosition === "bottom" ? 0 : "auto",
-                    left: 0,
-                    width: "100%",
-                    zIndex: 2,
-                    background:
-                      selectedTheme === "solid"
-                        ? colorSettings["Background Color"]
-                        : `url(${themeOptions.find((t) => t.value === selectedTheme)?.image})`,
-                    color:
-                      selectedTheme === "solid"
-                        ? colorSettings["Text Color"]
-                        : "#ffffff",
-                    backgroundSize:
-                      selectedTheme === "solid" ? "auto" : "cover",
-                    backgroundPosition: "center",
-                    padding: "12px 16px",
-                    borderRadius: "8px",
-                    minHeight: "60px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginTop: barPosition === "top-fixed" ? 0 : "20px",
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  <h2
-                    className="cardtitle"
-                    style={{ margin: 0, fontSize: "18px" }}
-                  >
-                    {message || "Type text here"}
-                  </h2>
-                </div>
+                <div className="d-flex flex-column  align-items-center gap-2"
+                style={{
+                      position:
+                        barPosition === "top-fixed" || barPosition === "bottom"
+                          ? "fixed"
+                          : "relative",
+                }}>
+                 
 
-               
+                  <div
+                    className={`themetitle announcement-bar ${barPosition === "top-fixed" ? "fixed-bar" : ""}`}
+                    style={{
+                      position:
+                        barPosition === "top-fixed" || barPosition === "bottom"
+                          ? "fixed"
+                          : "relative",
+                      top: barPosition === "top-fixed" ? 0 : "auto",
+                      bottom: barPosition === "bottom" ? 0 : "auto",
+                      left: "50%", // Center horizontally
+                      transform: "translateX(-50%)", // Adjust for centering
+                      width: `${barWidth}%`, // Dynamic width
+                      resize: "both",
+                      height: `${barHeight}px`, 
+                     
+                      maxWidth: "100%",
+                      zIndex: 4,
+                      background: getBackgroundStyle(),
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      padding: "12px 16px",
+                      borderRadius: "8px 8px 0 0",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "15px",
+                      marginTop: barPosition === "top" ? "0px" : 0,
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    {showMessage && (
+                      <div
+                        className="message-container"
+                        style={{
+                          overflow: "hidden",
+                          flexGrow: 1,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <h2
+                          className={`cardtitle ${animateMessage ? "scrolling-text" : ""}`}
+                          style={{
+                            margin: 0,
+                            color: generalColorSettings["Message Font Color"],
+                            fontSize: messageDesktopFontSettings.fontSize,
+                            fontFamily: messageDesktopFontSettings.fontFamily,
+                            fontWeight: messageDesktopFontSettings.fontWeight,
+                            letterSpacing:
+                              messageDesktopFontSettings.letterSpacing,
+                            lineHeight: messageDesktopFontSettings.lineHeight,
+                            display: "inline-block", // Important for scrolling effect
+                            paddingLeft: animateMessage ? "100%" : "0", // Start off-screen
+                            animation: animateMessage
+                              ? `scrollText ${messageAnimationSpeed}s linear infinite` // Dynamic speed
+                              : "none",
+                          }}
+                        >
+                          {[...Array(5)].map(
+                            (
+                              _,
+                              i // Repeat message 5 times
+                            ) => (
+                              <React.Fragment key={i}>
+                                {message || "Type text here"}
+                                {message.length > 0 && i < 4 && (
+                                  <span
+                                    style={{
+                                      marginLeft: "50px",
+                                      marginRight: "50px",
+                                    }}
+                                  >
+                                    &bull;
+                                  </span>
+                                )}{" "}
+                                {/* Add separator */}
+                              </React.Fragment>
+                            )
+                          )}
+                        </h2>
+                      </div>
+                    )}
+                    <div className="d-flex align-items-center justify-content-center gap-3">
+                      {showSaveBox && (
+                        <div
+                          className="save-box"
+                          style={{
+                            backgroundColor: saveBoxSettings.backgroundColor,
+                            color: saveBoxSettings.fontColor,
+                            fontSize: saveBoxSettings.fontSize,
+                            fontFamily: saveBoxSettings.fontFamily,
+                            fontWeight: saveBoxSettings.fontWeight,
+                            padding: saveBoxSettings.padding,
+                            borderRadius: saveBoxSettings.borderRadius,
+                            border: `1px solid ${saveBoxSettings.borderColor}`,
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                            height: "fit-content",
+                          }}
+                        >
+                          {saveBoxText}
+                        </div>
+                      )}
+                      
+                      {showTimer && (
+                        <div className="timer-display mt-0 d-flex align-items-center justify-content-center">
+                          {fixedTimerDisplay
+                            .split(":")
+                            .map((part, index, arr) => (
+                              <React.Fragment key={index}>
+                                {renderTimerBlock(
+                                  part,
+                                  index === 0
+                                    ? "Days"
+                                    : index === 1
+                                      ? "Hours"
+                                      : index === 2
+                                        ? "Minutes"
+                                        : "Seconds",
+                                  index === 0
+                                    ? timerLabelSettings.showDaysLabel
+                                    : index === 1
+                                      ? timerLabelSettings.showHoursLabel
+                                      : index === 2
+                                        ? timerLabelSettings.showMinutesLabel
+                                        : timerLabelSettings.showSecondsLabel
+                                )}
+                                {index < arr.length - 1 &&
+                                  timerBlockSettings.showSeparators && (
+                                    <span
+                                      className="timer-separator"
+                                      style={{
+                                        color:
+                                          timerColorSettings[
+                                            "Timer Separator Color"
+                                          ],
+                                        fontSize:
+                                          timerDesktopFontSettings.fontSize,
+                                      }}
+                                    >
+                                      :
+                                    </span>
+                                  )}
+                              </React.Fragment>
+                            ))}
+                        </div>
+                      )}
+
+                      {showShopNowButton && (
+                        <div
+                          className={`shop-now-button ${animateShopNowButton ? "shaky" : ""}`}
+                          style={{
+                            backgroundColor:
+                              shopNowButtonSettings.backgroundColor,
+                            color: shopNowButtonSettings.fontColor,
+                            fontSize: shopNowButtonSettings.fontSize,
+                            fontFamily: shopNowButtonSettings.fontFamily,
+                            fontWeight: shopNowButtonSettings.fontWeight,
+                            padding: shopNowButtonSettings.padding,
+                            borderRadius: shopNowButtonSettings.borderRadius,
+                            border: `1px solid ${shopNowButtonSettings.borderColor}`,
+                            whiteSpace: "nowrap",
+                            flexShrink: 0,
+                            marginLeft: "15px",
+                          }}
+                        >
+                          {shopNowButtonText} {/* This is the corrected line */}
+                        </div>
+                      )}
+                    </div>
+                    <div
+  className="wave-bottom"
+  style={{
+    position: "absolute",
+    bottom: "0px", /* Align wave with the bottom of announcement-bar */
+    left: "0",
+    width: "100%",
+    height: "50px", /* This is the visual height of your wave. Adjust for amplitude. */
+    zIndex: 1,
+    // No background here, as the SVG's path fill will determine the color
+  }}
+>
+  <svg
+    width="100%"
+    height="100%"
+    viewBox="0 0 1200 120" /* Keep the viewBox, path coordinates are relative to this */
+    preserveAspectRatio="none"
+    style={{
+      display: "block",
+      width: "100%",
+      height: "100%",
+    }}
+  >
+    <defs>
+      <linearGradient id="dynamicWaveGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        {/*
+          getBackgroundStyle() likely returns a CSS string for a background.
+          If it returns an object with startColor and endColor, this works.
+          If it returns a CSS string like 'linear-gradient(...)', you'll need
+          to parse it or adjust getBackgroundStyle to return an object.
+          For now, assuming it returns { startColor: '...', endColor: '...' }
+        */}
+        <stop offset="0%" stopColor={getBackgroundStyle().startColor || '#ffffff'} /> {/* Default to white if not found */}
+        <stop offset="100%" stopColor={getBackgroundStyle().endColor || '#ffffff'} /> {/* Default to white if not found */}
+      </linearGradient>
+    </defs>
+
+    {/* Main wave layer - Path adjusted for bottom wave with bigger last curve */}
+    <path
+      // M0,120: Start at bottom-left of viewBox (0, 120)
+      // Q points: (controlX, controlY, endX, endY)
+      // T points: (endX, endY) - creates smooth curve from previous Q/T
+      // The wave moves up (smaller Y) then down (larger Y, towards 120)
+      d="M0,120 L0,90 C100,20 200,100 300,90 S500,40 600,90 S800,20 900,90 C1000,100 1100,50 1200,90 L1200,120 Z"
+      fill="url(#dynamicWaveGradient)"
+      style={{
+        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+      }}
+    />
+
+    {/* Second wave layer for depth - Path adjusted slightly differently for offset */}
+    <path
+      // Slightly different offsets for a layered look
+      d="M0,120 L0,100 C150,30 300,110 450,100 S750,50 900,100 C1050,110 1150,60 1200,100 L1200,120 Z"
+      fill="url(#dynamicWaveGradient)"
+      style={{
+        opacity: 0.7, // Keep opacity for layered effect
+      }}
+    />
+  </svg>
+</div>
+
+                  </div>
+                </div>
+                {showEndSaleMessage && (
+                  <div
+                    className="end-sale-message"
+                    style={{
+                      backgroundColor: endSaleMessageSettings.backgroundColor,
+                      color: endSaleMessageSettings.fontColor,
+                      fontSize: endSaleMessageSettings.fontSize,
+                      fontFamily: endSaleMessageSettings.fontFamily,
+                      fontWeight: endSaleMessageSettings.fontWeight,
+                      padding: "5px 10px",
+                      borderRadius: "3px",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: "8px 18px 8px 8px",
+                      boxSizing: "border-box",
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      padding: "8px 10px 8px 8px",
+                      gap: "5px",
+                      position: "absolute",
+                      width: "144.5px",
+                      height: "29px",
+                      right: "0px",
+                      top: "0.5px",
+                      zIndex: 3,
+                    }}
+                  >
+                    {endSaleMessage}
+                  </div>
+                )}
+
                 {/* Main Product Item */}
                 <div
                   style={{
