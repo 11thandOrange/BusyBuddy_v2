@@ -216,13 +216,13 @@ export default function BundleDiscountActions() {
     });
   };
 
-  useEffect(() => {
-    console.log("preview options", previewProductsSelectedOptions);
-  }, [previewProductsSelectedOptions]);
+  // useEffect(() => {
+  //   console.log("preview options", previewProductsSelectedOptions);
+  // }, [previewProductsSelectedOptions]);
 
-  useEffect(() => {
-    console.log("variant price", variantPricing);
-  }, [variantPricing]);
+  // useEffect(() => {
+  //   console.log("variant price", variantPricing);
+  // }, [variantPricing]);
 
   // Add this function to calculate price for a specific product
   const getProductPrice = (productId) => {

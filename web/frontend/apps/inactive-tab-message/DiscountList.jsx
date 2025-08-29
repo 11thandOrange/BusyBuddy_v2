@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Container,
   Row,
@@ -13,7 +13,7 @@ import AnnouncementBarActions from "./inactiveTabMessageActions";
 import tshirt from "./tshirt.png";
 import "./inactiveTabMessageStyles.css";
 import Button from "../../components/Button";
-import { X, Trash } from "react-bootstrap-icons";
+import { X, Trash, Upload } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 
@@ -26,6 +26,8 @@ export default function DiscountList({ onMakeBundleClick }) {
   const [isToggled, setIsToggled] = useState(true); // Toggle button in active state
   const [checkboxes, setCheckboxes] = useState([false, false, false, false]);
   const [toggles, setToggles] = useState([true, true, true, true]);
+  const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
+
   const handleCheckboxChange = (index) => {
     setCheckboxes((prev) =>
       prev.map((checked, i) => (i === index ? !checked : checked))
@@ -41,6 +43,33 @@ export default function DiscountList({ onMakeBundleClick }) {
   if (showBundleAction) {
     return <AnnouncementBarActions />;
   }
+  const [message, setMessage] = useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [image, setImage] = useState(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const fileInputRef = useRef(null);
+
+  const handleEmojiClick = (emojiData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+  };
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImage(file);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Message:", message);
+    console.log("Image:", image);
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+
+    alert("Message submitted successfully!");
+  };
 
   return (
     <Container
@@ -392,7 +421,6 @@ export default function DiscountList({ onMakeBundleClick }) {
                   </div>
                 </div>
                 <div className="d-flex align-items-start flex-column">
-                
                   <div>
                     <span
                       className="text-secondary"
@@ -438,7 +466,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                 >
                   <Card.Body className="d-flex align-items-center justify-content-between">
                     <div className="d-flex flex-column gap-[10px]">
-                      <Form.Group>
+                      {/* <Form.Group>
                         <Form.Label className="inputtitle">Message</Form.Label>
                         <Form.Control
                           className="inputbox"
@@ -459,6 +487,122 @@ export default function DiscountList({ onMakeBundleClick }) {
                           The message that will show in the browser tab's title
                           when the visitor changes to another tab.
                         </p>
+                      </Form.Group> */}
+                      <Form.Group>
+                        <Form.Label className="inputtitle">Message</Form.Label>
+
+                        {/* Message Input Box */}
+                       <div style={{ display: "flex", alignItems: "center", gap: "10px", width: "700px", position: "relative" }}>
+      {/* Input Box with Emoji Icon Inside */}
+      <div style={{ position: "relative", flexGrow: 1 }}>
+        <Form.Control
+          className="inputbox"
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Enter message"
+          style={{
+            paddingRight: "35px", // space for emoji icon
+            borderRadius: "8px",
+          }}
+        />
+
+        {/* Emoji Icon Inside Input */}
+        <span
+          onClick={() => setShowEmojiPicker((prev) => !prev)}
+          style={{
+            position: "absolute",
+            right: "10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            cursor: "pointer",
+            color: "#6c757d",
+            fontSize: "1.5rem",
+          }}
+        >
+          😀
+        </span>
+
+        {/* Emoji Picker */}
+        {showEmojiPicker && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "50px",
+              right: "0",
+              zIndex: 100,
+            }}
+          >
+            <EmojiPicker onEmojiClick={handleEmojiClick} />
+          </div>
+        )}
+      </div>
+
+      {/* Upload Icon Outside Input */}
+      <span
+        onClick={() => fileInputRef.current.click()}
+        style={{
+          cursor: "pointer",
+          color: "#6c757d",
+          fontSize: "1.6rem",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <Upload />
+      </span>
+
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        onChange={handleImageUpload}
+        style={{ display: "none" }}
+      />
+    </div>
+
+                        {/* Image Preview */}
+                        {image && (
+                          <div style={{ marginTop: "8px" }}>
+                            <img
+                              src={URL.createObjectURL(image)}
+                              alt="Preview"
+                              width="100"
+                              height="80"
+                              style={{
+                                borderRadius: "6px",
+                                border: "1px solid #ccc",
+                              }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Start & End Date */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "10px",
+                            marginTop: "15px",
+                          }}
+                        >
+                          <Form.Group controlId="startDate" style={{ flex: 1 }}>
+                            <Form.Label>Start Date</Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={startDate}
+                              onChange={(e) => setStartDate(e.target.value)}
+                            />
+                          </Form.Group>
+                          <Form.Group controlId="endDate" style={{ flex: 1 }}>
+                            <Form.Label>End Date</Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={endDate}
+                              onChange={(e) => setEndDate(e.target.value)}
+                            />
+                          </Form.Group>
+                        </div>
                       </Form.Group>
                     </div>
                   </Card.Body>

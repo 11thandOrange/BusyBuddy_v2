@@ -146,7 +146,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
       case "Inactive Tab Message":
         setActiveAction("inactiveTabMessage");
         break;
-     
+
       case "Bundle Discount":
         setActiveAction("bundleDiscount");
         break;
@@ -164,6 +164,24 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         break;
     }
     onMakeBundleNowClick(); // Call the function passed from HomePage
+  };
+  const getButtonLabel = () => {
+    switch (activeTab) {
+      case "Announcement Bar":
+        return "Create Announcement Bar";
+      case "Inactive Tab Message":
+        return "Set Inactive Tab Message";
+      case "Bundle Discount":
+        return "Make your Bundle Now!";
+      case "Buy One Get One":
+        return "Set Up Buy One Get One Offer";
+      case "Volume Discounts":
+        return "Add Volume Discounts";
+      case "Mix & Match":
+        return "Create Mix & Match Bundle";
+      default:
+        return "Make your Bundle Now!";
+    }
   };
 
   // Render the selected action component
@@ -197,19 +215,19 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     );
   } else if (activeAction === "announcementBar") {
     return (
-      <AnnouncementBarForm 
+      <AnnouncementBarForm
         setActiveAction={setActiveAction}
         goBack={onMakeBundleNowClick}
       />
     );
   } else if (activeAction === "inactiveTabMessage") {
     return (
-      <InactiveTabMessageForm 
+      <InactiveTabMessageForm
         setActiveAction={setActiveAction}
         goBack={onMakeBundleNowClick}
       />
     );
-  } 
+  }
 
   const updateQuantity = (id, amount) => {
     setCartItems((prev) =>
@@ -573,25 +591,25 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                                     viewBox="0 0 20 20"
                                     fill="none"
                                   >
-                                    <g clip-path="url(#clip0_14004_1299)">
+                                    <g clipPath="url(#clip0_14004_1299)">
                                       <path
                                         d="M11.7281 3.2379C12.3491 2.56509 12.6596 2.22868 12.9895 2.03246C13.7856 1.55899 14.7659 1.54426 15.5753 1.99362C15.9108 2.17985 16.2308 2.50679 16.8709 3.16066C17.511 3.81452 17.831 4.14146 18.0133 4.48413C18.4532 5.31095 18.4388 6.31235 17.9753 7.12561C17.7832 7.46265 17.4539 7.77983 16.7953 8.4142L8.95888 15.9619C7.71075 17.1641 7.08669 17.7652 6.30674 18.0698C5.52679 18.3744 4.66936 18.352 2.95449 18.3072L2.72117 18.3011C2.19911 18.2874 1.93808 18.2806 1.78634 18.1084C1.63461 17.9362 1.65532 17.6703 1.69675 17.1385L1.71925 16.8497C1.83586 15.353 1.89417 14.6046 2.18644 13.9319C2.47872 13.2591 2.98288 12.7129 3.99121 11.6204L11.7281 3.2379Z"
                                         stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linejoin="round"
+                                        strokeWidth="1.5"
+                                        strokeLinejoin="round"
                                       />
                                       <path
                                         d="M10.8334 3.33337L16.6667 9.16671"
                                         stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linejoin="round"
+                                        strokeWidth="1.5"
+                                        strokeLinejoin="round"
                                       />
                                       <path
                                         d="M11.6667 18.3334L18.3334 18.3334"
                                         stroke="white"
-                                        stroke-width="1.5"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
                                       />
                                     </g>
                                     <defs>
@@ -638,8 +656,9 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                           }}
                           onClick={handleMakeBundleNowClick}
                         >
-                          Make your Bundle Now!
+                          {getButtonLabel()}
                         </Button>
+
                         <span
                           className="align-middle"
                           style={{

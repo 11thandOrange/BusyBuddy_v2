@@ -73,10 +73,27 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
     );
   };
 
-  const handlePriorityChange = () => {
-    setStatus(!status);
-  };
+  // const handlePriorityChange = () => {
+  //   setStatus(!status);
+  // };
+  const handlePriorityChange = async (id, value) => {
+    try {
+      const res = await fetch(`/api/bundles/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority: value }),
+      });
+      const { data } = await res.json();
 
+      setDiscounts(
+        discounts.map((discount) =>
+          discount._id === id ? { ...discount, priority: data.priority } : discount
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update priority:", err);
+    }
+  };
   // const handleToggleChange = (id) => {
   //   setDiscounts(
   //     discounts.map((discount) =>
@@ -84,17 +101,54 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
   //     )
   //   );
   // };
-  const handleToggleChange = (id) => {
-    setDiscounts(
-      discounts.map((discount) =>
-        discount._id === id ? { ...discount, status: !discount.status } : discount
-      )
-    );
+  const handleToggleChange = async (id, currentStatus) => {
+    try {
+      const res = await fetch(`/api/bundles/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: !currentStatus }),
+      });
+      const { data } = await res.json();
+
+      setDiscounts(
+        discounts.map((discount) => (discount._id === id ? { ...discount, status: data.status } : discount))
+      );
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
   };
 
-  const handleDeleteSelected = () => {
-    // Implement delete functionality here
-    console.log("Deleting selected discounts");
+  const handleDeleteSelected = async () => {
+    const selectedIds = discounts.filter((d) => d.selected).map((d) => d._id);
+    if (selectedIds.length === 0) return;
+
+    if (!window.confirm(`Delete ${selectedIds.length} selected bundle(s)?`)) return;
+
+    try {
+      await Promise.all(
+        selectedIds.map((id) =>
+          fetch(`/api/bundles/${id}`, { method: "DELETE", headers: { "Content-Type": "application/json" } })
+        )
+      );
+
+      setDiscounts(discounts.filter((d) => !selectedIds.includes(d._id)));
+    } catch (err) {
+      console.error("Bulk delete failed:", err);
+    }
+  };
+  const handleDeleteOne = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this bundle?")) return;
+
+    try {
+      await fetch(`/api/bundles/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      setDiscounts(discounts.filter((d) => d._id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -521,14 +575,9 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
                                 <Form.Label className="inputtitle mt-1">Priority</Form.Label>
                                 <Form.Control
                                   type="text"
-                                  placeholder=""
-                                  value={discount.priority || ""}
+                                  value={discount.priority || 0}
                                   onChange={(e) => handlePriorityChange(discount._id, e.target.value)}
-                                  style={{
-                                    background: "white",
-                                    width: "80px",
-                                    height: "29px",
-                                  }}
+                                  style={{ background: "white", width: "80px", height: "29px" ,color:"black" }}
                                   className="inputbox"
                                 />
                               </Form.Group>
@@ -539,11 +588,16 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
                                   type="switch"
                                   id={`discount-toggle-${discount._id}`}
                                   checked={discount.status}
-                                  onChange={handleToggleChange}
+                                  onChange={() => handleToggleChange(discount._id, discount.status)} // ✅ pass id + current status
                                   className="custom-switch-toggle"
-                                  style={{ width: "41px", height: "21px" }}
                                 />
                               </div>
+                              <Button
+                                text={ <Trash size={16} />}
+                                onClick={() => console.log("Create Discount")}
+                                style={{
+                                }}
+                              />
                             </div>
                           </Card.Body>
                         </Card>

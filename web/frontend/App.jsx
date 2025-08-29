@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { NavMenu } from "@shopify/app-bridge-react";
 import Routes from "./Routes";
 import "bootstrap/dist/css/bootstrap.min.css";
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import "bootstrap-icons/font/bootstrap-icons.css";
 import { QueryProvider, PolarisProvider } from "./components";
 import "./App.css";
 import "./assets/fonts/stylesheet.css";
@@ -18,13 +18,11 @@ export default function App() {
 
   return (
     <PolarisProvider>
-      <BrowserRouter> 
+      <BrowserRouter>
         <QueryProvider>
           <NavMenu>
             <a href="/" rel="home" />
-            {/* <a href="/pagename">{t("NavigationMenu.pageName")}</a>
-            <a href="/marshallearphone">MarshallEarphonePage</a>
-            <a href="/dummypage">dummypage</a> */}
+            <a href="/Plan">plan</a>
           </NavMenu>
           <Routes pages={pages} />
         </QueryProvider>

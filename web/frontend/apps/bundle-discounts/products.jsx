@@ -1,27 +1,51 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   Container,
   Row,
   Col,
-  ButtonGroup,
-  ToggleButton,
   Form,
-  InputGroup,
   Image,
   Collapse,
 } from "react-bootstrap";
-import { X, Check } from "react-bootstrap-icons";
 import Button from "../../components/Button";
-import tshirtp from "../../assets/tshirt.png";
 
 export default function Products({ onClose, setSelectedProducts, selectedProducts = [], setVariantPricing }) {
   const [activeTab, setActiveTab] = useState("All Products");
   const [selectedVariants, setSelectedVariants] = useState({});
   const [expandedProducts, setExpandedProducts] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [products, setProducts] = useState([]);
 
   // Refs for indeterminate checkboxes
   const checkboxRefs = useRef({});
+
+  // Filter products based on search term and active tab
+  const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
+    
+    let filtered = products;
+    
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(({ node }) => 
+        node.title.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply tab filter (Selected Products)
+    if (activeTab === "Selected Products") {
+      filtered = filtered.filter(({ node }) => {
+        const productVariants = selectedVariants[node.id] || {};
+        // Check if any variant is selected (excluding optionInfo)
+        return Object.entries(productVariants).some(([key, value]) => 
+          key !== "optionInfo" && value === true
+        );
+      });
+    }
+    
+    return filtered;
+  }, [products, searchTerm, activeTab, selectedVariants]);
 
   // Modified toggle variant function
   const handleToggleVariant = (productId, variantIndex) => {
@@ -45,6 +69,13 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
         productDetails.options.forEach((option, optIdx) => {
           option.values.forEach((_, valueIdx) => {
             updatedVariantState[`${optIdx}-${valueIdx}`] = true;
+          });
+        });
+      } else {
+        // If unchecking the main checkbox, uncheck all options
+        productDetails.options.forEach((option, optIdx) => {
+          option.values.forEach((_, valueIdx) => {
+            updatedVariantState[`${optIdx}-${valueIdx}`] = false;
           });
         });
       }
@@ -138,16 +169,18 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       [productId]: !prev[productId],
     }));
   };
-  const [products, setProducts] = useState([]);
 
-  // Replace your current getSelectedCount function with this:
+  // Count selected products
   const getSelectedCount = () => {
     return Object.keys(selectedVariants).filter((productId) => {
       // Check if this product has at least one selected variant
       const productVariants = selectedVariants[productId] || {};
-      return Object.values(productVariants).some((isSelected) => isSelected);
+      return Object.entries(productVariants).some(([key, value]) => 
+        key !== "optionInfo" && value === true
+      );
     }).length;
   };
+
   useEffect(() => {
     getProducts();
   }, []);
@@ -164,7 +197,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
         throw new Error("Failed to fetch products");
       }
       const data = await response.json();
-      console.log("Data'''''''''", data.data.products.edges);
+      console.log("Products data:", data.data.products.edges);
       setProducts(data.data.products.edges);
     } catch (error) {
       console.log("GetProductsError", error);
@@ -282,7 +315,9 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       if (!productVariants) return;
       
       // Check if any variant is selected for this product
-      const hasSelectedVariant = Object.values(productVariants).some(isSelected => isSelected);
+      const hasSelectedVariant = Object.entries(productVariants).some(([key, value]) => 
+        key !== "optionInfo" && value === true
+      );
       if (!hasSelectedVariant) return;
       
       // Find the product details
@@ -370,28 +405,6 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
 
     // set variantPricing to the selected products
     if (typeof setVariantPricing === 'function') {
-        // Helper to compute cartesian product
-        //   function cartesianProduct(arrays) {
-        //       return arrays.reduce((a, b) =>
-        //       a.flatMap(d => b.map(e => d.concat(e)))
-        //       , [[]]);
-        //   }
-
-        //   // Step 1: Flatten all option values across products
-        //   const allOptionValueGroups = bundleData.flatMap(p =>
-        //       p.optionSelections.map(opt => opt.values)
-        //   );
-
-        //   // Step 2: Generate combinations
-        //   const combinations = cartesianProduct(allOptionValueGroups);
-
-        //   // Step 3: Assign prices (dummy logic: base + index * 100)
-        //   const result = combinations.map((combo, index) => ({
-        //       title: combo.join(" / "),
-        //   }));
-        //   console.log(" result | result:", result)
-
-        // get price for each variant combination for each product
         // Proper cartesian product function that handles 1+ arrays
         function cartesianProduct(arrays) {
             if (arrays.length === 0) return [];
@@ -433,20 +446,6 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     onClose();
   };
 
-  // CSS for custom checkboxes
-  const checkboxStyle = {
-    transform: 'scale(1.3)',
-    marginRight: '10px',
-    '&::before': {
-      backgroundColor: 'black',
-      borderColor: 'black',
-    },
-    '&:checked': {
-      backgroundColor: 'black',
-      borderColor: 'black',
-    }
-  };
-
   // Prevent event propagation when clicking on checkbox
   const handleCheckboxClick = (e) => {
     e.stopPropagation();
@@ -460,7 +459,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       >
         {/* Tabs */}
         <Col md="8" className="d-flex gap-2">
-          {["All Products", "Collections", "Selected Products"].map((tab) => (
+          {["All Products", "Selected Products"].map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 rounded ${activeTab === tab ? "bg-dark text-white" : "bg-light text-dark"}`}
@@ -477,7 +476,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
           <div style={{ position: "relative", width: "100%" }}>
             <Form.Control
               type="text"
-              placeholder="🔍 Search Product"
+              placeholder="🔍 Search Products"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -487,90 +486,94 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
                 borderRadius: "10px",
               }}
             />
-            {/* Optionally you can add a search icon absolutely positioned */}
           </div>
         </Col>
       </Row>
 
-
       {/* Product List */}
       <div className="bg-white shadow-sm rounded">
-      {products.map(({ node: product }, idx) => {
-        // Check if product is in selectedProducts but don't show badge
-        const isProductSelected = selectedProducts.some(p => p.productId === product.id);
-        
-        return (
-          <div key={product.id} className="p-3 mb-3 rounded">
-            <div className="d-flex align-items-center">
-              <div onClick={handleCheckboxClick}>
-                <Form.Check
-                  type="checkbox"
-                  ref={ref => checkboxRefs.current[product.id] = ref}
-                  checked={selectedVariants[product.id]?.[0] || false}
-                  onChange={() => handleToggleVariant(product.id, 0)}
-                  className="me-2"
-                  style={{
-                    transform: 'scale(1.3)',
-                    accentColor: 'black'
-                  }}
-                />
-              </div>
-              <div className="d-flex align-items-center flex-grow-1" onClick={() => handleToggleProduct(product.id)}>
-                <Image
-                  src={product?.featuredMedia?.image?.url || 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292'}
-                  width={80} 
-                  height={80}
-                  className="me-3 rounded img-fluid" />
-                <div className="flex-grow-1">
-                  <div>{product.title}</div>
+      {filteredProducts.length > 0 ? (
+        filteredProducts.map(({ node: product }, idx) => {
+          return (
+            <div key={product.id} className="p-3 mb-3 rounded">
+              <div className="d-flex align-items-center">
+                <div onClick={handleCheckboxClick}>
+                  <Form.Check
+                    type="checkbox"
+                    ref={ref => checkboxRefs.current[product.id] = ref}
+                    checked={selectedVariants[product.id]?.[0] || false}
+                    onChange={() => handleToggleVariant(product.id, 0)}
+                    className="me-2"
+                    style={{
+                      transform: 'scale(1.3)',
+                      accentColor: 'black'
+                    }}
+                  />
+                </div>
+                <div className="d-flex align-items-center flex-grow-1" onClick={() => handleToggleProduct(product.id)}>
+                  <Image
+                    src={product?.featuredMedia?.image?.url || 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292'}
+                    width={80} 
+                    height={80}
+                    className="me-3 rounded img-fluid" />
+                  <div className="flex-grow-1">
+                    <div>{product.title}</div>
+                  </div>
                 </div>
               </div>
+
+              <Collapse in={expandedProducts[product.id]}>
+                <div className="mt-3">
+                  {/* Display each option separately */}
+                  {product.options.map((option, optIdx) => {
+                    // Find matching option in selectedProducts
+                    const selectedProduct = selectedProducts.find(p => p.productId === product.id);
+                    const selectedOption = selectedProduct?.optionSelections.find(o => o.name === option.name);
+                    
+                    return (
+                      <div key={optIdx} className="mb-3">
+                        <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>{option.name}</div>
+
+                        {/* Display individual values for each option */}
+                        {option.values.map((value, valueIdx) => {
+                          // Check if this specific value is selected in selectedProducts
+                          const isValueSelected = selectedOption?.values.includes(value);
+                          const variantIndex = `${optIdx}-${valueIdx}`;
+                          
+                          return (
+                            <div key={valueIdx} className="d-flex align-items-center" 
+                            style={{ border: "1px solid lightgrey", padding: "10px 100px", borderWidth: (valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0") }}>
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedVariants[product.id]?.[variantIndex] || false}
+                                onChange={() => handleToggleVariant(product.id, variantIndex)}
+                                className="me-2"
+                                style={{
+                                  transform: 'scale(1.3)',
+                                  accentColor: 'black'
+                                }}
+                              />
+                              <div className="fw-bold">{value}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </Collapse>
             </div>
-
-            <Collapse in={expandedProducts[product.id]}>
-              <div className="mt-3">
-                {/* Display each option separately */}
-                {product.options.map((option, optIdx) => {
-                  // Find matching option in selectedProducts
-                  const selectedProduct = selectedProducts.find(p => p.productId === product.id);
-                  const selectedOption = selectedProduct?.optionSelections.find(o => o.name === option.name);
-                  
-                  return (
-                    <div key={optIdx} className="mb-3">
-                      <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>{option.name}</div>
-
-                      {/* Display individual values for each option */}
-                      {option.values.map((value, valueIdx) => {
-                        // Check if this specific value is selected in selectedProducts
-                        const isValueSelected = selectedOption?.values.includes(value);
-                        const variantIndex = `${optIdx}-${valueIdx}`;
-                        
-                        return (
-                          <div key={valueIdx} className="d-flex align-items-center" 
-                          // if last index then show border bottom as well
-                          style={{ border: "1px solid lightgrey", padding: "10px 100px", borderWidth: (valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0") }}>
-                            <Form.Check
-                              type="checkbox"
-                              checked={selectedVariants[product.id]?.[variantIndex] || false}
-                              onChange={() => handleToggleVariant(product.id, variantIndex)}
-                              className="me-2"
-                              style={{
-                                transform: 'scale(1.3)',
-                                accentColor: 'black'
-                              }}
-                            />
-                            <div className="fw-bold">{value}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            </Collapse>
-          </div>
-        );
-      })}
+          );
+        })
+      ) : (
+        <div className="p-4 text-center text-muted">
+          {activeTab === "Selected Products" 
+            ? "No products selected" 
+            : searchTerm 
+              ? `No products found for "${searchTerm}"` 
+              : "No products available"}
+        </div>
+      )}
       </div>
 
       {/* Footer */}
@@ -592,7 +595,6 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
             style={{
               backgroundColor: "white",
               color: "#5169DD",
-              // border: "1px solid #5169DD",
               borderRadius: "10px",
               padding: "7px 10px 7px 7px",
             }}

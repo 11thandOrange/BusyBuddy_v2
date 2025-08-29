@@ -213,9 +213,9 @@ export default function MixMatchActions() {
     });
   };
 
-  useEffect(() => {
-    console.log("preview options", previewProductsSelectedOptions);
-  }, [previewProductsSelectedOptions]);
+  // useEffect(() => {
+  //   console.log("preview options", previewProductsSelectedOptions);
+  // }, [previewProductsSelectedOptions]);
 
   useEffect(() => {
     console.log("variant price", variantPricing);

@@ -157,7 +157,7 @@ const MarshallEarphonePage = () => {
                             fontSize: '15px',
                             letterSpacing: '0'
                         }}>
-                            Make your Bundle Now!
+                            Make your Bundle Nw!
                         </Button>
 
                         <div>

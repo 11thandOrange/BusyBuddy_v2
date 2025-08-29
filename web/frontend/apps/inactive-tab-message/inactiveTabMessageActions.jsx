@@ -26,6 +26,7 @@ export default function BundleDiscountActions() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState(["Bundle 1"]);
   const [isBundleActive, setIsBundleActive] = useState(true);
+    const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
   const [colorSettings, setColorSettings] = useState({
     "Primary Text Color": "#ff0000",
     "Secondary Text Color": "#000000",

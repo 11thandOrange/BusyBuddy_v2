@@ -107,7 +107,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
           ) : (
             <Col xs="auto" className="d-flex align-items-center gap-2">
               <Button
-                text="Create Another Discount"
+                text="Create Announcement Bar"
                 onClick={handleOpenDiscountModal}
                 style={{
                   borderRadius: "15px",
@@ -122,7 +122,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                   lineHeight: "100%",
                 }}
               />
-              <ToggleSwitch />
+              {/* <ToggleSwitch /> */}
             </Col>
           )}
         </Row>
