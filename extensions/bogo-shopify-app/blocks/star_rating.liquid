@@ -1,109 +1,181 @@
 {% comment %} Set this as a section that can be placed anywhere {% endcomment %}
 <div id="bogoApp-{{ section.id }}" class="bogo-bundle-container">
-  <div style="
-    padding: 0px;
-    box-shadow: 1px 1px 4px 0px #0000001A inset;
-    background-color: #fff;
-    border-radius: 20px;
-    height: fit-content;
-    max-width: 100%;">
-
+  <div
+    style="
+      padding: 0px;
+      box-shadow: 1px 1px 4px 0px #0000001A inset;
+      background-color: #fff;
+      border-radius: 20px;
+      height: fit-content;
+      max-width: 100%;
+    "
+  >
     <div style="padding: 20px;">
-      <div style="
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px;">
-        <h2 class="bogo-bundle-title" style="
-          font-family: Inter;
-          font-weight: 600;
-          font-size: 20px;
-          margin: 0;"> Preview
-          </h2>
-
-        <div style="
-          cursor: pointer;
-          background-color: #f8f9fa;
-          padding: 7px 10px 7px 7px;
-          border: 1px solid rgba(34, 34, 34, 0.1);
-          border-radius: 8px;
+      <div
+        style="
           display: flex;
-          align-items: center;">
-           <img src="{{ 'customize.png' | asset_url }}" width="13" height="13" alt="Customize Icon" style="margin-right: 6px;" />
-          Customize
-        </div>
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px;
+        "
+      >
+        {% comment %}
+          <h2
+            class="bogo-bundle-title"
+            style="
+              font-family: Inter;
+              font-weight: 600;
+              font-size: 20px;
+              margin: 0;
+            "
+          >
+            Preview
+          </h2>
+        {% endcomment %}
+
+        {% comment %}
+          <div
+            style="
+              cursor: pointer;
+              background-color: #f8f9fa;
+              padding: 7px 10px 7px 7px;
+              border: 1px solid rgba(34, 34, 34, 0.1);
+              border-radius: 8px;
+              display: flex;
+              align-items: center;
+            "
+          >
+            <img
+              src="{{ 'customize.png' | asset_url }}"
+              width="13"
+              height="13"
+              alt="Customize Icon"
+              style="margin-right: 6px;"
+            >
+            Customize
+          </div>
+        {% endcomment %}
       </div>
 
-      <div style="
-        background-color: rgb(241, 242, 244);
-        padding: 15px;
-        border-radius: 18px;
-        position: relative;">
-
-        <h2 class="bogo-bundle-tagline" style="font-size: 16px; font-weight: bold;margin: 25px 0 20px 0;">
-          </h2>
-
-        <div style="
-          position: absolute;
-          top: 0.5px;
-          right: 0;
-          background: #C4290E;
-          color: white;
-          padding: 5px 7px 8px 8px;
-          border-radius: 8px 18px 8px 8px;
-          font-size: 12px;
-          font-weight: 500;">
-          Ends In 23 10 10
-        </div>
-        <div class="bogo-products-container">
-          </div>
-
-        <div style="
-          background: #FFFFFF;
-          border: 1px solid rgba(34, 34, 34, 0.1);
-          border-radius: 15px;
-          padding: 10px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;">
-          <p style="
+      <div
+        style="
+          background-color: rgb(241, 242, 244);
+          padding: 15px;
+          border-radius: 18px;
+          position: relative;
+        "
+      >
+        {% comment %} <h2 class="bogo-bundle-tagline" style="font-size: 16px; font-weight: bold;margin: 25px 0 20px 0;"></h2> {% endcomment %}
+        <h2
+          class="bogo-bundle-title"
+          style="
             font-family: Inter;
             font-weight: 600;
-            font-size: 15px;
-            color: #303030;">
+            font-size: 20px;
+            padding: 5px 0px;
+          "
+        >
+          Preview
+        </h2>
+        <div
+          style="
+            position: absolute;
+            top: 0.5px;
+            right: 0;
+            background: #C4290E;
+            color: white;
+            padding: 5px 7px 8px 8px;
+            border-radius: 8px 18px 8px 8px;
+            font-size: 12px;
+            font-weight: 500;
+          "
+          class="bogo-timer-display"
+        >
+          Ends In <span class="bogo-timer-countdown"></span>
+        </div>
+        <div class="bogo-products-container"></div>
+
+        <div
+          style="
+            background: #FFFFFF;
+            border: 1px solid rgba(34, 34, 34, 0.1);
+            border-radius: 15px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          "
+        >
+          <p
+            style="
+              font-family: Inter;
+              font-weight: 600;
+              font-size: 15px;
+              color: #303030;
+            "
+          >
             Total
           </p>
-          <p class="bogo-bundle-total-price" style="
-            font-family: Inter;
-            font-weight: 500;
-            font-size: 13px;
-            color: #222222;">
-            </p>
+          <p
+            class="bogo-bundle-total-price"
+            style="
+              font-family: Inter;
+              font-weight: 500;
+              font-size: 13px;
+              color: #222222;
+            "
+          ></p>
         </div>
 
-        <button class="bogo-add-to-cart" style="
-          background-color: #222222;
-          color: white;
-          border: none;
-          border-radius: 15px;
-          padding: 15px 25px;
-          font-size: 15px;
-          width: 100%;
-          margin-bottom: 10px;">
+        <button
+          class="bogo-add-to-cart"
+          style="
+            background-color: #222222;
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 15px 25px;
+            font-size: 15px;
+            width: 100%;
+            margin-bottom: 10px;
+          "
+        >
           Add To Cart
         </button>
 
-        <button class="bogo-skip" style="
-          background-color: #F1F1F1;
-          color: black;
-          border: 1px solid rgba(34, 34, 34, 0.1);
-          border-radius: 15px;
-          padding: 15px 25px;
-          font-size: 15px;
-          width: 100%;">
+        <button
+          class="bogo-skip"
+          style="
+            background-color: #F1F1F1;
+            color: black;
+            border: 1px solid rgba(34, 34, 34, 0.1);
+            border-radius: 15px;
+            padding: 15px 25px;
+            font-size: 15px;
+            width: 100%;
+          "
+        >
           Skip Offer
         </button>
+        <a href="/collections/busybuddy-bundles"
+          ><button
+            class="bogo-show-all"
+            style="
+              margin-top: 10px;
+              background-color: #F1F1F1;
+              color: black;
+              border: 1px solid rgba(34, 34, 34, 0.1);
+              border-radius: 15px;
+              padding: 15px 25px;
+              font-size: 15px;
+              width: 100%;
+              cursor: pointer;
+            "
+          >
+            View All bundles
+          </button>
+        </a>
       </div>
     </div>
   </div>
@@ -113,12 +185,12 @@
   src="{{ 'script-preview.js' | asset_url }}"
   data-store-url="{{ shop.url }}"
   data-product-id="{{ product.id }}"
-  defer>
-</script>
+  defer
+></script>
 
 {% schema %}
 {
-  "name": "BOGO Bundle",
+  "name": "BusyBuddy Bundle",
   "target": "section",
   "settings": [
     {

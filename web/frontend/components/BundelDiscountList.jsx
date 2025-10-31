@@ -1,28 +1,87 @@
 import React, { useEffect, useState } from "react";
 import { Container, Row, Col, Card, ButtonGroup, ToggleButton, Alert, Spinner, Form } from "react-bootstrap";
-import { Play, ArrowRight, Trash } from "react-bootstrap-icons";
+import { Play, ArrowRight, Trash, Pencil } from "react-bootstrap-icons";
 import Button from "./Button";
 import view from "../assets/view.png";
 import videoimg from "../assets/videoimg.png";
 import BundleDiscountActions from "../apps/bundle-discounts/bundleDiscountActions";
 import VolumeDiscountActions from "../apps/volume-discounts/volumeDiscountActions";
+import MixAndMatchActions from "../apps/mix-and-match-discounts/mixMatchActions";
+import BuyoneGetoneActionsActions from "../apps/buy-one-get-one/buyoneGetoneActions";
 import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
-export default function DiscountList({ onMakeBundleClick, discountType }) {
+import Settings from "./Settings";
+import Analytics from "./Analytics/BundleAnalytics";
+
+export default function DiscountList({
+  onMakeBundleClick,
+  discountType,
+  refreshTrigger,
+  onBundleCreated,
+  discountActionsRef,
+  autoTriggerActions,
+}) {
   const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
-  const [selectedTab, setSelectedTab] = useState(tabs[0]);
+  const [selectedTab, setSelectedTab] = useState(tabs[1]);
   const [showAction, setShowAction] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [discounts, setDiscounts] = useState([]);
-  const [selectAll, setSelectAll] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
   const [status, setStatus] = useState(false);
+  const [mainLoading, setMainLoading] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState(null); // Track which discount is being edited
+
   useEffect(() => {
-    if (selectedTab === "Discounts") {
-      fetchDiscounts();
+    if (autoTriggerActions) {
+      const timer = setTimeout(() => {
+        setShowAction(true);
+        if (onMakeBundleClick) {
+          onMakeBundleClick();
+        }
+        setMainLoading(false);
+      }, 10);
+
+      return () => clearTimeout(timer);
+    } else {
+      setMainLoading(false);
     }
-  }, [selectedTab, discountType]);
+  }, [autoTriggerActions, onMakeBundleClick]);
+  // useEffect(() => {
+  //   if (selectedTab === "Discounts") {
+  //     fetchDiscounts();
+  //   }
+  // }, [selectedTab, discountType, refreshTrigger]);
+  useEffect(() => {
+    if (!autoTriggerActions) {
+      // Only fetch if not auto-triggering
+      if (selectedTab === "Discounts") {
+        fetchDiscounts();
+      }
+    }
+  }, [refreshTrigger, autoTriggerActions]);
+
+  if (mainLoading) {
+    return (
+      <Container
+        fluid
+        className="bg-white d-flex justify-content-center align-items-center"
+        style={{
+          maxWidth: "1500px",
+          margin: "50px auto",
+          borderRadius: "15px",
+          height: "300px",
+        }}
+      >
+        <div className="text-center">
+          <Spinner animation="border" role="status" variant="dark" />
+          <p className="mt-3" style={{ color: "#616161" }}>
+            Loading...
+          </p>
+        </div>
+      </Container>
+    );
+  }
 
   const fetchDiscounts = async () => {
     setIsLoading(true);
@@ -54,29 +113,13 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
     }
   };
 
-  const handleSelectAllChange = () => {
-    const newSelectAllState = !selectAll;
-    setSelectAll(newSelectAllState);
-    setDiscounts(
-      discounts.map((discount) => ({
-        ...discount,
-        selected: newSelectAllState,
-      }))
-    );
-  };
-
-  const handleDiscountSelectionChange = (id) => {
-    setDiscounts(
-      discounts.map((discount) =>
-        discount._id === id ? { ...discount, selected: !discount.selected } : discount
-      )
-    );
-  };
-
-  // const handlePriorityChange = () => {
-  //   setStatus(!status);
-  // };
   const handlePriorityChange = async (id, value) => {
+    const originalPriority = discounts.find((d) => d._id === id)?.priority;
+
+    // Optimistically update the UI first
+    setDiscounts(
+      discounts.map((discount) => (discount._id === id ? { ...discount, priority: value } : discount))
+    );
     try {
       const res = await fetch(`/api/bundles/${id}`, {
         method: "PUT",
@@ -94,13 +137,7 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
       console.error("Failed to update priority:", err);
     }
   };
-  // const handleToggleChange = (id) => {
-  //   setDiscounts(
-  //     discounts.map((discount) =>
-  //       discount._id === id ? { ...discount, status: !discount.status } : discount
-  //     )
-  //   );
-  // };
+
   const handleToggleChange = async (id, currentStatus) => {
     try {
       const res = await fetch(`/api/bundles/${id}`, {
@@ -118,24 +155,6 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
     }
   };
 
-  const handleDeleteSelected = async () => {
-    const selectedIds = discounts.filter((d) => d.selected).map((d) => d._id);
-    if (selectedIds.length === 0) return;
-
-    if (!window.confirm(`Delete ${selectedIds.length} selected bundle(s)?`)) return;
-
-    try {
-      await Promise.all(
-        selectedIds.map((id) =>
-          fetch(`/api/bundles/${id}`, { method: "DELETE", headers: { "Content-Type": "application/json" } })
-        )
-      );
-
-      setDiscounts(discounts.filter((d) => !selectedIds.includes(d._id)));
-    } catch (err) {
-      console.error("Bulk delete failed:", err);
-    }
-  };
   const handleDeleteOne = async (id) => {
     if (!window.confirm("Are you sure you want to delete this bundle?")) return;
 
@@ -151,6 +170,12 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
     }
   };
 
+  // New function to handle edit
+  const handleEditClick = (discount) => {
+    setEditingDiscount(discount);
+    setShowAction(true);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const month = date.toLocaleString("default", { month: "short" });
@@ -164,9 +189,52 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
     return `${month} ${day} at ${formattedHour}:${formattedMinute}${ampm}`;
   };
 
+  const handleActionSuccess = () => {
+    setShowAction(false);
+    setEditingDiscount(null); // Reset editing state
+    if (onBundleCreated) {
+      onBundleCreated();
+    }
+    // Refresh the discounts list
+    fetchDiscounts();
+  };
+
   if (showAction) {
-    return discountType === "Volume Discount" ? <VolumeDiscountActions /> : <BundleDiscountActions />;
+    if (discountType === "Volume Discount") {
+      return (
+        <VolumeDiscountActions 
+          ref={discountActionsRef} 
+          onSuccess={handleActionSuccess} 
+          editData={editingDiscount} 
+        />
+      );
+    } else if (discountType === "Buy One Get One") {
+      return (
+        <BuyoneGetoneActionsActions 
+          ref={discountActionsRef} 
+          onSuccess={handleActionSuccess} 
+          editData={editingDiscount} 
+        />
+      );
+    } else if (discountType === "Bundle Discount") {
+      return (
+        <BundleDiscountActions 
+          ref={discountActionsRef} 
+          onSuccess={handleActionSuccess} 
+          editData={editingDiscount} 
+        />
+      );
+    } else if (discountType === "Mix and Match") {
+      return (
+        <MixAndMatchActions 
+          ref={discountActionsRef} 
+          onSuccess={handleActionSuccess} 
+          editData={editingDiscount} 
+        />
+      );
+    }
   }
+
   const handlePreviewClick = (discount) => {
     setSelectedDiscount(discount);
     setShowPreviewModal(true);
@@ -249,7 +317,11 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
           {selectedTab === "Discounts" && (
             <Button
               text="Create Discount"
-              onClick={() => console.log("Create Discount")}
+              onClick={() => {
+                setEditingDiscount(null); // Ensure we're creating new, not editing
+                setShowAction(true);
+                onMakeBundleClick();
+              }}
               style={{
                 background: "black",
                 borderRadius: "12px",
@@ -265,45 +337,8 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
 
       {selectedTab === "Discounts" && (
         <div className="d-flex justify-content-between my-2 px-2 py-1">
-          <Button
-            text={
-              <div className="slecetbox">
-                <Form.Check
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={handleSelectAllChange}
-                  className="custom-checkbox me-2"
-                />
-                <p className="selecttext">Select All</p>
-              </div>
-            }
-            onClick={() => {}}
-            style={{
-              backgroundColor: "white",
-              border: "1px solid rgba(34, 34, 34, 0.1)",
-              display: "flex",
-              borderRadius: "8px",
-              padding: "7px 10px 7px 7px",
-              color: "black",
-            }}
-          />
-
-          <Button
-            text={
-              <>
-                <Trash style={{ marginRight: "6px" }} />
-                Delete All
-              </>
-            }
-            onClick={handleDeleteSelected}
-            style={{
-              backgroundColor: "rgba(196, 41, 14, 0.1)",
-              color: "#C4290E",
-              border: "1px solid #C4290E",
-              borderRadius: "8px",
-              padding: "7px 10px 7px 7px",
-            }}
-          />
+          <div></div>
+          <div></div>
         </div>
       )}
 
@@ -463,6 +498,7 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
                       padding: "15px 25px",
                     }}
                     onClick={() => {
+                      setEditingDiscount(null);
                       setShowAction(true);
                       onMakeBundleClick();
                     }}
@@ -520,84 +556,127 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
                   </div>
                 ) : (
                   discounts.map((discount, index) => (
-                    <Row key={discount._id} className="g-0 linrrow">
-                      <Col sm={9} md={9} lg={12}>
-                        <Card className="border-0 w-150" style={{ background: "rgb(241, 242, 244)" }}>
-                          <Card.Body className="d-flex align-items-center justify-content-between">
-                            <div className="d-flex align-items-center">
-                              <Form.Check
-                                type="checkbox"
-                                checked={discount.selected}
-                                onChange={() => handleDiscountSelectionChange(discount._id)}
-                                className="custom-checkbox me-2"
-                              />
-
+                    <Row key={discount._id} className="g-0 linrrow mb-3">
+                      <Col>
+                        <Card
+                          className="border-0"
+                          style={{ background: "rgb(241, 242, 244)", borderRadius: "12px" }}
+                        >
+                          <Card.Body className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            {/* Left Side: Image + Details */}
+                            <div className="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
                               <img
-                                src={discount.products[0]?.media || tshirt}
+                                src={discount.products[0]?.media}
                                 alt={discount.products[0]?.title || "Discount Product"}
                                 width={80}
                                 height={80}
-                                className="me-2"
-                                style={{ objectFit: "cover" }}
+                                className="flex-shrink-0"
+                                style={{ objectFit: "cover", borderRadius: "8px" }}
                               />
-                              <div className="bundlebox">
-                                <div className="bundletxxtb1">
-                                  <span className="bundletext">
+
+                              <div className="bundlebox text-truncate" style={{ minWidth: 0 }}>
+                                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                  <span className="fw-bold text-truncate" style={{ maxWidth: "250px" }}>
                                     {discount.title || `${discountType} #${index + 1}`}
                                   </span>
                                   <div
-                                    className="previewbtn"
+                                    className="previewbtn text-primary"
                                     onClick={() => handlePreviewClick(discount)}
-                                    style={{ cursor: "pointer" }}
+                                    style={{ cursor: "pointer", whiteSpace: "nowrap" }}
                                   >
-                                    <img src={view} width={13} height={13} alt="preview" />
+                                    <img src={view} width={13} height={13} alt="preview" className="me-1" />
                                     Preview
                                   </div>
                                 </div>
-                                <p className="buymorebtn">
+
+                                <p className="text-muted mb-1 small">
                                   {discount.internalName ||
                                     (discountType === "Volume Discount"
-                                      ? "Buy More, Save More!"
+                                      ? "Buy Together & Save More!🔥!"
                                       : "Bundle and Save!")}
                                 </p>
-                                <div className="bundletxtb2">
+
+                                {/* Wrap product titles */}
+                                <div className="d-flex flex-wrap gap-2 small text-truncate">
                                   {discount.products.map((product, idx) => (
-                                    <p key={product.productId}>{product.title}</p>
+                                    <span
+                                      key={product.productId}
+                                      className="badge bg-light text-dark text-truncate"
+                                      style={{ maxWidth: "120px" }}
+                                    >
+                                      {product.title}
+                                    </span>
                                   ))}
                                 </div>
                               </div>
                             </div>
-                            <div
-                              className="d-flex align-items-center justify-content-between gap-2"
-                              style={{ width: "25%" }}
-                            >
-                              <Form.Group className="mt-1 d-flex align-items-center gap-2">
-                                <Form.Label className="inputtitle mt-1">Priority</Form.Label>
+
+                            {/* Right Side: Actions */}
+                            <div className="d-flex align-items-center gap-3 flex-shrink-0">
+                              <Form.Group className="d-flex align-items-center gap-2 mb-0">
+                                <Form.Label className="inputtitle mb-0">Priority</Form.Label>
                                 <Form.Control
-                                  type="text"
+                                  type="number"
+                                  min="0"
                                   value={discount.priority || 0}
-                                  onChange={(e) => handlePriorityChange(discount._id, e.target.value)}
-                                  style={{ background: "white", width: "80px", height: "29px" ,color:"black" }}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value) && value >= 0) {
+                                      handlePriorityChange(discount._id, value);
+                                    }
+                                  }}
+                                  style={{
+                                    background: "white",
+                                    width: "70px",
+                                    height: "29px",
+                                    color: "black",
+                                  }}
                                   className="inputbox"
                                 />
                               </Form.Group>
 
-                              <div className="togglebox">
-                                <p className="datetext mt-2">{formatDate(discount.createdAt)}</p>
-                                <Form.Check
-                                  type="switch"
-                                  id={`discount-toggle-${discount._id}`}
-                                  checked={discount.status}
-                                  onChange={() => handleToggleChange(discount._id, discount.status)} // ✅ pass id + current status
-                                  className="custom-switch-toggle"
-                                />
+                              <div className="d-flex flex-column align-items-end">
+                                <p className="datetext mb-1 small">{formatDate(discount.createdAt)}</p>
+                                <div className="d-flex align-items-center gap-2">
+                                  <Form.Check
+                                    type="switch"
+                                    id={`toggle-${discount._id}`}
+                                    checked={discount.status}
+                                    onChange={() => handleToggleChange(discount._id, discount.status)}
+                                  />
+                                  <span
+                                    style={{
+                                      color: discount.status ? "#4CAF50" : "#616161",
+                                      fontSize: "14px",
+                                      minWidth: "60px",
+                                    }}
+                                  >
+                                    {discount.status ? "Active" : "Inactive"}
+                                  </span>
+                                  <Button
+                                    text={<Pencil size={16} />}
+                                    onClick={() => handleEditClick(discount)}
+                                    style={{
+                                      backgroundColor: "rgba(33, 150, 243, 0.1)",
+                                      color: "#2196F3",
+                                      border: "1px solid #2196F3",
+                                      borderRadius: "8px",
+                                      padding: "6px 8px",
+                                    }}
+                                  />
+                                  <Button
+                                    text={<Trash size={16} />}
+                                    onClick={() => handleDeleteOne(discount._id)}
+                                    style={{
+                                      backgroundColor: "rgba(196, 41, 14, 0.1)",
+                                      color: "#C4290E",
+                                      border: "1px solid #C4290E",
+                                      borderRadius: "8px",
+                                      padding: "6px 8px",
+                                    }}
+                                  />
+                                </div>
                               </div>
-                              <Button
-                                text={ <Trash size={16} />}
-                                onClick={() => console.log("Create Discount")}
-                                style={{
-                                }}
-                              />
                             </div>
                           </Card.Body>
                         </Card>
@@ -608,6 +687,16 @@ export default function DiscountList({ onMakeBundleClick, discountType }) {
               </div>
             )}
           </>
+        )}
+        {selectedTab === "Setting" && (
+          <Col lg={12} className="p-4">
+            <Settings />
+          </Col>
+        )}
+        {selectedTab === "Analytics" && (
+          <Col lg={12} className="p-4">
+            <Analytics />
+          </Col>
         )}
       </Row>
       {/* Add the modal component at the bottom */}

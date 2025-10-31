@@ -108,12 +108,12 @@
   
   .description {
     font-size: 13px;
-    margin: 0 0 15px;
+    margin: 28px 0;
     flex-grow: 1;
     text-align: left;
     font-weight: 400;
     line-height:17.76px ;
-    min-height: 143px;
+    max-height: 115px;
   }
 
   .plan-content .upper-wrapper .Polaris-Link {
@@ -266,3 +266,88 @@
     text-decoration: none;
     color :#616161;
   }
+.current-plan {
+  position: relative;
+  border: 3px solid #ffc107 !important;
+  box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+}
+
+.current-badge {
+  position: absolute;
+  top: -10px;
+  right: 10px;
+  background-color: #ffc107;
+  color: #000;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  z-index: 10;
+}
+
+.current-plan-banner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.planboxes {
+  position: relative;
+}
+
+.modal-content {
+  border-radius: 12px;
+}
+
+.modal-header {
+  border-bottom: 1px solid #e9ecef;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.modal-footer {
+  border-top: 1px solid #e9ecef;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+/* Cancel button styles */
+.btn-outline-danger {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+/* Plan card improvements */
+.plan-card {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.plan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .current-plan-banner .alert {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .plan-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .planboxes {
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 20px;
+  }
+}

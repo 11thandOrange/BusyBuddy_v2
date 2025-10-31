@@ -1,13 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  InputGroup,
-  Image,
-  Collapse,
-} from "react-bootstrap";
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { Container, Row, Col, Form, InputGroup, Image, Collapse } from "react-bootstrap";
 import { X, Check } from "react-bootstrap-icons";
 import Button from "../../components/Button";
 import tshirtp from "../../assets/tshirt.png";
@@ -17,10 +9,48 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   const [selectedVariants, setSelectedVariants] = useState({});
   const [expandedProducts, setExpandedProducts] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [products, setProducts] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [activeCollection, setActiveCollection] = useState(null);
+  const [baseProducts, setBaseProducts] = useState([]);
 
   // Refs for indeterminate checkboxes
   const checkboxRefs = useRef({});
+  const filteredProducts = useMemo(() => {
+    // 🟦 Handle "Collections" tab
+    if (activeTab === "Collections") {
+      if (!activeCollection) return [];
+      let collectionProducts = activeCollection.products.nodes || [];
 
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        collectionProducts = collectionProducts.filter((p) => p.title.toLowerCase().includes(searchLower));
+      }
+
+      return collectionProducts.map((p) => ({ node: p }));
+    }
+
+    if (!products.length) return [];
+
+    let filtered = products;
+
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(({ node }) => node.title.toLowerCase().includes(searchLower));
+    }
+
+    // Apply tab filter (Selected Products)
+    if (activeTab === "Selected Products") {
+      filtered = filtered.filter(({ node }) => {
+        const productVariants = selectedVariants[node.id] || {};
+        // Check if any variant is selected (excluding optionInfo)
+        return Object.entries(productVariants).some(([key, value]) => key !== "optionInfo" && value === true);
+      });
+    }
+
+    return filtered;
+  }, [products, searchTerm, activeTab, selectedVariants, collections, activeCollection]);
   // Modified toggle variant function
   const handleToggleVariant = (productId, variantIndex) => {
     // Get current variant state
@@ -135,7 +165,6 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       [productId]: !prev[productId],
     }));
   };
-  const [products, setProducts] = useState([]);
 
   // Replace your current getSelectedCount function with this:
   const getSelectedCount = () => {
@@ -147,24 +176,42 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   };
   useEffect(() => {
     getProducts();
+    getCollections();
   }, []);
+  useEffect(() => {
+    if (activeTab === "All Products" || activeTab === "Selected Products") {
+      setProducts(baseProducts);
+      setActiveCollection(null);
+    }
+  }, [activeTab]);
 
   async function getProducts() {
     try {
       const response = await fetch("/api/products", {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
+      if (!response.ok) throw new Error("Failed to fetch products");
       const data = await response.json();
-      console.log("Data'''''''''", data.data.products.edges);
-      setProducts(data.data.products.edges);
+      const edges = data.data.products.edges || [];
+      setBaseProducts(edges);
+      setProducts(edges);
     } catch (error) {
       console.log("GetProductsError", error);
+    }
+  }
+  async function getCollections() {
+    try {
+      const response = await fetch("/api/products/collections", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to fetch collections");
+      const data = await response.json();
+      const fetched = data.data.collections.nodes || [];
+      setCollections(fetched);
+    } catch (error) {
+      console.log("GetCollectionsError", error);
     }
   }
 
@@ -491,11 +538,33 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
             {/* Optionally you can add a search icon absolutely positioned */}
           </div>
         </Col>
+        {activeTab === "Collections" && collections.length > 0 && (
+          <Row className="mt-3 mb-3 bg-white rounded shadow-sm p-2">
+            <Col className="d-flex flex-wrap gap-2 pt-2">
+              {collections.map((collection) => (
+                <button
+                  key={collection.id}
+                  className={`px-3 py-2 rounded ${
+                    activeCollection?.title === collection.title ? "bg-dark text-white" : "bg-light text-dark"
+                  }`}
+                  onClick={() => {
+                    setActiveCollection(collection);
+                    const newProducts = collection.products.nodes.map((p) => ({ node: p }));
+                    setProducts(newProducts);
+                  }}
+                  style={{ border: "none", fontWeight: "500" }}
+                >
+                  {collection.title}
+                </button>
+              ))}
+            </Col>
+          </Row>
+        )}
       </Row>
 
       {/* Product List */}
       <div className="bg-white shadow-sm rounded">
-        {products.map(({ node: product }, idx) => {
+        {filteredProducts.map(({ node: product }, idx) => {
           // Check if product is in selectedProducts but don't show badge
           const isProductSelected = selectedProducts.some((p) => p.productId === product.id);
 

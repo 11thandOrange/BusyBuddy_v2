@@ -4,6 +4,10 @@ import {
   getBundlePriceUpdateMutation,
   getUpdatedBundleMutation,
   getProductStatusUpdateMutation,
+  getProductTagsUpdateMutation,
+  GET_COLLECTION,
+  CREATE_COLLECTIONV2,
+  GET_publications,
 } from "../../services/mutations.js";
 import shopify from "../../../shopify.js";
 import Shop from "../../models/shop.model.js";
@@ -414,7 +418,11 @@ async function createProductBundleV2(req, res) {
     // The Shopify API expects "ACTIVE" or "DRAFT" string.
     const productStatusString = status ? "ACTIVE" : "DRAFT";
     const statusUpdateResult = await updateProductStatus(client, session, productId, productStatusString);
-
+    // console.log("business tags ::::", type);
+    const cleanType = type.replace(/\s+/g, "");
+    // console.log("business tags ::::", cleanType);
+    let tags = ["busybuddybundles", cleanType];
+    const tagsUpdateResult = await updateProductTags(client, session, productId, tags);
     // 5. Get updated product data (optional, for response)
     const updatedProductData = await getUpdatedProductData(client, session, productId);
 
@@ -434,7 +442,7 @@ async function createProductBundleV2(req, res) {
     } else {
       productsToStoreInDb = products; // Store the general products array for other types
     }
-
+    console.log("productsToStoreInDb:", JSON.stringify(productsToStoreInDb, null, 2));
     let CreateBundle = await Bundle.create({
       title,
       type,
@@ -450,8 +458,36 @@ async function createProductBundleV2(req, res) {
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      productsX: productsX,
+      productsY: productsY,
     });
-
+    // fetch collection if dont exist  then insert
+    const clients = new shopify.api.clients.Graphql({
+      session: session,
+      apiVersion: "2025-07", // Ensure this is a valid and supported API version
+    });
+    const resultcollection = await clients.request(GET_COLLECTION, { session });
+    if (
+      resultcollection?.data?.collections?.nodes &&
+      resultcollection?.data?.collections?.nodes?.length == 0
+    ) {
+      const getpublications = await clients.request(GET_publications, {
+        session,
+      });
+      if (getpublications?.data?.publications?.nodes) {
+        let publicationsData = getpublications?.data?.publications?.nodes;
+        let publicationId = null;
+        for (let Pub of publicationsData) {
+          if (Pub.name === "Online Store") {
+            publicationId = Pub.id;
+            break;
+          }
+        }
+        if (publicationId) {
+          const createcollection = await clients.request(CREATE_COLLECTIONV2(publicationId), { session });
+        }
+      }
+    }
     return res.status(201).json({
       status: true,
       message: "Bundle created successfully.",
@@ -514,6 +550,7 @@ async function createMixAndMatchBundle(req, res) {
       widgetAppearance,
       startDate,
       endDate,
+      tierDiscounts, // for mix and match
       // BOGO specific product arrays
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
@@ -596,7 +633,8 @@ mutation setPriceForMixAndMatchProduct {
         {
           key: "bundle_discount_value",
           namespace: "busy-buddy",
-          value: discountValue || "10,20", // Default values for example
+        //   value: discountValue || "10,20", // Default values for example
+          value: Object.values(tierDiscounts).join(","),
           type: "single_line_text_field",
         },
         {
@@ -623,6 +661,7 @@ mutation setPriceForMixAndMatchProduct {
       productPublications: {
         channelHandle: "online_store", // Assuming you want to publish to online store
       },
+      tags: ["busybuddybundles", "mixAndMatch"],
     };
     const result = await client.request(bundleProductCreateMutation, {
       session,
@@ -645,12 +684,12 @@ mutation setPriceForMixAndMatchProduct {
 
     const productId = result.data.productCreate.product.id;
     const bundleProductVariants = result.data.productCreate.product.variants.nodes;
-    console.log("Mix and Match Bundle product variants:", JSON.stringify(bundleProductVariants, null, 2));
+    // console.log("Mix and Match Bundle product variants:", JSON.stringify(bundleProductVariants, null, 2));
 
     // 2. Update prices and set it to 1000 for default variant of mix and match product
     let priceUpdateResult = null;
     const bundleProductPriceUpdateMutation = `
-            mutation setPriceForMixAndMatchProduct($productId: ID!, $variants: [ProductVariantInput!]!) {
+            mutation setPriceForMixAndMatchProduct($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
                 productVariantsBulkUpdate(productId: $productId, variants: $variants) {
                     product {
                         id
@@ -675,7 +714,7 @@ mutation setPriceForMixAndMatchProduct {
         })),
       },
     });
-    console.log("Mix and Match Bundle price update result:", JSON.stringify(priceUpdateResult, null, 2));
+    // console.log("Mix and Match Bundle price update result:", JSON.stringify(priceUpdateResult, null, 2));
     if (priceUpdateResult?.data?.productVariantsBulkUpdate?.userErrors?.length > 0) {
       console.error(
         "User errors on price update:",
@@ -691,7 +730,293 @@ mutation setPriceForMixAndMatchProduct {
       console.error("Failed to update product price:", priceUpdateResult);
       throw new Error("Failed to update Mix and Match bundle prices on Shopify.");
     }
+    const shopDomain = res.locals.shopify.session.shop;
+    let shopData = await Shop.findOne({ shopDomain }); // Assuming shopDomain is the correct field
+    if (!shopData) {
+      // Handle case where shop is not found in your DB, perhaps create it or return error
+      console.error(`Shop not found in DB: ${shopDomain}`);
+      // return res.status(404).json({ status: false, error: "Shop not found in local database." });
+    }
+    let CreateBundle = await Bundle.create({
+      title,
+      type,
+      products: products,
+      quantityBreaks: type === "Volume Discount" ? quantityBreaks : undefined,
+      tierDiscounts: type === "Mix and Match" ? tierDiscounts : undefined,
+      discountType,
+      discountValue,
+      internalName,
+      priority: bundlePriority,
+      status, // Store the string status
+      widgetAppearance,
+      startDate,
+      endDate,
+      shopId: shopData ? shopData._id : null, // Handle if shopData is null
+      shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+    });
 
+    return res.status(201).json({
+      status: true,
+      message: "Mix and Match Bundle created successfully.",
+      bundleId: productId, // Shopify's bundle product ID
+    });
+  } catch (error) {
+    console.error("Error creating Mix and Match bundle:", error);
+    return res.status(500).json({
+      status: false,
+      error: error.message,
+    });
+  }
+}
+async function updateMixAndMatchBundle(req, res) {
+  try {
+    const session = res.locals.shopify.session;
+    console.log(" createMixAndMatchBundle | session:", session);
+    const client = new shopify.api.clients.Graphql({
+      session: session,
+      apiVersion: "2024-10", // Ensure this is a valid and supported API version
+    });
+    const { id } = req.params;
+    // Find existing bundle in database
+    const existingBundle = await Bundle.findById(id);
+    if (!existingBundle) {
+      return res.status(404).json({
+        status: false,
+        error: "Bundle not found in database",
+      });
+    }
+    let {
+      title,
+      products, // General products array, may not be used for BOGO if productsX/Y are present
+      discountType,
+      quantityBreaks, // for Volume Discount
+      tierDiscounts,
+      discountValue,
+      status, // boolean: true for ACTIVE, false for DRAFT
+      internalName,
+      type, // "Bundle Discount", "Volume Discount", "Buy One Get One"
+      bundlePriority,
+      widgetAppearance,
+      startDate,
+      endDate,
+      // BOGO specific product arrays
+      productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
+      productsY, // same structure as productsX
+      originalVariantPrices, // Array of {productId, title, price} from frontend
+    } = req.body;
+
+    /*
+        
+        mutation mixMatchProductCreate {
+    productCreate(
+      input: {title: "mix and match", metafields: [
+        {key: "bundle_discount_type", namespace: "busy-buddy", value: "percentage", type: "single_line_text_field"}, // type of discount, can be percentage or fixed
+        {key: "bundle_discount_value", namespace: "busy-buddy", value: "10,20", type: "single_line_text_field"}, // in value , will be used for percentage discount based on number of products in bundle
+        {key: "bundle_discount_products", namespace: "busy-buddy", value: "51011200123156:10.00,51011200123156:20.00", type: "single_line_text_field"}, // productId: productPrice, productId: productPrice
+    ], status: ACTIVE, productPublications: {channelHandle: "online_store"}}
+    ) {
+      product {
+        id
+        variants(first: 10) {
+          nodes {
+            id
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+
+mutation setPriceForMixAndMatchProduct {
+    productVariantsBulkUpdate(
+        productId: "gid://shopify/Product/9833549201684"
+    variants: [
+        {
+            id: "gid://shopify/ProductVariant/50396722888980",
+            price: "1000"
+        }
+    ]
+    ) {
+    product {
+            id
+        }
+    }
+}
+        */
+
+    // fetch variantIds and price for each variant for products
+    const productIds = products.map((p) => p.productId);
+    const fetchedProductDetailsMap = await fetchProductDetailsByIds(client, session, productIds);
+
+    // 1. Update the bundle
+    const bundleProductUpdateMutation = `
+            mutation mixMatchProductUpdate($input: ProductInput!) {
+                productUpdate(input: $input) {
+                    product {
+                        id
+                        variants(first: 10) {
+                            nodes {
+                                id
+                            }
+                        }
+                    }
+                    userErrors {
+                        field
+                        message
+                    }
+                }
+            }`;
+    const bundleInput = {
+      id: existingBundle.shopifyBundleId,
+      title,
+      metafields: [
+        {
+          key: "bundle_discount_type",
+          namespace: "busy-buddy",
+          value: discountType || "percentage", // Default to percentage if not provided
+          type: "single_line_text_field",
+        },
+        {
+          key: "bundle_discount_value",
+          namespace: "busy-buddy",
+        //   value: discountValue || "10,20", // Default values for example
+          value: Object.values(tierDiscounts).join(","),
+          type: "single_line_text_field",
+        },
+        {
+          key: "bundle_discount_products",
+          namespace: "busy-buddy",
+          // get all variant Id and price for products
+          value: products
+            .map((p) => {
+              const productDetail = fetchedProductDetailsMap[p.productId];
+              if (!productDetail || !productDetail.variants || productDetail.variants.nodes.length === 0) {
+                console.warn(`Product ${p.productId} has no variants or details.`);
+                return `${p.productId}:0`; // Default to 0 if no variants found
+              }
+              const variants = productDetail.variants.nodes;
+              return variants
+                .map((v) => `${v.id.split("gid://shopify/ProductVariant/")[1]}:${v.price}`)
+                .join(","); // Format as "variantId:price"
+            })
+            .join(","),
+          type: "single_line_text_field",
+        },
+      ],
+      status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
+      productPublications: {
+        channelHandle: "online_store", // Assuming you want to publish to online store
+      },
+      tags: ["busybuddybundles", "mixAndMatch"],
+    };
+    const result = await client.request(bundleProductUpdateMutation, {
+      session,
+      variables: { input: bundleInput },
+    });
+
+    console.log("Mix and Match Bundle creation initiated:", JSON.stringify(result, null, 2));
+
+    if (result?.data?.productUpdate?.userErrors?.length > 0) {
+      console.error("User errors on bundle creation:", result.data.productUpdate.userErrors);
+      throw new Error(
+        `Shopify User Errors: ${result.data.productUpdate.userErrors.map((e) => e.message).join(", ")}`
+      );
+    }
+
+    if (!result?.data?.productUpdate?.product?.id) {
+      console.error("Failed to get product ID from bundle creation:", result);
+      throw new Error("Failed to initiate Mix and Match bundle creation on Shopify.");
+    }
+
+    const productId = result.data.productUpdate.product.id;
+    const bundleProductVariants = result.data.productUpdate.product.variants.nodes;
+    // console.log("Mix and Match Bundle product variants:", JSON.stringify(bundleProductVariants, null, 2));
+
+    // 2. Update prices and set it to 1000 for default variant of mix and match product
+    let priceUpdateResult = null;
+    const bundleProductPriceUpdateMutation = `
+            mutation setPriceForMixAndMatchProduct($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+                productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+                    product {
+                        id
+                    }
+                    userErrors {
+                        field
+                        message
+                    }
+                }
+            }`;
+    const variantUpdates = bundleProductVariants.map((variant) => ({
+      id: variant.id, // This is the variant ID
+      price: "1000", // Set to 1000 as per your requirement
+    }));
+    priceUpdateResult = await client.request(bundleProductPriceUpdateMutation, {
+      session,
+      variables: {
+        productId: productId,
+        variants: variantUpdates.map((v) => ({
+          id: v.id,
+          price: v.price,
+        })),
+      },
+    });
+    // console.log("Mix and Match Bundle price update result:", JSON.stringify(priceUpdateResult, null, 2));
+    if (priceUpdateResult?.data?.productVariantsBulkUpdate?.userErrors?.length > 0) {
+      console.error(
+        "User errors on price update:",
+        priceUpdateResult.data.productVariantsBulkUpdate.userErrors
+      );
+      throw new Error(
+        `Shopify User Errors: ${priceUpdateResult.data.productVariantsBulkUpdate.userErrors
+          .map((e) => e.message)
+          .join(", ")}`
+      );
+    }
+    if (!priceUpdateResult?.data?.productVariantsBulkUpdate?.product?.id) {
+      console.error("Failed to update product price:", priceUpdateResult);
+      throw new Error("Failed to update Mix and Match bundle prices on Shopify.");
+    }
+    const shopDomain = res.locals.shopify.session.shop;
+    let shopData = await Shop.findOne({ shopDomain }); // Assuming shopDomain is the correct field
+    if (!shopData) {
+      // Handle case where shop is not found in your DB, perhaps create it or return error
+      console.error(`Shop not found in DB: ${shopDomain}`);
+      // return res.status(404).json({ status: false, error: "Shop not found in local database." });
+    }
+    // let CreateBundle = await Bundle.create({
+    //   title,
+    //   type,
+    //   products: products,
+    //   discountType,
+    //   discountValue,
+    //   internalName,
+    //   priority: bundlePriority,
+    //   status, // Store the string status
+    //   widgetAppearance,
+    //   startDate,
+    //   endDate,
+    //   shopId: shopData ? shopData._id : null, // Handle if shopData is null
+    //   shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+    // });
+
+    await Bundle.findByIdAndUpdate(id, {
+        title,
+        type,
+        products: products,
+        discountType,
+        discountValue,
+        internalName,
+        priority: bundlePriority,
+        status, // Store the string status
+        widgetAppearance,
+        startDate,
+        endDate,
+        shopId: shopData ? shopData._id : null, // Handle if shopData is null
+        shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+    });
     return res.status(201).json({
       status: true,
       message: "Mix and Match Bundle created successfully.",
@@ -729,7 +1054,7 @@ async function createBundle(client, session, title, products, type, quantityBrea
     const bundleCreateMutation = getCreateBundlesMutation(title, componentsString);
 
     const result = await client.request(bundleCreateMutation, { session });
-    console.log("Bundle creation initiated:", JSON.stringify(result, null, 2));
+    // console.log("Bundle creation initiated:", JSON.stringify(result, null, 2));
 
     if (result?.data?.productBundleCreate?.userErrors?.length > 0) {
       console.error("User errors on bundle creation:", result.data.productBundleCreate.userErrors);
@@ -929,7 +1254,7 @@ function calculateVariantPricesUsingVolumeDiscount(variants, discountType, quant
     let newPrice = originalPrice;
     let compareAtPrice = null;
     const variantTitle = variant.title; // e.g., "ProductA Option1 ValueX / Quantity: 10-Pack"
-
+    console.log(`Calculating price for variant: "${variantTitle}" with original price: ${originalPrice}`);
     // Find the quantity break that applies to this variant by matching uniqueName in title
     const quantityBreak = quantityBreaks.find((qb) => variantTitle.includes(qb.uniqueName));
 
@@ -1001,7 +1326,7 @@ async function updateVariantPrices(client, session, productId, variantUpdates) {
 
     const updatePriceMutation = getBundlePriceUpdateMutation(productId, variantsString);
     const result = await client.request(updatePriceMutation, { session });
-    console.log("Price update result:", JSON.stringify(result, null, 2));
+    // console.log("Price update result:", JSON.stringify(result, null, 2));
 
     if (result?.data?.productVariantsBulkUpdate?.userErrors?.length > 0) {
       console.error("User errors on price update:", result.data.productVariantsBulkUpdate.userErrors);
@@ -1030,7 +1355,7 @@ async function updateProductStatus(client, session, productId, statusString) {
   try {
     const updateStatusMutation = getProductStatusUpdateMutation(productId, statusString);
     const result = await client.request(updateStatusMutation, { session });
-    console.log("Status update result:", JSON.stringify(result, null, 2));
+    // console.log("Status update result:", JSON.stringify(result, null, 2));
     if (result?.data?.productUpdate?.userErrors?.length > 0) {
       console.error("User errors on status update:", result.data.productUpdate.userErrors);
       throw new Error(
@@ -1042,6 +1367,26 @@ async function updateProductStatus(client, session, productId, statusString) {
     return result;
   } catch (error) {
     console.error("Error updating product status:", error);
+    throw error;
+  }
+}
+
+async function updateProductTags(client, session, productId, statusString) {
+  try {
+    const updateStatusMutation = getProductTagsUpdateMutation(productId, statusString);
+    const result = await client.request(updateStatusMutation, { session });
+    // console.log("tags update result:", JSON.stringify(result, null, 2));
+    if (result?.data?.productUpdate?.userErrors?.length > 0) {
+      console.error("User errors on status update:", result.data.productUpdate.userErrors);
+      throw new Error(
+        `Shopify User Errors on status update: ${result.data.productUpdate.userErrors
+          .map((e) => e.message)
+          .join(", ")}`
+      );
+    }
+    return result;
+  } catch (error) {
+    console.error("Error updating product tags:", error);
     throw error;
   }
 }
@@ -1155,58 +1500,236 @@ async function updateBundle(req, res) {
   try {
     const { id } = req.params;
     const session = res.locals.shopify.session;
-    const updateData = req.body;
+    const client = new shopify.api.clients.Graphql({
+      session: session,
+      apiVersion: "2024-10",
+    });
 
-    // Update in your database
-    const updatedBundle = await Bundle.findByIdAndUpdate(id, updateData, { new: true });
-
-    if (!updatedBundle) {
-      return res.status(404).json({ status: false, error: "Bundle not found" });
+    // Find existing bundle in database
+    const existingBundle = await Bundle.findById(id);
+    if (!existingBundle) {
+      return res.status(404).json({
+        status: false,
+        error: "Bundle not found in database",
+      });
     }
 
-    // If you need to update in Shopify as well
-    if (updatedBundle.shopifyBundleId) {
-      const client = new shopify.api.clients.Graphql({ session });
+    const {
+      title,
+      products,
+      discountType,
+      discountValue,
+      quantityBreaks,
+      status,
+      internalName,
+      type,
+      bundlePriority,
+      widgetAppearance,
+      startDate,
+      endDate,
+      productsX,
+      productsY,
+      originalVariantPrices,
+    } = req.body;
+    console.log("Update bundle request body:", widgetAppearance);
+    // 1. Update Shopify bundle product if title changed
+    let shopifyUpdateResult = null;
+    if (title && title !== existingBundle.title) {
+      shopifyUpdateResult = await updateShopifyProduct(client, session, existingBundle.shopifyBundleId, {
+        title,
+      });
+    }
 
-      // Update status if changed
-      if (updateData.status !== undefined) {
-        const status = updateData.status ? "ACTIVE" : "DRAFT";
-        await client.query({
-          data: {
-            query: `mutation productUpdate($input: ProductInput!) {
-              productUpdate(input: $input) {
-                product {
-                  id
-                  status
-                }
-                userErrors {
-                  field
-                  message
-                }
-              }
-            }`,
-            variables: {
-              input: {
-                id: updatedBundle.shopifyBundleId,
-                status: status,
-              },
-            },
-          },
-        });
+    // 2. Update prices if discount information changed
+    let priceUpdateResult = null;
+    let variantUpdates = null;
+
+    const discountChanged =
+      discountType !== existingBundle.discountType || discountValue !== existingBundle.discountValue;
+
+    const quantityBreaksChanged =
+      JSON.stringify(quantityBreaks) !== JSON.stringify(existingBundle.quantityBreaks);
+
+    if (discountChanged || quantityBreaksChanged) {
+      // Get current product data from Shopify to get variants
+      const currentProductData = await getUpdatedProductData(client, session, existingBundle.shopifyBundleId);
+      const bundleProductVariants = currentProductData?.data?.product?.variants?.nodes;
+
+      if (bundleProductVariants) {
+        if (type === "Bundle Discount" && discountType && discountValue) {
+          variantUpdates = calculateVariantPrices(bundleProductVariants, discountType, discountValue);
+        } else if (type === "Volume Discount" && quantityBreaks) {
+          variantUpdates = calculateVariantPricesUsingVolumeDiscount(
+            bundleProductVariants,
+            discountType,
+            quantityBreaks
+          );
+        } else if (type === "Buy One Get One" && productsX && productsY && discountType && discountValue) {
+          variantUpdates = calculateBogoVariantPrices(
+            bundleProductVariants,
+            productsX,
+            productsY,
+            discountType,
+            discountValue,
+            originalVariantPrices
+          );
+        }
+
+        if (variantUpdates && variantUpdates.length > 0) {
+          priceUpdateResult = await updateVariantPrices(
+            client,
+            session,
+            existingBundle.shopifyBundleId,
+            variantUpdates
+          );
+        }
       }
+    }
 
-      // Update prices if discount changed
-      if (updateData.discountValue || updateData.discountType) {
-        // Similar to your create logic, but for updates
-        // You'll need to implement this based on your pricing logic
-      }
-    } 
+    // 3. Update status if changed
+    let statusUpdateResult = null;
+    if (status !== undefined && status !== existingBundle.status) {
+      const productStatusString = status ? "ACTIVE" : "DRAFT";
+      statusUpdateResult = await updateProductStatus(
+        client,
+        session,
+        existingBundle.shopifyBundleId,
+        productStatusString
+      );
+    }
 
-    return res.json({ status: true, data: updatedBundle });
+    // 4. Update tags if type changed
+    let tagsUpdateResult = null;
+    if (type && type !== existingBundle.type) {
+      const cleanType = type.replace(/\s+/g, "");
+      const tags = ["busybuddybundles", cleanType];
+      tagsUpdateResult = await updateProductTags(client, session, existingBundle.shopifyBundleId, tags);
+    }
+
+    // 5. Update bundle in database
+    const updateFields = {};
+
+    if (title) updateFields.title = title;
+    if (type) updateFields.type = type;
+    if (discountType) updateFields.discountType = discountType;
+    if (discountValue !== undefined) updateFields.discountValue = discountValue;
+    if (quantityBreaks !== undefined) updateFields.quantityBreaks = quantityBreaks;
+    if (status !== undefined) updateFields.status = status;
+    if (internalName) updateFields.internalName = internalName;
+    if (bundlePriority !== undefined) updateFields.priority = bundlePriority;
+    if (widgetAppearance) updateFields.widgetAppearance = widgetAppearance;
+    if (startDate) updateFields.startDate = startDate;
+    if (endDate) updateFields.endDate = endDate;
+
+    // Handle products update based on type
+    if (type === "Buy One Get One" && productsX && productsY) {
+      updateFields.productsX = productsX;
+      updateFields.productsY = productsY;
+    } else if (products) {
+      updateFields.products = products;
+    }
+
+    const updatedBundle = await Bundle.findByIdAndUpdate(id, updateFields, {
+      new: true,
+      runValidators: true,
+    });
+
+    // 6. Get updated product data for response
+    const updatedProductData = await getUpdatedProductData(client, session, existingBundle.shopifyBundleId);
+
+    return res.status(200).json({
+      status: true,
+      message: "Bundle updated successfully.",
+      bundleId: updatedBundle._id,
+      shopifyBundleId: existingBundle.shopifyBundleId,
+      updatedFields: Object.keys(updateFields),
+      shopifyUpdates: {
+        product: shopifyUpdateResult ? "Title updated" : "No title update",
+        prices: priceUpdateResult ? "Prices updated" : "No price update",
+        status: statusUpdateResult ? "Status updated" : "No status update",
+        tags: tagsUpdateResult ? "Tags updated" : "No tags update",
+      },
+      bundleData: updatedProductData?.data?.product || "Could not fetch updated product data",
+    });
   } catch (error) {
-    console.error("Error updating bundle:", error);
-    return res.status(500).json({ status: false, error: error.message });
+    console.error("Error updating product bundle:", error);
+
+    if (error.response && error.response.errors) {
+      console.error("Shopify GraphQL Errors:", JSON.stringify(error.response.errors, null, 2));
+      return res.status(500).json({
+        status: false,
+        error: "Shopify API error during bundle update.",
+        details: error.response.errors,
+      });
+    }
+
+    return res.status(500).json({
+      status: false,
+      error: error.message,
+    });
   }
 }
 
-export { createProductBundleV2, getActiveBundles, getShopBundles, createMixAndMatchBundle,updateBundle,deleteBundle };
+// Helper function to update Shopify product basic info
+async function updateShopifyProduct(client, session, productId, updateData) {
+  try {
+    let inputFields = [];
+
+    if (updateData.title) {
+      inputFields.push(`title: "${updateData.title.replace(/"/g, '\\"')}"`);
+    }
+
+    if (updateData.description) {
+      inputFields.push(`descriptionHtml: "${updateData.description.replace(/"/g, '\\"')}"`);
+    }
+
+    if (inputFields.length === 0) {
+      return null; // Nothing to update
+    }
+
+    const mutation = `
+      mutation productUpdate($input: ProductInput!) {
+        productUpdate(input: $input) {
+          product {
+            id
+            title
+          }
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      input: {
+        id: productId,
+        ...updateData,
+      },
+    };
+
+    const result = await client.request(mutation, { session, variables });
+
+    if (result?.data?.productUpdate?.userErrors?.length > 0) {
+      console.error("User errors on product update:", result.data.productUpdate.userErrors);
+      throw new Error(
+        `Shopify User Errors: ${result.data.productUpdate.userErrors.map((e) => e.message).join(", ")}`
+      );
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error updating Shopify product:", error);
+    throw error;
+  }
+}
+export {
+  createProductBundleV2,
+  getActiveBundles,
+  getShopBundles,
+  createMixAndMatchBundle,
+  updateBundle,
+  deleteBundle,
+  updateMixAndMatchBundle,
+};

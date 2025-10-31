@@ -15,12 +15,27 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   const [expandedProducts, setExpandedProducts] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [products, setProducts] = useState([]);
-
+  const [collections, setCollections] = useState([]);
+  const [activeCollection, setActiveCollection] = useState(null);
+  const [baseProducts, setBaseProducts] = useState([]); // store all products from API
   // Refs for indeterminate checkboxes
   const checkboxRefs = useRef({});
 
   // Filter products based on search term and active tab
   const filteredProducts = useMemo(() => {
+    // 🟦 Handle "Collections" tab
+    if (activeTab === "Collections") {
+      if (!activeCollection) return [];
+      let collectionProducts = activeCollection.products.nodes || [];
+
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        collectionProducts = collectionProducts.filter((p) => p.title.toLowerCase().includes(searchLower));
+      }
+
+      return collectionProducts.map((p) => ({ node: p }));
+    }
+
     if (!products.length) return [];
     
     let filtered = products;
@@ -45,7 +60,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     }
     
     return filtered;
-  }, [products, searchTerm, activeTab, selectedVariants]);
+  }, [products, searchTerm, activeTab, selectedVariants, collections, activeCollection]);
 
   // Modified toggle variant function
   const handleToggleVariant = (productId, variantIndex) => {
@@ -162,7 +177,13 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       }
     });
   }, [selectedVariants]);
-
+  // useEffect(() => {
+  //   if (activeTab === "All Products") {
+  //     setProducts(baseProducts);
+  //   } else if (activeTab === "Selected Products") {
+  //     setProducts(baseProducts); // still same base for selection filter
+  //   }
+  // }, [activeTab]);
   const handleToggleProduct = (productId) => {
     setExpandedProducts((prev) => ({
       ...prev,
@@ -183,8 +204,14 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
 
   useEffect(() => {
     getProducts();
+    getCollections();
   }, []);
-
+  useEffect(() => {
+    if (activeTab === "All Products" || activeTab === "Selected Products") {
+      setProducts(baseProducts);
+      setActiveCollection(null);
+    }
+  }, [activeTab]);
   async function getProducts() {
     try {
       const response = await fetch("/api/products", {
@@ -198,9 +225,33 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       }
       const data = await response.json();
       console.log("Products data:", data.data.products.edges);
-      setProducts(data.data.products.edges);
+      const edges = data.data.products.edges || [];
+      setProducts(edges);
+      setBaseProducts(edges); // store original all products
     } catch (error) {
       console.log("GetProductsError", error);
+    }
+  }
+  async function getCollections() {
+    try {
+      const response = await fetch("/api/products/collections", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to fetch collections");
+      const data = await response.json();
+      // console.log("Products collections:", data.data.collections.nodes);
+      // setCollections(data.data.collections.nodes || []);
+      // const fetchedCollections = data.data.collections.nodes || [];
+      // setCollections(fetchedCollections);
+      // if (fetchedCollections.length > 0) {
+      //   setActiveCollection(fetchedCollections[0]); // Default to first collection
+      // }
+      const fetched = data.data.collections.nodes || [];
+      console.log("Products collections:", fetched);
+      setCollections(fetched);
+    } catch (error) {
+      console.log("GetCollectionsError", error);
     }
   }
 
@@ -241,7 +292,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       setSelectedVariants(initialSelection);
     }
   }, [selectedProducts]);
-  
+
   // Match selected options to actual product data when products are loaded
   useEffect(() => {
     if (products.length > 0 && Object.keys(selectedVariants).length > 0) {
@@ -397,7 +448,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   const handleAddProducts = () => {
     const bundleData = prepareSelectedProductData();
     console.log("Bundle Data:", bundleData);
-    
+
     // If there's a callback to pass the data to the parent component
     if (typeof setSelectedProducts === 'function') {
       setSelectedProducts(bundleData);
@@ -459,7 +510,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       >
         {/* Tabs */}
         <Col md="8" className="d-flex gap-2">
-          {["All Products", "Selected Products"].map((tab) => (
+          {["All Products", "Collections", "Selected Products"].map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 rounded ${activeTab === tab ? "bg-dark text-white" : "bg-light text-dark"}`}
@@ -488,92 +539,151 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
             />
           </div>
         </Col>
+        {activeTab === "Collections" && collections.length > 0 && (
+          <Row className="mb-3 bg-white rounded shadow-sm p-2">
+            <Col className="d-flex flex-wrap gap-2 pt-2">
+              {collections.map((collection) => (
+                <button
+                  key={collection.title}
+                  className={`px-3 py-2 rounded ${
+                    activeCollection?.title === collection.title ? "bg-dark text-white" : "bg-light text-dark"
+                  }`}
+                  // logic for select product from collection
+                  // onClick={() => {
+                  //   setActiveCollection(collection);
+                  //   // 🟩 Replace products with this collection’s products
+                  //   const newProducts = collection.products.nodes.map((p) => ({ node: p }));
+                  //   setProducts(newProducts);
+                  // }}
+                  // logic from select product in any collection
+                  onClick={() => {
+                    setActiveCollection(collection);
+                    // 🟩 Convert current collection's products
+                    console.log("Selected Collection Products:", collection.products.nodes);
+                    const newCollectionProducts = collection.products.nodes.map((p) => ({ node: p }));
+
+                    // 🟩 Merge with existing base products (avoid duplicates)
+                    setProducts((prevProducts) => {
+                      const existingIds = new Set(prevProducts.map(({ node }) => node.id));
+                      const merged = [
+                        ...prevProducts,
+                        ...newCollectionProducts.filter(({ node }) => !existingIds.has(node.id)),
+                      ];
+                      return merged;
+                    });
+                  }}
+                  style={{ border: "none", fontWeight: "500" }}
+                >
+                  {collection.title}
+                </button>
+              ))}
+            </Col>
+          </Row>
+        )}
       </Row>
 
       {/* Product List */}
       <div className="bg-white shadow-sm rounded">
-      {filteredProducts.length > 0 ? (
-        filteredProducts.map(({ node: product }, idx) => {
-          return (
-            <div key={product.id} className="p-3 mb-3 rounded">
-              <div className="d-flex align-items-center">
-                <div onClick={handleCheckboxClick}>
-                  <Form.Check
-                    type="checkbox"
-                    ref={ref => checkboxRefs.current[product.id] = ref}
-                    checked={selectedVariants[product.id]?.[0] || false}
-                    onChange={() => handleToggleVariant(product.id, 0)}
-                    className="me-2"
-                    style={{
-                      transform: 'scale(1.3)',
-                      accentColor: 'black'
-                    }}
-                  />
-                </div>
-                <div className="d-flex align-items-center flex-grow-1" onClick={() => handleToggleProduct(product.id)}>
-                  <Image
-                    src={product?.featuredMedia?.image?.url || 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292'}
-                    width={80} 
-                    height={80}
-                    className="me-3 rounded img-fluid" />
-                  <div className="flex-grow-1">
-                    <div>{product.title}</div>
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map(({ node: product }, idx) => {
+            return (
+              <div key={product.id} className="p-3 mb-3 rounded">
+                <div className="d-flex align-items-center">
+                  <div onClick={handleCheckboxClick}>
+                    <Form.Check
+                      type="checkbox"
+                      ref={(ref) => (checkboxRefs.current[product.id] = ref)}
+                      checked={selectedVariants[product.id]?.[0] || false}
+                      onChange={() => handleToggleVariant(product.id, 0)}
+                      className="me-2"
+                      style={{
+                        transform: "scale(1.3)",
+                        accentColor: "black",
+                      }}
+                    />
+                  </div>
+                  <div
+                    className="d-flex align-items-center flex-grow-1"
+                    onClick={() => handleToggleProduct(product.id)}
+                  >
+                    <Image
+                      src={
+                        product?.featuredMedia?.image?.url ||
+                        "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"
+                      }
+                      width={80}
+                      height={80}
+                      className="me-3 rounded img-fluid"
+                    />
+                    <div className="flex-grow-1">
+                      <div>{product.title}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Collapse in={expandedProducts[product.id]}>
-                <div className="mt-3">
-                  {/* Display each option separately */}
-                  {product.options.map((option, optIdx) => {
-                    // Find matching option in selectedProducts
-                    const selectedProduct = selectedProducts.find(p => p.productId === product.id);
-                    const selectedOption = selectedProduct?.optionSelections.find(o => o.name === option.name);
-                    
-                    return (
-                      <div key={optIdx} className="mb-3">
-                        <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>{option.name}</div>
+                <Collapse in={expandedProducts[product.id]}>
+                  <div className="mt-3">
+                    {/* Display each option separately */}
+                    {product.options.map((option, optIdx) => {
+                      // Find matching option in selectedProducts
+                      const selectedProduct = selectedProducts.find((p) => p.productId === product.id);
+                      const selectedOption = selectedProduct?.optionSelections.find(
+                        (o) => o.name === option.name
+                      );
 
-                        {/* Display individual values for each option */}
-                        {option.values.map((value, valueIdx) => {
-                          // Check if this specific value is selected in selectedProducts
-                          const isValueSelected = selectedOption?.values.includes(value);
-                          const variantIndex = `${optIdx}-${valueIdx}`;
-                          
-                          return (
-                            <div key={valueIdx} className="d-flex align-items-center" 
-                            style={{ border: "1px solid lightgrey", padding: "10px 100px", borderWidth: (valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0") }}>
-                              <Form.Check
-                                type="checkbox"
-                                checked={selectedVariants[product.id]?.[variantIndex] || false}
-                                onChange={() => handleToggleVariant(product.id, variantIndex)}
-                                className="me-2"
+                      return (
+                        <div key={optIdx} className="mb-3">
+                          <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>
+                            {option.name}
+                          </div>
+
+                          {/* Display individual values for each option */}
+                          {option.values.map((value, valueIdx) => {
+                            // Check if this specific value is selected in selectedProducts
+                            const isValueSelected = selectedOption?.values.includes(value);
+                            const variantIndex = `${optIdx}-${valueIdx}`;
+
+                            return (
+                              <div
+                                key={valueIdx}
+                                className="d-flex align-items-center"
                                 style={{
-                                  transform: 'scale(1.3)',
-                                  accentColor: 'black'
+                                  border: "1px solid lightgrey",
+                                  padding: "10px 100px",
+                                  borderWidth: valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0",
                                 }}
-                              />
-                              <div className="fw-bold">{value}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Collapse>
-            </div>
-          );
-        })
-      ) : (
-        <div className="p-4 text-center text-muted">
-          {activeTab === "Selected Products" 
-            ? "No products selected" 
-            : searchTerm 
-              ? `No products found for "${searchTerm}"` 
-              : "No products available"}
-        </div>
-      )}
+                              >
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={selectedVariants[product.id]?.[variantIndex] || false}
+                                  onChange={() => handleToggleVariant(product.id, variantIndex)}
+                                  className="me-2"
+                                  style={{
+                                    transform: "scale(1.3)",
+                                    accentColor: "black",
+                                  }}
+                                />
+                                <div className="fw-bold">{value}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Collapse>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-4 text-center text-muted">
+            {activeTab === "Selected Products"
+              ? "No products selected"
+              : searchTerm
+                ? `No products found for "${searchTerm}"`
+                : "No products available"}
+          </div>
+        )}
       </div>
 
       {/* Footer */}

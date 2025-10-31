@@ -23,6 +23,7 @@ export default function App() {
           <NavMenu>
             <a href="/" rel="home" />
             <a href="/Plan">plan</a>
+            <a href="/bundles">Bundles</a>
           </NavMenu>
           <Routes pages={pages} />
         </QueryProvider>

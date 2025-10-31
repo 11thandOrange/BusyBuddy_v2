@@ -1,25 +1,43 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 // import DiscountModal from "../../pages/DiscountModal";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
+import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function AnnouncementBarForm({ goBack, setActiveAction }) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
-  const [resetDiscountList, setResetDiscountList] = useState(false); 
+  const [resetDiscountList, setResetDiscountList] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(1); // Add refresh trigger state
+  const [autoTriggerActions, setAutoTriggerActions] = useState(true); // Add this state
+  const discountActionsRef = useRef();
+  // Add this useEffect to automatically trigger the flow
+  useEffect(() => {
+    if (autoTriggerActions) {
+      // Automatically set fromDiscountPage to true and trigger the flow
+      setFromDiscountPage(true);
+      setAutoTriggerActions(false); // Prevent infinite loop
+    }
+  }, [autoTriggerActions]);
   const handleOpenDiscountModal = () => {
-    setShowDiscountModal(true);
-  };
-
-  const handleCloseDiscountModal = () => {
-    setShowDiscountModal(false);
+    setAutoTriggerActions(true)
   };
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList(prev => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev); // Toggle to force re-render
+  };
+  const handleBundleCreated = () => {
+    setFromDiscountPage(false);
+    // Trigger refresh by incrementing the trigger value
+    setRefreshTrigger((prev) => prev + 1);
+  };
+  const handleSaveChanges = () => {
+    if (discountActionsRef.current) {
+      discountActionsRef.current.handleSaveChanges();
+    }
   };
   return (
     <div>
@@ -37,9 +55,9 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                   cursor: "pointer",
                 }}
                 onClick={() => {
-                    goBack(true);
-                    setActiveAction(null);
-                  }}
+                  goBack(true);
+                  setActiveAction(null);
+                }}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -65,21 +83,19 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                 color: "#616161",
               }}
             >
-              Get Noticed! 🔔 Want to make sure your message doesn’t get missed? Announcement Bar lets you display important alerts right at the top of your store. Whether it’s a sale, promotion, or update, it’s impossible to ignore!
+              Get Noticed! 🔔 Want to make sure your message doesn’t get missed? Announcement Bar lets you
+              display important alerts right at the top of your store. Whether it’s a sale, promotion, or
+              update, it’s impossible to ignore!
             </p>
           </Col>
 
           {fromDiscountPage ? (
-            <Col
-              xs="auto"
-              className="d-flex align-items-center"
-              style={{ maxWidth: "300px", width: "100%" }}
-            >
+            <Col xs="auto" className="d-flex align-items-center" style={{ maxWidth: "300px", width: "100%" }}>
               <Button
                 text="Discard"
-                onClick={handleDiscard} 
+                onClick={handleDiscard}
                 style={{
-                  background:"white",
+                  background: "white",
                   border: "1px solid #dee2e6",
                   height: "45px",
                   fontWeight: 500,
@@ -92,7 +108,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
               />
               <Button
                 text="Save Changes"
-                onClick={() => console.log("Save")}
+                onClick={handleSaveChanges}
                 style={{
                   height: "45px",
                   fontWeight: 500,
@@ -122,78 +138,19 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                   lineHeight: "100%",
                 }}
               />
-              {/* <ToggleSwitch /> */}
+              <ToggleSwitch appId="announcement_bar" />
             </Col>
           )}
         </Row>
-
-        <DiscountModal
-          show={showDiscountModal}
-          onHide={handleCloseDiscountModal}
-        />
       </Container>
-      <DiscountList 
-        key={resetDiscountList ? 'reset' : 'normal'} 
-        onMakeBundleClick={() => setFromDiscountPage(true)} 
+      <DiscountList
+        key={resetDiscountList ? "reset" : "normal"}
+        onMakeBundleClick={() => setFromDiscountPage(true)}
+        refreshTrigger={refreshTrigger}
+        onBundleCreated={handleBundleCreated}
+        discountActionsRef={discountActionsRef}
+        autoTriggerActions={fromDiscountPage}
       />
     </div>
   );
 }
-
-const ToggleSwitch = () => {
-  const [active, setActive] = useState(false);
-
-  const toggleSwitch = () => {
-    setActive(!active);
-  };
-
-  return (
-    <div
-      className="d-flex align-items-center"
-      style={{ cursor: "pointer" }}
-      onClick={toggleSwitch}
-    >
-      <div
-        className={`position-relative ${active ? "bg-success" : "bg-danger"}`}
-        style={{
-          width: "132px",
-          height: "48px",
-          padding: "4px",
-          borderRadius: "15px",
-        }}
-      >
-        <div
-          className="bg-white position-absolute"
-          style={{
-            width: "50px",
-            height: "40px",
-            transition: "all 0.3s ease",
-            left: active ? "78px" : "5px",
-            top: "4px",
-            borderRadius: "11px",
-          }}
-        />
-        <div className="d-flex align-items-center justify-content-between h-100 px-3">
-          <span
-            className="text-white fw-medium"
-            style={{
-              visibility: active ? "visible" : "hidden",
-              zIndex: 1,
-            }}
-          >
-            Active
-          </span>
-          <span
-            className="text-white fw-medium ms-auto"
-            style={{
-              visibility: active ? "hidden" : "visible",
-              zIndex: 1,
-            }}
-          >
-            Inactive
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};

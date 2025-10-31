@@ -10,8 +10,9 @@
 
 }
 .linrrow{
-    border-bottom: 1px solid #e8e5e5;
-    padding-bottom: 20px;
+    border-bottom: 2px solid #e8e5e5;
+    /* padding-bottom: 20px; */
+    padding: 15px;
 }
 .linrrowleft {
     border-left: 2px solid #e8e5e5;

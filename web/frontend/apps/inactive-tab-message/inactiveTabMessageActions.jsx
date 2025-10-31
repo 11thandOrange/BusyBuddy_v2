@@ -26,7 +26,7 @@ export default function BundleDiscountActions() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState(["Bundle 1"]);
   const [isBundleActive, setIsBundleActive] = useState(true);
-    const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
+  const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
   const [colorSettings, setColorSettings] = useState({
     "Primary Text Color": "#ff0000",
     "Secondary Text Color": "#000000",
@@ -34,8 +34,8 @@ export default function BundleDiscountActions() {
     "Secondary Background Color": "#f1f2f4",
     "Border Color": "#FFFFFF",
     "Button Color": "#000000",
-    "Offer Tag Background Color": "#C4290E",
-    "Offer Tag Background Color": "#FFFFFF",
+    "Countdown Timer background Color": "#C4290E",
+    "Countdown Timer background Color": "#FFFFFF",
   });
   const [count, setCount] = useState(50);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
@@ -111,16 +111,16 @@ export default function BundleDiscountActions() {
     >
       {/* Step Navigation */}
       <Row
-        className="align-items-center mb-2"
+        className="justify-content-center mb-2"
         style={{
           padding: "4px",
           boxShadow: "1px 1px 4px 0px #0000001A inset",
           backgroundColor: "#fff",
-          borderRadius: "20px",
+          borderRadius: "16px",
         }}
       >
-        <Col md="12" className="p-0">
-          <ButtonGroup className="w-100 d-flex align-items-center">
+        <Col xs="" className="p-1">
+          <ButtonGroup className="d-flex justify-content-center align-items-center">
             {tabs.map((tab, idx) => (
               <React.Fragment key={idx}>
                 <ToggleButton
@@ -131,23 +131,24 @@ export default function BundleDiscountActions() {
                   value={tab}
                   checked={selectedIndex === idx}
                   onChange={() => setSelectedIndex(idx)}
-                  style={
-                    selectedIndex === idx || idx < selectedIndex
-                      ? {
-                          backgroundColor: "black",
-                          borderColor: "black",
-                          borderRadius: "15px",
-                          color: "white",
-                          padding: "15px",
-                        }
-                      : {
-                          boxShadow: "1px 1px 4px 0px #0000001A inset",
-                          backgroundColor: "#F1F2F4",
-                          height: "100%",
-                          borderRadius: "15px",
-                          padding: "15px",
-                        }
-                  }
+                  style={{
+                    borderRadius: "12px", // << one standard radius
+                    padding: "12px 18px",
+                    backgroundColor:
+                      selectedIndex === idx || idx < selectedIndex
+                        ? "#000"
+                        : "#F1F2F4",
+                    color:
+                      selectedIndex === idx || idx < selectedIndex
+                        ? "#fff"
+                        : "#222",
+                    boxShadow:
+                      selectedIndex === idx || idx < selectedIndex
+                        ? "none"
+                        : "1px 1px 4px 0px #0000001A inset",
+                    borderColor: "#000",
+                    margin: 0,
+                  }}
                   className="d-flex justify-content-start align-items-center px-3"
                 >
                   <>
@@ -669,7 +670,6 @@ export default function BundleDiscountActions() {
                           <option value="">Select Discount Setting</option>
                           <option value="Percentage">Percentage</option>
                           <option value="Fixed Amount">Fixed Discount</option>
-                          <option value="Free Gift">Free Gift</option>
                         </Form.Select>
 
                         {/* Dropdown icon */}
@@ -713,54 +713,6 @@ export default function BundleDiscountActions() {
                   >
                     A ‘Percentage’ discount reduces the bundle products prices.
                   </p>
-                  <div className="d-flex flex-nowrap gap-1 align-items-center justify-content-start px-2 py-2 mt-2">
-                    <Form.Check
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={showCountdown}
-                      onChange={() => setShowCountdown(!showCountdown)}
-                      label={
-                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>
-                          Free Shipping
-                        </span>
-                      }
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "bold",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        color: "#303030",
-                        whiteSpace: "nowrap",
-                      }}
-                    />
-
-                    <p
-                      style={{
-                        width: "1.5px",
-                        height: "10px",
-                        background: "#222222",
-                        opacity: 0.1,
-                        margin: "0 4px",
-                      }}
-                    ></p>
-                    <p
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: 500,
-                        fontSize: "14px",
-                        color: "#616161",
-                        margin: 0,
-                        whiteSpace: "wrap",
-
-                        textOverflow: "ellipsis",
-                        maxWidth: "800px", // Adjust as needed
-                      }}
-                    >
-                      Customers are eligible for complimentary shipping on all
-                      orders placed within this bundled discount offer.
-                    </p>
-                  </div>
                 </CardBody>
               </Card>
             )}
@@ -798,11 +750,7 @@ export default function BundleDiscountActions() {
                             color: "#616161",
                           }}
                         >
-                          Get Noticed! Want to make sure your message doesn't
-                          get missed? Announcement Bar lets you display
-                          important alerts right at the top of your store.
-                          Whether it's a sale, promotion, or update, it's
-                          impossible to ignore!
+                          Activate Your Bundle
                         </p>
                       </div>
 
@@ -810,7 +758,8 @@ export default function BundleDiscountActions() {
                         type="switch"
                         id={`bundle-toggle`}
                         checked={toggles}
-                        onChange={() => handleToggleChange()}
+                        // onChange={() => handleToggleChange()}
+                        onChange={() => setToggles(!toggles)}
                         className="custom-switch-toggle"
                       />
                     </div>
@@ -938,7 +887,7 @@ export default function BundleDiscountActions() {
                         ))}
                       </div>
                     </div>
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 py-3">
                       {/* Countdown Timer and Emoji Options */}
                       <Form.Check
                         type="checkbox"
@@ -1084,7 +1033,7 @@ export default function BundleDiscountActions() {
             {selectedIndex === 3 && (
               <Card className="border-0">
                 <CardBody className="d-flex flex-column gap-2">
-                  <Form.Group
+                  {/* <Form.Group
                     className=" position-relative"
                     style={{
                       background: "#F1F2F4",
@@ -1151,7 +1100,7 @@ export default function BundleDiscountActions() {
                         <img src={dropdown} alt="Dropdown Icon" />
                       </span>
                     </div>
-                  </Form.Group>
+                  </Form.Group> */}
                   <Form.Group
                     className=" position-relative"
                     style={{
@@ -1347,16 +1296,17 @@ export default function BundleDiscountActions() {
                         </span>
                       </div>
                     </Form.Group>
-                    <Row
-                      style={{
-                        background: "#fff",
-                        borderRadius: "10px",
-                        padding: "30px 8px",
-                        margin: "15px",
-                      }}
-                    >
-                      {/* Start Date Calendar */}
-                      <Col md={7}>
+                    {!toggles && (
+                      <Row
+                        style={{
+                          background: "#fff",
+                          borderRadius: "10px",
+                          padding: "30px 8px",
+                          margin: "15px",
+                        }}
+                      >
+                        {/* Start Date Calendar */}
+                        {/* <Col md={7}>
                         <Form.Group>
                           <Calendar
                             onChange={setStartDate}
@@ -1365,14 +1315,39 @@ export default function BundleDiscountActions() {
                             showDoubleView
                           />
                         </Form.Group>
-                      </Col>
-
-                      {/* Inputs Section */}
-                      <Col md={5}>
+                      </Col> */}
+                        <Col md={12}>
+                          <Form.Group>
+                            <Form.Label className="inputtitle">
+                              Start Date
+                            </Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={startDate.toISOString().split("T")[0]}
+                              onChange={(e) =>
+                                setStartDate(new Date(e.target.value))
+                              }
+                              className="inputbox2"
+                            />
+                          </Form.Group>
+                          <Form.Group className="mt-3">
+                            <Form.Label className="inputtitle">
+                              End Date
+                            </Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={endDate.toISOString().split("T")[0]}
+                              onChange={(e) =>
+                                setEndDate(new Date(e.target.value))
+                              }
+                              className="inputbox2"
+                            />
+                          </Form.Group>
+                        </Col>
+                        {/* Inputs Section */}
+                        {/* <Col md={5}>
                         <Form.Group>
-                          <Form.Label className="inputtitle">
-                            Start Date
-                          </Form.Label>
+                          <Form.Label className="inputtitle">Start Date</Form.Label>
                           <Form.Control
                             type="text"
                             value={startDate?.toLocaleDateString() || ""}
@@ -1383,24 +1358,18 @@ export default function BundleDiscountActions() {
                         </Form.Group>
 
                         <Form.Group className="mt-3">
-                          <Form.Label className="inputtitle">
-                            End Date
-                          </Form.Label>
+                          <Form.Label className="inputtitle">End Date</Form.Label>
                           <Form.Control
                             type="text"
                             value={endDate?.toLocaleDateString() || ""}
-                            onChange={(e) =>
-                              setEndDate(new Date(e.target.value))
-                            }
+                            onChange={(e) => setEndDate(new Date(e.target.value))}
                             style={{ backgroundColor: "#f5f5f5" }}
                             className="inputbox2"
                           />
                         </Form.Group>
 
                         <Form.Group className="mt-3">
-                          <Form.Label className="inputtitle">
-                            Timezone
-                          </Form.Label>
+                          <Form.Label className="inputtitle">Timezone</Form.Label>
                           <Form.Select
                             value={timezone}
                             onChange={(e) => setTimezone(e.target.value)}
@@ -1408,15 +1377,11 @@ export default function BundleDiscountActions() {
                             className="inputbox2"
                           >
                             <option value="">Select Timezone</option>
-                            <option value="America/New_York">
-                              America/New_York
-                            </option>
+                            <option value="America/New_York">America/New_York</option>
                             <option value="Europe/London">Europe/London</option>
                             <option value="Asia/Kolkata">Asia/Kolkata</option>
                             <option value="Asia/Tokyo">Asia/Tokyo</option>
-                            <option value="Australia/Sydney">
-                              Australia/Sydney
-                            </option>
+                            <option value="Australia/Sydney">Australia/Sydney</option>
                           </Form.Select>
                         </Form.Group>
 
@@ -1433,8 +1398,9 @@ export default function BundleDiscountActions() {
                             className="savebtn"
                           />
                         </div>
-                      </Col>
-                    </Row>
+                      </Col> */}
+                      </Row>
+                    )}
                   </Form>
                 </CardBody>
               </Card>
@@ -1720,6 +1686,11 @@ export default function BundleDiscountActions() {
         <Col
           md={5}
           style={{
+            position: "sticky",
+            top: "10px", // Distance from top of viewport when stuck
+            maxHeight: "calc(100vh - 40px)", // Prevent it from being taller than viewport
+            overflowY: "auto", // Allow scrolling within the sticky element if content is too long
+            zIndex: 10, // Ensure it stays above other content
             padding: "0px",
             boxShadow: "1px 1px 4px 0px #0000001A inset",
             backgroundColor: "#fff",
@@ -1747,7 +1718,7 @@ export default function BundleDiscountActions() {
                   Preview
                 </h2>
 
-                <div
+                {/* <div
                   className="d-flex align-items-center"
                   style={{
                     cursor: "pointer",
@@ -1767,7 +1738,7 @@ export default function BundleDiscountActions() {
                     style={{ marginRight: "6px" }}
                   />
                   Customize
-                </div>
+                </div> */}
               </div>
 
               <div
@@ -1778,7 +1749,7 @@ export default function BundleDiscountActions() {
                   position: "relative",
                 }}
               >
-                <h2 className="cardtitle">Bought together and save more!🔥</h2>
+                <h2 className="cardtitle">Buy Together & Save More!🔥</h2>
                 <div
                   style={{
                     boxSizing: "border-box",
@@ -1806,7 +1777,6 @@ export default function BundleDiscountActions() {
                 {/* Main Product Item */}
                 <div
                   style={{
-                   
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",
@@ -1913,7 +1883,6 @@ export default function BundleDiscountActions() {
                     marginBottom: "-10px", // pulls into bottom card
                     zIndex: 1,
                   }}
-                  
                 >
                   <div
                     style={{
@@ -1938,7 +1907,6 @@ export default function BundleDiscountActions() {
                 {/* Additional Product Item */}
                 <div
                   style={{
-                    
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",
@@ -2069,7 +2037,6 @@ export default function BundleDiscountActions() {
 
                 <div
                   style={{
-                   
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",

@@ -1,0 +1,11 @@
+import express from 'express';
+const router = express.Router();
+import{ getUsersubscription,subscribeToPlan,cancelSubscribe,checkBusyBuddyEnabled,getThemeEditorUrl,toggleApp,getAppStatus } from '../../controller/subscription/index.js';
+router.get('/getUserSubscription', getUsersubscription);
+router.post("/subscribe", subscribeToPlan);
+router.post("/cancel-subscription", cancelSubscribe);
+router.get("/checkBusyBuddyEnabled", checkBusyBuddyEnabled);
+router.get("/getThemeEditorUrl", getThemeEditorUrl);
+router.post("/toggle-app", toggleApp);
+router.get("/app-status/:appId?", getAppStatus);
+export default router;

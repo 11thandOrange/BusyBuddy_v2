@@ -2,25 +2,35 @@ import { GraphqlQueryError, BillingInterval } from "@shopify/shopify-api";
 import shopify from "./shopify.js";
 
 const USAGE_CHARGE_INCREMENT_AMOUNT = 1.0;
-
-
+const planData = [
+  {
+    id: 1,
+    title: "Free",
+    price: 0,
+  },
+  {
+    id: 2,
+    title: "Starter",
+    price: 30,
+  },
+  {
+    id: 3,
+    title: "Advanced",
+    price: 60,
+  },
+];
 //https://shopify.dev/docs/apps/billing
-export const billingConfig = {
-  "Basic": {
-    // This is an example configuration that would do a one-time charge for $5 (only USD is currently supported)
-    amount: 10,
-    currencyCode: "USD",
-    interval: BillingInterval.Every30Days,
-    usageTerms: "10$ every 30 days",
-  },
-  "Advanced": {
-    // This is an example configuration that would do a one-time charge for $10 (only USD is currently supported)
-    amount: 25,
-    currencyCode: "USD",
-    interval: BillingInterval.Every30Days,
-    usageTerms: "25$ every 30 days",
-  },
-};
+export const billingConfig = planData.reduce((acc, plan) => {
+  if (plan.price > 0) {
+    acc[plan.title] = {
+      amount: plan.price,
+      currencyCode: "USD",
+      interval: BillingInterval.Every30Days,
+      usageTerms: `${plan.price}$ every 30 days`,
+    };
+  }
+  return acc;
+}, {});
 
 export async function requestBilling(res, next) {
   const plans = Object.keys(billingConfig);
@@ -162,7 +172,7 @@ export async function getAppSubscription(session) {
         query: HAS_PAYMENTS_QUERY,
       },
     });
-    return response.body.data.currentAppInstallation.activeSubscriptions
+    return response.body.data.currentAppInstallation.activeSubscriptions;
     // .forEach(
     //   (subscription) => {
     //     console.log("subscription::::",JSON.stringify(subscription))
@@ -185,9 +195,7 @@ export async function getAppSubscription(session) {
     // );
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
-      throw new Error(
-        `${error.message}\n${JSON.stringify(error.response, null, 2)}`
-      );
+      throw new Error(`${error.message}\n${JSON.stringify(error.response, null, 2)}`);
     } else {
       throw error;
     }
@@ -207,19 +215,15 @@ export async function getAppSubscriptionByPlanName(session, planName) {
         query: HAS_PAYMENTS_QUERY,
       },
     });
-    response.body.data.currentAppInstallation.activeSubscriptions.forEach(
-      (subscription) => {
-        console.log("subscription:::", subscription)
-        if (subscription.name === planName) {
-          subscriptionLineItem = subscription
-        }
+    response.body.data.currentAppInstallation.activeSubscriptions.forEach((subscription) => {
+      console.log("subscription:::", subscription);
+      if (subscription.name === planName) {
+        subscriptionLineItem = subscription;
       }
-    );
+    });
   } catch (error) {
     if (error instanceof GraphqlQueryError) {
-      throw new Error(
-        `${error.message}\n${JSON.stringify(error.response, null, 2)}`
-      );
+      throw new Error(`${error.message}\n${JSON.stringify(error.response, null, 2)}`);
     } else {
       throw error;
     }
@@ -240,31 +244,31 @@ mutation AppSubscriptionCancel($id: ID!) {
     }
   }
 }
-`
+`;
 
 export async function cancelSubscriptionPlan(session, planName) {
   try {
-    let planData = await getAppSubscriptionByPlanName(session, planName)
+    let planData = await getAppSubscriptionByPlanName(session, planName);
     if (!planData) {
       console.log(`Data not found for the plan : ${planName}`);
       return null;
     }
     const client = new shopify.api.clients.Graphql({ session });
-    console.log("planData.id:::", planData.id)
+    console.log("planData.id:::", planData.id);
     const cancelRes = await client.query({
       data: {
         query: CANCEL_SUBSCRIPTION_MUTATION,
         variables: {
-          "id": planData.id,
-          "prorate": true,
+          id: planData.id,
+          prorate: true,
           // isTest: JSON.parse(process.env.SHOPIFY_PAYMENT_MODE),
         },
       },
     });
-    console.log("cancelRes:::", cancelRes)
-    return cancelRes
+    console.log("cancelRes:::", cancelRes);
+    return cancelRes;
   } catch (error) {
-    console.log("cancelSubscriptionPlan Error::", error)
-    throw Error("cancelSubscriptionPlan Error")
+    console.log("cancelSubscriptionPlan Error::", error);
+    throw Error("cancelSubscriptionPlan Error");
   }
 }

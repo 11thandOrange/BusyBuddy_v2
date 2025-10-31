@@ -551,7 +551,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                                     Preview
                                   </div>
                                 </div>
-                                <p className="buymorebtn">{bundle.internalName || "Buy More, Save More!"}</p>
+                                <p className="buymorebtn">{bundle.internalName || "Buy Together & Save More!🔥!"}</p>
                                 <div className="bundletxtb2">
                                   {bundle.products.map((product, idx) => (
                                     <p key={product.productId}>{product.title}</p>

@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 // import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
+import ToggleSwitch from "../../components/ToggelSwitch";
 export default function CountdownTimerForm() {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
@@ -121,7 +122,7 @@ export default function CountdownTimerForm() {
                   lineHeight: "100%",
                 }}
               />
-              <ToggleSwitch />
+              <ToggleSwitch appId="buy_one_get_one" />
             </Col>
           )}
         </Row>
@@ -129,6 +130,7 @@ export default function CountdownTimerForm() {
         <DiscountModal
           show={showDiscountModal}
           onHide={handleCloseDiscountModal}
+          setActiveAction={()=>{}}
         />
       </Container>
       <DiscountList 
@@ -139,60 +141,3 @@ export default function CountdownTimerForm() {
   );
 }
 
-const ToggleSwitch = () => {
-  const [active, setActive] = useState(false);
-
-  const toggleSwitch = () => {
-    setActive(!active);
-  };
-
-  return (
-    <div
-      className="d-flex align-items-center"
-      style={{ cursor: "pointer" }}
-      onClick={toggleSwitch}
-    >
-      <div
-        className={`position-relative ${active ? "bg-success" : "bg-danger"}`}
-        style={{
-          width: "132px",
-          height: "48px",
-          padding: "4px",
-          borderRadius: "15px",
-        }}
-      >
-        <div
-          className="bg-white position-absolute"
-          style={{
-            width: "50px",
-            height: "40px",
-            transition: "all 0.3s ease",
-            left: active ? "78px" : "5px",
-            top: "4px",
-            borderRadius: "11px",
-          }}
-        />
-        <div className="d-flex align-items-center justify-content-between h-100 px-3">
-          <span
-            className="text-white fw-medium"
-            style={{
-              visibility: active ? "visible" : "hidden",
-              zIndex: 1,
-            }}
-          >
-            Active
-          </span>
-          <span
-            className="text-white fw-medium ms-auto"
-            style={{
-              visibility: active ? "hidden" : "visible",
-              zIndex: 1,
-            }}
-          >
-            Inactive
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};

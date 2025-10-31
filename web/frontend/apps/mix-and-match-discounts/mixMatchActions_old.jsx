@@ -33,8 +33,8 @@ export default function MixMatchActions() {
     "Secondary Background Color": "#f1f2f4",
     "Border Color": "#FFFFFF",
     "Button Color": "#000000",
-    "Offer Tag Background Color": "#C4290E",
-    "Offer Tag Background Color": "#FFFFFF",
+    "Countdown Timer background Color": "#C4290E",
+    "Countdown Timer background Color": "#FFFFFF",
   });
   const [count, setCount] = useState(50);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
@@ -668,7 +668,6 @@ export default function MixMatchActions() {
                           <option value="">Select Discount Setting</option>
                           <option value="Percentage">Percentage</option>
                           <option value="Fixed Amount">Fixed Discount</option>
-                          <option value="Free Gift">Free Gift</option>
                         </Form.Select>
 
                         {/* Dropdown icon */}
@@ -677,8 +676,6 @@ export default function MixMatchActions() {
                         </span>
                       </div>
                     </div>
-
-                  
                   </Form.Group>
 
                   <p
@@ -694,7 +691,6 @@ export default function MixMatchActions() {
                   >
                     A ‘Percentage’ discount reduces the bundle products prices.
                   </p>
-                 
                 </CardBody>
               </Card>
             )}
@@ -732,11 +728,7 @@ export default function MixMatchActions() {
                             color: "#616161",
                           }}
                         >
-                          Get Noticed! Want to make sure your message doesn't
-                          get missed? Announcement Bar lets you display
-                          important alerts right at the top of your store.
-                          Whether it's a sale, promotion, or update, it's
-                          impossible to ignore!
+                          Activate Your Bundle
                         </p>
                       </div>
 
@@ -872,7 +864,7 @@ export default function MixMatchActions() {
                         ))}
                       </div>
                     </div>
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 py-3">
                       {/* Countdown Timer and Emoji Options */}
                       <Form.Check
                         type="checkbox"
@@ -1018,7 +1010,7 @@ export default function MixMatchActions() {
             {selectedIndex === 3 && (
               <Card className="border-0">
                 <CardBody className="d-flex flex-column gap-2">
-                  <Form.Group
+                  {/* <Form.Group
                     className=" position-relative"
                     style={{
                       background: "#F1F2F4",
@@ -1085,7 +1077,7 @@ export default function MixMatchActions() {
                         <img src={dropdown} alt="Dropdown Icon" />
                       </span>
                     </div>
-                  </Form.Group>
+                  </Form.Group> */}
                   <Form.Group
                     className=" position-relative"
                     style={{
@@ -1281,16 +1273,17 @@ export default function MixMatchActions() {
                         </span>
                       </div>
                     </Form.Group>
-                    <Row
-                      style={{
-                        background: "#fff",
-                        borderRadius: "10px",
-                        padding: "30px 8px",
-                        margin: "15px",
-                      }}
-                    >
-                      {/* Start Date Calendar */}
-                      <Col md={7}>
+                    {!toggles && (
+                      <Row
+                        style={{
+                          background: "#fff",
+                          borderRadius: "10px",
+                          padding: "30px 8px",
+                          margin: "15px",
+                        }}
+                      >
+                        {/* Start Date Calendar */}
+                        {/* <Col md={7}>
                         <Form.Group>
                           <Calendar
                             onChange={setStartDate}
@@ -1299,10 +1292,37 @@ export default function MixMatchActions() {
                             showDoubleView
                           />
                         </Form.Group>
-                      </Col>
-
-                      {/* Inputs Section */}
-                      <Col md={5}>
+                      </Col> */}
+                        <Col md={12}>
+                          <Form.Group>
+                            <Form.Label className="inputtitle">
+                              Start Date
+                            </Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={startDate.toISOString().split("T")[0]}
+                              onChange={(e) =>
+                                setStartDate(new Date(e.target.value))
+                              }
+                              className="inputbox2"
+                            />
+                          </Form.Group>
+                          <Form.Group className="mt-3">
+                            <Form.Label className="inputtitle">
+                              End Date
+                            </Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={endDate.toISOString().split("T")[0]}
+                              onChange={(e) =>
+                                setEndDate(new Date(e.target.value))
+                              }
+                              className="inputbox2"
+                            />
+                          </Form.Group>
+                        </Col>
+                        {/* Inputs Section */}
+                        {/* <Col md={5}>
                         <Form.Group>
                           <Form.Label className="inputtitle">
                             Start Date
@@ -1367,8 +1387,9 @@ export default function MixMatchActions() {
                             className="savebtn"
                           />
                         </div>
-                      </Col>
-                    </Row>
+                      </Col> */}
+                      </Row>
+                    )}
                   </Form>
                 </CardBody>
               </Card>
@@ -1681,7 +1702,7 @@ export default function MixMatchActions() {
                   Preview
                 </h2>
 
-                <div
+                {/* <div
                   className="d-flex align-items-center"
                   style={{
                     cursor: "pointer",
@@ -1701,7 +1722,7 @@ export default function MixMatchActions() {
                     style={{ marginRight: "6px" }}
                   />
                   Customize
-                </div>
+                </div> */}
               </div>
 
               <div
@@ -1712,7 +1733,7 @@ export default function MixMatchActions() {
                   position: "relative",
                 }}
               >
-                <h2 className="cardtitle">Bought together and save more!🔥</h2>
+                <h2 className="cardtitle">Buy Together & Save More!🔥</h2>
                 <div
                   style={{
                     boxSizing: "border-box",
@@ -1740,7 +1761,6 @@ export default function MixMatchActions() {
                 {/* Main Product Item */}
                 <div
                   style={{
-                   
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",
@@ -1847,7 +1867,6 @@ export default function MixMatchActions() {
                     marginBottom: "-10px", // pulls into bottom card
                     zIndex: 1,
                   }}
-                  
                 >
                   <div
                     style={{
@@ -1872,7 +1891,6 @@ export default function MixMatchActions() {
                 {/* Additional Product Item */}
                 <div
                   style={{
-                    
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",
@@ -2003,7 +2021,6 @@ export default function MixMatchActions() {
 
                 <div
                   style={{
-                   
                     padding: "15px",
                     borderRadius: "18px",
                     marginBottom: "15px",

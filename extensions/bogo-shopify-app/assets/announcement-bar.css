@@ -1,0 +1,68 @@
+/* announcement-bar.css */
+.announcement-bar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.announcement-bar .countdown {
+  margin: 0 10px;
+  font-weight: bold;
+}
+
+.announcement-button {
+  margin-left: 15px;
+  padding: 5px 15px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.announcement-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Admin styles */
+.announcement-bar-admin {
+  max-width: 600px;
+  margin: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.announcement-bar-admin .form-group {
+  margin-bottom: 15px;
+}
+
+.announcement-bar-admin label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.announcement-bar-admin input[type="text"],
+.announcement-bar-admin input[type="url"],
+.announcement-bar-admin input[type="datetime-local"],
+.announcement-bar-admin select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.announcement-bar-admin button {
+  padding: 10px 20px;
+  background: #5c6ac4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.announcement-bar-admin button:hover {
+  background: #4a56a3;
+}

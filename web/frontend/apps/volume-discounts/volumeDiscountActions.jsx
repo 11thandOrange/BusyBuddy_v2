@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { Container, Row, Col, ButtonGroup, ToggleButton, Card, CardBody, Form } from "react-bootstrap";
 import { X, Trash } from "react-bootstrap-icons";
 import tshirt from "./tshirt.png";
@@ -15,29 +15,31 @@ import learnmore from "../../assets/help-square.png";
 import Products from "./products";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { Navigation } from "@shopify/polaris";
+import DatePicker from "../../components/DatePicker";
 
-export default function volumeDiscountActions() {
+const volumeDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) => {
   const shopify = useAppBridge();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [variantPricing, setVariantPricing] = useState([]);
   const [isBundleActive, setIsBundleActive] = useState(true);
   const [colorSettings, setColorSettings] = useState({
-    "Primary Text Color": "#ff0000",
+    "Primary Text Color": "#303030",
     "Secondary Text Color": "#000000",
-    "Primary Background Color": "#cccccc",
+    "Primary Background Color": "#fff",
     "Secondary Background Color": "#f1f2f4",
     "Border Color": "#FFFFFF",
-    "Button Color": "#000000",
-    "Offer Tag Background Color": "#C4290E",
-    "Offer Tag Text Color": "#FFFFFF",
+    "Button Color": "#5169DD",
+    "Countdown Timer background Color": "#C4290E",
+    "Countdown Timer Text Color": "#FFFFFF",
   });
+
   const [count, setCount] = useState(50);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
   const [showCountdown, setShowCountdown] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-   const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null); 
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [timezone, setTimezone] = useState("GMT");
   const tabs = [
     "Select Products",
@@ -49,13 +51,22 @@ export default function volumeDiscountActions() {
   const [discountType, setDiscountType] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [showProductPage, setShowProductPage] = useState(false);
-  const [bundleTitle, setBundleTitle] = useState("");
+  const [bundleTitle, setBundleTitle] = useState("Buy Together & Save More!🔥");
   const [bundleInternalName, setBundleInternalName] = useState("");
   const [statusToggle, setStatusToggle] = useState(false);
   const [previewProductsSelectedOptions, setPreviewProductsSelectedOptions] = useState([]);
+
   const [quantityBreaks, setQuantityBreaks] = useState([
-    { quantity: 1, discount: 10, name: "Buy [quantity], get [discount] OFF", banner: "", default: true },
+    {
+      quantity: 1,
+      discount: 10,
+      name: "Buy [quantity], get [discount] OFF",
+      banner: "",
+      default: true,
+    },
   ]); // Initialize with one quantity break
+
+  const defaultProductItem = quantityBreaks.find((item) => item.default);
   const [margins, setMargins] = useState({
     top: 20,
     bottom: 20,
@@ -63,6 +74,158 @@ export default function volumeDiscountActions() {
   const [cornerRadius, setCornerRadius] = useState("20");
   const [bundlePriority, setBundlePriority] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState("");
+  const [isEditing, setIsEditing] = useState(false); // Add this line
+  const [timeLeft, setTimeLeft] = useState({
+    hours: "23",
+    minutes: "59",
+    seconds: "59",
+  });
+  const [isCountdownActive, setIsCountdownActive] = useState(false);
+  // Countdown timer effect
+  useEffect(() => {
+    if (!showCountdown) {
+      setIsCountdownActive(false);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Set to end of day
+
+      const difference = endOfDay - now;
+
+      if (difference <= 0) {
+        // If past midnight, calculate for next day
+        endOfDay.setDate(endOfDay.getDate() + 1);
+        const newDifference = endOfDay - now;
+        return formatTimeLeft(newDifference);
+      }
+
+      return formatTimeLeft(difference);
+    };
+
+    const formatTimeLeft = (difference) => {
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / (1000 * 60)) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      return {
+        hours: hours.toString().padStart(2, "0"),
+        minutes: minutes.toString().padStart(2, "0"),
+        seconds: seconds.toString().padStart(2, "0"),
+      };
+    };
+
+    // Calculate initial time
+    setTimeLeft(calculateTimeLeft());
+    setIsCountdownActive(true);
+
+    // Update every second
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    // Cleanup interval on unmount or when showCountdown changes
+    return () => clearInterval(timer);
+  }, [showCountdown]);
+  // Change 2: Add useEffect to initialize form with edit data
+  useEffect(() => {
+    if (editData) {
+      setIsEditing(true);
+      // Populate form fields with existing data
+      setBundleTitle(editData.title || "");
+      setBundleInternalName(editData.internalName || "");
+      setBundlePriority(editData.bundlePriority || 0);
+      setStatusToggle(editData.status || false);
+      setDiscountType(editData.discountType || "");
+      setInputValue(editData.discountValue || "");
+
+      // Set products if available
+      if (editData.products) {
+        setSelectedProducts(editData.products);
+      }
+
+      // Set quantity breaks if available
+      if (editData.quantityBreaks) {
+        setQuantityBreaks(editData.quantityBreaks);
+      }
+
+      // Set widget appearance settings
+      if (editData.widgetAppearance) {
+        console.log("color settings", colorSettings);
+        console.log("editData.widgetAppearance", editData.widgetAppearance);
+        setColorSettings({
+          "Primary Text Color": editData.widgetAppearance.primaryTextColor || "#303030",
+          "Secondary Text Color": editData.widgetAppearance.secondaryTextColor || "#000000",
+          "Primary Background Color": editData.widgetAppearance.PrimaryBackgroundColor || "#fff",
+          "Secondary Background Color": editData.widgetAppearance.secondaryBackgroundColor || "#f1f2f4",
+          "Border Color": editData.widgetAppearance.borderColor || "#FFFFFF",
+          "Button Color": editData.widgetAppearance.buttonColor || "#000000",
+          "Countdown Timer background Color": editData.widgetAppearance.offerTagBackgroundColor || "#C4290E",
+          "Countdown Timer Text Color": editData.widgetAppearance.offerTagTextColor || "#FFFFFF",
+        });
+        setShowCountdown(editData.widgetAppearance.isShowCountDownTimer || false);
+        setShowEmoji(editData.widgetAppearance.addEmoji || false);
+        setMargins({
+          top: editData.widgetAppearance.topMargin || 20,
+          bottom: editData.widgetAppearance.bottomMargin || 20,
+        });
+        setCornerRadius(editData.widgetAppearance.cardCornerRadius || "20");
+      }
+
+      // Set dates
+      if (editData.startDate) {
+        setStartDate(new Date(editData.startDate));
+      }
+      if (editData.endDate) {
+        setEndDate(new Date(editData.endDate));
+      }
+      fetchProductPricesForEdit(editData);
+    }
+  }, [editData]);
+  // Function to fetch product prices when editing using your existing products API
+  const fetchProductPricesForEdit = async (editData) => {
+    try {
+      const allProducts = editData.products || [];
+      const variantPrices = [];
+
+      // Fetch all products data using your existing API
+      const response = await fetch("/api/products", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const productsData = await response.json();
+        const allProductsFromAPI = productsData.data?.products?.edges || [];
+
+        // For each product in edit data, find its variants and prices
+        for (const product of allProducts) {
+          const apiProduct = allProductsFromAPI.find((p) => p.node.id === product.productId);
+
+          if (apiProduct && apiProduct.node.variants) {
+            const variants = apiProduct.node.variants.nodes || [];
+
+            // Get variant prices for this product
+            variants.forEach((variant) => {
+              variantPrices.push({
+                productId: product.productId,
+                title: variant.title,
+                price: parseFloat(variant.price) || 0,
+              });
+            });
+          }
+        }
+
+        setVariantPricing(variantPrices);
+      }
+    } catch (error) {
+      console.error("Error fetching product prices for edit:", error);
+    }
+  };
   const handleSelectChange = (e) => {
     const value = e.target.value;
     setDiscountType(value);
@@ -93,11 +256,7 @@ export default function volumeDiscountActions() {
   const handleVariationChange = (event) => {
     setSelectedVariation(event.target.value);
   };
-  const [toggles, setToggles] = useState([true, true, true, true]);
-
-  const handleToggleChange = (index) => {
-    setToggles((prev) => prev.map((toggled, i) => (i === index ? !toggled : toggled)));
-  };
+  const [toggles, setToggles] = useState(true);
 
   const handleIncrement = () => {
     if (count < 100) setCount((prev) => prev + 1);
@@ -114,10 +273,42 @@ export default function volumeDiscountActions() {
 
     if (selectedIndex == tabs.length - 1) {
       quantityBreaks.forEach((breakItem) => {
-        breakItem.uniqueName = breakItem.name.replace('[quantity]', breakItem.quantity).replace('[discount]', discountType == 'Percentage' ? `${breakItem.discount}%` : `Rs ${breakItem.discount}`);
+        breakItem.uniqueName = breakItem.name
+          .replace("[quantity]", breakItem.quantity)
+          .replace(
+            "[discount]",
+            discountType == "Percentage" ? `${breakItem.discount}%` : `Rs ${breakItem.discount}`
+          );
       });
-        
-      
+      if (!selectedProducts || selectedProducts.length === 0) {
+        shopify.toast.show("Please select at least one product.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+      if (!bundleTitle || bundleTitle.trim() === "") {
+        shopify.toast.show("Please enter a bundle title.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+      if (!discountType) {
+        shopify.toast.show("Please select a discount type.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+
+      if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+        shopify.toast.show("End date must be after start date.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
@@ -135,8 +326,8 @@ export default function volumeDiscountActions() {
           secondaryBackgroundColor: colorSettings["Secondary Background Color"],
           borderColor: colorSettings["Border Color"],
           buttonColor: colorSettings["Button Color"],
-          offerTagBackgroundColor: colorSettings["Offer Tag Background Color"],
-          offerTagTextColor: colorSettings["Offer Tag Text Color"],
+          offerTagBackgroundColor: colorSettings["Countdown Timer background Color"],
+          offerTagTextColor: colorSettings["Countdown Timer Text Color"],
           isShowCountDownTimer: showCountdown,
           addEmoji: showEmoji,
           topMargin: margins.top,
@@ -148,8 +339,13 @@ export default function volumeDiscountActions() {
       };
 
       console.log("Bundle Data: ", bundleData);
-      const response = await fetch("/api/bundles", {
-        method: "POST",
+
+      // Change 4: Use dynamic URL and method based on edit mode
+      const url = isEditing ? `/api/bundles/${editData._id}` : "/api/bundles";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -157,8 +353,8 @@ export default function volumeDiscountActions() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log("Bundle created successfully:", data);
-        shopify.toast.show("Bundle created successfully!", {
+        console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
+        shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
           duration: 5000,
           style: {
             backgroundColor: "#4CAF50",
@@ -166,21 +362,28 @@ export default function volumeDiscountActions() {
             fontSize: "16px",
           },
         });
-        open("shopify://admin/products", "_top");
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        console.error("Error creating bundle");
-        shopify.toast.show("Oops! Something went wrong.", {
-          duration: 5000,
-          style: {
-            backgroundColor: "#f44336",
-            color: "#fff",
-            fontSize: "16px",
-          },
-        });
+        console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
+        shopify.toast.show(
+          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
+          {
+            duration: 5000,
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+              fontSize: "16px",
+            },
+          }
+        );
       }
     }
   };
-
+  useImperativeHandle(ref, () => ({
+    handleSaveChanges: handleNext,
+  }));
   const handleBack = () => {
     if (selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1);
@@ -206,19 +409,20 @@ export default function volumeDiscountActions() {
   useEffect(() => {
     let defaultOptions = {};
 
-    if(selectedProducts.length > 0){
-        quantityBreaks.forEach((breakItem, index) => {
-            const product = selectedProducts[0];
-            defaultOptions[`${product.productId}-${index}`] = { options: {} };
-            product.optionSelections.forEach((option) => {
-                defaultOptions[`${product.productId}-${index}`].options[option.name] = option.values[0];
-                if (!defaultOptions[`${product.productId}-${index}`].title) {
-                defaultOptions[`${product.productId}-${index}`].title = [];
-                }
-                defaultOptions[`${product.productId}-${index}`].title.push(option.values[0]);
-            });
-            defaultOptions[`${product.productId}-${index}`].title = defaultOptions[`${product.productId}-${index}`].title.join(" / ");
-        });        
+    if (selectedProducts.length > 0) {
+      quantityBreaks.forEach((breakItem, index) => {
+        const product = selectedProducts[0];
+        defaultOptions[`${product.productId}-${index}`] = { options: {} };
+        product.optionSelections.forEach((option) => {
+          defaultOptions[`${product.productId}-${index}`].options[option.name] = option.values[0];
+          if (!defaultOptions[`${product.productId}-${index}`].title) {
+            defaultOptions[`${product.productId}-${index}`].title = [];
+          }
+          defaultOptions[`${product.productId}-${index}`].title.push(option.values[0]);
+        });
+        defaultOptions[`${product.productId}-${index}`].title =
+          defaultOptions[`${product.productId}-${index}`].title.join(" / ");
+      });
     }
     setPreviewProductsSelectedOptions(defaultOptions);
   }, [selectedProducts, quantityBreaks]);
@@ -234,10 +438,11 @@ export default function volumeDiscountActions() {
         updatedOptions[`${productId}-${index}`].title = [];
       }
       // return an array with option values only
-      updatedOptions[`${productId}-${index}`].title = Object.keys(updatedOptions[`${productId}-${index}`].options).map(
-        (key) => updatedOptions[`${productId}-${index}`].options[key]
-      );
-      updatedOptions[`${productId}-${index}`].title = updatedOptions[`${productId}-${index}`].title.join(" / ");
+      updatedOptions[`${productId}-${index}`].title = Object.keys(
+        updatedOptions[`${productId}-${index}`].options
+      ).map((key) => updatedOptions[`${productId}-${index}`].options[key]);
+      updatedOptions[`${productId}-${index}`].title =
+        updatedOptions[`${productId}-${index}`].title.join(" / ");
       return updatedOptions;
     });
   };
@@ -252,9 +457,15 @@ export default function volumeDiscountActions() {
 
   // Add this function to calculate price for a specific product
   const getProductPrice = (productId, index) => {
-    const product = variantPricing.find((p) => p.productId === productId && p.title === previewProductsSelectedOptions[`${productId}-${index}`]?.title);
+    const product = variantPricing.find(
+      (p) =>
+        p.productId === productId &&
+        p.title === previewProductsSelectedOptions[`${productId}-${index}`]?.title
+    );
 
     const breakItem = quantityBreaks[index];
+    // const breakItem = defaultProductItem;
+
     if (product) {
       // calculate discount price if discountType is defined
       let price = null;
@@ -280,22 +491,14 @@ export default function volumeDiscountActions() {
     let total = 0;
     let originalTotal = 0;
 
+    const defaultProdIndex = quantityBreaks.findIndex((item) => item.default);
+
     selectedProducts.forEach((product) => {
-      const { price, compareAtPrice } = getProductPrice(product.productId, 0);
+      // const { price, compareAtPrice } = getProductPrice(product.productId, 0);
+      const { price, compareAtPrice } = getProductPrice(product.productId, defaultProdIndex);
       total += price;
       originalTotal += compareAtPrice;
     });
-
-    // Apply discount based on selectedType and inputValue
-    // let finalPrice = total;
-    // if (discountType === "Percentage" && inputValue) {
-    // 	const percentage = parseFloat(inputValue.replace('%', '')) || 0;
-    // 	finalPrice = total * (1 - percentage / 100);
-    // } else if (discountType === "Fixed Amount" && inputValue) {
-    // 	const discount = parseFloat(inputValue) || 0;
-    // 	console.log(" calculateTotalPrice | discount:", discount)
-    // 	finalPrice = Math.max(0, total - discount);
-    // }
 
     return {
       finalPrice: total.toFixed(2),
@@ -323,16 +526,16 @@ export default function volumeDiscountActions() {
         <Container fluid className="" style={{ margin: "0 auto", height: "auto" }}>
           {/* Step Navigation */}
           <Row
-            className="align-items-center mb-2"
+            className="justify-content-center mb-2"
             style={{
               padding: "4px",
               boxShadow: "1px 1px 4px 0px #0000001A inset",
               backgroundColor: "#fff",
-              borderRadius: "20px",
+              borderRadius: "16px",
             }}
           >
-            <Col md="12" className="p-0">
-              <ButtonGroup className="w-100 d-flex align-items-center">
+            <Col xs="" className="p-1">
+              <ButtonGroup className="d-flex justify-content-center align-items-center">
                 {tabs.map((tab, idx) => (
                   <React.Fragment key={idx}>
                     <ToggleButton
@@ -343,23 +546,18 @@ export default function volumeDiscountActions() {
                       value={tab}
                       checked={selectedIndex === idx}
                       onChange={() => setSelectedIndex(idx)}
-                      style={
-                        selectedIndex === idx || idx < selectedIndex
-                          ? {
-                              backgroundColor: "black",
-                              borderColor: "black",
-                              borderRadius: "15px",
-                              color: "white",
-                              padding: "15px",
-                            }
-                          : {
-                              boxShadow: "1px 1px 4px 0px #0000001A inset",
-                              backgroundColor: "#F1F2F4",
-                              height: "100%",
-                              borderRadius: "15px",
-                              padding: "15px",
-                            }
-                      }
+                      style={{
+                        borderRadius: "12px", // << one standard radius
+                        padding: "12px 18px",
+                        backgroundColor: selectedIndex === idx || idx < selectedIndex ? "#000" : "#F1F2F4",
+                        color: selectedIndex === idx || idx < selectedIndex ? "#fff" : "#222",
+                        boxShadow:
+                          selectedIndex === idx || idx < selectedIndex
+                            ? "none"
+                            : "1px 1px 4px 0px #0000001A inset",
+                        borderColor: "#000",
+                        margin: 0,
+                      }}
                       className="d-flex justify-content-start align-items-center px-3"
                     >
                       <>
@@ -390,7 +588,11 @@ export default function volumeDiscountActions() {
                                 borderRadius: "50%",
                                 backgroundColor: "#222222",
                               }
-                            : { width: "5.5px", height: "9.5px", color: "#000" }
+                            : {
+                                width: "5.5px",
+                                height: "9.5px",
+                                color: "#000",
+                              }
                         }
                       >
                         {idx < selectedIndex ? "" : "›"}
@@ -618,9 +820,6 @@ export default function volumeDiscountActions() {
                               <option value="">Select Discount Setting</option>
                               <option value="Percentage">Percentage</option>
                               <option value="Fixed Amount">Fixed Discount</option>
-                              <option value="Free Gift" disabled>
-                                Free Gift
-                              </option>
                             </Form.Select>
 
                             {/* Dropdown icon */}
@@ -644,196 +843,165 @@ export default function volumeDiscountActions() {
                       >
                         A ‘Percentage’ discount reduces the bundle products prices.
                       </p>
-                      {/* <div className="d-flex flex-nowrap gap-1 align-items-center justify-content-start px-2 py-2 mt-2">
-                        <Form.Check
-                          type="checkbox"
-                          className="custom-checkbox"
-                          checked={showCountdown}
-                          onChange={() => setShowCountdown(!showCountdown)}
-                          label={<span style={{ marginLeft: "6px", marginTop: "5px" }}>Free Shipping</span>}
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "bold",
-                            fontWeight: 600,
-                            fontSize: "14px",
-                            color: "#303030",
-                            whiteSpace: "nowrap",
-                          }}
-                        />
-
-                        <p
-                          style={{
-                            width: "1.5px",
-                            height: "10px",
-                            background: "#222222",
-                            opacity: 0.1,
-                            margin: "0 4px",
-                          }}
-                        ></p>
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: 500,
-                            fontSize: "14px",
-                            color: "#616161",
-                            margin: 0,
-                            whiteSpace: "wrap",
-
-                            textOverflow: "ellipsis",
-                            maxWidth: "800px", // Adjust as needed
-                          }}
-                        >
-                          Customers are eligible for complimentary shipping on all orders placed within this
-                          bundled discount offer.
-                        </p>
-                      </div> */}
-
                       {/* Tier Section */}
                       {discountType && (
                         <>
-                            <div className="mt-4">
-                                <h3 className="mb-3" style={{ fontWeight: "600", fontSize: "16px" }}>
-                                Quantity Breaks
-                                </h3>
-                                {quantityBreaks.map((quantityBreak, index) => (
-                                <div
-                                    key={index}
-                                    className="p-3 mb-3"
-                                    style={{
-                                    border: "1px solid #ccc",
-                                    borderRadius: "10px",
-                                    background: "#F9F9F9",
-                                    }}
-                                >
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <h4
-                                        style={{
-                                            fontWeight: "600",
-                                            fontSize: "14px",
-                                            marginBottom: "10px",
-                                        }}
-                                        >
-                                        QUANTITY BREAK {index + 1}
-                                        </h4>
-                                        {index > 0 && (
-                                            <Button
-                                                text={'Remove'}
-                                                variant="link"
-                                                className="d-flex justify-content-center align-items-center"
-                                                onClick={() => {
-                                                    const newQuantityBreaks = [...quantityBreaks];
-                                                    newQuantityBreaks.splice(index, 1);
-                                                    setQuantityBreaks(newQuantityBreaks);
-                                                }}
-                                                style={{
-                                                    color: "#ca141b",
-                                                    backgroundColor: '#eedcda',
-                                                    borderRadius: '8px',
-                                                    border: '1px solid #ca141b',
-                                                    padding: '1px 8px',
-                                                    fontWeight: 500
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                    <div className="d-flex gap-3 mb-3">
-                                    <Form.Group style={{ flex: 1 }}>
-                                        <Form.Label>Quantity</Form.Label>
-                                        <Form.Control
-                                        type="number"
-                                        placeholder="Enter quantity"
-                                        value={quantityBreak.quantity}
-                                        onChange={(e) => {
-                                            const newQuantityBreaks = [...quantityBreaks];
-                                            newQuantityBreaks[index].quantity = e.target.value;
-                                            setQuantityBreaks(newQuantityBreaks);
-                                        }}
-                                        min={1}
-                                        style={{ background: "white" }}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group style={{ flex: 1 }}>
-                                        <Form.Label>
-                                            Discount {discountType === "Percentage" ? "Percentage" : "Amount"}
-                                        </Form.Label>
-                                        <Form.Control
-                                        type="number"
-                                        placeholder="Enter discount"
-                                        value={quantityBreak.discount}
-                                        onChange={(e) => {
-                                            const newQuantityBreaks = [...quantityBreaks];
-                                            newQuantityBreaks[index].discount = e.target.value;
-                                            setQuantityBreaks(newQuantityBreaks);
-                                        }}
-                                        style={{ background: "white" }}
-                                        min={0}
-                                        max={discountType === "Percentage" ? 100 : undefined}
-                                        />
-                                    </Form.Group>
-                                    </div>
-                                    <div className="d-flex gap-3 mb-3">
-                                    <Form.Group style={{ flex: 1 }}>
-                                        <Form.Label>Discount Name</Form.Label>
-                                        <Form.Control
-                                        type="text"
-                                        placeholder="Enter discount name"
-                                        value={quantityBreak.name}
-                                        onChange={(e) => {
-                                            const newQuantityBreaks = [...quantityBreaks];
-                                            newQuantityBreaks[index].name = e.target.value;
-                                            setQuantityBreaks(newQuantityBreaks);
-                                        }}
-                                        style={{ background: "white" }}
-                                        />
-                                    </Form.Group>
-                                    <Form.Group style={{ flex: 1 }}>
-                                        <Form.Label>Banner</Form.Label>
-                                        <Form.Control
-                                        type="text"
-                                        placeholder="Enter banner text"
-                                        value={quantityBreak.banner}
-                                        onChange={(e) => {
-                                            const newQuantityBreaks = [...quantityBreaks];
-                                            newQuantityBreaks[index].banner = e.target.value;
-                                            setQuantityBreaks(newQuantityBreaks);
-                                        }}
-                                        style={{ background: "white" }}
-                                        />
-                                    </Form.Group>
-                                    </div>
-                                    <Form.Check
-                                    type="checkbox"
-                                    label="Selected by default"
-                                    style={{ fontWeight: "500", fontSize: "14px" }}
-                                    checked={quantityBreak.default}
-                                    onChange={(e) => {
-                                        const newQuantityBreaks = [...quantityBreaks];
-                                        // Uncheck all other checkboxes
-                                        newQuantityBreaks.forEach((qb, i) => {
-                                            if (i !== index) {
-                                                qb.default = false;
-                                            }
-                                        });
-                                        newQuantityBreaks[index].default = e.target.checked;
-                                        setQuantityBreaks(newQuantityBreaks);
-                                    }}
-                                    />
-                                </div>
-                                ))}
-                                <Button
-                                text="+ Add Another Quantity Break"
-                                onClick={() => { setQuantityBreaks([...quantityBreaks, { quantity: "", discount: "", name: "", banner: "", default: false }]) }}
+                          <div className="mt-4">
+                            <h3 className="mb-3" style={{ fontWeight: "600", fontSize: "16px" }}>
+                              Quantity Breaks
+                            </h3>
+                            {quantityBreaks.map((quantityBreak, index) => (
+                              <div
+                                key={index}
+                                className="p-3 mb-3"
                                 style={{
-                                    backgroundColor: "rgb(231 239 255)",
-                                    color: "#5169DD",
-                                    border: "1px solid #5169DD",
-                                    borderRadius: "8px",
-                                    padding: "7px 10px",
-                                    marginTop: "10px",
+                                  border: "1px solid #ccc",
+                                  borderRadius: "10px",
+                                  background: "#F9F9F9",
                                 }}
+                              >
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                  <h4
+                                    style={{
+                                      fontWeight: "600",
+                                      fontSize: "14px",
+                                      marginBottom: "10px",
+                                    }}
+                                  >
+                                    QUANTITY BREAK {index + 1}
+                                  </h4>
+                                  {index > 0 && (
+                                    <Button
+                                      text={"Remove"}
+                                      variant="link"
+                                      className="d-flex justify-content-center align-items-center"
+                                      onClick={() => {
+                                        const newQuantityBreaks = [...quantityBreaks];
+                                        newQuantityBreaks.splice(index, 1);
+                                        setQuantityBreaks(newQuantityBreaks);
+                                      }}
+                                      style={{
+                                        color: "#ca141b",
+                                        backgroundColor: "#eedcda",
+                                        borderRadius: "8px",
+                                        border: "1px solid #ca141b",
+                                        padding: "1px 8px",
+                                        fontWeight: 500,
+                                      }}
+                                    />
+                                  )}
+                                </div>
+                                <div className="d-flex gap-3 mb-3">
+                                  <Form.Group style={{ flex: 1 }}>
+                                    <Form.Label>Quantity</Form.Label>
+                                    <Form.Control
+                                      type="number"
+                                      placeholder="Enter quantity"
+                                      value={quantityBreak.quantity}
+                                      onChange={(e) => {
+                                        const newQuantityBreaks = [...quantityBreaks];
+                                        newQuantityBreaks[index].quantity = e.target.value;
+                                        setQuantityBreaks(newQuantityBreaks);
+                                      }}
+                                      min={1}
+                                      style={{ background: "white" }}
+                                    />
+                                  </Form.Group>
+                                  <Form.Group style={{ flex: 1 }}>
+                                    <Form.Label>
+                                      Discount {discountType === "Percentage" ? "Percentage" : "Amount"}
+                                    </Form.Label>
+                                    <Form.Control
+                                      type="number"
+                                      placeholder="Enter discount"
+                                      value={quantityBreak.discount}
+                                      onChange={(e) => {
+                                        const newQuantityBreaks = [...quantityBreaks];
+                                        newQuantityBreaks[index].discount = e.target.value;
+                                        setQuantityBreaks(newQuantityBreaks);
+                                      }}
+                                      style={{ background: "white" }}
+                                      min={0}
+                                      max={discountType === "Percentage" ? 100 : undefined}
+                                    />
+                                  </Form.Group>
+                                </div>
+                                <div className="d-flex gap-3 mb-3">
+                                  <Form.Group style={{ flex: 1 }}>
+                                    <Form.Label>Discount Name</Form.Label>
+                                    <Form.Control
+                                      type="text"
+                                      placeholder="Enter discount name"
+                                      value={quantityBreak.name}
+                                      onChange={(e) => {
+                                        const newQuantityBreaks = [...quantityBreaks];
+                                        newQuantityBreaks[index].name = e.target.value;
+                                        setQuantityBreaks(newQuantityBreaks);
+                                      }}
+                                      style={{ background: "white" }}
+                                    />
+                                  </Form.Group>
+                                  <Form.Group style={{ flex: 1 }}>
+                                    <Form.Label>Banner</Form.Label>
+                                    <Form.Control
+                                      type="text"
+                                      placeholder="Enter banner text"
+                                      value={quantityBreak.banner}
+                                      onChange={(e) => {
+                                        const newQuantityBreaks = [...quantityBreaks];
+                                        newQuantityBreaks[index].banner = e.target.value;
+                                        setQuantityBreaks(newQuantityBreaks);
+                                      }}
+                                      style={{ background: "white" }}
+                                    />
+                                  </Form.Group>
+                                </div>
+                                <Form.Check
+                                  type="checkbox"
+                                  label="Selected by default"
+                                  style={{
+                                    fontWeight: "500",
+                                    fontSize: "14px",
+                                  }}
+                                  checked={quantityBreak.default}
+                                  onChange={(e) => {
+                                    const newQuantityBreaks = [...quantityBreaks];
+                                    // Uncheck all other checkboxes
+                                    newQuantityBreaks.forEach((qb, i) => {
+                                      if (i !== index) {
+                                        qb.default = false;
+                                      }
+                                    });
+                                    newQuantityBreaks[index].default = e.target.checked;
+                                    setQuantityBreaks(newQuantityBreaks);
+                                  }}
                                 />
-                            </div>
+                              </div>
+                            ))}
+                            <Button
+                              text="+ Add Another Quantity Break"
+                              onClick={() => {
+                                setQuantityBreaks([
+                                  ...quantityBreaks,
+                                  {
+                                    quantity: 1,
+                                    discount: 10,
+                                    name: "Buy [quantity], get [discount] OFF",
+                                    banner: "",
+                                    default: false,
+                                  },
+                                ]);
+                              }}
+                              style={{
+                                backgroundColor: "rgb(231 239 255)",
+                                color: "#5169DD",
+                                border: "1px solid #5169DD",
+                                borderRadius: "8px",
+                                padding: "7px 10px",
+                                marginTop: "10px",
+                              }}
+                            />
+                          </div>
                         </>
                       )}
                     </CardBody>
@@ -844,7 +1012,13 @@ export default function volumeDiscountActions() {
                   <Card className="border-0">
                     <CardBody>
                       {/* Bundle Status Section */}
-                      <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                      <Form
+                        className="mt-3 p-3"
+                        style={{
+                          background: "#F1F2F4",
+                          borderRadius: "10px",
+                        }}
+                      >
                         <div className="d-flex justify-content-between align-items-center mb-3 linewhite">
                           <div className="d-flex flex-column gap-2">
                             <h2
@@ -870,9 +1044,7 @@ export default function volumeDiscountActions() {
                                 color: "#616161",
                               }}
                             >
-                              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar
-                              lets you display important alerts right at the top of your store. Whether it's a
-                              sale, promotion, or update, it's impossible to ignore!
+                              Activate Your Bundle
                             </p>
                           </div>
 
@@ -960,7 +1132,13 @@ export default function volumeDiscountActions() {
                       </Form>
 
                       {/* Appearance Settings Section */}
-                      <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                      <Form
+                        className="mt-3 p-3"
+                        style={{
+                          background: "#F1F2F4",
+                          borderRadius: "10px",
+                        }}
+                      >
                         <div className="linewhite">
                           <h2
                             style={{
@@ -978,34 +1156,42 @@ export default function volumeDiscountActions() {
 
                         <div className="py-3">
                           <div className="colorgrid">
-                            {Object.keys(colorSettings).map((key) => (
-                              <Form.Group className="colorbox" key={key}>
-                                <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
-                                <div className="colorinputbox">
-                                  <input
-                                    type="color"
-                                    value={colorSettings[key]}
-                                    onChange={(e) =>
-                                      setColorSettings({
-                                        ...colorSettings,
-                                        [key]: e.target.value,
-                                      })
-                                    }
-                                    className="colorinput"
-                                  />
-                                  <Form.Control
-                                    type="text"
-                                    className="inputbox"
-                                    value={colorSettings[key]}
-                                    readOnly
-                                    style={{ background: "white" }}
-                                  />
-                                </div>
-                              </Form.Group>
-                            ))}
+                            {Object.keys(colorSettings).map((key) => {
+                              if (
+                                ["Countdown Timer background Color", "Countdown Timer Text Color"].includes(
+                                  key
+                                )
+                              )
+                                return;
+                              return (
+                                <Form.Group className="colorbox" key={key}>
+                                  <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={colorSettings[key]}
+                                      onChange={(e) =>
+                                        setColorSettings({
+                                          ...colorSettings,
+                                          [key]: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={colorSettings[key]}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              );
+                            })}
                           </div>
                         </div>
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-2 py-3">
                           {/* Countdown Timer and Emoji Options */}
                           <Form.Check
                             type="checkbox"
@@ -1039,7 +1225,44 @@ export default function volumeDiscountActions() {
                             tag
                           </p>
                         </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
+                        <div className="py-3">
+                          <div className="colorgrid">
+                            {Object.keys(colorSettings).map((key) => {
+                              if (
+                                !["Countdown Timer background Color", "Countdown Timer Text Color"].includes(
+                                  key
+                                )
+                              )
+                                return;
+                              return (
+                                <Form.Group className="colorbox" key={key}>
+                                  <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={colorSettings[key]}
+                                      onChange={(e) =>
+                                        setColorSettings({
+                                          ...colorSettings,
+                                          [key]: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={colorSettings[key]}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* <div className="d-flex align-items-center justify-content-between gap-2">
                           <Form.Check
                             type="checkbox"
                             className="custom-checkbox"
@@ -1067,11 +1290,17 @@ export default function volumeDiscountActions() {
                               padding: "7px 10px 7px 7px",
                             }}
                           />
-                        </div>
+                        </div> */}
                       </Form>
 
                       {/* Margin Settings Section */}
-                      <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                      <Form
+                        className="mt-3 p-3"
+                        style={{
+                          background: "#F1F2F4",
+                          borderRadius: "10px",
+                        }}
+                      >
                         <h2
                           className="linewhite"
                           style={{
@@ -1106,7 +1335,13 @@ export default function volumeDiscountActions() {
                       </Form>
 
                       {/* Card Settings Section */}
-                      <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                      <Form
+                        className="mt-3 p-3"
+                        style={{
+                          background: "#F1F2F4",
+                          borderRadius: "10px",
+                        }}
+                      >
                         <h2
                           className="linewhite"
                           style={{
@@ -1140,178 +1375,6 @@ export default function volumeDiscountActions() {
                 {selectedIndex === 3 && (
                   <Card className="border-0">
                     <CardBody className="d-flex flex-column gap-2">
-                      <Form.Group
-                        className="position-relative"
-                        style={{
-                          background: "#F1F2F4",
-                          borderRadius: "10px",
-                          padding: "10px 20px",
-                          border: "none",
-                        }}
-                      >
-                        <div className="d-flex flex-column gap-2 linewhite">
-                          <h2
-                            style={{
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "600",
-                              fontSize: "15px",
-                              lineHeight: "100%",
-                              color: "#303030",
-                            }}
-                          >
-                            Placements
-                          </h2>
-                          <p
-                            style={{
-                              maxWidth: "778.87px",
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "500",
-                              fontSize: "14px",
-                              lineHeight: "100%",
-                              color: "#616161",
-                            }}
-                          >
-                            Choose where to display this bundle.
-                          </p>
-                        </div>
-                        <Form.Label className="inputtitle mt-3">Select Variation</Form.Label>
-                        <div className="position-relative">
-                          <Form.Control
-                            as="select"
-                            className="pe-5"
-                            style={{
-                              backgroundColor: "#ffffff",
-                              border: "1px solid #ccc",
-                              borderRadius: "8px",
-                              paddingRight: "40px",
-                              border: "none",
-                              padding: "15px 10px",
-                            }}
-                            value={selectedVariation} // Step 3: Bind the value to the state variable
-                            onChange={handleVariationChange} // Step 4: Set the onChange handler
-                          >
-                            <option value="productPages">Select the bundle on the product pages</option>
-                            <option value="fixed_discount">Fixed Discount</option>
-                            <option value="buy_x_get_y">Buy X Get Y</option>
-                          </Form.Control>
-                          <span
-                            className="dropdown-icon position-absolute"
-                            style={{
-                              right: "10px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                            }}
-                          >
-                            <img src={dropdown} alt="Dropdown Icon" />
-                          </span>
-                        </div>
-                      </Form.Group>
-                      <Form.Group
-                        className=" position-relative"
-                        style={{
-                          background: "#F1F2F4",
-                          borderRadius: "10px",
-                          padding: "10px 20px",
-                          border: "none",
-                        }}
-                      >
-                        <div className="d-flex flex-column gap-2 linewhite">
-                          <h2
-                            style={{
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "600",
-                              fontSize: "15px",
-                              lineHeight: "100%",
-                              color: "#303030",
-                            }}
-                          >
-                            Embed the bundle anywhere
-                          </h2>
-                        </div>
-                        <Form.Label className="inputtitle mt-3">
-                          Display this bundle anywhere by placing this HTML Tag in your theme file.
-                        </Form.Label>
-
-                        <div className="position-relative mt-3">
-                          <Form.Control
-                            type="text"
-                            value='<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                            readOnly
-                            className="pe-5"
-                            style={{
-                              backgroundColor: "#ffffff",
-                              border: "none",
-                              borderRadius: "8px",
-                              paddingRight: "40px",
-                              padding: "15px 10px",
-                              fontFamily: "Inter",
-                              fontSize: "13px",
-                            }}
-                          />
-                          <span
-                            className="dropdown-icon position-absolute"
-                            style={{
-                              right: "10px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              fontFamily: "Inter",
-                              fontWeight: 600,
-                              fontSize: "15px",
-                              color: "#222222",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                '<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                              );
-                            }}
-                          >
-                            Copy{" "}
-                            <Copy
-                              style={{
-                                width: "12.5px",
-                                height: "12.5px",
-                                color: "#222222",
-                                fontWeight: "bold",
-                              }}
-                            />
-                          </span>
-                        </div>
-                        <p
-                          className="mt-3"
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                        >
-                          Bundle ID. Se030243-1265-4010-122-e13bcca82421
-                        </p>
-
-                        <p
-                          className="mt-3"
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                            display: "flex",
-                            gap: "2px",
-                          }}
-                        >
-                          <img src={learnmore} width={15} height={15} />
-                          Learn More about embed in specific pages
-                        </p>
-                      </Form.Group>
-
                       {/* Date and Time Configuration */}
                       <Form
                         style={{
@@ -1358,6 +1421,7 @@ export default function volumeDiscountActions() {
                               indefinitely
                             </p>
                           </div>
+
                           <div className="position-relative mt-3">
                             <Form.Control
                               type="text"
@@ -1368,191 +1432,66 @@ export default function volumeDiscountActions() {
                                 backgroundColor: "#ffffff",
                                 border: "none",
                                 borderRadius: "8px",
-                                paddingRight: "40px",
+                                paddingRight: "80px", // More space for both elements
                                 padding: "15px 10px",
                                 fontFamily: "Inter",
                                 fontSize: "13px",
                               }}
                             />
-                            <span
-                              className="dropdown-icon position-absolute"
+
+                            {/* Switch */}
+                            <div
+                              className="position-absolute"
                               style={{
                                 right: "10px",
                                 top: "50%",
                                 transform: "translateY(-50%)",
-                                fontFamily: "Inter",
-                                fontWeight: 600,
-                                fontSize: "15px",
-                                color: "#222222",
-                                cursor: "pointer",
-                              }}
-                              onClick={() => {
-                                navigator.clipboard.writeText("Make it available for Long time");
                               }}
                             >
                               <Form.Check
                                 type="switch"
                                 id={`bundle-toggle`}
                                 checked={toggles}
-                                onChange={() => handleToggleChange()}
+                                onChange={() => setToggles(!toggles)}
                                 className="custom-switch-toggle"
                               />
-                            </span>
+                            </div>
                           </div>
                         </Form.Group>
-                        {/* <Row
-                          style={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            padding: "30px 8px",
-                            margin: "15px",
-                          }}
-                        >
-                          <Col md={7}>
-                            <Form.Group>
-                              <Calendar
-                                onChange={setStartDate}
-                                value={startDate}
-                                className="border-0"
-                                
-                              />
-                            </Form.Group>
-                          </Col>
-
-                          <Col md={5}>
-                            <Form.Group>
-                              <Form.Label className="inputtitle">Start Date</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={startDate?.toLocaleDateString() || ""}
-                                readOnly
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              />
-                            </Form.Group>
-
-                            <Form.Group className="mt-3">
-                              <Form.Label className="inputtitle">End Date</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={endDate?.toLocaleDateString() || ""}
-                                onChange={(e) => setEndDate(new Date(e.target.value))}
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              />
-                            </Form.Group>
-
-                            <Form.Group className="mt-3">
-                              <Form.Label className="inputtitle">Timezone</Form.Label>
-                              <Form.Select
-                                value={timezone}
-                                onChange={(e) => setTimezone(e.target.value)}
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              >
-                                <option value="">Select Timezone</option>
-                                <option value="America/New_York">America/New_York</option>
-                                <option value="Europe/London">Europe/London</option>
-                                <option value="Asia/Kolkata">Asia/Kolkata</option>
-                                <option value="Asia/Tokyo">Asia/Tokyo</option>
-                                <option value="Australia/Sydney">Australia/Sydney</option>
-                              </Form.Select>
-                            </Form.Group>
-
-                            <div className="mt-4 d-flex gap-2">
-                              <Button
-                                text="Cancel"
-                                onClick={() => console.log("Cancel")}
-                                className="cancelbtn ms-2"
+                        {!toggles && (
+                          <Row
+                            style={{
+                              background: "#fff",
+                              borderRadius: "10px",
+                              padding: "30px 8px",
+                              margin: "15px",
+                            }}
+                          >
+                            {/* Start Date Calendar */}
+                            <Col md={12}>
+                              <DatePicker
+                                onDatePicked={(dateTimeValue) => {
+                                  setStartDate(new Date(dateTimeValue));
+                                }}
+                                initialValue={startDate.toISOString().slice(0, 16)} // Format: "YYYY-MM-DDTHH:mm"
+                                label={"Start Date & Time"}
+                                helpText={"Select the start date and time"}
                               />
 
-                              <Button
-                                text="Save Changes"
-                                onClick={() => console.log("Save Changes")}
-                                className="savebtn"
-                              />
-                            </div>
-                          </Col>
-                        </Row> */}
-                         <Row
-      style={{
-        background: "#fff",
-        borderRadius: "10px",
-        padding: "30px 8px",
-        margin: "15px",
-      }}
-    >
-      {/* Start Date Calendar */}
-      <Col md={7}>
-        <Form.Group>
-          <Calendar
-            onChange={handleCalendarChange} // Use the new handler
-            value={startDate && endDate ? [startDate, endDate] : startDate} // Display range if both are set, else just start
-            className="border-0"
-            // Remove showDoubleView to display one month at a time
-            selectRange={true} // Enable range selection
-          />
-        </Form.Group>
-      </Col>
-
-      {/* Inputs Section */}
-      <Col md={5}>
-        <Form.Group>
-          <Form.Label className="inputtitle">Start Date</Form.Label>
-          <Form.Control
-            type="text"
-            value={startDate?.toLocaleDateString() || ""}
-            readOnly
-            style={{ backgroundColor: "#f5f5f5" }}
-            className="inputbox2"
-          />
-        </Form.Group>
-
-        <Form.Group className="mt-3">
-          <Form.Label className="inputtitle">End Date</Form.Label>
-          <Form.Control
-            type="text"
-            value={endDate?.toLocaleDateString() || ""}
-            readOnly // Make this readOnly as well, as the calendar updates it
-            style={{ backgroundColor: "#f5f5f5" }}
-            className="inputbox2"
-          />
-        </Form.Group>
-
-        <Form.Group className="mt-3">
-          <Form.Label className="inputtitle">Timezone</Form.Label>
-          <Form.Select
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            style={{ backgroundColor: "#f5f5f5" }}
-            className="inputbox2"
-          >
-            <option value="">Select Timezone</option>
-            <option value="America/New_York">America/New_York</option>
-            <option value="Europe/London">Europe/London</option>
-            <option value="Asia/Kolkata">Asia/Kolkata</option>
-            <option value="Asia/Tokyo">Asia/Tokyo</option>
-            <option value="Australia/Sydney">Australia/Sydney</option>
-          </Form.Select>
-        </Form.Group>
-
-        <div className="mt-4 d-flex gap-2">
-          <Button
-            text="Cancel"
-            onClick={() => console.log("Cancel")}
-            className="cancelbtn ms-2"
-          />
-
-          <Button
-            text="Save Changes"
-            onClick={() =>
-              console.log("Save Changes", { startDate, endDate, timezone })
-            }
-            className="savebtn"
-          />
-        </div>
-      </Col>
-    </Row>
+                              <div className="mt-3">
+                                <DatePicker
+                                  onDatePicked={(dateTimeValue) => {
+                                    setEndDate(new Date(dateTimeValue));
+                                  }}
+                                  initialValue={endDate.toISOString().slice(0, 16)}
+                                  label={"End Date & Time"}
+                                  helpText={"Select the end date and time"}
+                                  minValue={startDate.toISOString().slice(0, 16)} // Prevent end date/time before start
+                                />
+                              </div>
+                            </Col>
+                          </Row>
+                        )}
                       </Form>
                     </CardBody>
                   </Card>
@@ -1563,7 +1502,13 @@ export default function volumeDiscountActions() {
                   <Card className="border-0">
                     <CardBody>
                       <h2 className="cardtitle">Review Settings</h2>
-                      <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                      <Form
+                        className="mt-3 p-3"
+                        style={{
+                          background: "#F1F2F4",
+                          borderRadius: "10px",
+                        }}
+                      >
                         <div className="d-flex justify-content-between align-items-center borderbox">
                           <div className="d-flex flex-column gap-2">
                             <h2 className="cardtitle2">Selection of Products</h2>
@@ -1598,7 +1543,7 @@ export default function volumeDiscountActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(0)} // Navigate to Discount Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1643,7 +1588,7 @@ export default function volumeDiscountActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(1)}
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1709,7 +1654,7 @@ export default function volumeDiscountActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(2)} // Navigate to Display Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1812,8 +1757,8 @@ export default function volumeDiscountActions() {
                                 }}
                               >
                                 {`${colorSettings["Border Color"]},
-                                ${colorSettings["Button Color"]}, ${colorSettings["Offer Tag Background Color"]},
-                                ${colorSettings["Offer Tag Text Color"]}, ${colorSettings["Primary Background Color"]},
+                                ${colorSettings["Button Color"]}, ${colorSettings["Countdown Timer background Color"]},
+                                ${colorSettings["Countdown Timer Text Color"]}, ${colorSettings["Primary Background Color"]},
                                 ${colorSettings["Primary Text Color"]}, ${colorSettings["Secondary Background Color"]},
                                 ${colorSettings["Secondary Text Color"]}`}
                               </p>
@@ -1871,7 +1816,7 @@ export default function volumeDiscountActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(3)} // Navigate to Bundle Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1908,7 +1853,9 @@ export default function volumeDiscountActions() {
                     text={
                       <>
                         {selectedIndex === tabs.length - 1
-                          ? "Confirm and Publish Bundle"
+                          ? isEditing
+                            ? "Update Bundle"
+                            : "Confirm and Publish Bundle"
                           : "Next to Continue"}
                       </>
                     }
@@ -1928,6 +1875,11 @@ export default function volumeDiscountActions() {
             <Col
               md={5}
               style={{
+                position: "sticky",
+                top: "10px",
+                maxHeight: "calc(100vh - 40px)",
+                overflowY: "auto",
+                zIndex: 10,
                 padding: "0px",
                 boxShadow: "1px 1px 4px 0px #0000001A inset",
                 backgroundColor: "#fff",
@@ -1955,7 +1907,7 @@ export default function volumeDiscountActions() {
                       Preview
                     </h2>
 
-                    <div
+                    {/* <div
                       className="d-flex align-items-center"
                       style={{
                         cursor: "pointer",
@@ -1975,60 +1927,85 @@ export default function volumeDiscountActions() {
                         style={{ marginRight: "6px" }}
                       />
                       Customize
-                    </div>
+                    </div> */}
                   </div>
 
                   <div
                     style={{
                       backgroundColor: colorSettings["Secondary Background Color"],
                       padding: "15px",
-                      borderRadius: "18px",
+                      borderRadius: `${cornerRadius}px`,
                       position: "relative",
+                      marginTop: `${margins.top}px`,
+                      marginBottom: `${margins.bottom}px`,
                     }}
                   >
-                    <h2 className="cardtitle">Buy More, Save More</h2>
-                    <div
+                    <h2
+                      className="cardtitle"
                       style={{
-                        boxSizing: "border-box",
-                        display: "none",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        padding: "8px 10px 8px 8px",
-                        gap: "5px",
-                        position: "absolute",
-                        width: "144.5px",
-                        height: "29px",
-                        right: "0px",
-                        top: "0.5px",
-                        background: colorSettings["Offer Tag Background Color"],
-                        border: `1px solid ${colorSettings["Offer Tag Background Color"]}`,
-                        borderRadius: "8px 18px 8px 8px",
-                        color: colorSettings["Offer Tag Text Color"],
-                        fontSize: "12px",
-                        fontWeight: "500",
-                        zIndex: 3,
+                        color: colorSettings["Primary Text Color"],
                       }}
                     >
-                      Ends In 23 10 10
-                    </div>
+                      {bundleTitle || "Buy Together & Save More!🔥"}
+                    </h2>
+
+                    {showCountdown && (
+                      <div
+                        style={{
+                          boxSizing: "border-box",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          padding: "8px 10px 8px 8px",
+                          gap: "5px",
+                          position: "absolute",
+                          width: "144.5px",
+                          height: "29px",
+                          right: "0px",
+                          top: "0.5px",
+                          background: colorSettings["Countdown Timer background Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: "8px 18px 8px 8px",
+                          color: colorSettings["Countdown Timer Text Color"],
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          zIndex: 3,
+                        }}
+                      >
+                        {showEmoji && "🔥 "}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
+                      </div>
+                    )}
 
                     {/* Dynamically render selected products in preview */}
                     {selectedProducts.length > 0 && quantityBreaks.length > 0 ? (
                       quantityBreaks.map((breakItem, index) => {
                         const product = selectedProducts[0];
-                        // Get pricing information for this product
                         const { price, compareAtPrice } = getProductPrice(product.productId, index);
-                        
+                        const defaultSelected = breakItem.default;
                         return (
                           <React.Fragment key={`${product.productId}-${index}`}>
                             {/* Product Item */}
                             <div
                               style={{
                                 padding: "15px",
-                                borderRadius: "18px",
+                                borderRadius: `${parseInt(cornerRadius) - 5}px`,
                                 marginBottom: "15px",
+                                backgroundColor: defaultSelected ? "#EAEDFB" : "white",
+                                // colorSettings["Primary Background Color"],
+                                // border: `1px solid ${colorSettings["Border Color"]}`,
+                                border: `1px solid ${defaultSelected ? "#5169DD" : colorSettings["Border Color"]}`,
                               }}
                               className={`previewbox ${breakItem.default ? "active" : ""}`}
+                              onClick={() => {
+                                const newQuantityBreaks = [...quantityBreaks];
+                                newQuantityBreaks.forEach((qb, i) => {
+                                  if (i !== index) {
+                                    qb.default = false;
+                                  }
+                                });
+                                newQuantityBreaks[index].default = true;
+                                setQuantityBreaks(newQuantityBreaks);
+                              }}
                             >
                               <div className="d-flex flex-column">
                                 <div className="d-flex align-items-center">
@@ -2040,14 +2017,16 @@ export default function volumeDiscountActions() {
                                     style={{
                                       borderRadius: "10px",
                                       marginRight: "15px",
+                                      border: `1px solid ${colorSettings["Border Color"]}`,
                                     }}
                                   />
                                   <div className="w-100">
                                     <p
                                       style={{
                                         fontWeight: 600,
-                                        fontSize: "14px",
+                                        fontSize: "13px",
                                         marginBottom: "5px",
+                                        color: colorSettings["Primary Text Color"],
                                       }}
                                     >
                                       {product.title}
@@ -2059,6 +2038,7 @@ export default function volumeDiscountActions() {
                                           fontWeight: 600,
                                           fontSize: "14px",
                                           margin: 0,
+                                          color: colorSettings["Primary Text Color"],
                                         }}
                                       >
                                         Rs.{price}
@@ -2069,13 +2049,13 @@ export default function volumeDiscountActions() {
                                             style={{
                                               width: "1.5px",
                                               height: "10px",
-                                              background: "#222222",
-                                              opacity: 0.1,
+                                              background: colorSettings["Primary Text Color"],
+                                              opacity: 0.3,
                                             }}
                                           ></p>
                                           <p
                                             style={{
-                                              color: "#999",
+                                              color: colorSettings["Secondary Text Color"],
                                               fontSize: "12px",
                                               textDecoration: "line-through",
                                               margin: 0,
@@ -2084,92 +2064,133 @@ export default function volumeDiscountActions() {
                                             Rs.{compareAtPrice}
                                           </p>
                                           {/* badge displaying discount percentage */}
-                                            <span
-                                                style={{
-                                                background: "#436fd8",
-                                                color: "white",
-                                                padding: "2px 4px",
-                                                borderRadius: "5px",
-                                                fontSize: "15px",
-                                                }}
-                                                >
-                                                {Math.round(
-                                                    ((compareAtPrice - price) / compareAtPrice) * 100
-                                                )}% OFF
-                                                </span>
+                                          <span
+                                            style={{
+                                              background:
+                                                // colorSettings[
+                                                //   "Countdown Timer background Color"
+                                                // ],
+                                                "#5169DD",
+                                              color: colorSettings["Countdown Timer Text Color"],
+                                              padding: "5px",
+                                              borderRadius: "8px",
+                                              fontSize: "15px",
+                                            }}
+                                          >
+                                            {Math.round(((compareAtPrice - price) / compareAtPrice) * 100)}%
+                                            OFF
+                                          </span>
                                         </>
                                       )}
                                     </div>
 
                                     <p
+                                      className="pt-2"
                                       style={{
-                                        color: "#616161",
-                                        fontSize: "12px",
-                                        margin: 0
+                                        color: "#303030",
+                                        // colorSettings["Secondary Text Color"],
+                                        fontSize: "13px",
+                                        margin: 0,
+                                        fontWeight: 600,
                                       }}
                                     >
-                                      {breakItem.name.replace('[quantity]', breakItem.quantity).replace('[discount]', discountType == 'Percentage' ? `${breakItem.discount}%` : `Rs.${breakItem.discount}`)}
-
+                                      {breakItem.name
+                                        .replace("[quantity]", breakItem.quantity)
+                                        .replace(
+                                          "[discount]",
+                                          discountType == "Percentage"
+                                            ? `${breakItem.discount}%`
+                                            : `Rs.${breakItem.discount}`
+                                        )}
                                     </p>
                                   </div>
                                 </div>
                                 {product.optionSelections && product.optionSelections.length > 0 && (
                                   <div className="mt-2">
-                                    {product.optionSelections.map((option, optIdx) => (
-                                      <div key={`${option.name}-${optIdx}`} style={{ marginBottom: "10px" }}>
-                                        <label
-                                          style={{
-                                            fontSize: "12px",
-                                            fontWeight: "500",
-                                            color: "#616161",
-                                            marginBottom: "4px",
-                                            display: "block",
-                                          }}
+                                    {product.optionSelections.map((option, optIdx) => {
+                                      if (option.values.length === 1) return;
+                                      return (
+                                        <div
+                                          key={`${option.name}-${optIdx}`}
+                                          style={{ marginBottom: "10px" }}
                                         >
-                                          {option.name}
-                                        </label>
-                                        <div style={{ position: "relative" }}>
-                                          <select
-                                            className="form-select"
-                                            onChange={(e) =>
-                                              handlePreviewOptionChange(
-                                                product.productId,
-                                                option.name,
-                                                e.target.value,
-                                                index
-                                              )
-                                            }
+                                          <label
                                             style={{
                                               fontSize: "12px",
-                                              background: "#F1F1F1",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1px solid rgba(34, 34, 34, 0.1)",
-                                              width: "100%",
-                                              appearance: "none",
-                                              WebkitAppearance: "none",
-                                              MozAppearance: "none",
+                                              fontWeight: "500",
+                                              color: colorSettings["Secondary Text Color"],
+                                              marginBottom: "4px",
+                                              display: "block",
                                             }}
                                           >
-                                            {option.values.map((value, vIdx) => (
-                                              <option key={`value-${vIdx}`}>{value}</option>
-                                            ))}
-                                          </select>
-                                          <span
+                                            {option.name}
+                                          </label>
+                                          <div
                                             style={{
-                                              position: "absolute",
-                                              right: "15px",
-                                              top: "50%",
-                                              transform: "translateY(-50%)",
-                                              pointerEvents: "none",
-                                              fontSize: "10px",
+                                              position: "relative",
                                             }}
                                           >
-                                            <CaretDownFill />
-                                          </span>
+                                            {option.values.length === 1 ? (
+                                              option.values.map((value, vIdx) => (
+                                                <span
+                                                  style={{
+                                                    right: "15px",
+                                                    top: "50%",
+                                                    transform: "translateY(-50%)",
+                                                    pointerEvents: "none",
+                                                    fontSize: "10px",
+                                                  }}
+                                                >
+                                                  {value}
+                                                </span>
+                                              ))
+                                            ) : (
+                                              <>
+                                                <select
+                                                  className="form-select"
+                                                  onChange={(e) =>
+                                                    handlePreviewOptionChange(
+                                                      product.productId,
+                                                      option.name,
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  style={{
+                                                    fontSize: "12px",
+                                                    background: colorSettings["Secondary Background Color"],
+                                                    color: colorSettings["Primary Text Color"],
+                                                    padding: "8px 12px",
+                                                    borderRadius: "8px",
+                                                    border: `1px solid ${colorSettings["Border Color"]}`,
+                                                    width: "100%",
+                                                    appearance: "none",
+                                                    WebkitAppearance: "none",
+                                                    MozAppearance: "none",
+                                                  }}
+                                                >
+                                                  {option.values.map((value, vIdx) => (
+                                                    <option key={`value-${vIdx}`}>{value}</option>
+                                                  ))}
+                                                </select>
+                                                <span
+                                                  style={{
+                                                    position: "absolute",
+                                                    right: "15px",
+                                                    top: "50%",
+                                                    transform: "translateY(-50%)",
+                                                    pointerEvents: "none",
+                                                    fontSize: "10px",
+                                                    color: colorSettings["Primary Text Color"],
+                                                  }}
+                                                >
+                                                  <CaretDownFill />
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -2182,23 +2203,30 @@ export default function volumeDiscountActions() {
                         style={{
                           padding: "30px 15px",
                           textAlign: "center",
-                          backgroundColor: "#f8f8f8",
-                          borderRadius: "18px",
+                          backgroundColor: colorSettings["Primary Background Color"],
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
+                          border: `1px solid ${colorSettings["Border Color"]}`,
                         }}
                       >
-                        <p style={{ fontSize: "14px", color: "#666" }}>
+                        <p
+                          style={{
+                            fontSize: "14px",
+                            color: colorSettings["Secondary Text Color"],
+                          }}
+                        >
                           No products selected. Add products to see the preview.
                         </p>
                       </div>
                     )}
+
                     {/* Buttons */}
                     <div className="d-flex flex-column gap-2">
-                      {/* <div
+                      <div
                         className="d-flex align-items-center justify-content-between gap-2"
                         style={{
-                          background: "#FFFFFF",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          borderRadius: "15px",
+                          background: colorSettings["Primary Background Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
                           padding: "20px",
                         }}
                       >
@@ -2210,7 +2238,7 @@ export default function volumeDiscountActions() {
                               fontWeight: "600",
                               fontSize: "15px",
                               lineHeight: "100%",
-                              color: "#303030",
+                              color: colorSettings["Primary Text Color"],
                               margin: 0,
                             }}
                           >
@@ -2224,11 +2252,12 @@ export default function volumeDiscountActions() {
                                 fontWeight: "500",
                                 fontSize: "11px",
                                 lineHeight: "100%",
-                                color: "#C4290E",
+                                color: colorSettings["Countdown Timer background Color"],
                                 margin: "5px 0 0 0",
                               }}
                             >
-                              Save {bundlePricing.discountPercentage}% (Rs.{bundlePricing.saved})
+                              Save {bundlePricing.discountPercentage}% (Rs.
+                              {bundlePricing.saved})
                             </p>
                           )}
                         </div>
@@ -2241,7 +2270,7 @@ export default function volumeDiscountActions() {
                               fontWeight: "600",
                               fontSize: "15px",
                               lineHeight: "100%",
-                              color: "#222222",
+                              color: colorSettings["Primary Text Color"],
                               margin: 0,
                             }}
                           >
@@ -2255,7 +2284,7 @@ export default function volumeDiscountActions() {
                                 fontWeight: "500",
                                 fontSize: "11px",
                                 textDecoration: "line-through",
-                                color: "#999",
+                                color: colorSettings["Secondary Text Color"],
                                 margin: "5px 0 0 0",
                               }}
                             >
@@ -2263,19 +2292,20 @@ export default function volumeDiscountActions() {
                             </p>
                           )}
                         </div>
-                      </div> */}
+                      </div>
 
                       <Button
                         text="Add To Cart"
                         onClick={handleBack}
                         style={{
-                          backgroundColor: "#222222",
+                          backgroundColor: colorSettings["Button Color"],
                           color: "white",
                           border: "none",
-                          borderRadius: "15px",
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
+                          borderRadius: `${15}px`,
                           padding: "15px 25px",
                           fontSize: "15px",
-                          displayL: "flex",
+                          display: "flex",
                           flexDirection: "row",
                           justifyContent: "center",
                           alignItems: "center",
@@ -2285,13 +2315,13 @@ export default function volumeDiscountActions() {
                         text="Skip Offer"
                         onClick={handleBack}
                         style={{
-                          backgroundColor: "#F1F1F1",
-                          color: "black",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          borderRadius: "15px",
+                          backgroundColor: colorSettings["Secondary Background Color"],
+                          color: colorSettings["Primary Text Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
                           padding: "15px 25px",
                           fontSize: "15px",
-                          displayL: "flex",
+                          display: "flex",
                           flexDirection: "row",
                           justifyContent: "center",
                           alignItems: "center",
@@ -2312,7 +2342,8 @@ export default function volumeDiscountActions() {
           setVariantPricing={setVariantPricing}
         />
       )}
-      {/* {showProductPage ? <Products onClose={handleCloseProducts} />} */}
     </>
   );
-}
+});
+
+export default volumeDiscountActions;

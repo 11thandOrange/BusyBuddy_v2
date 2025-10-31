@@ -7,7 +7,7 @@ import BuyonegetoneForm from "../../apps/buy-one-get-one/buyoneGetone";
 import VolumeForm from "../../apps/volume-discounts/VolumeForm";
 import MixMatchForm from "../../apps/mix-and-match-discounts/MixMatchForm";
 
-export default function DiscountModal({ show, onHide }) {
+export default function GlobalDiscountModal({ show, onHide,setActiveAction }) {
   const [activeComponent, setActiveComponent] = useState(null);
 
   // Create discount options with proper handling
@@ -57,17 +57,18 @@ export default function DiscountModal({ show, onHide }) {
   // Handler to go back to the main discount selection view
   const handleGoBack = () => {
     setActiveComponent(null);
+    setActiveAction(null);
   };
 
   // Render the selected component or show the options
   if (activeComponent === "bundleDiscount") {
-    return <BundleForm setActiveAction={setActiveComponent} goBack={handleGoBack} />;
+    return <BundleForm  goBack={handleGoBack} setActiveAction={setActiveComponent} />;
   } else if (activeComponent === "bogo") {
-    return <BuyonegetoneForm setActiveAction={setActiveComponent} goBack={handleGoBack} />;
+    return <BuyonegetoneForm goBack={handleGoBack} setActiveAction={setActiveComponent}  />;
   } else if (activeComponent === "volumeDiscount") {
-    return <VolumeForm setActiveAction={setActiveComponent} goBack={handleGoBack} />;
+    return <VolumeForm goBack={handleGoBack} setActiveAction={setActiveComponent} />;
   } else if (activeComponent === "mixMatch") {
-    return <MixMatchForm setActiveAction={setActiveComponent} goBack={handleGoBack} />;
+    return <MixMatchForm goBack={handleGoBack} setActiveAction={setActiveComponent}  />;
   }
 
   // Main discount selection modal
@@ -104,7 +105,8 @@ export default function DiscountModal({ show, onHide }) {
                 cursor: "pointer",
                 transition: "background-color 0.15s ease-in-out",
               }}
-              onClick={() => setActiveComponent(option.action)}
+              // onClick={() => setActiveComponent(option.action)}
+              onClick={() => setActiveAction(option.action)}
             >
               <div className="d-flex align-items-center">
                 <div className="me-3 text-secondary">{option.icon}</div>

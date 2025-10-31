@@ -248,6 +248,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     .toFixed(2);
 
   return (
+    <>
     <div
       className="container-fluid"
       style={{
@@ -350,7 +351,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                                         </Button>
                                       </div>
                                     ) : feature.title ===
-                                      "Buy More, Save More!" ? (
+                                      "Buy Together & Save More!🔥!" ? (
                                       <Card
                                         className="p-1"
                                         style={{
@@ -682,6 +683,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         </Col>
       </Row>
     </div>
+    </>
   );
 };
 

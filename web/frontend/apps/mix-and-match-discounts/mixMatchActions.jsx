@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useImperativeHandle } from "react";
 import { Container, Row, Col, ButtonGroup, ToggleButton, Card, CardBody, Form } from "react-bootstrap";
 import { X, Trash } from "react-bootstrap-icons";
 import tshirt from "./tshirt.png";
@@ -14,21 +14,22 @@ import tshirtp from "../../assets/tshirt.png";
 import learnmore from "../../assets/help-square.png";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import Products from "./products";
-export default function MixMatchActions() {
+import DatePicker from "../../components/DatePicker";
+const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
   const shopify = useAppBridge();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [isBundleActive, setIsBundleActive] = useState(true);
   const [variantPricing, setVariantPricing] = useState([]);
   const [colorSettings, setColorSettings] = useState({
-    "Primary Text Color": "#ff0000",
+    "Primary Text Color": "#303030",
     "Secondary Text Color": "#000000",
-    "Primary Background Color": "#cccccc",
+    "Primary Background Color": "#fff",
     "Secondary Background Color": "#f1f2f4",
     "Border Color": "#FFFFFF",
     "Button Color": "#000000",
-    "Offer Tag Background Color": "#C4290E",
-    "Offer Tag Background Color": "#FFFFFF",
+    "Countdown Timer background Color": "#C4290E",
+    "Countdown Timer Text Color": "#FFFFFF",
   });
   const [count, setCount] = useState(50);
   const [isAvailableLongTime, setIsAvailableLongTime] = useState(false);
@@ -43,11 +44,11 @@ export default function MixMatchActions() {
     "Display Settings",
     "Review Settings",
   ];
-  const [selectedType, setSelectedType] = useState("");
+  const [selectedType, setSelectedType] = useState("Percentage");
   const [discountType, setDiscountType] = useState("");
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState("4");
   const [showProductPage, setShowProductPage] = useState(false);
-  const [bundleTitle, setBundleTitle] = useState("");
+  const [bundleTitle, setBundleTitle] = useState("Buy Together & Save More!🔥");
   const [bundleInternalName, setBundleInternalName] = useState("");
   const [statusToggle, setStatusToggle] = useState(false);
   const [previewProductsSelectedOptions, setPreviewProductsSelectedOptions] = useState([]);
@@ -59,9 +60,165 @@ export default function MixMatchActions() {
   const [bundlePriority, setBundlePriority] = useState(0);
   const [selectedVariation, setSelectedVariation] = useState("");
   const [selectedTier, setSelectedTier] = useState(2); // Default to Buy 2
+  const [isEditing, setIsEditing] = useState(false); // Add this line
+  const [productQuantities, setProductQuantities] = useState({}); // Add this line
+  const [tierDiscounts, setTierDiscounts] = useState({}); // State to store discount values for each tier
+  const [timeLeft, setTimeLeft] = useState({
+    hours: "23",
+    minutes: "59",
+    seconds: "59",
+  });
+  const [isCountdownActive, setIsCountdownActive] = useState(false);
+  // Countdown timer effect
+  useEffect(() => {
+    if (!showCountdown) {
+      setIsCountdownActive(false);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Set to end of day
+
+      const difference = endOfDay - now;
+
+      if (difference <= 0) {
+        // If past midnight, calculate for next day
+        endOfDay.setDate(endOfDay.getDate() + 1);
+        const newDifference = endOfDay - now;
+        return formatTimeLeft(newDifference);
+      }
+
+      return formatTimeLeft(difference);
+    };
+
+    const formatTimeLeft = (difference) => {
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((difference / (1000 * 60)) % 60);
+      const seconds = Math.floor((difference / 1000) % 60);
+
+      return {
+        hours: hours.toString().padStart(2, "0"),
+        minutes: minutes.toString().padStart(2, "0"),
+        seconds: seconds.toString().padStart(2, "0"),
+      };
+    };
+
+    // Calculate initial time
+    setTimeLeft(calculateTimeLeft());
+    setIsCountdownActive(true);
+
+    // Update every second
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    // Cleanup interval on unmount or when showCountdown changes
+    return () => clearInterval(timer);
+  }, [showCountdown]);
+  useEffect(() => {
+    if (editData) {
+      setIsEditing(true);
+      // Populate form fields with existing data
+      setBundleTitle(editData.title || "");
+      setBundleInternalName(editData.internalName || "");
+      setBundlePriority(editData.bundlePriority || 0);
+      setStatusToggle(editData.status || false);
+      setDiscountType(editData.discountType || "");
+      setInputValue(String(editData.discountValue) || "");
+
+      // Set products if available
+      if (editData.products) {
+        setSelectedProducts(editData.products);
+      }
+
+      // Set widget appearance settings
+      if (editData.widgetAppearance) {
+        setColorSettings({
+          "Primary Text Color": editData.widgetAppearance.primaryTextColor || "#303030",
+          "Secondary Text Color": editData.widgetAppearance.secondaryTextColor || "#000000",
+          "Primary Background Color": editData.widgetAppearance.PrimaryBackgroundColor || "#fff",
+          "Secondary Background Color": editData.widgetAppearance.secondaryBackgroundColor || "#f1f2f4",
+          "Border Color": editData.widgetAppearance.borderColor || "#FFFFFF",
+          "Button Color": editData.widgetAppearance.buttonColor || "#000000",
+          "Countdown Timer background Color": editData.widgetAppearance.offerTagBackgroundColor || "#C4290E",
+          "Countdown Timer Text Color": editData.widgetAppearance.offerTagTextColor || "#FFFFFF",
+        });
+        setShowCountdown(editData.widgetAppearance.isShowCountDownTimer || false);
+        setMargins({
+          top: editData.widgetAppearance.topMargin || 20,
+          bottom: editData.widgetAppearance.bottomMargin || 20,
+        });
+        setCornerRadius(editData.widgetAppearance.cardCornerRadius || "20");
+      }
+
+      // Set dates
+      if (editData.startDate) {
+        setStartDate(new Date(editData.startDate));
+      }
+      if (editData.endDate) {
+        setEndDate(new Date(editData.endDate));
+      }
+
+      // Set selected tier if available in edit data
+      if (editData.selectedTier) {
+        setSelectedTier(editData.selectedTier);
+      }
+
+      // Set tier discounts if available in edit data
+      if (editData.tierDiscounts) {
+        setTierDiscounts(editData.tierDiscounts);
+      }
+      fetchProductPricesForEdit(editData);
+    }
+  }, [editData]);
+  // Function to fetch product prices when editing using your existing products API
+  const fetchProductPricesForEdit = async (editData) => {
+    try {
+      const allProducts = editData.products || [];
+      const variantPrices = [];
+
+      // Fetch all products data using your existing API
+      const response = await fetch("/api/products", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const productsData = await response.json();
+        const allProductsFromAPI = productsData.data?.products?.edges || [];
+
+        // For each product in edit data, find its variants and prices
+        for (const product of allProducts) {
+          const apiProduct = allProductsFromAPI.find((p) => p.node.id === product.productId);
+
+          if (apiProduct && apiProduct.node.variants) {
+            const variants = apiProduct.node.variants.nodes || [];
+
+            // Get variant prices for this product
+            variants.forEach((variant) => {
+              variantPrices.push({
+                productId: product.productId,
+                title: variant.title,
+                price: parseFloat(variant.price) || 0,
+              });
+            });
+          }
+        }
+
+        setVariantPricing(variantPrices);
+      }
+    } catch (error) {
+      console.error("Error fetching product prices for edit:", error);
+    }
+  };
   const handleSelectChange = (e) => {
     const value = e.target.value;
     setSelectedType(value);
+    setDiscountType(value); // Also set the discountType state
 
     // if (value === "Percentage") {
     //   setInputValue("%");
@@ -76,11 +233,7 @@ export default function MixMatchActions() {
   const handleVariationChange = (event) => {
     setSelectedVariation(event.target.value);
   };
-  const [toggles, setToggles] = useState([true, true, true, true]);
-
-  const handleToggleChange = (index) => {
-    setToggles((prev) => prev.map((toggled, i) => (i === index ? !toggled : toggled)));
-  };
+  const [toggles, setToggles] = useState(true);
 
   const handleIncrement = () => {
     if (count < 100) setCount((prev) => prev + 1);
@@ -89,12 +242,48 @@ export default function MixMatchActions() {
   const handleDecrement = () => {
     if (count > 0) setCount((prev) => prev - 1);
   };
-  const handleNext = async() => {
+  const handleNext = async () => {
     if (selectedIndex < tabs.length - 1) {
       setSelectedIndex(selectedIndex + 1);
-       return;
+      return;
     }
-  if (selectedIndex == tabs.length - 1) {
+    if (selectedIndex == tabs.length - 1) {
+      if (!selectedProducts || selectedProducts.length === 0) {
+        shopify.toast.show("Please select at least one product.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+      if (selectedProducts.length < 2) {
+        shopify.toast.show("Merchant must select more than one product to save a mix & match bundle.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+      if (!bundleTitle || bundleTitle.trim() === "") {
+        shopify.toast.show("Please enter a bundle title.", {
+          duration: 4000,
+          style: { backgroundColor: "#f44336", color: "#fff" },
+        });
+        return;
+      }
+      // if (!discountType) {
+      //   shopify.toast.show("Please select a discount type.", {
+      //     duration: 4000,
+      //     style: { backgroundColor: "#f44336", color: "#fff" },
+      //   });
+      //   return;
+      // }
+
+      // if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      //   shopify.toast.show("End date must be after start date.", {
+      //     duration: 4000,
+      //     style: { backgroundColor: "#f44336", color: "#fff" },
+      //   });
+      //   return;
+      // }
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
@@ -104,6 +293,8 @@ export default function MixMatchActions() {
         internalName: bundleInternalName,
         type: "Mix and Match",
         bundlePriority: bundlePriority,
+        selectedTier: selectedTier, // Add selected tier to bundle data
+        tierDiscounts: tierDiscounts, // Add tier-specific discounts to bundle data
         widgetAppearance: {
           primaryTextColor: colorSettings["Primary Text Color"],
           secondaryTextColor: colorSettings["Secondary Text Color"],
@@ -111,10 +302,10 @@ export default function MixMatchActions() {
           secondaryBackgroundColor: colorSettings["Secondary Background Color"],
           borderColor: colorSettings["Border Color"],
           buttonColor: colorSettings["Button Color"],
-          offerTagBackgroundColor: colorSettings["Offer Tag Background Color"],
-          offerTagTextColor: colorSettings["Offer Tag Text Color"],
+          offerTagBackgroundColor: colorSettings["Countdown Timer background Color"],
+          offerTagTextColor: colorSettings["Countdown Timer Text Color"],
           isShowCountDownTimer: showCountdown,
-          addEmoji: "showEmoji",
+          addEmoji: false,
           topMargin: margins.top,
           bottomMargin: margins.bottom,
           cardCornerRadius: cornerRadius,
@@ -124,8 +315,13 @@ export default function MixMatchActions() {
       };
 
       console.log("Bundle Data: ", bundleData);
-      const response = await fetch("/api/bundles/mix-and-match", {
-        method: "POST",
+
+      // Change 4: Use dynamic URL and method based on edit mode
+      const url = isEditing ? `/api/bundles/mix-and-match/${editData._id}` : "/api/bundles/mix-and-match";
+      const method = isEditing ? "POST" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -133,8 +329,8 @@ export default function MixMatchActions() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log("Bundle created successfully:", data);
-        shopify.toast.show("Bundle created successfully!", {
+        console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
+        shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
           duration: 5000,
           style: {
             backgroundColor: "#4CAF50",
@@ -142,21 +338,28 @@ export default function MixMatchActions() {
             fontSize: "16px",
           },
         });
-        // open("shopify://admin/products", "_top");
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        console.error("Error creating bundle");
-        shopify.toast.show("Oops! Something went wrong.", {
-          duration: 5000,
-          style: {
-            backgroundColor: "#f44336",
-            color: "#fff",
-            fontSize: "16px",
-          },
-        });
+        console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
+        shopify.toast.show(
+          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
+          {
+            duration: 5000,
+            style: {
+              backgroundColor: "#f44336",
+              color: "#fff",
+              fontSize: "16px",
+            },
+          }
+        );
       }
     }
   };
-
+  useImperativeHandle(ref, () => ({
+    handleSaveChanges: handleNext,
+  }));
   const handleBack = () => {
     if (selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1);
@@ -179,6 +382,7 @@ export default function MixMatchActions() {
   };
 
   useEffect(() => {
+    console.log("🚀 | selectedProducts:", selectedProducts);
     let defaultOptions = {};
     selectedProducts.forEach((product) => {
       defaultOptions[product.productId] = { options: {} };
@@ -213,33 +417,79 @@ export default function MixMatchActions() {
     });
   };
 
-  // useEffect(() => {
-  //   console.log("preview options", previewProductsSelectedOptions);
-  // }, [previewProductsSelectedOptions]);
+  useEffect(() => {
+    console.log("preview options", previewProductsSelectedOptions);
+  }, [previewProductsSelectedOptions]);
 
   useEffect(() => {
     console.log("variant price", variantPricing);
   }, [variantPricing]);
+
+  // Initialize tier discounts when products change
+  useEffect(() => {
+    if (selectedProducts.length > 1) {
+      const newTierDiscounts = { ...tierDiscounts };
+      let hasChanges = false;
+
+      for (let i = 2; i <= selectedProducts.length; i++) {
+        if (!newTierDiscounts[i]) {
+          newTierDiscounts[i] = 10 + (i - 2) * 5; // Default discount values
+          hasChanges = true;
+        }
+      }
+
+      if (hasChanges) {
+        setTierDiscounts(newTierDiscounts);
+      }
+    }
+  }, [selectedProducts.length]);
+
+  // Helper function to get available tiers
+  const getAvailableTiers = () => {
+    const maxProducts = Math.max(selectedProducts.length, selectedProducts.length);
+    const tiers = {};
+
+    for (let i = 2; i <= maxProducts; i++) {
+      // Use manual input value if available, otherwise use default calculation
+      const defaultDiscount = 10 + (i - 2) * 5; // First discount is 10%, then add 5% for each tier
+      const discount = tierDiscounts[i] || defaultDiscount;
+      tiers[i] = {
+        id: i,
+        quantity: i,
+        discount: discount,
+        label: `BUY ${i}`,
+        sublabel: `Get ${discount}${discountType === "Percentage" ? "%" : ""} OFF`,
+      };
+    }
+
+    return tiers;
+  };
+
+  // Calculate available tiers
+  const tiers = getAvailableTiers();
+
   // Add this function to calculate price for a specific product
   const getProductPrice = (productId) => {
     const product = variantPricing.find(
       (p) => p.productId === productId && p.title === previewProductsSelectedOptions[productId]?.title
     );
     if (product) {
-      // calculate discount price if discountType is defined
-      let price = null;
-      if (discountType === "Percentage" && inputValue) {
-        const percentage = parseFloat(inputValue.replace("%", "")) || 0;
-        price = product.price * (1 - percentage / 100);
-      } else if (discountType === "Fixed Amount" && inputValue) {
-        const discount = parseFloat(inputValue) / selectedProducts.length || 0;
-        price = Math.max(0, product.price - discount);
-      } else {
-        price = product.price;
+      // Use tier-specific discount if available
+      const tierConfig = tiers[selectedTier];
+      let price = product.price;
+      if (tierConfig && discountType) {
+        if (discountType === "Percentage") {
+          const percentage = tierConfig.discount || 0;
+          price = product.price * (1 - percentage / 100);
+        } else if (discountType === "Fixed Amount") {
+          const discount = (tierConfig.discount || 0) / selectedProducts.length;
+          price = Math.max(0, product.price - discount);
+        }
       }
+
       return {
-        price: price,
-        compareAtPrice: product.price,
+        price: parseFloat(price.toFixed(2)),
+        compareAtPrice: parseFloat(product.price.toFixed(2)),
       };
     }
     return { price: 0, compareAtPrice: 0 };
@@ -293,43 +543,37 @@ export default function MixMatchActions() {
     </button>
   );
 
-  const getAvailableTiers = () => {
-    const maxProducts = Math.max(selectedProducts.length, selectedProducts.length);
-    const tiers = {};
-
-    for (let i = 2; i <= maxProducts; i++) {
-      const discount = 10 + (i - 2) * 5; // First discount is 10%, then add 5% for each tier
-      tiers[i] = {
-        id: i,
-        quantity: i,
-        discount: discount,
-        label: `BUY ${i}`,
-        sublabel: `Get ${discount}% OFF`,
-      };
-    }
-
-    return tiers;
-  };
-  const tiers = getAvailableTiers();
   const handleTierSelect = (tier) => {
     if (tiers[tier]) {
       setSelectedTier(tier);
     }
   };
+
+  // Function to handle discount value changes for each tier
+  const handleTierDiscountChange = (tier, value) => {
+    setTierDiscounts((prev) => ({
+      ...prev,
+      [tier]: value,
+    }));
+  };
   const getDiscountedProductPrice = (productId) => {
-    // Look in both initialSelectedProducts and mockProducts
-    const productsToSearch = selectedProducts.length > 0 ? selectedProducts : selectedProducts;
-    const product = productsToSearch.find((p) => p.productId === productId);
+    const product = variantPricing.find(
+      (p) => p.productId === productId && p.title === previewProductsSelectedOptions[productId]?.title
+    );
     if (!product) return { price: 0, compareAtPrice: 0 };
 
     const tierConfig = tiers[selectedTier];
-    if (!tierConfig) return { price: product.basePrice, compareAtPrice: product.compareAtPrice };
+    if (!tierConfig)
+      return {
+        price: product.price,
+        compareAtPrice: product.price,
+      };
 
-    const discountedPrice = Math.round(product.basePrice * (1 - tierConfig.discount / 100));
+    const discountedPrice = Math.round(product.price * (1 - tierConfig.discount / 100));
 
     return {
       price: discountedPrice,
-      compareAtPrice: product.compareAtPrice,
+      compareAtPrice: product.price,
     };
   };
   const handleQuantityChange = (productId, change) => {
@@ -364,7 +608,7 @@ export default function MixMatchActions() {
   return (
     <>
       {!showProductPage ? (
-        <Container fluid className="" style={{ maxWidth: "auto", margin: "0 auto", height: "auto" }}>
+        <Container fluid className="" style={{ margin: "0 auto", height: "auto" }}>
           {/* Step Navigation */}
           <Row
             className="align-items-center mb-2"
@@ -375,7 +619,7 @@ export default function MixMatchActions() {
               borderRadius: "20px",
             }}
           >
-            <Col md="12" className="p-0">
+            <Col md="12" className="p-1">
               <ButtonGroup className="w-100 d-flex align-items-center">
                 {tabs.map((tab, idx) => (
                   <React.Fragment key={idx}>
@@ -387,23 +631,18 @@ export default function MixMatchActions() {
                       value={tab}
                       checked={selectedIndex === idx}
                       onChange={() => setSelectedIndex(idx)}
-                      style={
-                        selectedIndex === idx || idx < selectedIndex
-                          ? {
-                              backgroundColor: "black",
-                              borderColor: "black",
-                              borderRadius: "15px",
-                              color: "white",
-                              padding: "15px",
-                            }
-                          : {
-                              boxShadow: "1px 1px 4px 0px #0000001A inset",
-                              backgroundColor: "#F1F2F4",
-                              height: "100%",
-                              borderRadius: "15px",
-                              padding: "15px",
-                            }
-                      }
+                      style={{
+                        borderRadius: "12px", // << one standard radius
+                        padding: "12px 18px",
+                        backgroundColor: selectedIndex === idx || idx < selectedIndex ? "#000" : "#F1F2F4",
+                        color: selectedIndex === idx || idx < selectedIndex ? "#fff" : "#222",
+                        boxShadow:
+                          selectedIndex === idx || idx < selectedIndex
+                            ? "none"
+                            : "1px 1px 4px 0px #0000001A inset",
+                        borderColor: "#000",
+                        margin: 0,
+                      }}
                       className="d-flex justify-content-start align-items-center px-3"
                     >
                       <>
@@ -457,7 +696,7 @@ export default function MixMatchActions() {
               <div
                 style={{
                   padding: "10px 0px 0px 0px",
-                  boxShadow: "1px 1px 4px 0px #0000001A inset",
+                  // boxShadow: "1px 1px 4px 0px #0000001A inset",
                   backgroundColor: "#fff",
                   borderRadius: "20px",
                   height: "fit-content",
@@ -599,7 +838,14 @@ export default function MixMatchActions() {
                                 >
                                   -
                                 </button>
-                                <span style={{ fontSize: "14px", fontWeight: "500" }}>{count}</span>
+                                <span
+                                  style={{
+                                    fontSize: "14px",
+                                    fontWeight: "500",
+                                  }}
+                                >
+                                  {count}
+                                </span>
                                 <button
                                   style={{
                                     border: "none",
@@ -655,7 +901,6 @@ export default function MixMatchActions() {
                               <option value="">Select Discount Setting</option>
                               <option value="Percentage">Percentage</option>
                               <option value="Fixed Amount">Fixed Discount</option>
-                              <option value="Free Gift">Free Gift</option>
                             </Form.Select>
 
                             {/* Dropdown icon */}
@@ -679,6 +924,92 @@ export default function MixMatchActions() {
                       >
                         A ‘Percentage’ discount reduces the bundle products prices.
                       </p>
+
+                      {/* Tier Discount Input Section */}
+                      {selectedProducts.length > 1 && discountType && (
+                        <div className="mt-4">
+                          <h6
+                            className="mb-3"
+                            style={{
+                              fontFamily: "Inter",
+                              fontWeight: 600,
+                              fontSize: "15px",
+                              color: "#303030",
+                            }}
+                          >
+                            Set Discount Values for Each Tier
+                          </h6>
+                          <div className="d-flex flex-column gap-3">
+                            {(() => {
+                              const maxProducts = selectedProducts.length;
+                              const tierInputs = [];
+                              for (let i = 2; i <= maxProducts; i++) {
+                                const defaultDiscount = 10 + (i - 2) * 5;
+                                tierInputs.push(
+                                  <div key={i} className="d-flex align-items-center gap-3">
+                                    <div style={{ minWidth: "120px" }}>
+                                      <Form.Label
+                                        className="mb-1"
+                                        style={{
+                                          fontSize: "14px",
+                                          fontWeight: 500,
+                                          color: "#303030",
+                                        }}
+                                      >
+                                        Buy {i} Products:
+                                      </Form.Label>
+                                    </div>
+                                    <div className="flex-grow-1">
+                                      <div className="position-relative">
+                                        <Form.Control
+                                          type="number"
+                                          min="0"
+                                          max={discountType === "Percentage" ? "100" : undefined}
+                                          step={discountType === "Percentage" ? "1" : "0.01"}
+                                          placeholder={defaultDiscount.toString()}
+                                          value={tierDiscounts[i] || ""}
+                                          onChange={(e) => handleTierDiscountChange(i, e.target.value)}
+                                          className="inputbox"
+                                          style={{
+                                            paddingRight: discountType === "Percentage" ? "30px" : "15px",
+                                            fontSize: "14px",
+                                          }}
+                                        />
+                                        {discountType === "Percentage" && (
+                                          <span
+                                            style={{
+                                              position: "absolute",
+                                              right: "15px",
+                                              top: "50%",
+                                              transform: "translateY(-50%)",
+                                              fontSize: "14px",
+                                              color: "#616161",
+                                            }}
+                                          >
+                                            %
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return tierInputs;
+                            })()}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: "12px",
+                              color: "#616161",
+                              marginTop: "10px",
+                              fontStyle: "italic",
+                            }}
+                          >
+                            Leave empty to use default values. Default values increase by 5% for each
+                            additional product.
+                          </p>
+                        </div>
+                      )}
                     </CardBody>
                   </Card>
                 )}
@@ -713,25 +1044,29 @@ export default function MixMatchActions() {
                                 color: "#616161",
                               }}
                             >
-                              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar
-                              lets you display important alerts right at the top of your store. Whether it's a
-                              sale, promotion, or update, it's impossible to ignore!
+                              Activate Your Bundle
                             </p>
                           </div>
 
                           <Form.Check
                             type="switch"
                             id={`bundle-toggle`}
-                            checked={toggles}
-                            onChange={() => handleToggleChange()}
+                            // checked={toggles}
+                            checked={statusToggle}
+                            onChange={() => setStatusToggle(!statusToggle)}
                             className="custom-switch-toggle"
                           />
                         </div>
                         <div className="d-flex flex-column gap-4">
                           <Form.Group>
                             <Form.Label className="inputtitle">Title</Form.Label>
-                            <Form.Control className="inputbox" type="text" placeholder="Enter title" value={bundleTitle}
-                              onChange={(e) => setBundleTitle(e.target.value)}/>
+                            <Form.Control
+                              className="inputbox"
+                              type="text"
+                              placeholder="Enter title"
+                              value={bundleTitle}
+                              onChange={(e) => setBundleTitle(e.target.value)}
+                            />
                             <p
                               style={{
                                 fontFamily: "Inter",
@@ -776,7 +1111,7 @@ export default function MixMatchActions() {
                               className="inputbox"
                               type="number"
                               placeholder="Priority"
-                               value={bundlePriority}
+                              value={bundlePriority}
                               onChange={(e) => setBundlePriority(e.target.value)}
                               style={{ background: "white" }}
                             />
@@ -816,34 +1151,42 @@ export default function MixMatchActions() {
 
                         <div className="py-3">
                           <div className="colorgrid">
-                            {Object.keys(colorSettings).map((key) => (
-                              <Form.Group className="colorbox" key={key}>
-                                <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
-                                <div className="colorinputbox">
-                                  <input
-                                    type="color"
-                                    value={colorSettings[key]}
-                                    onChange={(e) =>
-                                      setColorSettings({
-                                        ...colorSettings,
-                                        [key]: e.target.value,
-                                      })
-                                    }
-                                    className="colorinput"
-                                  />
-                                  <Form.Control
-                                    type="text"
-                                    className="inputbox"
-                                    value={colorSettings[key]}
-                                    readOnly
-                                    style={{ background: "white" }}
-                                  />
-                                </div>
-                              </Form.Group>
-                            ))}
+                            {Object.keys(colorSettings).map((key) => {
+                              if (
+                                ["Countdown Timer background Color", "Countdown Timer Text Color"].includes(
+                                  key
+                                )
+                              )
+                                return;
+                              return (
+                                <Form.Group className="colorbox" key={key}>
+                                  <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={colorSettings[key]}
+                                      onChange={(e) =>
+                                        setColorSettings({
+                                          ...colorSettings,
+                                          [key]: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={colorSettings[key]}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              );
+                            })}
                           </div>
                         </div>
-                        <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-2 py-3">
                           {/* Countdown Timer and Emoji Options */}
                           <Form.Check
                             type="checkbox"
@@ -877,7 +1220,45 @@ export default function MixMatchActions() {
                             tag
                           </p>
                         </div>
-                        <div className="d-flex align-items-center justify-content-between gap-2">
+
+                        <div className="py-3">
+                          <div className="colorgrid">
+                            {Object.keys(colorSettings).map((key) => {
+                              if (
+                                !["Countdown Timer background Color", "Countdown Timer Text Color"].includes(
+                                  key
+                                )
+                              )
+                                return;
+                              return (
+                                <Form.Group className="colorbox" key={key}>
+                                  <Form.Label>{key.replace(/([A-Z])/g, " $1")}</Form.Label>
+                                  <div className="colorinputbox">
+                                    <input
+                                      type="color"
+                                      value={colorSettings[key]}
+                                      onChange={(e) =>
+                                        setColorSettings({
+                                          ...colorSettings,
+                                          [key]: e.target.value,
+                                        })
+                                      }
+                                      className="colorinput"
+                                    />
+                                    <Form.Control
+                                      type="text"
+                                      className="inputbox"
+                                      value={colorSettings[key]}
+                                      readOnly
+                                      style={{ background: "white" }}
+                                    />
+                                  </div>
+                                </Form.Group>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        {/* <div className="d-flex align-items-center justify-content-between gap-2">
                           <Form.Check
                             type="checkbox"
                             className="custom-checkbox"
@@ -905,7 +1286,7 @@ export default function MixMatchActions() {
                               padding: "7px 10px 7px 7px",
                             }}
                           />
-                        </div>
+                        </div> */}
                       </Form>
 
                       {/* Margin Settings Section */}
@@ -924,22 +1305,22 @@ export default function MixMatchActions() {
                           Margin Settings
                         </h2>
                         <div className="colorgrid mt-3">
-                            {[
-                                                     { key: "top", label: "Top Margin" },
-                                                     { key: "bottom", label: "Bottom Margin" },
-                                                   ].map((margin) => (
-                                                     <Form.Group className="mb-3" key={margin.label}>
-                                                       <Form.Label className="inputtitle">{margin.label}</Form.Label>
-                                                       <Form.Control
-                                                         className="inputbox"
-                                                         type="number"
-                                                         placeholder="20"
-                                                         value={margins[margin.key]}
-                                                         onChange={(e) => handleMarginChange(margin.key, e.target.value)}
-                                                         style={{ background: "white" }}
-                                                       />
-                                                     </Form.Group>
-                                                   ))}
+                          {[
+                            { key: "top", label: "Top Margin" },
+                            { key: "bottom", label: "Bottom Margin" },
+                          ].map((margin) => (
+                            <Form.Group className="mb-3" key={margin.label}>
+                              <Form.Label className="inputtitle">{margin.label}</Form.Label>
+                              <Form.Control
+                                className="inputbox"
+                                type="number"
+                                placeholder="20"
+                                value={margins[margin.key]}
+                                onChange={(e) => handleMarginChange(margin.key, e.target.value)}
+                                style={{ background: "white" }}
+                              />
+                            </Form.Group>
+                          ))}
                         </div>
                       </Form>
 
@@ -978,178 +1359,6 @@ export default function MixMatchActions() {
                 {selectedIndex === 3 && (
                   <Card className="border-0">
                     <CardBody className="d-flex flex-column gap-2">
-                      <Form.Group
-                        className=" position-relative"
-                        style={{
-                          background: "#F1F2F4",
-                          borderRadius: "10px",
-                          padding: "10px 20px",
-                          border: "none",
-                        }}
-                      >
-                        <div className="d-flex flex-column gap-2 linewhite">
-                          <h2
-                            style={{
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "600",
-                              fontSize: "15px",
-                              lineHeight: "100%",
-                              color: "#303030",
-                            }}
-                          >
-                            Placements
-                          </h2>
-                          <p
-                            style={{
-                              maxWidth: "778.87px",
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "500",
-                              fontSize: "14px",
-                              lineHeight: "100%",
-                              color: "#616161",
-                            }}
-                          >
-                            Choose where to display this bundle.
-                          </p>
-                        </div>
-                        <Form.Label className="inputtitle mt-3">Select Variation</Form.Label>
-                        <div className="position-relative">
-                          <Form.Control
-                            as="select"
-                            className=" pe-5"
-                            style={{
-                              backgroundColor: "#ffffff",
-                              border: "1px solid #ccc",
-                              borderRadius: "8px",
-                              paddingRight: "40px",
-                              border: "none",
-                              padding: "15px 10px",
-                            }}
-                            value={selectedVariation} // Step 3: Bind the value to the state variable
-                            onChange={handleVariationChange}
-                          >
-                            <option>Select the bundle on the product pages</option>
-                            <option>Fixed Discount</option>
-                            <option>Buy X Get Y</option>
-                          </Form.Control>
-                          <span
-                            className="dropdown-icon position-absolute"
-                            style={{
-                              right: "10px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                            }}
-                          >
-                            <img src={dropdown} alt="Dropdown Icon" />
-                          </span>
-                        </div>
-                      </Form.Group>
-                      <Form.Group
-                        className=" position-relative"
-                        style={{
-                          background: "#F1F2F4",
-                          borderRadius: "10px",
-                          padding: "10px 20px",
-                          border: "none",
-                        }}
-                      >
-                        <div className="d-flex flex-column gap-2 linewhite">
-                          <h2
-                            style={{
-                              fontFamily: "Inter",
-                              fontStyle: "normal",
-                              fontWeight: "600",
-                              fontSize: "15px",
-                              lineHeight: "100%",
-                              color: "#303030",
-                            }}
-                          >
-                            Embed the bundle anywhere
-                          </h2>
-                        </div>
-                        <Form.Label className="inputtitle mt-3">
-                          Display this bundle anywhere by placing this HTML Tag in your theme file.
-                        </Form.Label>
-
-                        <div className="position-relative mt-3">
-                          <Form.Control
-                            type="text"
-                            value='<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                            readOnly
-                            className="pe-5"
-                            style={{
-                              backgroundColor: "#ffffff",
-                              border: "none",
-                              borderRadius: "8px",
-                              paddingRight: "40px",
-                              padding: "15px 10px",
-                              fontFamily: "Inter",
-                              fontSize: "13px",
-                            }}
-                          />
-                          <span
-                            className="dropdown-icon position-absolute"
-                            style={{
-                              right: "10px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              fontFamily: "Inter",
-                              fontWeight: 600,
-                              fontSize: "15px",
-                              color: "#222222",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => {
-                              navigator.clipboard.writeText(
-                                '<div data-revy-bundle-id="5a030243-265-4570-8122-613bcca82421"></div>'
-                              );
-                            }}
-                          >
-                            Copy{" "}
-                            <Copy
-                              style={{
-                                width: "12.5px",
-                                height: "12.5px",
-                                color: "#222222",
-                                fontWeight: "bold",
-                              }}
-                            />
-                          </span>
-                        </div>
-                        <p
-                          className="mt-3"
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                        >
-                          Bundle ID. Se030243-1265-4010-122-e13bcca82421
-                        </p>
-
-                        <p
-                          className="mt-3"
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                            display: "flex",
-                            gap: "2px",
-                          }}
-                        >
-                          <img src={learnmore} width={15} height={15} />
-                          Learn More about embed in specific pages
-                        </p>
-                      </Form.Group>
-
                       {/* Date and Time Configuration */}
                       <Form
                         style={{
@@ -1196,6 +1405,7 @@ export default function MixMatchActions() {
                               indefinitely
                             </p>
                           </div>
+
                           <div className="position-relative mt-3">
                             <Form.Control
                               type="text"
@@ -1206,114 +1416,65 @@ export default function MixMatchActions() {
                                 backgroundColor: "#ffffff",
                                 border: "none",
                                 borderRadius: "8px",
-                                paddingRight: "40px",
+                                paddingRight: "80px", // More space for both elements
                                 padding: "15px 10px",
                                 fontFamily: "Inter",
                                 fontSize: "13px",
                               }}
                             />
-                            <span
-                              className="dropdown-icon position-absolute"
+                            {/* Switch */}
+                            <div
+                              className="position-absolute"
                               style={{
                                 right: "10px",
                                 top: "50%",
                                 transform: "translateY(-50%)",
-                                fontFamily: "Inter",
-                                fontWeight: 600,
-                                fontSize: "15px",
-                                color: "#222222",
-                                cursor: "pointer",
-                              }}
-                              onClick={() => {
-                                navigator.clipboard.writeText("Make it available for Long time");
                               }}
                             >
                               <Form.Check
                                 type="switch"
                                 id={`bundle-toggle`}
                                 checked={toggles}
-                                onChange={() => handleToggleChange()}
+                                onChange={() => setToggles(!toggles)}
                                 className="custom-switch-toggle"
                               />
-                            </span>
+                            </div>
                           </div>
                         </Form.Group>
-                        <Row
-                          style={{
-                            background: "#fff",
-                            borderRadius: "10px",
-                            padding: "30px 8px",
-                            margin: "15px",
-                          }}
-                        >
-                          {/* Start Date Calendar */}
-                          <Col md={7}>
-                            <Form.Group>
-                              <Calendar
-                                onChange={setStartDate}
-                                value={startDate}
-                                className="border-0"
-                                showDoubleView
-                              />
-                            </Form.Group>
-                          </Col>
-
-                          {/* Inputs Section */}
-                          <Col md={5}>
-                            <Form.Group>
-                              <Form.Label className="inputtitle">Start Date</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={startDate?.toLocaleDateString() || ""}
-                                readOnly
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              />
-                            </Form.Group>
-
-                            <Form.Group className="mt-3">
-                              <Form.Label className="inputtitle">End Date</Form.Label>
-                              <Form.Control
-                                type="text"
-                                value={endDate?.toLocaleDateString() || ""}
-                                onChange={(e) => setEndDate(new Date(e.target.value))}
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              />
-                            </Form.Group>
-
-                            <Form.Group className="mt-3">
-                              <Form.Label className="inputtitle">Timezone</Form.Label>
-                              <Form.Select
-                                value={timezone}
-                                onChange={(e) => setTimezone(e.target.value)}
-                                style={{ backgroundColor: "#f5f5f5" }}
-                                className="inputbox2"
-                              >
-                                <option value="">Select Timezone</option>
-                                <option value="America/New_York">America/New_York</option>
-                                <option value="Europe/London">Europe/London</option>
-                                <option value="Asia/Kolkata">Asia/Kolkata</option>
-                                <option value="Asia/Tokyo">Asia/Tokyo</option>
-                                <option value="Australia/Sydney">Australia/Sydney</option>
-                              </Form.Select>
-                            </Form.Group>
-
-                            <div className="mt-4 d-flex gap-2">
-                              <Button
-                                text="Cancel"
-                                onClick={() => console.log("Cancel")}
-                                className="cancelbtn ms-2"
+                        {!toggles && (
+                          <Row
+                            style={{
+                              background: "#fff",
+                              borderRadius: "10px",
+                              padding: "30px 8px",
+                              margin: "15px",
+                            }}
+                          >
+                            {/* Start Date Calendar */}
+                            <Col md={12}>
+                              <DatePicker
+                                onDatePicked={(dateTimeValue) => {
+                                  setStartDate(new Date(dateTimeValue));
+                                }}
+                                initialValue={startDate.toISOString().slice(0, 16)} // Format: "YYYY-MM-DDTHH:mm"
+                                label={"Start Date & Time"}
+                                helpText={"Select the start date and time"}
                               />
 
-                              <Button
-                                text="Save Changes"
-                                onClick={() => console.log("Save Changes")}
-                                className="savebtn"
-                              />
-                            </div>
-                          </Col>
-                        </Row>
+                              <div className="mt-3">
+                                <DatePicker
+                                  onDatePicked={(dateTimeValue) => {
+                                    setEndDate(new Date(dateTimeValue));
+                                  }}
+                                  initialValue={endDate.toISOString().slice(0, 16)}
+                                  label={"End Date & Time"}
+                                  helpText={"Select the end date and time"}
+                                  minValue={startDate.toISOString().slice(0, 16)} // Prevent end date/time before start
+                                />
+                              </div>
+                            </Col>
+                          </Row>
+                        )}
                       </Form>
                     </CardBody>
                   </Card>
@@ -1325,7 +1486,7 @@ export default function MixMatchActions() {
                     <CardBody>
                       <h2 className="cardtitle">Review Settings</h2>
                       <Form className="mt-3 p-3" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
-                          <div className="d-flex justify-content-between align-items-center borderbox">
+                        <div className="d-flex justify-content-between align-items-center borderbox">
                           <div className="d-flex flex-column gap-2">
                             <h2 className="cardtitle2">Selection of Products</h2>
                             <div className="d-flex gap-2 align-items-center">
@@ -1359,7 +1520,7 @@ export default function MixMatchActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(0)} // Navigate to Select Products
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1404,7 +1565,7 @@ export default function MixMatchActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(1)} // Navigate to Discount Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1470,7 +1631,7 @@ export default function MixMatchActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(3)} // Navigate to Display Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1573,8 +1734,8 @@ export default function MixMatchActions() {
                                 }}
                               >
                                 {`${colorSettings["Border Color"]},
-                                ${colorSettings["Button Color"]}, ${colorSettings["Offer Tag Background Color"]},
-                                ${colorSettings["Offer Tag Text Color"]}, ${colorSettings["Primary Background Color"]},
+                                ${colorSettings["Button Color"]}, ${colorSettings["Countdown Timer background Color"]},
+                                ${colorSettings["Countdown Timer Text Color"]}, ${colorSettings["Primary Background Color"]},
                                 ${colorSettings["Primary Text Color"]}, ${colorSettings["Secondary Background Color"]},
                                 ${colorSettings["Secondary Text Color"]}`}
                               </p>
@@ -1632,7 +1793,7 @@ export default function MixMatchActions() {
                                 <img src={edit} width={12} height={12} /> Change Setting
                               </>
                             }
-                            onClick={() => console.log("Change Setting")}
+                            onClick={() => setSelectedIndex(2)} // Navigate to Bundle Settings
                             style={{
                               backgroundColor: "rgba(81, 105, 221, 0.1)",
                               color: "#5169DD",
@@ -1669,7 +1830,9 @@ export default function MixMatchActions() {
                     text={
                       <>
                         {selectedIndex === tabs.length - 1
-                          ? "Confirm and Publish Bundle"
+                          ? isEditing
+                            ? "Update Bundle"
+                            : "Confirm and Publish Bundle"
                           : "Next to Continue"}
                       </>
                     }
@@ -1689,6 +1852,11 @@ export default function MixMatchActions() {
             <Col
               md={5}
               style={{
+                position: "sticky",
+                top: "10px",
+                maxHeight: "calc(100vh - 40px)",
+                overflowY: "auto",
+                zIndex: 10,
                 padding: "0px",
                 boxShadow: "1px 1px 4px 0px #0000001A inset",
                 backgroundColor: "#fff",
@@ -1716,7 +1884,7 @@ export default function MixMatchActions() {
                       Preview
                     </h2>
 
-                    <div
+                    {/* <div
                       className="d-flex align-items-center"
                       style={{
                         cursor: "pointer",
@@ -1736,95 +1904,97 @@ export default function MixMatchActions() {
                         style={{ marginRight: "6px" }}
                       />
                       Customize
-                    </div>
+                    </div> */}
                   </div>
 
                   <div
                     style={{
-                      backgroundColor: "rgb(241, 242, 244)",
+                      backgroundColor: colorSettings["Secondary Background Color"],
                       padding: "15px",
-                      borderRadius: "18px",
+                      borderRadius: `${cornerRadius}px`,
                       position: "relative",
+                      marginTop: `${margins.top}px`,
+                      marginBottom: `${margins.bottom}px`,
                     }}
                   >
-                    <h2 className="cardtitle">Buy More ,Save More </h2>
+                    <h2
+                      className="cardtitle"
+                      style={{
+                        color: colorSettings["Primary Text Color"],
+                      }}
+                    >
+                      {bundleTitle || "Buy Together & Save More!🔥"}
+                    </h2>
+
+                    {showCountdown && (
+                      <div
+                        style={{
+                          boxSizing: "border-box",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          padding: "8px 10px 8px 8px",
+                          gap: "5px",
+                          position: "absolute",
+                          width: "144.5px",
+                          height: "29px",
+                          right: "0px",
+                          top: "0.5px",
+                          background: colorSettings["Countdown Timer background Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: "8px 18px 8px 8px",
+                          color: colorSettings["Countdown Timer Text Color"],
+                          fontSize: "12px",
+                          fontWeight: "500",
+                          zIndex: 3,
+                        }}
+                      >
+                        {showEmoji && "🔥 "}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
+                      </div>
+                    )}
+
+                    {/* Tier Selection */}
                     {selectedProducts.length > 0 && (
                       <>
                         <div
                           style={{
                             display: "flex",
                             gap: "8px",
-                            justifyContent: "space-between",
+                            // justifyContent: "space-between",
+                            marginBottom: "15px",
+                            overflowY: "auto",
+                            paddingBottom: "5px",
                           }}
                         >
                           {Object.entries(tiers).map(([tierKey, tierConfig]) => (
                             <div
                               key={tierKey}
                               style={{
-                                flex: 1,
+                                // flex: 1,
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "8px",
                               }}
                             >
-                              {/* Checkbox outside the button */}
-
-                              {/* Button */}
-                              {/* <button
-                                onClick={() => handleTierSelect(parseInt(tierKey))}
-                                style={{
-                                  flex: 1,
-                                  padding: "12px 8px",
-                                  borderRadius: "8px",
-                                  border:
-                                    selectedTier === parseInt(tierKey)
-                                      ? "2px solid #4285f4"
-                                      : "1px solid #ddd",
-                                  backgroundColor: selectedTier === parseInt(tierKey) ? "#4285f4" : "white",
-                                  color: selectedTier === parseInt(tierKey) ? "white" : "#333",
-                                  fontSize: "14px",
-                                  fontWeight: "600",
-                                  cursor: "pointer",
-                                  textAlign: "center",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                                  transition: "all 0.2s ease",
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  alignItems: "center",
-                                  gap: "4px",
-                                }}
-                              >
-                                <input
-                                type="checkbox"
-                                checked={selectedTier === parseInt(tierKey)}
-                                onChange={() => handleTierSelect(parseInt(tierKey))}
-                                style={{
-                                  appearance: "none",
-                                  width: "20px",
-                                  height: "20px",
-                                  border: "2px solid #ddd",
-                                  borderRadius: "4px",
-                                  backgroundColor: selectedTier === parseInt(tierKey) ? "#4285f4" : "white",
-                                  cursor: "pointer",
-                                  position: "relative",
-                                  flexShrink: 0,
-                                }}
-                              />
-                                <div style={{ fontWeight: "bold" }}>{tierConfig.label}</div>
-                                <div style={{ fontSize: "12px", opacity: 0.8 }}>{tierConfig.sublabel}</div>
-                              </button> */}
                               <button
                                 onClick={() => handleTierSelect(parseInt(tierKey))}
                                 style={{
+                                  width: "135px",
+                                  height: "60px",
                                   flex: 1,
                                   padding: "16px 12px",
-                                  borderRadius: "8px",
-                                  border:
-                                    selectedTier === parseInt(tierKey)
-                                      ? "2px solid #4285f4"
-                                      : "1px solid #e0e0e0",
-                                  backgroundColor: "white",
-                                  color: "#333",
+                                  // borderRadius: "50px",
+                                  borderRadius: "20px",
+                                  // border:
+                                  //   selectedTier === parseInt(tierKey)
+                                  //     ? `2px solid ${colorSettings["Button Color"]}`
+                                  //     : `1px solid ${colorSettings["Border Color"]}`,
+                                  // backgroundColor:
+                                  //   colorSettings["Primary Background Color"],
+                                  // color: colorSettings["Primary Text Color"],
+                                  border: "none",
+                                  backgroundColor: selectedTier === parseInt(tierKey) ? "#5169DD" : "white",
+                                  color: selectedTier === parseInt(tierKey) ? "white" : "#222222",
                                   fontSize: "16px",
                                   fontWeight: "600",
                                   cursor: "pointer",
@@ -1832,53 +2002,71 @@ export default function MixMatchActions() {
                                   boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                                   transition: "all 0.2s ease",
                                   display: "flex",
-                                  flexDirection: "column",
+                                  // flexDirection: "column",
                                   alignItems: "center",
-                                  gap: "4px",
+                                  justifyContent: "center",
+                                  gap: "12px",
                                 }}
                               >
+                                {/* {selectedTier === parseInt(tierKey) && ( */}
                                 <div
                                   style={{
-                                    fontWeight: "bold",
-                                    fontSize: "18px",
-                                    marginBottom: "4px",
+                                    width: "20px",
+                                    height: "20px",
+                                    borderRadius: "25%",
+                                    // backgroundColor:
+                                    //   colorSettings["Button Color"],
+                                    backgroundColor: "white",
+                                    color: "black",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    border: selectedTier !== parseInt(tierKey) && "1px solid #222222",
                                   }}
                                 >
-                                  {tierConfig.label}
-                                </div>
-                                <div
-                                  style={{
-                                    fontSize: "14px",
-                                    color: "#666",
-                                    marginBottom: "8px",
-                                  }}
-                                >
-                                  {tierConfig.sublabel}
-                                </div>
-                                {selectedTier === parseInt(tierKey) && (
-                                  <div
-                                    style={{
-                                      width: "24px",
-                                      height: "24px",
-                                      borderRadius: "50%",
-                                      backgroundColor: "#4285f4",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                    }}
-                                  >
+                                  {selectedTier === parseInt(tierKey) && (
                                     <svg
-                                      width="12"
-                                      height="12"
+                                      width="16"
+                                      height="16"
                                       viewBox="0 0 24 24"
                                       fill="none"
-                                      stroke="white"
+                                      // stroke="white"
+                                      stroke="#5169DD"
                                       strokeWidth="3"
                                     >
                                       <path d="M5 12l5 5L20 7" />
                                     </svg>
+                                  )}
+                                </div>
+                                {/* )} */}
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontWeight: "bold",
+                                      fontSize: "16px",
+                                      // marginBottom: "4px",
+                                    }}
+                                  >
+                                    {tierConfig.label}
                                   </div>
-                                )}
+                                  <div
+                                    style={{
+                                      fontSize: "13px",
+                                      // color:
+                                      // colorSettings["Secondary Text Color"],
+                                      color: selectedTier === parseInt(tierKey) ? "white" : "#616161",
+                                      marginBottom: "8px",
+                                    }}
+                                  >
+                                    {tierConfig.sublabel}
+                                  </div>
+                                </div>
                               </button>
                             </div>
                           ))}
@@ -1889,7 +2077,7 @@ export default function MixMatchActions() {
                           <div
                             style={{
                               fontSize: "12px",
-                              color: "#666",
+                              color: colorSettings["Secondary Text Color"],
                               marginBottom: "8px",
                             }}
                           >
@@ -1901,18 +2089,19 @@ export default function MixMatchActions() {
                       </>
                     )}
 
-                    {/* Main Product Item */}
+                    {/* Products Display */}
                     {selectedProducts.length > 0 ? (
                       selectedProducts.map((product, index) => {
-                        const { price, compareAtPrice } = getDiscountedProductPrice(product.productId);
-                        // const { price, compareAtPrice } = getProductPrice(product.productId);
+                        const { price, compareAtPrice } = getProductPrice(product.productId);
                         return (
                           <React.Fragment key={product.productId || index}>
                             <div
                               style={{
                                 padding: "15px",
-                                borderRadius: "18px",
+                                borderRadius: `${parseInt(cornerRadius) - 5}px`,
                                 marginBottom: "15px",
+                                backgroundColor: colorSettings["Primary Background Color"],
+                                border: `1px solid ${colorSettings["Border Color"]}`,
                               }}
                               className="previewbox"
                             >
@@ -1926,6 +2115,7 @@ export default function MixMatchActions() {
                                     style={{
                                       borderRadius: "10px",
                                       marginRight: "15px",
+                                      border: `1px solid ${colorSettings["Border Color"]}`,
                                     }}
                                   />
                                   <div className="w-100">
@@ -1934,6 +2124,7 @@ export default function MixMatchActions() {
                                         fontWeight: 600,
                                         fontSize: "14px",
                                         marginBottom: "5px",
+                                        color: colorSettings["Primary Text Color"],
                                       }}
                                     >
                                       {product.title}
@@ -1945,6 +2136,7 @@ export default function MixMatchActions() {
                                           fontWeight: 600,
                                           fontSize: "14px",
                                           margin: 0,
+                                          color: colorSettings["Primary Text Color"],
                                         }}
                                       >
                                         Rs.{price}
@@ -1955,13 +2147,13 @@ export default function MixMatchActions() {
                                             style={{
                                               width: "1.5px",
                                               height: "10px",
-                                              background: "#222222",
-                                              opacity: 0.1,
+                                              background: colorSettings["Primary Text Color"],
+                                              opacity: 0.3,
                                             }}
                                           ></p>
                                           <p
                                             style={{
-                                              color: "#999",
+                                              color: colorSettings["Secondary Text Color"],
                                               fontSize: "12px",
                                               textDecoration: "line-through",
                                               margin: 0,
@@ -1976,60 +2168,86 @@ export default function MixMatchActions() {
                                 </div>
                                 {product.optionSelections && product.optionSelections.length > 0 && (
                                   <div className="mt-2">
-                                    {product.optionSelections.map((option, optIdx) => (
-                                      <div key={`${option.name}-${optIdx}`} style={{ marginBottom: "10px" }}>
-                                        <label
-                                          style={{
-                                            fontSize: "12px",
-                                            fontWeight: "500",
-                                            color: "#616161",
-                                            marginBottom: "4px",
-                                            display: "block",
-                                          }}
+                                    {product.optionSelections.map((option, optIdx) => {
+                                      if (option.values.length === 1) return;
+                                      return (
+                                        <div
+                                          key={`${option.name}-${optIdx}`}
+                                          style={{ marginBottom: "10px" }}
                                         >
-                                          {option.name}
-                                        </label>
-                                        <div style={{ position: "relative" }}>
-                                          <select
-                                            className="form-select"
-                                            onChange={(e) =>
-                                              handlePreviewOptionChange(
-                                                product.productId,
-                                                option.name,
-                                                e.target.value
-                                              )
-                                            }
+                                          <label
                                             style={{
                                               fontSize: "12px",
-                                              background: "#F1F1F1",
-                                              padding: "8px 12px",
-                                              borderRadius: "8px",
-                                              border: "1px solid rgba(34, 34, 34, 0.1)",
-                                              width: "100%",
-                                              appearance: "none",
-                                              WebkitAppearance: "none",
-                                              MozAppearance: "none",
+                                              fontWeight: "500",
+                                              color: colorSettings["Secondary Text Color"],
+                                              marginBottom: "4px",
+                                              display: "block",
                                             }}
                                           >
-                                            {option.values.map((value, vIdx) => (
-                                              <option key={`value-${vIdx}`}>{value}</option>
-                                            ))}
-                                          </select>
-                                          <span
-                                            style={{
-                                              position: "absolute",
-                                              right: "15px",
-                                              top: "50%",
-                                              transform: "translateY(-50%)",
-                                              pointerEvents: "none",
-                                              fontSize: "10px",
-                                            }}
-                                          >
-                                            <CaretDownFill />
-                                          </span>
+                                            {option.name}
+                                          </label>
+                                          <div style={{ position: "relative" }}>
+                                            {option.values.length === 1 ? (
+                                              option.values.map((value, vIdx) => (
+                                                <span
+                                                  style={{
+                                                    right: "15px",
+                                                    top: "50%",
+                                                    transform: "translateY(-50%)",
+                                                    pointerEvents: "none",
+                                                    fontSize: "10px",
+                                                  }}
+                                                >
+                                                  {value}
+                                                </span>
+                                              ))
+                                            ) : (
+                                              <>
+                                                <select
+                                                  className="form-select"
+                                                  onChange={(e) =>
+                                                    handlePreviewOptionChange(
+                                                      product.productId,
+                                                      option.name,
+                                                      e.target.value
+                                                    )
+                                                  }
+                                                  style={{
+                                                    fontSize: "12px",
+                                                    background: colorSettings["Secondary Background Color"],
+                                                    color: colorSettings["Primary Text Color"],
+                                                    padding: "8px 12px",
+                                                    borderRadius: "8px",
+                                                    border: `1px solid ${colorSettings["Border Color"]}`,
+                                                    width: "100%",
+                                                    appearance: "none",
+                                                    WebkitAppearance: "none",
+                                                    MozAppearance: "none",
+                                                  }}
+                                                >
+                                                  {option.values.map((value, vIdx) => (
+                                                    <option key={`value-${vIdx}`}>{value}</option>
+                                                  ))}
+                                                </select>
+                                                <span
+                                                  style={{
+                                                    position: "absolute",
+                                                    right: "15px",
+                                                    top: "50%",
+                                                    transform: "translateY(-50%)",
+                                                    pointerEvents: "none",
+                                                    fontSize: "10px",
+                                                    color: colorSettings["Primary Text Color"],
+                                                  }}
+                                                >
+                                                  <CaretDownFill />
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -2042,80 +2260,124 @@ export default function MixMatchActions() {
                         style={{
                           padding: "30px 15px",
                           textAlign: "center",
-                          backgroundColor: "#f8f8f8",
-                          borderRadius: "18px",
+                          backgroundColor: colorSettings["Primary Background Color"],
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
+                          border: `1px solid ${colorSettings["Border Color"]}`,
                         }}
                       >
-                        <p style={{ fontSize: "14px", color: "#666" }}>
+                        <p
+                          style={{
+                            fontSize: "14px",
+                            color: colorSettings["Secondary Text Color"],
+                          }}
+                        >
                           No products selected. Add products to see the preview.
                         </p>
                       </div>
                     )}
-                    {/* Additional Product Item */}
 
                     {/* Buttons */}
                     <div className="d-flex flex-column gap-2">
                       <div
                         className="d-flex align-items-center justify-content-between gap-2"
                         style={{
-                          background: "#FFFFFF",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          borderRadius: "15px",
+                          background: colorSettings["Primary Background Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
                           padding: "20px",
                         }}
                       >
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "600",
-                            fontSize: "15px",
-                            lineHeight: "100%",
-                            color: "#303030",
-                          }}
-                        >
-                          Total
-                        </p>
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#222222",
-                          }}
-                        >
-                          Rs.999.00
-                        </p>
+                        <div>
+                          <p
+                            style={{
+                              fontFamily: "Inter",
+                              fontStyle: "normal",
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              lineHeight: "100%",
+                              color: colorSettings["Primary Text Color"],
+                              margin: 0,
+                            }}
+                          >
+                            Total
+                          </p>
+                          {bundlePricing.discountPercentage > 0 && (
+                            <p
+                              style={{
+                                fontFamily: "Inter",
+                                fontStyle: "normal",
+                                fontWeight: "500",
+                                fontSize: "11px",
+                                lineHeight: "100%",
+                                color: colorSettings["Countdown Timer background Color"],
+                                margin: "5px 0 0 0",
+                              }}
+                            >
+                              Save {bundlePricing.discountPercentage}% (Rs.
+                              {bundlePricing.saved})
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="text-end">
+                          <p
+                            style={{
+                              fontFamily: "Inter",
+                              fontStyle: "normal",
+                              fontWeight: "600",
+                              fontSize: "15px",
+                              lineHeight: "100%",
+                              color: colorSettings["Primary Text Color"],
+                              margin: 0,
+                            }}
+                          >
+                            Rs.{bundlePricing.finalPrice}
+                          </p>
+                          {bundlePricing.discountPercentage > 0 && (
+                            <p
+                              style={{
+                                fontFamily: "Inter",
+                                fontStyle: "normal",
+                                fontWeight: "500",
+                                fontSize: "11px",
+                                textDecoration: "line-through",
+                                color: colorSettings["Secondary Text Color"],
+                                margin: "5px 0 0 0",
+                              }}
+                            >
+                              Rs.{bundlePricing.compareAtPrice}
+                            </p>
+                          )}
+                        </div>
                       </div>
+
                       <Button
                         text="Add To Cart"
                         onClick={handleBack}
                         style={{
-                          backgroundColor: "#222222",
+                          backgroundColor: colorSettings["Button Color"],
                           color: "white",
                           border: "none",
-                          borderRadius: "15px",
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
                           padding: "15px 25px",
                           fontSize: "15px",
-                          displayL: "flex",
+                          display: "flex",
                           flexDirection: "row",
                           justifyContent: "center",
                           alignItems: "center",
                         }}
-                      />{" "}
+                      />
                       <Button
                         text="Skip Offer"
                         onClick={handleBack}
                         style={{
-                          backgroundColor: "#F1F1F1",
-                          color: "black",
-                          border: "1px solid rgba(34, 34, 34, 0.1)",
-                          borderRadius: "15px",
+                          backgroundColor: colorSettings["Secondary Background Color"],
+                          color: colorSettings["Primary Text Color"],
+                          border: `1px solid ${colorSettings["Border Color"]}`,
+                          borderRadius: `${parseInt(cornerRadius) - 5}px`,
                           padding: "15px 25px",
                           fontSize: "15px",
-                          displayL: "flex",
+                          display: "flex",
                           flexDirection: "row",
                           justifyContent: "center",
                           alignItems: "center",
@@ -2138,4 +2400,6 @@ export default function MixMatchActions() {
       )}
     </>
   );
-}
+});
+
+export default MixMatchActions;

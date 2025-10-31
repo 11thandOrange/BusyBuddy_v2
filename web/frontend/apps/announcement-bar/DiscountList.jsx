@@ -10,10 +10,19 @@ import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
+import { Spinner } from "@shopify/polaris";
+import Analytics from "../../components/Analytics/AnnouncementAnalytics";
 
-export default function DiscountList({ onMakeBundleClick }) {
+export default function DiscountList({
+  onMakeBundleClick,
+  refreshTrigger,
+  onBundleCreated,
+  discountActionsRef,
+  autoTriggerActions,
+}) {
   const tabs = ["Overview", "Announcement Bars", "Setting", "Analytics"];
-  const [selectedTab, setSelectedTab] = useState(tabs[0]);
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [selectedTab, setSelectedTab] = useState(tabs[1]);
   const [showBundleAction, setShowBundleAction] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [checkboxes, setCheckboxes] = useState([false, false, false, false]);
@@ -25,25 +34,38 @@ export default function DiscountList({ onMakeBundleClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5); // You can make this configurable
   const [totalItems, setTotalItems] = useState(0);
+  const [editingBar, setEditingBar] = useState(null);
+  // Fetch announcement bars when component mounts
+  // Handle auto-trigger with loader
+  useEffect(() => {
+    if (autoTriggerActions) {
+      // Set a small delay to ensure smooth transition
+      const timer = setTimeout(() => {
+        setShowBundleAction(true);
+        if (onMakeBundleClick) {
+          onMakeBundleClick();
+        }
+        setIsLoading(false);
+      }, 10);
+
+      return () => clearTimeout(timer);
+    } else {
+      setIsLoading(false);
+    }
+  }, [autoTriggerActions, onMakeBundleClick]);
   // Fetch announcement bars when component mounts
   useEffect(() => {
+    if (!autoTriggerActions) {
+      // Only fetch if not auto-triggering
+      setSelectedTab(tabs[1]);
+      fetchAnnouncementBars();
+    }
+  }, [refreshTrigger, autoTriggerActions]);
+  useEffect(() => {
+    setSelectedTab(tabs[1]);
     fetchAnnouncementBars();
-  }, []);
+  }, [refreshTrigger]);
   const fetchAnnouncementBars = async (page = 1) => {
-    // try {
-    //   const response = await fetch("/api/announcement-bars");
-    //   if (!response.ok) {
-    //     throw new Error("Failed to fetch announcement bars");
-    //   }
-    //   const data = await response.json();
-
-    //   console.log("Fetched Announcement Bars:", data);
-    //   setAnnouncementBars(data?.data?.announcementBars);
-    // } catch (err) {
-    //   setError(err.message);
-    // } finally {
-    //   setLoading(false);
-    // }
     try {
       setLoading(true);
       const response = await fetch(`/api/announcement-bars?page=${page}&limit=${itemsPerPage}`);
@@ -68,9 +90,47 @@ export default function DiscountList({ onMakeBundleClick }) {
   const handleToggleChange = (index) => {
     setToggles((prev) => prev.map((toggled, i) => (i === index ? !toggled : toggled)));
   };
-
+  const handleActionSuccess = () => {
+    setShowBundleAction(false);
+    if (onBundleCreated) {
+      onBundleCreated();
+    }
+  };
+  // Show loader while determining what to display
+  if (isLoading) {
+    return (
+      <Container
+        fluid
+        className="bg-white d-flex justify-content-center align-items-center"
+        style={{
+          maxWidth: "1500px",
+          margin: "50px auto",
+          borderRadius: "15px",
+          height: "300px",
+        }}
+      >
+        <div className="text-center">
+          <Spinner animation="border" role="status" variant="dark" />
+          <p className="mt-3" style={{ color: "#616161" }}>
+            Loading...
+          </p>
+        </div>
+      </Container>
+    );
+  }
+  // if (showBundleAction) {
+  //   return <AnnouncementBarActions />;
+  // }
+  // With this:
   if (showBundleAction) {
-    return <AnnouncementBarActions />;
+    return (
+      <AnnouncementBarActions
+        ref={discountActionsRef} // Pass the ref here
+        onMakeBundleClick={onMakeBundleClick}
+        editingBar={editingBar}
+        onSuccess={handleActionSuccess}
+      />
+    );
   }
   const Pagination = ({ currentPage, totalItems, itemsPerPage, onPageChange }) => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -516,6 +576,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                         onEdit={(id) => {
                           setShowBundleAction(true);
                           onMakeBundleClick();
+                          setEditingBar(bar);
                         }}
                         onDelete={async (id) => {
                           try {
@@ -617,6 +678,11 @@ export default function DiscountList({ onMakeBundleClick }) {
             </>
           </div>
         )}
+        {selectedTab === "Analytics" && (
+          <Col lg={12} className="p-4">
+            <Analytics />
+          </Col>
+        )}
       </Row>
     </Container>
   );
@@ -624,10 +690,10 @@ export default function DiscountList({ onMakeBundleClick }) {
 const AnnouncementBarItem = ({ bar, onEdit, onDelete, onToggle }) => {
   return (
     <Card className="border-0 w-full" style={{ background: "rgb(241, 242, 244)" }}>
-      <Card.Body className="d-flex align-items-center justify-content-between">
+      <Card.Body className="d-flex align-items-center justify-content-between mt-3">
         {/* Left side - Checkbox and Bar Info */}
         <div className="d-flex align-items-center gap-3">
-          <Form.Check type="checkbox" className="custom-checkbox" />
+          {/* <Form.Check type="checkbox" className="custom-checkbox" /> */}
 
           <div className="d-flex flex-column">
             <span className="bundletext" style={{ fontWeight: 600 }}>

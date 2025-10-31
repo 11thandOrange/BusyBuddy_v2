@@ -91,19 +91,7 @@
   border-bottom: 1px solid #f1f1f1;
   padding: 20px 0px;
 }
-@keyframes scrollText {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
 
-.scrolling-text {
-  display: inline-block;
-  white-space: nowrap;
-}
 .ticker-content {
   display: inline-flex;
   white-space: nowrap;
@@ -672,20 +660,13 @@ label {
   /* roughly gap-2 in Bootstrap */
 }
 /* Animation for scrolling text */
-/* @keyframes scrollText {
+
+@keyframes scrollText {
   0% {
     transform: translateX(0%);
   }
   100% {
-    transform: translateX(-100%);
-  }
-} */
-@keyframes scrollText {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(-100%);
+    transform: translateX(-50%);
   }
 }
 
@@ -788,4 +769,86 @@ label {
     color: white;
     font-size: 18px;
     margin-top: -90px !important;
+}
+/* Ocean container */
+.ocean {
+  height: 80px; /* Adjust wave height */
+  width: 100%;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow-x: hidden;
+}
+
+/* Wave layers */
+.wave {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 88.7'%3E%3Cpath d='M800 56.9c-155.5 0-204.9-50-405.5-49.9-200 0-250 49.9-394.5 49.9v31.8h800v-.2-31.6z' fill='%23003F7C'/%3E%3C/svg%3E");
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  animation: wave 10s -3s linear infinite;
+  transform: translate3d(0, 0, 0);
+  opacity: 0.8;
+}
+
+.wave:nth-of-type(2) {
+  bottom: 0;
+  animation: wave 18s linear reverse infinite;
+  opacity: 0.5;
+}
+
+.wave:nth-of-type(3) {
+  bottom: 0;
+  animation: wave 20s -1s linear infinite;
+  opacity: 0.5;
+}
+
+/* Hexagon timer design */
+/* General Styling */
+
+.hexagon-countdown {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Spacing between units */
+}
+
+/* The Hexagon Container (using clip-path) */
+.hexagon {
+    --size: 60px; /* Width of the hexagon */
+    width: var(--size);
+    height: calc(var(--size) * 1.1547); /* approx: 1.1547 = sqrt(3) */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2px;
+    border: 1px solid #a0a0a0;       /* Thin gray outline */
+    background-color: #ffffff; 
+}
+
+.progress-circle{
+  --size: 70px; /* Width of the hexagon */
+    width: var(--size);
+    height: calc(var(--size) * 1); /* approx: 1.1547 = sqrt(3) */
+    border-radius: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2px;
+    border: 1px solid #a0a0a0;       /* Thin gray outline */
+    background-color: #ffffff; 
+}
+
+/* Wave animation */
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-25%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }

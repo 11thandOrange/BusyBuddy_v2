@@ -11,23 +11,21 @@ import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
+import { verifySHA256 } from "./middleware/verify-signature.js";
+import sessionModel from "./backend/models/shopify_sessions.model.js"
+import { subscriptionUpdate } from "./backend/services/subscription.js"
 dotenv.config();
-const PORT = parseInt(
-  process.env.BACKEND_PORT || process.env.PORT || "3000",
-  10
-);
+const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || "3000", 10);
 
 const STATIC_PATH =
-  process.env.NODE_ENV === "production"
-    ? `${process.cwd()}/frontend/dist`
-    : `${process.cwd()}/frontend/`;
+  process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
 
 const app = express();
 // a route to test the server
 app.get("/api/test", (req, res) => {
-    res.status(200).send("Hello world");
+  res.status(200).send("Hello world");
 });
-app.use(morgan("tiny"));
+
 let db = process.env.DB_CONNECTION || "";
 // mongodb setup
 mongoose.set("strictQuery", true);
@@ -39,23 +37,25 @@ mongoose.connect(db).then(
     console.log("mongodb failed to connect : ", error);
   }
 );
+app.use(morgan("tiny"));
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
   shopData.shopData,
+    async (req, res, next) => {
+    console.log("-------->**************<--------------")
+    next();
+  },
   shopify.redirectToShopifyOrAppRoot()
 );
-app.post(
-  shopify.config.webhooks.path,
-  shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers })
-);
+app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
 
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
-// app.use("/api/*", shopify.validateAuthenticatedSession());  
+// app.use("/api/*", shopify.validateAuthenticatedSession());
 app.use(
   "/api/*",
   conditional(
@@ -69,6 +69,8 @@ app.use(
     async (_req, res, next) => {
       // @ts-ignore
       var shop = _req.query.shop.toString();
+      const isValid = verifySHA256(_req);
+      if (!isValid) return res.status(401).send("Unauthorized");
       const sessionId = await shopify.api.session.getOfflineId(shop);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
       console.log("index session", session);
@@ -103,11 +105,24 @@ app.use(express.json());
 //   res.status(200).send({ count: countData.data.productsCount.count });
 // });
 
+app.use(shopify.cspHeaders());
 app.use("/api", router);
 
-app.use(shopify.cspHeaders());
 app.use(serveStatic(STATIC_PATH, { index: false }));
-
+app.use("/", async (_req, res, _next) => {
+  console.log("**********#@@!#!#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@***********");
+  // console.log("_req.query", _req.query)
+  // console.log("res.locals",res.locals)
+  if (_req.query.charge_id) {
+    //find session
+    const session = await sessionModel.findOne({ shop: _req.query.shop });
+    // console.log("session:::",session)
+    if (session) {
+      subscriptionUpdate(session);
+    }
+  }
+  _next();
+});
 app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
   return res
     .status(200)

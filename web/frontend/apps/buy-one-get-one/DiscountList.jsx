@@ -491,7 +491,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                               Preview
                             </div>
                           </div>
-                          <p className="buymorebtn">Buy More, Save More!</p>
+                          <p className="buymorebtn">Buy Together & Save More!🔥!</p>
                           <div className="bundletxtb2">
                             <p>Product 1</p>
                             <p>Product 3</p>
