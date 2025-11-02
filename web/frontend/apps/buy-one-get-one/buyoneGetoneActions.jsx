@@ -2182,7 +2182,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                               {discountType === "Percentage"
                                 ? `YOU GET ${inputValue || 0}% OFF ON`
                                 : discountType === "Free Gift"
-                                  ? `YOU WILL GET FREE GIFT ON`
+                                  ? `GET FREE GIFT!`
                                   : `YOU GET Rs.${inputValue || 0} OFF ON`}
                             </p>
                             {selectedYProducts.map((product, index) => {

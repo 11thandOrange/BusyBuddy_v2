@@ -1529,7 +1529,7 @@ class BOGOBundle {
       const label = this.bundleConfig.discountType === 'Percentage'
         ? `YOU GET ${this.bundleConfig.discountPercent || 0}% OFF ON`
         : this.bundleConfig.discountType === 'Free Gift'
-          ? 'YOU WILL GET FREE GIFT ON'
+          ? 'GET FREE GIFT!'
           : `YOU GET Rs.${this.bundleConfig.discountPercent || 0} OFF ON`;
       html += `
         <div style=\"margin-bottom: 20px;\">

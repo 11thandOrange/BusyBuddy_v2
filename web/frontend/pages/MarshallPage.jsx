@@ -38,101 +38,120 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     "Announcement Bar": {
       title: "Announcement Bar",
       description:
-        "Bundle products together and sell them at a discount price.",
+        "Display important updates, promotions, or messages across your store to capture visitors’ attention instantly.",
       features: [
         {
           title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          description: "Easily adjust text, colors, style, and placement to match your brand.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Responsive",
+          description: "Automatically adapts to any screen size for a seamless customer experience.",
+        },
+        {
+          title: "Attention Grabbing",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Boost engagement by highlighting offers or announcements without interrupting shopping.",
         },
       ],
     },
     "Inactive Tab Message": {
       title: "Inactive Tab Message",
       description:
-        "Bundle products together and sell them at a discount price.",
+        "Bring customers back when they switch tabs by showing a playful or promotional browser title message.",
       features: [
         {
           title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          description: "Set your own messages, emojis, and triggers to suit your brand’s tone.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Engaging",
+          description: "Encourages users to return to your store and complete their purchase.",
+        },
+        {
+          title: "Simple Setup",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Activate in seconds—no coding required, just pick your message and go live.",
         },
       ],
     },
     "Bundle Discount": {
       title: "Bundle Discount",
       description:
-        "Bundle products together and sell them at a discount price.",
+        "Boost average order value by letting customers buy related products together at a discount.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Flexible Discounts",
+          description: "Offer percentage or fixed discounts for product bundles.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Customizable Display",
+          description: "Choose where and how bundles appear on your store pages.",
+        },
+        {
+          title: "Automated Savings",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Discounts apply automatically at checkout for a frictionless experience.",
         },
       ],
     },
-    "Buy One Get One": {
+    "Buy 'X' Get 'Y'": {
       title: "Buy One Get One",
       description:
-        "Provide discounts when a customer purchases a qualifying product.",
+        "Run classic BOGO campaigns that reward shoppers with free or discounted products automatically.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Versatile Setup",
+          description: "Create ‘Buy X Get Y’ offers for any product combination.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Auto Application",
+          description: "No discount codes needed—Shopify applies the deal instantly.",
+        },
+        {
+          title: "Conversion Boosting",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Encourages larger purchases and repeat customers with irresistible deals.",
         },
       ],
     },
     "Volume Discounts": {
       title: "Volume Discounts",
-      description: "Offer tiered discounts based on quantity purchased.",
+      description:
+        "Encourage bulk buying by offering tiered discounts based on the quantity purchased.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Tiered Pricing",
+          description: "Set dynamic price breaks to reward higher order quantities.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Visual Display",
+          description: "Show customers how much they’ll save as they add more items.",
+        },
+        {
+          title: "Increased Revenue",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Boost cart size and profit margins by motivating shoppers to buy more per order.",
         },
       ],
     },
     "Mix & Match": {
       title: "Mix & Match",
       description:
-        "Let customers create bundles by choosing products at a discount.",
+        "Let shoppers build their own custom bundles by mixing products at a special combined price.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Flexible Rules",
+          description: "Define eligible products and discounts for any combination.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Engaging Experience",
+          description: "Encourages exploration and personalization while shopping.",
+        },
+        {
+          title: "Sales Growth",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Increase average order value by making it fun and rewarding to bundle products.",
         },
       ],
     },
