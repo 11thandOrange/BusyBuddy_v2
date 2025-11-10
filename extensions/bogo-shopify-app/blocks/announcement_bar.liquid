@@ -1,0 +1,16 @@
+
+  <div id="busybuddy-announcement-bar"></div>
+  
+  <script
+    src="{{ 'announcement-bar-extension.js' | asset_url }}"
+    data-store-url="{{ shop.url }}"
+    defer
+  ></script>
+  {% schema %}
+  {
+    "name": "BusyBuddy Announcement",
+    "target": "section",
+    "settings": []
+  }
+  {% endschema %}
+

@@ -1,0 +1,13 @@
+version: '3'
+services:
+  bundle-app:
+    build:
+      context: .
+      args:
+        - SHOPIFY_API_KEY=${SHOPIFY_API_KEY}
+    ports:
+      - "8080:8081"
+    env_file:
+      - .env.production
+    volumes:
+      - ./web/images:/images

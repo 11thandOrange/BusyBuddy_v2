@@ -1,0 +1,193 @@
+/* .bogo-app-container {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #e1e1e1;
+  border-radius: 5px;
+  max-width: 400px;
+}
+
+.bogo-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.bundle-item, .bundle-total {
+  margin: 10px 0;
+}
+
+.item-name {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.item-variant {
+  font-size: 14px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.item-prices, .total-prices {
+  display: flex;
+  gap: 10px;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.discounted-price {
+  font-weight: 600;
+  color: #d82c2c;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e1e1e1;
+  margin: 15px 0;
+}
+
+.bundle-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-weight: 600;
+}
+
+.sold-out {
+  color: #d82c2c;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+}
+ .product__bogo-bundle {
+  width: 100%;
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #e1e1e1;
+  border-radius: 5px;
+}
+
+.bogo-bundle {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.bogo-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.bundle-item, .bundle-total {
+  margin: 10px 0;
+}
+
+.item-name {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.item-variant {
+  font-size: 14px;
+  color: #666;
+  margin-top: 3px;
+}
+
+.item-prices, .total-prices {
+  display: flex;
+  gap: 10px;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.discounted-price {
+  font-weight: 600;
+  color: #d82c2c;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e1e1e1;
+  margin: 15px 0;
+}
+
+.bundle-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-weight: 600;
+}
+
+.sold-out {
+  color: #d82c2c;
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+} */
+
+.bogo-bundle-container {
+  margin: 2em 0;
+  padding: 1.5em;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 4px;
+  background: white;
+}
+
+.bogo-bundle {
+  font-family: inherit;
+}
+
+.bogo-bundle h3 {
+  margin-top: 0;
+  font-size: 1.2em;
+}
+
+.bundle-item {
+  margin: 1em 0;
+}
+
+.item-prices {
+  display: flex;
+  gap: 1em;
+}
+
+.original-price {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.discounted-price {
+  font-weight: bold;
+  color: #d82c2c;
+}
+
+.bundle-total {
+  margin: 1.5em 0;
+  padding-top: 1em;
+  border-top: 1px solid rgba(0,0,0,0.1);
+  font-weight: bold;
+}
+
+.bundle-add-to-cart {
+  width: 100%;
+  padding: 1em;
+  background: #2a6df5;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+}

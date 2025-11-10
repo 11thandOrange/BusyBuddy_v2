@@ -1,0 +1,656 @@
+.bundletext {
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+    color: #303030;
+
+}
+.linrrow{
+    border-bottom: 2px solid #e8e5e5;
+    /* padding-bottom: 20px; */
+    padding: 15px;
+}
+.linrrowleft {
+    border-left: 2px solid #e8e5e5;
+    height: 100%; /* Ensures full height border */
+    padding-left: 30px;
+  }
+.linrcol{
+    border-right: 1px solid #d8d7d7;
+    padding-bottom: 20px;
+}
+
+.custom-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: black !important;
+    flex: none;
+    order: 0;
+    flex-grow: 0;
+}
+
+.custom-switch-toggle {
+    width: 41.13px;
+    height: 25px;
+    flex: none;
+    order: 1;
+    flex-grow: 0;
+
+}
+
+.custom-switch-toggle .form-check-input {
+    background-color: #6F6F76;
+    width: 41.13px;
+    height: 25px;
+}
+
+.custom-switch-toggle .form-check-input:checked {
+    background-color: #2FAE2E;
+    width: 41.13px;
+    height: 25px;
+}
+
+.custom-switch-toggle .form-check-input:checked::before {
+    transform: translateX(16px);
+
+}
+
+.productname {
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+    color: #303030;
+
+}
+
+.arrow {
+    width: 20px;
+    color: #8A8A8A;
+    font-size: 20px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crossicon {
+    width: 18px;
+    height: 18px;
+}
+
+.cardtitle {
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 100%;
+    color: #303030;
+    border-bottom: 1px solid #F1F1F1;
+    padding: 20px 0px;
+
+}
+
+.cardtitle1 {
+
+
+
+    border-bottom: 0.4px solid #e6e1e1;
+    padding: 20px 0px;
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 100%;
+
+    color: #222222;
+
+
+}
+.borderbox{
+    border-bottom: 0.4px solid #e6e1e1;
+    padding-top: 10px;
+    padding-bottom: 20px;
+
+}
+.cardtitle2 {
+
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+
+    color: #222222;
+
+
+}
+.carddesc{
+
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 13px;
+line-height: 100%;
+
+color: #616161;
+
+
+}
+
+.discountdropdownselect {
+    padding: 15px 10px;
+    background: #a7a7aa72 !important;
+    /* Persistent background */
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 98%;
+    cursor: pointer;
+    margin: 15px 15px;
+    height: fit-content;
+}
+
+.discountdropdownselect {
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+    color: #222222;
+
+    opacity: 0.6;
+
+}
+
+/* Optional: force background on focus */
+.discountdropdownselect:focus {
+    background: #aeaeb072 !important;
+    box-shadow: none;
+    outline: none;
+}
+
+/* Optional: override browser styles in Firefox */
+@-moz-document url-prefix() {
+    .discountdropdownselect {
+        background-color: #82828472 !important;
+        color: #000;
+    }
+}
+
+.discountdropdownselect2 {
+    padding: 15px 10px;
+    background: #FFFFFF !important;
+    /* Persistent background */
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+}
+
+.discountdropdownselect2 {
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+    color: #222222;
+
+    opacity: 0.6;
+
+}
+
+/* Optional: force background on focus */
+.discountdropdownselect2:focus {
+    background: #fff !important;
+    box-shadow: none;
+    outline: none;
+}
+
+/* Optional: override browser styles in Firefox */
+@-moz-document url-prefix() {
+    .discountdropdownselect2 {
+        background-color: #fff !important;
+        color: #000;
+    }
+}
+/* Dropdown icon styling */
+.dropdown-icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 15px;
+    color: #000;
+}
+
+.previewbox {
+    display: flex;
+    flex-direction: column;
+    gap: 0px;
+}
+
+.previewboxcontent {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+}
+
+.previewboxcontent:hover {
+    background: rgb(197, 197, 243);
+}
+
+.previewprouctname {
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 100%;
+
+    color: #303030;
+
+}
+
+.previewproductbox {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100px;
+}
+
+.previewprouctdesc {
+
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 100%;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    color: #222222;
+
+
+}
+
+.line {
+
+
+    margin: 0 auto;
+    width: 345px;
+    height: 1px;
+
+    background: #222222;
+    opacity: 0.1;
+
+}
+
+.buybtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0px;
+    gap: 5px;
+    background: #5169DD;
+    border-radius: 15px;
+    width: 480px;
+    height: 45px;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 100%;
+    color: #FFFFFF;
+    justify-content: center;
+    align-self: center;
+}
+
+.inputbox {
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 17px 15px;
+    gap: 15px;
+    width: -webkit-fill-available;
+    background: #FFFFFF;
+    border-radius: 12px;
+    border: none;
+
+height: 50px;
+
+
+
+}
+.inputbox2{
+
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 17px 15px;
+gap: 15px;
+
+background: #F1F1F1;
+border-radius: 12px;
+border: none;
+
+
+}
+.inputtitle {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 100%;
+    color: #222222;
+    opacity: 0.6;
+
+}
+
+.colorbox {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}
+
+.colorinputbox {
+    display: flex;
+    align-items: center;
+    gap: 10px !important;
+    width: -webkit-fill-available;
+}
+
+.colorinput {
+    appearance: none;
+    border: 1px solid rgba(34, 34, 34, 0.1);
+    border-radius: 6px;
+    padding: 0;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+
+.colorinput::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.colorinput::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.colorgrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+.cancelbtn{
+
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 10px 20px;
+gap: 10px;
+
+width: 100px;
+height: 35px;
+
+background: #FFFFFF;
+border: 1px solid rgba(34, 34, 34, 0.1);
+border-radius: 8px;
+color: #000;
+
+}
+.savebtn{
+
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 10px 20px;
+gap: 10px;
+
+width: 143px;
+height: 35px;
+color: white;
+background: #222222;
+border-radius: 8px;
+
+
+}
+.selecttext{
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 13px;
+line-height: 100%;
+color: #222222;
+
+
+}
+.slecetbox{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+.bundletxxtb1{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+}
+.bundletxtb2{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+}
+.bundlebox{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.bundletxtb2 p{
+
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 13px;
+line-height: 100%;
+color: #616161;
+
+}
+.previewbtn{
+
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 5px 8px 5px 5px;
+gap: 5px;
+
+background: #F1F1F1;
+border: 1px solid rgba(34, 34, 34, 0.1);
+border-radius: 4px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 11px;
+line-height: 100%;
+color: #222222;
+
+}
+.buymorebtn{
+
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 500;
+font-size: 13px;
+line-height: 100%;
+color: #616161;
+
+}
+.datetext{
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 12px;
+line-height: 100%;
+text-transform: uppercase;
+
+color: #222222;
+
+opacity: 0.5;
+
+}
+.togglebox{
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 10px;
+
+}
+.customizebtn{
+
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 13px;
+line-height: 100%;
+color: #222222;
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 7px 10px 7px 7px;
+gap: 5px;
+
+margin: 0 auto;
+width: 105px;
+height: 29px;
+
+background: #F1F1F1;
+border: 1px solid rgba(34, 34, 34, 0.1);
+border-radius: 8px;
+
+
+}
+.discountdropdownselect {
+    transition: all 0.3s ease;
+    padding-right: 30px;
+  }
+  
+  
+
+.custom-calendar {
+  width: 100%;
+  border: none !important;
+  background: white;
+}
+
+.input-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.input-box {
+  background-color: #f5f5f5 !important;
+}
+
+.button-group {
+  margin-top: 30px;
+  display: flex;
+  gap: 10px;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.save-btn:hover {
+  background: #0056b3;
+}
+
+/* Calendar customization */
+.react-calendar {
+  border: none !important;
+  width: 100% !important;
+}
+
+.react-calendar__tile--active {
+  background: #007bff !important;
+}
+
+.react-calendar__tile--now {
+  background: #e6f3ff !important;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: 500;
+}
+.linewhite{
+  padding: 10px 0;
+  margin: 0px;
+  border-bottom: 1px solid #FFFFFF;
+}

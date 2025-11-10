@@ -1,0 +1,16 @@
+@font-face {
+    font-family: 'Inter';
+    src: url('/web//frontend//assets/fonts/Inter24pt-Regular.woff') format('woff');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+  }
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .layoutbox{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
