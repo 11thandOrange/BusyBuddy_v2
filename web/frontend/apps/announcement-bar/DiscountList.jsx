@@ -9,6 +9,7 @@ import Button from "../../components/Button";
 import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
+import mixAndMatchVideo from "../../assets/mix_and_match.mp4";
 import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
@@ -348,7 +349,7 @@ export default function DiscountList({
                         padding: "4px",
                       }}
                     >
-                      <source src="/videos/marshall-promo.mp4" type="video/mp4" />
+                      <source src={mixAndMatchVideo} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                     <div className="position-absolute top-50 start-50 translate-middle">
