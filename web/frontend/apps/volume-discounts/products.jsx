@@ -9,10 +9,9 @@ import {
   InputGroup,
   Image,
   Collapse,
+  Spinner,
 } from "react-bootstrap";
-import { X, Check } from "react-bootstrap-icons";
 import Button from "../../components/Button";
-import tshirtp from "../../assets/tshirt.png";
 
 export default function Products({ onClose, setSelectedProducts, selectedProducts = [], setVariantPricing }) {
   const [activeTab, setActiveTab] = useState("All Products");
@@ -23,6 +22,9 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   const [collections, setCollections] = useState([]);
   const [activeCollection, setActiveCollection] = useState(null);
   const [products, setProducts] = useState([]);
+  const [pageInfo, setPageInfo] = useState({ hasNextPage: false, endCursor: null });
+  const loaderRef = useRef(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   // Refs for indeterminate checkboxes
   const checkboxRefs = useRef({});
   // Filter products based on search term and active tab
@@ -47,9 +49,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(({ node }) => 
-        node.title.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(({ node }) => node.title.toLowerCase().includes(searchLower));
     }
 
     // Apply tab filter (Selected Products)
@@ -57,9 +57,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       filtered = filtered.filter(({ node }) => {
         const productVariants = selectedVariants[node.id] || {};
         // Check if any variant is selected (excluding optionInfo)
-        return Object.entries(productVariants).some(([key, value]) => 
-          key !== "optionInfo" && value === true
-        );
+        return Object.entries(productVariants).some(([key, value]) => key !== "optionInfo" && value === true);
       });
     }
 
@@ -181,7 +179,6 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       [productId]: !prev[productId],
     }));
   };
-  
 
   // Replace your current getSelectedCount function with this:
   const getSelectedCount = () => {
@@ -208,14 +205,39 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       }
     }
   }, [activeTab]);
-  async function getProducts() {
+
+  useEffect(() => {
+    if (!loaderRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && pageInfo.hasNextPage && !isLoadingMore) {
+          setIsLoadingMore(true);
+          getProducts(pageInfo.endCursor, true).then(() => setIsLoadingMore(false));
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [pageInfo, isLoadingMore]);
+
+  async function getProducts(cursor = null, append = false) {
     try {
-      const response = await fetch("/api/products");
+      const response = await fetch(`/api/products${cursor ? `?cursor=${cursor}` : ""}`);
       if (!response.ok) throw new Error("Failed to fetch products");
+
       const data = await response.json();
-      const edges = data.data.products.edges || [];
-      setBaseProducts(edges);
-      setProducts(edges);
+      const edges = data.data.edges || [];
+      const newPageInfo = data.data.pageInfo || {};
+
+      setPageInfo(newPageInfo);
+      console.log("Fetched Products:", data);
+      console.log("Fetched Products edges:", edges);
+      setProducts((prev) => (append ? [...prev, ...edges] : edges));
+      setBaseProducts((prev) => (append ? [...prev, ...edges] : edges));
     } catch (error) {
       console.log("GetProductsError", error);
     }
@@ -598,109 +620,122 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
 
       {/* Product List */}
       <div className="bg-white shadow-sm rounded">
-        {filteredProducts.map(({ node: product }, idx) => {
-          // Check if product is in selectedProducts but don't show badge
-          const isProductSelected = selectedProducts.some((p) => p.productId === product.id);
-          const isDisabled = isProductDisabled(product.id);
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map(({ node: product }, idx) => {
+            // Check if product is in selectedProducts but don't show badge
+            const isProductSelected = selectedProducts.some((p) => p.productId === product.id);
+            const isDisabled = isProductDisabled(product.id);
 
-          return (
-            <div
-              key={product.id}
-              className={`p-3 mb-3 rounded ${isDisabled ? "text-muted" : ""}`}
-              style={{ opacity: isDisabled ? 0.5 : 1 }}
-            >
-              <div className="d-flex align-items-center">
-                <div onClick={handleCheckboxClick}>
-                  <Form.Check
-                    type="checkbox"
-                    ref={(ref) => (checkboxRefs.current[product.id] = ref)}
-                    checked={selectedVariants[product.id]?.[0] || false}
-                    onChange={() => handleToggleVariant(product.id, 0)}
-                    className="me-2"
-                    style={{
-                      transform: "scale(1.3)",
-                      accentColor: "black",
-                    }}
-                    disabled={isDisabled}
-                  />
-                </div>
-                <div
-                  className="d-flex align-items-center flex-grow-1"
-                  onClick={() => handleToggleProduct(product.id)}
-                >
-                  <Image
-                    src={
-                      product?.featuredMedia?.image?.url ||
-                      "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"
-                    }
-                    width={80}
-                    height={80}
-                    className="me-3 rounded img-fluid"
-                  />
-                  <div className="flex-grow-1">
-                    <div>{product.title}</div>
+            return (
+              <div
+                key={product.id}
+                className={`p-3 mb-3 rounded ${isDisabled ? "text-muted" : ""}`}
+                style={{ opacity: isDisabled ? 0.5 : 1 }}
+              >
+                <div className="d-flex align-items-center">
+                  <div onClick={handleCheckboxClick}>
+                    <Form.Check
+                      type="checkbox"
+                      ref={(ref) => (checkboxRefs.current[product.id] = ref)}
+                      checked={selectedVariants[product.id]?.[0] || false}
+                      onChange={() => handleToggleVariant(product.id, 0)}
+                      className="me-2"
+                      style={{
+                        transform: "scale(1.3)",
+                        accentColor: "black",
+                      }}
+                      disabled={isDisabled}
+                    />
+                  </div>
+                  <div
+                    className="d-flex align-items-center flex-grow-1"
+                    onClick={() => handleToggleProduct(product.id)}
+                  >
+                    <Image
+                      src={
+                        product?.featuredMedia?.image?.url ||
+                        "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"
+                      }
+                      width={80}
+                      height={80}
+                      className="me-3 rounded img-fluid"
+                    />
+                    <div className="flex-grow-1">
+                      <div>{product.title}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <Collapse in={expandedProducts[product.id]}>
-                <div className="mt-3">
-                  {/* Display each option separately */}
-                  {product.options.map((option, optIdx) => {
-                    // Find matching option in selectedProducts
-                    const selectedProduct = selectedProducts.find((p) => p.productId === product.id);
-                    const selectedOption = selectedProduct?.optionSelections.find(
-                      (o) => o.name === option.name
-                    );
+                <Collapse in={expandedProducts[product.id]}>
+                  <div className="mt-3">
+                    {/* Display each option separately */}
+                    {product.options.map((option, optIdx) => {
+                      // Find matching option in selectedProducts
+                      const selectedProduct = selectedProducts.find((p) => p.productId === product.id);
+                      const selectedOption = selectedProduct?.optionSelections.find(
+                        (o) => o.name === option.name
+                      );
 
-                    return (
-                      <div key={optIdx} className="mb-3">
-                        <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>
-                          {option.name}
-                        </div>
+                      return (
+                        <div key={optIdx} className="mb-3">
+                          <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>
+                            {option.name}
+                          </div>
 
-                        {/* Display individual values for each option */}
-                        {option.values.map((value, valueIdx) => {
-                          // Check if this specific value is selected in selectedProducts
-                          const isValueSelected = selectedOption?.values.includes(value);
-                          const variantIndex = `${optIdx}-${valueIdx}`;
-                          const isOptionDisabled = isProductDisabled(product.id);
+                          {/* Display individual values for each option */}
+                          {option.values.map((value, valueIdx) => {
+                            // Check if this specific value is selected in selectedProducts
+                            const isValueSelected = selectedOption?.values.includes(value);
+                            const variantIndex = `${optIdx}-${valueIdx}`;
+                            const isOptionDisabled = isProductDisabled(product.id);
 
-                          return (
-                            <div
-                              key={valueIdx}
-                              className="d-flex align-items-center"
-                              // if last index then show border bottom as well
-                              style={{
-                                border: "1px solid lightgrey",
-                                padding: "10px 100px",
-                                borderWidth: valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0",
-                                opacity: isOptionDisabled ? 0.5 : 1,
-                              }}
-                            >
-                              <Form.Check
-                                type="checkbox"
-                                checked={selectedVariants[product.id]?.[variantIndex] || false}
-                                onChange={() => handleToggleVariant(product.id, variantIndex)}
-                                className="me-2"
+                            return (
+                              <div
+                                key={valueIdx}
+                                className="d-flex align-items-center"
+                                // if last index then show border bottom as well
                                 style={{
-                                  transform: "scale(1.3)",
-                                  accentColor: "black",
+                                  border: "1px solid lightgrey",
+                                  padding: "10px 100px",
+                                  borderWidth: valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0",
+                                  opacity: isOptionDisabled ? 0.5 : 1,
                                 }}
-                                disabled={isOptionDisabled}
-                              />
-                              <div className="fw-bold">{value}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Collapse>
-            </div>
-          );
-        })}
+                              >
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={selectedVariants[product.id]?.[variantIndex] || false}
+                                  onChange={() => handleToggleVariant(product.id, variantIndex)}
+                                  className="me-2"
+                                  style={{
+                                    transform: "scale(1.3)",
+                                    accentColor: "black",
+                                  }}
+                                  disabled={isOptionDisabled}
+                                />
+                                <div className="fw-bold">{value}</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Collapse>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-4 text-center text-muted">
+            {activeTab === "Selected Products"
+              ? "No products selected"
+              : searchTerm
+                ? `No products found for "${searchTerm}"`
+                : "No products available"}
+          </div>
+        )}
+        <div ref={loaderRef} className="text-center p-3">
+          {isLoadingMore ? <Spinner animation="border" variant="primary" /> : ""}
+        </div>
       </div>
 
       {/* Footer */}

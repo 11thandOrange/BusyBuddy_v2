@@ -443,6 +443,14 @@ async function createProductBundleV2(req, res) {
       productsToStoreInDb = products; // Store the general products array for other types
     }
     console.log("productsToStoreInDb:", JSON.stringify(productsToStoreInDb, null, 2));
+    // 🧩 When type is "Volume Discount", attach variant IDs to quantityBreaks
+    if (type === "Volume Discount" && Array.isArray(quantityBreaks)) {
+      const bundleVariantIds = bundleProductVariants.map((v) => v.id);
+      quantityBreaks = quantityBreaks.map((qb, index) => ({
+        ...qb,
+        variantId: bundleVariantIds[index] || null, // store matching variantId if available
+      }));
+    }
     let CreateBundle = await Bundle.create({
       title,
       type,
@@ -633,7 +641,7 @@ mutation setPriceForMixAndMatchProduct {
         {
           key: "bundle_discount_value",
           namespace: "busy-buddy",
-        //   value: discountValue || "10,20", // Default values for example
+          //   value: discountValue || "10,20", // Default values for example
           value: Object.values(tierDiscounts).join(","),
           type: "single_line_text_field",
         },
@@ -882,7 +890,7 @@ mutation setPriceForMixAndMatchProduct {
         {
           key: "bundle_discount_value",
           namespace: "busy-buddy",
-        //   value: discountValue || "10,20", // Default values for example
+          //   value: discountValue || "10,20", // Default values for example
           value: Object.values(tierDiscounts).join(","),
           type: "single_line_text_field",
         },
@@ -1003,19 +1011,19 @@ mutation setPriceForMixAndMatchProduct {
     // });
 
     await Bundle.findByIdAndUpdate(id, {
-        title,
-        type,
-        products: products,
-        discountType,
-        discountValue,
-        internalName,
-        priority: bundlePriority,
-        status, // Store the string status
-        widgetAppearance,
-        startDate,
-        endDate,
-        shopId: shopData ? shopData._id : null, // Handle if shopData is null
-        shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      title,
+      type,
+      products: products,
+      discountType,
+      discountValue,
+      internalName,
+      priority: bundlePriority,
+      status, // Store the string status
+      widgetAppearance,
+      startDate,
+      endDate,
+      shopId: shopData ? shopData._id : null, // Handle if shopData is null
+      shopifyBundleId: productId, // Store the Shopify product ID of the bundle
     });
     return res.status(201).json({
       status: true,
@@ -1530,6 +1538,7 @@ async function updateBundle(req, res) {
       productsX,
       productsY,
       originalVariantPrices,
+      priority
     } = req.body;
     console.log("Update bundle request body:", widgetAppearance);
     // 1. Update Shopify bundle product if title changed
@@ -1617,6 +1626,7 @@ async function updateBundle(req, res) {
     if (status !== undefined) updateFields.status = status;
     if (internalName) updateFields.internalName = internalName;
     if (bundlePriority !== undefined) updateFields.priority = bundlePriority;
+    if (priority !== undefined) updateFields.priority = priority;
     if (widgetAppearance) updateFields.widgetAppearance = widgetAppearance;
     if (startDate) updateFields.startDate = startDate;
     if (endDate) updateFields.endDate = endDate;
@@ -1650,6 +1660,7 @@ async function updateBundle(req, res) {
         tags: tagsUpdateResult ? "Tags updated" : "No tags update",
       },
       bundleData: updatedProductData?.data?.product || "Could not fetch updated product data",
+      bundleRecords: updatedBundle,
     });
   } catch (error) {
     console.error("Error updating product bundle:", error);

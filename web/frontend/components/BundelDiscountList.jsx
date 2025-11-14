@@ -126,8 +126,9 @@ export default function DiscountList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priority: value }),
       });
-      const { data } = await res.json();
-
+      // console.log("Priority update response data:", await res.json());
+      const { bundleRecords } = await res.json();
+      let data = bundleRecords;
       setDiscounts(
         discounts.map((discount) =>
           discount._id === id ? { ...discount, priority: data.priority } : discount
@@ -145,7 +146,8 @@ export default function DiscountList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: !currentStatus }),
       });
-      const { data } = await res.json();
+      const { bundleRecords } = await res.json();
+      let data = bundleRecords;
 
       setDiscounts(
         discounts.map((discount) => (discount._id === id ? { ...discount, status: data.status } : discount))

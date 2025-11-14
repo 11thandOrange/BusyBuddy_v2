@@ -69,8 +69,12 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
   });
   const [isCountdownActive, setIsCountdownActive] = useState(false);
   const [products, setProducts] = useState([]); // Add products state
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingToastId, setSavingToastId] = useState(null);
+  const [currency, setCurrency] = useState("$");
   useEffect(() => {
     getProducts();
+    getCurrency();
   }, []);
   // Countdown timer effect
   useEffect(() => {
@@ -127,11 +131,10 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
       // Populate form fields with existing data
       setBundleTitle(editData.title || "");
       setBundleInternalName(editData.internalName || "");
-      setBundlePriority(editData.bundlePriority || 0);
+      setBundlePriority(editData.priority || 0);
       setStatusToggle(editData.status || false);
       setDiscountType(editData.discountType || "");
       setInputValue(String(editData.discountValue) || "");
-
       // Set products if available
       if (editData.products) {
         setSelectedProducts(editData.products);
@@ -167,12 +170,26 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
       }
     }
   }, [editData]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (savingToastId) {
+        dismissToast(savingToastId);
+      }
+    };
+  }, [savingToastId]);
   useEffect(() => {
     if (selectedProducts && selectedProducts.length > 0 && products.length > 0) {
       calculateVariantPricing();
     }
   }, [selectedProducts, products, discountType, inputValue]);
-
+  useEffect(() => {
+    return () => {
+      if (savingToastId) {
+        dismissToast(savingToastId);
+      }
+    };
+  }, [savingToastId]);
   // Same cartesian product function as in Products component
   const cartesianProduct = (arrays) => {
     if (arrays.length === 0) return [];
@@ -312,9 +329,27 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
         throw new Error("Failed to fetch products");
       }
       const data = await response.json();
-      console.log("Products data in BundleDiscountActions:", data.data.products.edges);
+      console.log("Products data in BundleDiscountActions:", data.data.products);
       const edges = data.data.products.edges || [];
       setProducts(edges);
+    } catch (error) {
+      console.log("GetProductsError in BundleDiscountActions", error);
+    }
+  }
+  async function getCurrency() {
+    try {
+      const response = await fetch("/api/products/currency", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+      const data = await response.json();
+      // console.log("Products data in BundleDiscountActions:", data);
+      setCurrency(data.symbol || "$");
     } catch (error) {
       console.log("GetProductsError in BundleDiscountActions", error);
     }
@@ -379,13 +414,21 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
         });
         return;
       }
+      setIsSaving(true);
+      // Show persistent saving toast
+      const toastId = showPersistentToast("Saving bundle...");
+      setSavingToastId(toastId);
+      const internalNameToUse =
+        bundleInternalName && bundleInternalName.trim() !== ""
+          ? bundleInternalName.trim()
+          : bundleTitle.trim();
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
         discountType: discountType,
         discountValue: inputValue,
         status: statusToggle,
-        internalName: bundleInternalName,
+        internalName: internalNameToUse,
         type: "Bundle Discount",
         bundlePriority: bundlePriority,
         widgetAppearance: {
@@ -411,40 +454,60 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
       const url = isEditing ? `/api/bundles/${editData._id}` : "/api/bundles";
       const method = isEditing ? "PUT" : "POST";
 
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bundleData),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
-          duration: 5000,
-          style: {
-            backgroundColor: "#4CAF50",
-            color: "#fff",
-            fontSize: "16px",
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify(bundleData),
         });
-        if (onSuccess) {
-          onSuccess(); // This will set showAction to false and return to DiscountList
+        let responseData;
+        try {
+          responseData = await response.json();
+        } catch (jsonErr) {
+          console.warn("Response is not valid JSON:", jsonErr);
+          responseData = { message: "Unexpected server response." };
         }
-      } else {
-        console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
-        shopify.toast.show(
-          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
-          {
+        if (response.ok) {
+          dismissToast(savingToastId);
+          shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
             duration: 5000,
-            style: {
-              backgroundColor: "#f44336",
-              color: "#fff",
-              fontSize: "16px",
-            },
-          }
-        );
+            style: { backgroundColor: "#4CAF50", color: "#fff", fontSize: "16px" },
+          });
+          if (onSuccess) onSuccess();
+        } else {
+          console.error("Backend error response:", responseData);
+          dismissToast(savingToastId);
+
+          const errorMessage =
+            responseData?.message ||
+            responseData?.error ||
+            `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`;
+
+          // Force flush to ensure toast shows even during rapid state updates
+          setTimeout(() => {
+            shopify.toast.show(errorMessage, {
+              duration: 8000,
+              style: { backgroundColor: "#f44336", color: "#fff", fontSize: "16px" },
+            });
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Network or parsing error:", error);
+        dismissToast(savingToastId);
+
+        const errorMessage = error?.message || "Network error. Please check your connection and try again.";
+
+        setTimeout(() => {
+          shopify.toast.show(errorMessage, {
+            duration: 8000,
+            style: { backgroundColor: "#f44336", color: "#fff", fontSize: "16px" },
+          });
+        }, 100);
+      } finally {
+        setIsSaving(false);
+        setSavingToastId(null);
       }
     }
   };
@@ -585,6 +648,21 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
   };
   const handleRadiusChange = (e) => {
     setCornerRadius(e.target.value);
+  };
+
+  const showPersistentToast = (message, style = {}) => {
+    // Show toast and store the ID to dismiss later
+    const toastId = shopify.toast.show(message, {
+      duration: 86400000, // Very long duration (24 hours)
+      style: { backgroundColor: "#2196F3", color: "#fff", ...style },
+      isError: false,
+    });
+    return toastId;
+  };
+  const dismissToast = (toastId) => {
+    if (toastId) {
+      shopify.toast.hide(toastId);
+    }
   };
   return (
     <>
@@ -1779,11 +1857,13 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                   <Button
                     text={
                       <>
-                        {selectedIndex === tabs.length - 1
-                          ? isEditing
-                            ? "Update Bundle"
-                            : "Confirm and Publish Bundle"
-                          : "Next to Continue"}
+                        {isSaving
+                          ? "Saving..."
+                          : selectedIndex === tabs.length - 1
+                            ? isEditing
+                              ? "Update Bundle"
+                              : "Confirm and Publish Bundle"
+                            : "Next to Continue"}
                       </>
                     }
                     onClick={handleNext}
@@ -1961,7 +2041,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                                           color: colorSettings["Primary Text Color"],
                                         }}
                                       >
-                                        Rs.{price}
+                                        {currency}.{price}
                                       </p>
                                       {compareAtPrice != price && (
                                         <>
@@ -1981,7 +2061,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                                               margin: 0,
                                             }}
                                           >
-                                            Rs.{compareAtPrice}
+                                            {currency}.{compareAtPrice}
                                           </p>
                                         </>
                                       )}
@@ -2174,7 +2254,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                                 margin: "5px 0 0 0",
                               }}
                             >
-                              Save {bundlePricing.discountPercentage}% (Rs.
+                              Save {bundlePricing.discountPercentage}% ({currency}.
                               {bundlePricing.saved})
                             </p>
                           )}
@@ -2192,7 +2272,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                               margin: 0,
                             }}
                           >
-                            Rs.{bundlePricing.finalPrice}
+                            {currency}.{bundlePricing.finalPrice}
                           </p>
                           {bundlePricing.discountPercentage > 0 && (
                             <p
@@ -2206,7 +2286,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                                 margin: "5px 0 0 0",
                               }}
                             >
-                              Rs.{bundlePricing.compareAtPrice}
+                              {currency}.{bundlePricing.compareAtPrice}
                             </p>
                           )}
                         </div>

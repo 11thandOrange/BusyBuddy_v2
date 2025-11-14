@@ -852,3 +852,19 @@ label {
     transform: translateX(-50%);
   }
 }
+/* Add this to your CSS file */
+.select-with-arrow {
+  /* appearance: menulist !important;
+  -webkit-appearance: menulist !important; */
+  -moz-appearance: menulist !important;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23333' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  background-size: 16px 12px !important;
+  padding-right: 2.5rem !important;
+  background-color: white !important;
+}
+
+.select-with-arrow::-ms-expand {
+  display: block !important; /* Show arrow in IE */
+}

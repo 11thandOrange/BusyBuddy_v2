@@ -2559,7 +2559,7 @@ const BundleDiscountActions = React.forwardRef(
                                   <Form.Label>Theme</Form.Label>
                                   <Form.Control
                                     as="select"
-                                    className="inputbox"
+                                    className="inputbox select-with-arrow"
                                     value={timerStylingSettings.theme}
                                     onChange={(e) =>
                                       setTimerStylingSettings({
@@ -2584,7 +2584,7 @@ const BundleDiscountActions = React.forwardRef(
                                   <Form.Label>Timer Alignment</Form.Label>
                                   <Form.Control
                                     as="select"
-                                    className="inputbox"
+                                    className="inputbox select-with-arrow"
                                     value={timerStylingSettings.alignment}
                                     onChange={(e) =>
                                       setTimerStylingSettings({

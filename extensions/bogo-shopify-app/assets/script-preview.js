@@ -17,7 +17,8 @@ class BOGOBundle {
     this.selectedXProducts = new Map();
     this.selectedYProducts = new Map();
     this.init();
-  }ou
+  }
+  ou;
 
   async init() {
     this.container = document.querySelector(".bogo-bundle-container");
@@ -131,19 +132,33 @@ class BOGOBundle {
           // products could be an array OR an object with x/y arrays (for BOGO)
           if (Array.isArray(bundle.products)) {
             bundleContainsCurrentProduct = bundle.products.some(
-              (bp) => String(bp.productId).split("/").pop() === currentProductIdString
+              (bp) =>
+                String(bp.productId).split("/").pop() === currentProductIdString
             );
           } else if (bundle.products && typeof bundle.products === "object") {
-            const xArr = Array.isArray(bundle.products.x) ? bundle.products.x : [];
-            const yArr = Array.isArray(bundle.products.y) ? bundle.products.y : [];
+            const xArr = Array.isArray(bundle.products.x)
+              ? bundle.products.x
+              : [];
+            const yArr = Array.isArray(bundle.products.y)
+              ? bundle.products.y
+              : [];
             bundleContainsCurrentProduct = [...xArr, ...yArr].some(
-              (bp) => String(bp.productId).split("/").pop() === currentProductIdString
+              (bp) =>
+                String(bp.productId).split("/").pop() === currentProductIdString
             );
-          } else if (Array.isArray(bundle.productsX) || Array.isArray(bundle.productsY)) {
-            const xArr = Array.isArray(bundle.productsX) ? bundle.productsX : [];
-            const yArr = Array.isArray(bundle.productsY) ? bundle.productsY : [];
+          } else if (
+            Array.isArray(bundle.productsX) ||
+            Array.isArray(bundle.productsY)
+          ) {
+            const xArr = Array.isArray(bundle.productsX)
+              ? bundle.productsX
+              : [];
+            const yArr = Array.isArray(bundle.productsY)
+              ? bundle.productsY
+              : [];
             bundleContainsCurrentProduct = [...xArr, ...yArr].some(
-              (bp) => String(bp.productId).split("/").pop() === currentProductIdString
+              (bp) =>
+                String(bp.productId).split("/").pop() === currentProductIdString
             );
           }
 
@@ -164,12 +179,12 @@ class BOGOBundle {
           this.bundleType = prioritizedBundle.type
             .toLowerCase()
             .replace(/\s+/g, "_");
-          
+
           // Handle Buy One Get One special case
           if (prioritizedBundle.type === "Buy One Get One") {
             this.bundleType = "buy_one_get_one";
           }
-          
+
           this.bundleConfig = {
             title: prioritizedBundle.title || "Special Bundle Offer!",
             discountPercent: prioritizedBundle.discountValue || 10,
@@ -468,7 +483,8 @@ class BOGOBundle {
         defaultQuantity: quantity,
         options: productData.options,
         bundleIndex: 0,
-        bundleTitle: bundleProductItem.title || bundle.title || "Prioritized Bundle",
+        bundleTitle:
+          bundleProductItem.title || bundle.title || "Prioritized Bundle",
       });
     }
     this.prioritizedBundleProducts = prioritizedBundleProducts;
@@ -504,9 +520,9 @@ class BOGOBundle {
         continue;
       }
 
-        for (let idx = 0; idx < bundle.products.length; idx++) {
-            const bundleProductItem = bundle.products[idx];
-            console.log(`  Processing bundle product item:`, bundleProductItem);
+      for (let idx = 0; idx < bundle.products.length; idx++) {
+        const bundleProductItem = bundle.products[idx];
+        console.log(`  Processing bundle product item:`, bundleProductItem);
 
         const shopifyProductId = String(bundleProductItem.productId)
           .split("/")
@@ -652,12 +668,12 @@ class BOGOBundle {
   }
 
   async collectBuyOneGetOneProducts(bundle) {
-    console.log('collectBuyOneGetOneProducts-bundle', bundle)
+    console.log("collectBuyOneGetOneProducts-bundle", bundle);
     console.log("Starting to collect Buy One Get One products:", bundle);
     console.log("Bundle products structure:", bundle.products);
     console.log("Bundle productsX:", bundle.productsX);
     console.log("Bundle productsY:", bundle.productsY);
-    
+
     // Handle X products (products customer buys)
     if (bundle.products && bundle.products.x && bundle.products.x.length > 0) {
       console.log("Found X products in bundle.products.x:", bundle.products.x);
@@ -666,7 +682,7 @@ class BOGOBundle {
       console.log("Found X products in bundle.productsX:", bundle.productsX);
       this.xProducts = await this.collectProductGroup(bundle.productsX, "X");
     }
-    
+
     // Handle Y products (products customer gets)
     if (bundle.products && bundle.products.y && bundle.products.y.length > 0) {
       console.log("Found Y products in bundle.products.y:", bundle.products.y);
@@ -675,10 +691,10 @@ class BOGOBundle {
       console.log("Found Y products in bundle.productsY:", bundle.productsY);
       this.yProducts = await this.collectProductGroup(bundle.productsY, "Y");
     }
-    
+
     console.log("X Products (Buy):", this.xProducts);
     console.log("Y Products (Get):", this.yProducts);
-    
+
     // Check if we have valid products for Buy One Get One
     if (this.xProducts.length === 0 && this.yProducts.length === 0) {
       console.warn("No valid X or Y products found for Buy One Get One bundle");
@@ -691,7 +707,11 @@ class BOGOBundle {
   async collectProductGroup(productGroup, groupType) {
     const products = [];
 
-    for (let productIndex = 0; productIndex < productGroup.length; productIndex++) {
+    for (
+      let productIndex = 0;
+      productIndex < productGroup.length;
+      productIndex++
+    ) {
       const bundleProductItem = productGroup[productIndex];
       const shopifyProductId = String(bundleProductItem.productId)
         .split("/")
@@ -702,15 +722,17 @@ class BOGOBundle {
 
       // Check if we already have enhanced product data from the API
       if (bundleProductItem.media && bundleProductItem.title) {
-        console.log(`Using enhanced product data from API for ${groupType} product ${shopifyProductId}`);
-        
+        console.log(
+          `Using enhanced product data from API for ${groupType} product ${shopifyProductId}`
+        );
+
         // Create a mock product data structure from the API response
         const productData = {
           id: shopifyProductId,
           title: bundleProductItem.title,
           images: [{ src: bundleProductItem.media }],
           variants: [], // We'll need to fetch variants for proper functionality
-          options: []
+          options: [],
         };
 
         // Still need to fetch variants for proper functionality
@@ -718,16 +740,23 @@ class BOGOBundle {
         try {
           productHandle = await this.resolveProductHandle(shopifyProductId);
           if (productHandle) {
-            const productResponse = await fetch(`/products/${productHandle}.js`);
+            const productResponse = await fetch(
+              `/products/${productHandle}.js`
+            );
             if (productResponse.ok) {
               const fullProductData = await productResponse.json();
               productData.variants = fullProductData.variants;
               productData.options = fullProductData.options;
-              console.log(`Fetched variants for ${groupType} product ${shopifyProductId}`);
+              console.log(
+                `Fetched variants for ${groupType} product ${shopifyProductId}`
+              );
             }
           }
         } catch (error) {
-          console.warn(`Could not fetch variants for ${groupType} product ${shopifyProductId}:`, error);
+          console.warn(
+            `Could not fetch variants for ${groupType} product ${shopifyProductId}:`,
+            error
+          );
         }
 
         const variants = productData.variants.map((variant) => ({
@@ -771,7 +800,9 @@ class BOGOBundle {
           defaultVariant = variants.find((v) => v.available) || variants[0];
         }
 
-        const instanceId = `${productData.id}-${groupType.toLowerCase()}-${productIndex}`;
+        const instanceId = `${
+          productData.id
+        }-${groupType.toLowerCase()}-${productIndex}`;
 
         if (defaultVariant) {
           if (groupType === "X") {
@@ -834,8 +865,10 @@ class BOGOBundle {
       }
 
       // Fallback to original method if no enhanced data
-      console.log(`No enhanced data available, fetching product data for ${groupType} product ${shopifyProductId}`);
-      
+      console.log(
+        `No enhanced data available, fetching product data for ${groupType} product ${shopifyProductId}`
+      );
+
       let productData;
       // Get the handle first
       const productHandle = await this.resolveProductHandle(shopifyProductId);
@@ -859,7 +892,9 @@ class BOGOBundle {
           continue;
         }
         productData = await productResponse.json();
-        console.log(`SUCCESS: Fetched ${groupType} product data for ${productHandle}.`);
+        console.log(
+          `SUCCESS: Fetched ${groupType} product data for ${productHandle}.`
+        );
       } catch (error) {
         console.error(
           `Error fetching ${groupType} product details for ${shopifyProductId} (handle: ${productHandle}):`,
@@ -916,7 +951,9 @@ class BOGOBundle {
         defaultVariant = variants.find((v) => v.available) || variants[0];
       }
 
-      const instanceId = `${productData.id}-${groupType.toLowerCase()}-${productIndex}`;
+      const instanceId = `${
+        productData.id
+      }-${groupType.toLowerCase()}-${productIndex}`;
 
       if (defaultVariant) {
         if (groupType === "X") {
@@ -972,7 +1009,8 @@ class BOGOBundle {
         defaultQuantity: quantity,
         options: productData.options,
         groupType: groupType,
-        bundleTitle: bundleProductItem.title || bundle.title || `${groupType} Products`,
+        bundleTitle:
+          bundleProductItem.title || bundle.title || `${groupType} Products`,
       });
     }
 
@@ -1169,7 +1207,10 @@ class BOGOBundle {
             appearance
           );
         });
-      } else if (this.bundleType === "bundle_discount" && this.bundleProducts.length > 0) {
+      } else if (
+        this.bundleType === "bundle_discount" &&
+        this.bundleProducts.length > 0
+      ) {
         const appearance = this.bundleConfig.appearance || {};
         let isFirstProductOverall = true;
         const displayedProductInstanceIds = new Set();
@@ -1178,14 +1219,17 @@ class BOGOBundle {
             if (!isFirstProductOverall) {
               allProductsHtml += this.getPlusDividerHtml();
             }
-            allProductsHtml += this.getBundleDiscountProductHtml(productInstance, appearance);
+            allProductsHtml += this.getBundleDiscountProductHtml(
+              productInstance,
+              appearance
+            );
             displayedProductInstanceIds.add(productInstance.instanceId);
             isFirstProductOverall = false;
           }
         });
       } else if (this.bundleType === "buy_one_get_one") {
         const appearance = this.bundleConfig.appearance || {};
-        console.log("getBuyOneGetOneHtml",appearance);
+        console.log("getBuyOneGetOneHtml", appearance);
         allProductsHtml += this.getBuyOneGetOneHtml(appearance);
       } else {
         let isFirstProductOverall = true;
@@ -1278,16 +1322,21 @@ class BOGOBundle {
   ) {
     const selectedVariantInfo = this.selectedProducts.get(instanceId);
     const quantity = parseInt(breakItem.quantity, 10) || 1;
-    const unit = selectedVariantInfo ? selectedVariantInfo.price : 0;
+    // const unit = selectedVariantInfo ? selectedVariantInfo.price : 0;
+    const unit = selectedVariantInfo ? selectedVariantInfo.price / 100 : 0;
     const originalTotal = unit * quantity;
+    const originalProductsTotal = unit * quantity * 100;
     let finalTotal = originalTotal;
     if (this.bundleConfig.discountType === "Percentage") {
-      const pct = parseFloat(breakItem.discount) || 0;
-      finalTotal = unit * (1 - pct / 100) * quantity;
+      const pct = Number(breakItem.discount) || 0;
+      // finalTotal = unit * (1 - pct / 100) * quantity;
+      // finalTotal = (unit * (1 - pct / 100) * quantity).toFixed(2);
+      finalTotal = (unit * (1 - pct / 100) * quantity * 100).toFixed(2);
     } else if (this.bundleConfig.discountType === "Fixed Amount") {
-      const discount = parseFloat(breakItem.discount) || 0;
-      const perUnit = Math.max(0, unit - discount);
-      finalTotal = perUnit * quantity;
+      const discount = Number(breakItem.discount) || 0;
+      // const perUnit = Math.max(0, unit - discount);
+      // finalTotal = Math.max(0, originalTotal - discount).toFixed(2);
+      finalTotal = ((originalTotal - discount) * 100).toFixed(2);
     }
 
     const corner = Math.max(
@@ -1319,25 +1368,23 @@ class BOGOBundle {
         margin-bottom: 15px;
         background-color: ${bg};
         border: 1px solid ${borderColor};
-        cursor: pointer;">
-        <div style="display:flex; align-items:center;">
-          <img src="${
-            product.image || product.images
-          }" width="100" height="100" alt="${
-      product.title
-    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
-      appearance?.borderColor || "#e5e5e5"
-    };" />
+        cursor: pointer;
+        overflow-x: auto;          
+        white-space: nowrap;       
+        max-width: 100%;          
+        -webkit-overflow-scrolling: touch; 
+        ">
+        <div style="display:flex; align-items:center;  min-width: 445px;">
           <div style="flex:1;">
-            <p style="font-weight: 600; font-size: 13px; margin: 0 0 6px 0; color: ${
-              appearance?.primaryTextColor || "#303030"
-            };">${product.title}</p>
+           <p style="margin:8px 0 0 0; font-size:13px; font-weight:600; color:${
+             appearance?.secondaryTextColor || "#303030"
+           };">${nameText}</p>
             <div style="display:flex; align-items:center; gap:8px;">
               <p style="font-weight:600; font-size:14px; margin:0; color:${
                 appearance?.primaryTextColor || "#303030"
               };">Rs.${this.formatCurrency(finalTotal)}</p>
               ${
-                finalTotal !== originalTotal
+                finalTotal !== originalProductsTotal
                   ? `
                 <p style="width:1.5px; height:10px; background:${
                   appearance?.primaryTextColor || "#222"
@@ -1345,18 +1392,12 @@ class BOGOBundle {
                 <p style="color:${
                   appearance?.secondaryTextColor || "#616161"
                 }; font-size:12px; text-decoration: line-through; margin:0;">Rs. ${this.formatCurrency(
-                      originalTotal
+                      originalProductsTotal
                     )}</p>
-                <span style="background:#5169DD; color:${
-                  appearance?.offerTagTextColor || "#fff"
-                }; padding:4px 6px; border-radius:8px; font-size:11px;">${savedPct}% OFF</span>
               `
                   : ""
               }
             </div>
-            <p style="margin:8px 0 0 0; font-size:13px; font-weight:600; color:${
-              appearance?.secondaryTextColor || "#303030"
-            };">${nameText}</p>
           </div>
         </div>
       </div>
@@ -1378,15 +1419,21 @@ class BOGOBundle {
         const suffix = discountType === "Percentage" ? "%" : "";
         return `
         <button data-tier="${tierKey}" style="
-          width: 135px; height: 60px; padding: 16px 12px; border-radius: 20px; border: none;
+          width: 135px; min-width: 135px; height: 60px; padding: 16px 12px; border-radius: 20px; border: none;
           background-color: ${bg}; color: ${col}; font-size: 16px; font-weight: 600; cursor: pointer;
           text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; gap:12px;">
-          <div style="width:20px; height:20px; border-radius:25%; background-color:white; color:black; display:flex; align-items:center; justify-content:center; ${isSelected ? '' : 'border:1px solid #222222;'}">
-            ${isSelected ? `
+          <div style="width:20px; height:20px; border-radius:25%; background-color:white; color:black; display:flex; align-items:center; justify-content:center; ${
+            isSelected ? "" : "border:1px solid #222222;"
+          }">
+            ${
+              isSelected
+                ? `
               <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#5169DD\" stroke-width=\"3\"> 
                 <path d=\"M5 12l5 5L20 7\" />
               </svg>
-            ` : ''}
+            `
+                : ""
+            }
           </div>
           <div style="display:flex; flex-direction:column; align-items:flex-start;">
             <div style="font-weight:bold; font-size:16px;">BUY ${tierKey}</div>
@@ -1425,8 +1472,12 @@ class BOGOBundle {
         parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
       )}px; margin-bottom: 15px; background-color: ${
       appearance?.primaryBackgroundColor || "#ffffff"
-    }; border: 1px solid ${appearance?.borderColor || "#e5e5e5"};">
-        <div style="display:flex; align-items:center;">
+    }; border: 1px solid ${appearance?.borderColor || "#e5e5e5"}; 
+    overflow-x: auto;          
+    white-space: nowrap;       
+    max-width: 100%;           
+    -webkit-overflow-scrolling: touch; ">
+        <div style="display:flex; align-items:center; min-width: 445px;">
           <img src="${
             product.image || product.images
           }" width="100" height="100" alt="${
@@ -1467,25 +1518,52 @@ class BOGOBundle {
     const unit = selectedVariantInfo ? selectedVariantInfo.price : 0;
     const original = this.formatCurrency(unit);
     let finalUnit = unit;
-    if (this.bundleConfig.discountType === 'Percentage') {
-      finalUnit = unit * (1 - (parseFloat(this.bundleConfig.discountPercent) || 0) / 100);
-    } else if (this.bundleConfig.discountType === 'Fixed Amount') {
-      finalUnit = Math.max(0, unit - (parseFloat(this.bundleConfig.discountPercent) || 0));
+    if (this.bundleConfig.discountType === "Percentage") {
+      finalUnit =
+        unit * (1 - (parseFloat(this.bundleConfig.discountPercent) || 0) / 100);
+    } else if (this.bundleConfig.discountType === "Fixed Amount") {
+      finalUnit = Math.max(
+        0,
+        unit - (parseFloat(this.bundleConfig.discountPercent) || 0)
+      );
     }
     const final = this.formatCurrency(finalUnit);
     const showCompare = finalUnit !== unit;
     return `
-      <div style="padding: 15px; border-radius: ${Math.max(0, parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5)}px; margin-bottom: 15px; background-color: ${appearance?.primaryBackgroundColor || '#ffffff'}; border: 1px solid ${appearance?.borderColor || '#e5e5e5'};">
+      <div style="padding: 15px; border-radius: ${Math.max(
+        0,
+        parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
+      )}px; margin-bottom: 15px; background-color: ${
+      appearance?.primaryBackgroundColor || "#ffffff"
+    }; border: 1px solid ${appearance?.borderColor || "#e5e5e5"};">
         <div style="display:flex; align-items:center;">
-          <img src="${product.image || product.images}" width="100" height="100" alt="${product.title} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${appearance?.borderColor || '#e5e5e5'};" />
+          <img src="${
+            product.image || product.images
+          }" width="100" height="100" alt="${
+      product.title
+    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
+      appearance?.borderColor || "#e5e5e5"
+    };" />
           <div style="flex:1;">
-            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${appearance?.primaryTextColor || '#303030'};">${product.title}</p>
+            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${
+              appearance?.primaryTextColor || "#303030"
+            };">${product.title}</p>
             <div style="display:flex; align-items:center; gap:8px;">
-              <p style="font-weight:600; font-size:14px; margin:0; color:${appearance?.primaryTextColor || '#303030'};">Rs.${final}</p>
-              ${showCompare ? `
-                <p style=\"width:1.5px; height:10px; background:${appearance?.primaryTextColor || '#222'}; opacity:0.3; margin:0;\"></p>
-                <p style=\"color:${appearance?.secondaryTextColor || '#616161'}; font-size:12px; text-decoration: line-through; margin:0;\">Rs.${original}</p>
-              ` : ''}
+              <p style="font-weight:600; font-size:14px; margin:0; color:${
+                appearance?.primaryTextColor || "#303030"
+              };">Rs.${final}</p>
+              ${
+                showCompare
+                  ? `
+                <p style=\"width:1.5px; height:10px; background:${
+                  appearance?.primaryTextColor || "#222"
+                }; opacity:0.3; margin:0;\"></p>
+                <p style=\"color:${
+                  appearance?.secondaryTextColor || "#616161"
+                }; font-size:12px; text-decoration: line-through; margin:0;\">Rs.${original}</p>
+              `
+                  : ""
+              }
             </div>
           </div>
         </div>
@@ -1500,36 +1578,37 @@ class BOGOBundle {
     console.log("X Products:", xArr);
     console.log("Y Products:", yArr);
     console.log("Bundle config:", this.bundleConfig);
-    
-    let html = '';
-    
+
+    let html = "";
+
     // X Products Section (Buy)
     if (xArr.length > 0) {
       html += `
         <div style="margin-bottom: 20px;">
           <div style="display: flex; flex-direction: column; gap: 12px;">
       `;
-      
+
       xArr.forEach((product, index) => {
         if (!product) return;
-        html += this.getBuyOneGetOneProductHtml(product, 'X', appearance);
+        html += this.getBuyOneGetOneProductHtml(product, "X", appearance);
         if (index < xArr.length - 1) {
           html += `<div style=\"height:6px\"></div>`;
         }
       });
-      
+
       html += `
           </div>
         </div>
       `;
     }
-    
+
     // Y Products Section (Get)
     if (yArr.length > 0) {
-      const label = this.bundleConfig.discountType === 'Percentage'
-        ? `YOU GET ${this.bundleConfig.discountPercent || 0}% OFF ON`
-        : this.bundleConfig.discountType === 'Free Gift'
-          ? 'YOU WILL GET FREE GIFT ON'
+      const label =
+        this.bundleConfig.discountType === "Percentage"
+          ? `YOU GET ${this.bundleConfig.discountPercent || 0}% OFF ON`
+          : this.bundleConfig.discountType === "Free Gift"
+          ? "YOU WILL GET FREE GIFT ON"
           : `YOU GET Rs.${this.bundleConfig.discountPercent || 0} OFF ON`;
       html += `
         <div style=\"margin-bottom: 20px;\">
@@ -1547,20 +1626,21 @@ class BOGOBundle {
       `;
       yArr.forEach((product) => {
         if (!product) return;
-        html += this.getBuyOneGetOneProductHtml(product, 'Y', appearance);
+        html += this.getBuyOneGetOneProductHtml(product, "Y", appearance);
       });
       html += `</div></div>`;
     }
-    
+
     console.log("Generated Buy One Get One HTML:", html);
     return html;
   }
 
   getBuyOneGetOneProductHtml(product, groupType, appearance) {
-    const selectedVariantInfo = groupType === 'X' 
-      ? this.selectedXProducts.get(product.instanceId)
-      : this.selectedYProducts.get(product.instanceId);
-    
+    const selectedVariantInfo =
+      groupType === "X"
+        ? this.selectedXProducts.get(product.instanceId)
+        : this.selectedYProducts.get(product.instanceId);
+
     if (!selectedVariantInfo) {
       return `<div>Product details unavailable for ${product.title}</div>`;
     }
@@ -1569,18 +1649,24 @@ class BOGOBundle {
       selectedVariantInfo.compare_at_price || selectedVariantInfo.price
     );
     const displayedPrice = this.formatCurrency(selectedVariantInfo.price);
-    
+
     // For Y products, apply discount
     let finalPrice = displayedPrice;
     let showDiscount = false;
-    if (groupType === 'Y') {
-      if (this.bundleConfig.discountType === 'Percentage') {
-        const discountAmount = selectedVariantInfo.price * (this.bundleConfig.discountPercent / 100);
-        finalPrice = this.formatCurrency(selectedVariantInfo.price - discountAmount);
+    if (groupType === "Y") {
+      if (this.bundleConfig.discountType === "Percentage") {
+        const discountAmount =
+          selectedVariantInfo.price * (this.bundleConfig.discountPercent / 100);
+        finalPrice = this.formatCurrency(
+          selectedVariantInfo.price - discountAmount
+        );
         showDiscount = true;
-      } else if (this.bundleConfig.discountType === 'Fixed Amount') {
-        const discountAmount = parseFloat(this.bundleConfig.discountPercent) || 0;
-        finalPrice = this.formatCurrency(Math.max(0, selectedVariantInfo.price - discountAmount));
+      } else if (this.bundleConfig.discountType === "Fixed Amount") {
+        const discountAmount =
+          parseFloat(this.bundleConfig.discountPercent) || 0;
+        finalPrice = this.formatCurrency(
+          Math.max(0, selectedVariantInfo.price - discountAmount)
+        );
         showDiscount = true;
       }
     }
@@ -1591,28 +1677,55 @@ class BOGOBundle {
       selectedVariantInfo.id
     );
 
-    const groupIndicator = '';
+    const groupIndicator = "";
 
     return `
-      <div class="bogo-single-product" data-instance-id="${product.instanceId}" data-group-type="${groupType}" style="
+      <div class="bogo-single-product" data-instance-id="${
+        product.instanceId
+      }" data-group-type="${groupType}" style="
         padding: 15px;
-        border-radius: ${Math.max(0, parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5)}px;
-        margin-bottom: ${groupType === 'Y' ? '5px' : '6px'};
-        background-color: ${groupType === 'Y' ? '#FFFFFFB2' : (appearance?.primaryBackgroundColor || 'white')};
-        border: 1px solid ${appearance?.borderColor || '#e5e5e5'};
+        border-radius: ${Math.max(
+          0,
+          parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
+        )}px;
+        margin-bottom: ${groupType === "Y" ? "5px" : "6px"};
+        background-color: ${
+          groupType === "Y"
+            ? "#FFFFFFB2"
+            : appearance?.primaryBackgroundColor || "white"
+        };
+        border: 1px solid ${appearance?.borderColor || "#e5e5e5"};
       ">
         <div style="display: flex; align-items: center;">
-          <img src="${product.image || product.images}" width="100" height="100" alt="${product.title} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${appearance?.borderColor || '#e5e5e5'};" />
+          <img src="${
+            product.image || product.images
+          }" width="100" height="100" alt="${
+      product.title
+    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
+      appearance?.borderColor || "#e5e5e5"
+    };" />
           <div style="flex-grow: 1;">
-            <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: ${appearance?.primaryTextColor || '#303030'};">
+            <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: ${
+              appearance?.primaryTextColor || "#303030"
+            };">
               ${product.title}
             </p>
             <div class="bogo-product-price-display" style="display: flex; align-items: center; gap: 8px;">
-              <p style="font-weight: 600; font-size: 14px; margin: 0; color: ${appearance?.primaryTextColor || '#303030'};">Rs.${finalPrice}</p>
-              ${showDiscount ? `
-                <p style=\"width: 1.5px; height: 10px; background: ${appearance?.primaryTextColor || '#222222'}; opacity: 0.3; margin: 0;\"></p>
-                <p style=\"color: ${appearance?.secondaryTextColor || '#999'}; font-size: 12px; text-decoration: line-through; margin: 0;\">Rs.${originalPrice}</p>
-              ` : ''}
+              <p style="font-weight: 600; font-size: 14px; margin: 0; color: ${
+                appearance?.primaryTextColor || "#303030"
+              };">Rs.${finalPrice}</p>
+              ${
+                showDiscount
+                  ? `
+                <p style=\"width: 1.5px; height: 10px; background: ${
+                  appearance?.primaryTextColor || "#222222"
+                }; opacity: 0.3; margin: 0;\"></p>
+                <p style=\"color: ${
+                  appearance?.secondaryTextColor || "#999"
+                }; font-size: 12px; text-decoration: line-through; margin: 0;\">Rs.${originalPrice}</p>
+              `
+                  : ""
+              }
             </div>
           </div>
         </div>
@@ -1812,7 +1925,7 @@ class BOGOBundle {
     let productDetails = null;
     let isBuyOneGetOne = false;
     let groupType = null;
-    
+
     if (this.currentProduct && this.currentProduct.instanceId === instanceId) {
       productDetails = this.currentProduct;
     } else if (
@@ -1825,15 +1938,15 @@ class BOGOBundle {
       // Handle Buy One Get One products
       const xProduct = this.xProducts.find((p) => p.instanceId === instanceId);
       const yProduct = this.yProducts.find((p) => p.instanceId === instanceId);
-      
+
       if (xProduct) {
         productDetails = xProduct;
         isBuyOneGetOne = true;
-        groupType = 'X';
+        groupType = "X";
       } else if (yProduct) {
         productDetails = yProduct;
         isBuyOneGetOne = true;
-        groupType = 'Y';
+        groupType = "Y";
       }
     } else {
       productDetails = this.bundleProducts.find(
@@ -1875,9 +1988,9 @@ class BOGOBundle {
         available: matchedVariant.available,
         quantity: productDetails.defaultQuantity || 1,
       };
-      
+
       if (isBuyOneGetOne) {
-        if (groupType === 'X') {
+        if (groupType === "X") {
           this.selectedXProducts.set(instanceId, variantData);
         } else {
           this.selectedYProducts.set(instanceId, variantData);
@@ -1885,7 +1998,7 @@ class BOGOBundle {
       } else {
         this.selectedProducts.set(instanceId, variantData);
       }
-      
+
       console.log(`Instance ${instanceId} variant updated to:`, matchedVariant);
       this.updateDisplayedProductPrice(instanceId);
 
@@ -1929,9 +2042,9 @@ class BOGOBundle {
         available: false,
         quantity: productDetails.defaultQuantity || 1,
       };
-      
+
       if (isBuyOneGetOne) {
-        if (groupType === 'X') {
+        if (groupType === "X") {
           this.selectedXProducts.set(instanceId, errorData);
         } else {
           this.selectedYProducts.set(instanceId, errorData);
@@ -1939,7 +2052,7 @@ class BOGOBundle {
       } else {
         this.selectedProducts.set(instanceId, errorData);
       }
-      
+
       this.updateDisplayedProductPrice(instanceId);
     }
 
@@ -1954,23 +2067,27 @@ class BOGOBundle {
       let selectedVariant = this.selectedProducts.get(instanceId);
       let isBuyOneGetOne = false;
       let groupType = null;
-      
+
       // Check if it's a Buy One Get One product
       if (this.bundleType === "buy_one_get_one") {
-        const xProduct = this.xProducts.find((p) => p.instanceId === instanceId);
-        const yProduct = this.yProducts.find((p) => p.instanceId === instanceId);
-        
+        const xProduct = this.xProducts.find(
+          (p) => p.instanceId === instanceId
+        );
+        const yProduct = this.yProducts.find(
+          (p) => p.instanceId === instanceId
+        );
+
         if (xProduct) {
           selectedVariant = this.selectedXProducts.get(instanceId);
           isBuyOneGetOne = true;
-          groupType = 'X';
+          groupType = "X";
         } else if (yProduct) {
           selectedVariant = this.selectedYProducts.get(instanceId);
           isBuyOneGetOne = true;
-          groupType = 'Y';
+          groupType = "Y";
         }
       }
-      
+
       if (selectedVariant) {
         const priceDisplay = productCard.querySelector(
           ".bogo-product-price-display"
@@ -1981,27 +2098,40 @@ class BOGOBundle {
           );
           let displayedPrice = this.formatCurrency(selectedVariant.price);
           let showDiscount = false;
-          let discountHtml = '';
-          
+          let discountHtml = "";
+
           // Apply discount for Y products in Buy One Get One
-          if (isBuyOneGetOne && groupType === 'Y') {
-            if (this.bundleConfig.discountType === 'Percentage') {
-              const discountAmount = selectedVariant.price * (this.bundleConfig.discountPercent / 100);
-              displayedPrice = this.formatCurrency(selectedVariant.price - discountAmount);
+          if (isBuyOneGetOne && groupType === "Y") {
+            if (this.bundleConfig.discountType === "Percentage") {
+              const discountAmount =
+                selectedVariant.price *
+                (this.bundleConfig.discountPercent / 100);
+              displayedPrice = this.formatCurrency(
+                selectedVariant.price - discountAmount
+              );
               showDiscount = true;
-            } else if (this.bundleConfig.discountType === 'Fixed Amount') {
-              const discountAmount = parseFloat(this.bundleConfig.discountPercent) || 0;
-              displayedPrice = this.formatCurrency(Math.max(0, selectedVariant.price - discountAmount));
+            } else if (this.bundleConfig.discountType === "Fixed Amount") {
+              const discountAmount =
+                parseFloat(this.bundleConfig.discountPercent) || 0;
+              displayedPrice = this.formatCurrency(
+                Math.max(0, selectedVariant.price - discountAmount)
+              );
               showDiscount = true;
             }
           }
-          
+
           if (showDiscount) {
             discountHtml = `
               <p style="width: 1.5px; height: 10px; background: #222222; opacity: 0.3; margin: 0;"></p>
               <p style="color: #999; font-size: 12px; text-decoration: line-through; margin: 0;">Rs.${originalPrice}</p>
               <span style="background: #C4290E; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">
-                ${this.bundleConfig.discountType === 'Percentage' ? `${this.bundleConfig.discountPercent}% OFF` : `${this.formatCurrency(this.bundleConfig.discountPercent)} OFF`}
+                ${
+                  this.bundleConfig.discountType === "Percentage"
+                    ? `${this.bundleConfig.discountPercent}% OFF`
+                    : `${this.formatCurrency(
+                        this.bundleConfig.discountPercent
+                      )} OFF`
+                }
               </span>
             `;
           } else if (selectedVariant.compare_at_price) {
@@ -2010,7 +2140,7 @@ class BOGOBundle {
               <p style="color: #999; font-size: 12px; text-decoration: line-through; margin: 0;">Rs.${originalPrice}</p>
             `;
           }
-          
+
           priceDisplay.innerHTML = `
             <p style="font-weight: 600; font-size: 14px; margin: 0;">Rs.${displayedPrice}</p>
             ${discountHtml}
@@ -2252,37 +2382,46 @@ class BOGOBundle {
       let totalXPrice = 0;
       let totalYPrice = 0;
       let totalYDiscountedPrice = 0;
-      
+
       // Calculate X products total (full price)
       this.selectedXProducts.forEach((variantInfo) => {
         if (variantInfo.id && variantInfo.available) {
           totalXPrice += variantInfo.price * variantInfo.quantity;
         }
       });
-      
+
       // Calculate Y products total (with discount)
       this.selectedYProducts.forEach((variantInfo) => {
         if (variantInfo.id && variantInfo.available) {
           totalYPrice += variantInfo.price * variantInfo.quantity;
-          
+
           let discountedPrice = variantInfo.price;
-          if (this.bundleConfig.discountType === 'Percentage') {
-            discountedPrice = variantInfo.price * (1 - this.bundleConfig.discountPercent / 100);
-          } else if (this.bundleConfig.discountType === 'Fixed Amount') {
-            discountedPrice = Math.max(0, variantInfo.price - this.bundleConfig.discountPercent);
+          if (this.bundleConfig.discountType === "Percentage") {
+            discountedPrice =
+              variantInfo.price * (1 - this.bundleConfig.discountPercent / 100);
+          } else if (this.bundleConfig.discountType === "Fixed Amount") {
+            discountedPrice = Math.max(
+              0,
+              variantInfo.price - this.bundleConfig.discountPercent
+            );
           }
           totalYDiscountedPrice += discountedPrice * variantInfo.quantity;
         }
       });
-      
+
       const originalTotal = totalXPrice + totalYPrice;
       const finalTotal = totalXPrice + totalYDiscountedPrice;
       const saved = originalTotal - finalTotal;
-      const discountPercentage = originalTotal > 0 ? Math.round((saved / originalTotal) * 100) : 0;
-      
-      const totalElement = this.container.querySelector(".bogo-bundle-total-price");
-      const totalBar = this.container.querySelector(".bogo-bundle-total-price")?.parentElement;
-      
+      const discountPercentage =
+        originalTotal > 0 ? Math.round((saved / originalTotal) * 100) : 0;
+
+      const totalElement = this.container.querySelector(
+        ".bogo-bundle-total-price"
+      );
+      const totalBar = this.container.querySelector(
+        ".bogo-bundle-total-price"
+      )?.parentElement;
+
       if (totalElement && totalBar) {
         // Left column wrapper for Total and Save
         const leftWrapperClass = "bogo-total-left";
@@ -2315,12 +2454,15 @@ class BOGOBundle {
           saveInfoEl.style.fontSize = "11px";
           saveInfoEl.style.lineHeight = "100%";
           saveInfoEl.style.margin = "0";
-          saveInfoEl.style.color = appearance.offerTagBackgroundColor || "#C4290E";
+          saveInfoEl.style.color =
+            appearance.offerTagBackgroundColor || "#C4290E";
           leftWrapper.appendChild(saveInfoEl);
         }
-        
+
         if (discountPercentage > 0) {
-          saveInfoEl.textContent = `Save ${discountPercentage}% (Rs.${this.formatCurrency(saved)})`;
+          saveInfoEl.textContent = `Save ${discountPercentage}% (Rs.${this.formatCurrency(
+            saved
+          )})`;
           saveInfoEl.style.display = "block";
         } else {
           saveInfoEl.textContent = "";
@@ -2337,8 +2479,14 @@ class BOGOBundle {
 
         if (discountPercentage > 0) {
           totalElement.innerHTML = `
-            <span style="font-weight: 600; font-size: 15px; color: ${appearance.primaryTextColor || '#303030'}; margin: 0;">Rs.${this.formatCurrency(finalTotal)}</span>
-            <span style="font-weight: 500; font-size: 11px; color: ${appearance.secondaryTextColor || '#616161'}; text-decoration: line-through; margin: 0;">Rs.${this.formatCurrency(originalTotal)}</span>
+            <span style="font-weight: 600; font-size: 15px; color: ${
+              appearance.primaryTextColor || "#303030"
+            }; margin: 0;">Rs.${this.formatCurrency(finalTotal)}</span>
+            <span style="font-weight: 500; font-size: 11px; color: ${
+              appearance.secondaryTextColor || "#616161"
+            }; text-decoration: line-through; margin: 0;">Rs.${this.formatCurrency(
+            originalTotal
+          )}</span>
           `;
         } else {
           totalElement.textContent = this.formatCurrency(finalTotal);
@@ -2370,63 +2518,73 @@ class BOGOBundle {
     const totalBar = this.container.querySelector(
       ".bogo-bundle-total-price"
     )?.parentElement;
-    if (this.bundleType === 'bundle_discount' && totalElement && totalBar) {
+    if (this.bundleType === "bundle_discount" && totalElement && totalBar) {
       const appearance = this.bundleConfig.appearance || {};
       const saved = Math.max(0, totalPrice - discountedPrice);
-      const discountPercentage = totalPrice > 0 ? Math.round((saved / totalPrice) * 100) : 0;
+      const discountPercentage =
+        totalPrice > 0 ? Math.round((saved / totalPrice) * 100) : 0;
 
-      const leftWrapperClass = 'bogo-total-left';
+      const leftWrapperClass = "bogo-total-left";
       let leftWrapper = totalBar.querySelector(`.${leftWrapperClass}`);
       if (!leftWrapper) {
-        leftWrapper = document.createElement('div');
+        leftWrapper = document.createElement("div");
         leftWrapper.className = leftWrapperClass;
-        leftWrapper.style.display = 'flex';
-        leftWrapper.style.flexDirection = 'column';
-        leftWrapper.style.justifyContent = 'center';
-        leftWrapper.style.alignItems = 'flex-start';
-        const firstP = totalBar.querySelector('p');
+        leftWrapper.style.display = "flex";
+        leftWrapper.style.flexDirection = "column";
+        leftWrapper.style.justifyContent = "center";
+        leftWrapper.style.alignItems = "flex-start";
+        const firstP = totalBar.querySelector("p");
         if (firstP) {
           totalBar.insertBefore(leftWrapper, firstP);
-          firstP.style.margin = '0';
+          firstP.style.margin = "0";
           leftWrapper.appendChild(firstP);
         } else {
           totalBar.prepend(leftWrapper);
         }
       }
-      const saveInfoClass = 'bogo-save-info';
+      const saveInfoClass = "bogo-save-info";
       let saveInfoEl = leftWrapper.querySelector(`.${saveInfoClass}`);
       if (!saveInfoEl) {
-        saveInfoEl = document.createElement('p');
+        saveInfoEl = document.createElement("p");
         saveInfoEl.className = saveInfoClass;
-        saveInfoEl.style.fontFamily = 'Inter';
-        saveInfoEl.style.fontStyle = 'normal';
-        saveInfoEl.style.fontWeight = '500';
-        saveInfoEl.style.fontSize = '11px';
-        saveInfoEl.style.lineHeight = '100%';
-        saveInfoEl.style.margin = '0';
-        saveInfoEl.style.color = appearance.offerTagBackgroundColor || '#C4290E';
+        saveInfoEl.style.fontFamily = "Inter";
+        saveInfoEl.style.fontStyle = "normal";
+        saveInfoEl.style.fontWeight = "500";
+        saveInfoEl.style.fontSize = "11px";
+        saveInfoEl.style.lineHeight = "100%";
+        saveInfoEl.style.margin = "0";
+        saveInfoEl.style.color =
+          appearance.offerTagBackgroundColor || "#C4290E";
         leftWrapper.appendChild(saveInfoEl);
       }
       if (discountPercentage > 0) {
-        saveInfoEl.textContent = `Save ${discountPercentage}% (Rs.${this.formatCurrency(saved)})`;
-        saveInfoEl.style.display = 'block';
+        saveInfoEl.textContent = `Save ${discountPercentage}% (Rs.${this.formatCurrency(
+          saved
+        )})`;
+        saveInfoEl.style.display = "block";
       } else {
-        saveInfoEl.textContent = '';
-        saveInfoEl.style.display = 'none';
+        saveInfoEl.textContent = "";
+        saveInfoEl.style.display = "none";
       }
 
-      totalElement.style.alignSelf = 'center';
-      totalElement.style.textAlign = 'right';
-      totalElement.style.marginLeft = 'auto';
-      totalElement.style.display = 'flex';
-      totalElement.style.flexDirection = 'column';
-      totalElement.style.alignItems = 'flex-end';
-      totalElement.style.gap = '0';
+      totalElement.style.alignSelf = "center";
+      totalElement.style.textAlign = "right";
+      totalElement.style.marginLeft = "auto";
+      totalElement.style.display = "flex";
+      totalElement.style.flexDirection = "column";
+      totalElement.style.alignItems = "flex-end";
+      totalElement.style.gap = "0";
 
       if (discountPercentage > 0) {
         totalElement.innerHTML = `
-          <span style="font-weight: 600; font-size: 15px; color: ${appearance.primaryTextColor || '#303030'}; margin: 0;">Rs.${this.formatCurrency(discountedPrice)}</span>
-          <span style="font-weight: 500; font-size: 11px; color: ${appearance.secondaryTextColor || '#616161'}; text-decoration: line-through; margin: 0;">Rs.${this.formatCurrency(totalPrice)}</span>
+          <span style="font-weight: 600; font-size: 15px; color: ${
+            appearance.primaryTextColor || "#303030"
+          }; margin: 0;">Rs.${this.formatCurrency(discountedPrice)}</span>
+          <span style="font-weight: 500; font-size: 11px; color: ${
+            appearance.secondaryTextColor || "#616161"
+          }; text-decoration: line-through; margin: 0;">Rs.${this.formatCurrency(
+          totalPrice
+        )}</span>
         `;
       } else {
         totalElement.textContent = this.formatCurrency(discountedPrice);
@@ -2496,7 +2654,6 @@ class BOGOBundle {
     const countdownInterval = setInterval(updateCountdown, 1000);
     updateCountdown();
   }
-
   addBundleToCart() {
     console.log("Adding bundle to cart...");
     const items = [];
@@ -2505,18 +2662,42 @@ class BOGOBundle {
       this.bundleType === "volume_discount" &&
       this.bundleConfig.quantityBreaks?.length
     ) {
-      const productInstance =
-        this.prioritizedBundleProducts[0] || this.bundleProducts[0];
-      const selectedVariant = productInstance
-        ? this.selectedProducts.get(productInstance.instanceId)
-        : null;
+      // const productInstance =
+      //   this.prioritizedBundleProducts[0] || this.bundleProducts[0];
+      // const selectedVariant = productInstance
+      //   ? this.selectedProducts.get(productInstance.instanceId)
+      //   : null;
+      // const breakItem =
+      //   this.bundleConfig.quantityBreaks[this.selectedQuantityBreakIndex];
+      // if (selectedVariant?.id && selectedVariant.available && breakItem) {
+      //   items.push({
+      //     id: selectedVariant.id,
+      //     // quantity: parseInt(breakItem.quantity, 10) || 1,
+      //     quantity: 1,
+      //   });
+      // }
       const breakItem =
         this.bundleConfig.quantityBreaks[this.selectedQuantityBreakIndex];
-      if (selectedVariant?.id && selectedVariant.available && breakItem) {
+
+      if (breakItem?.variantId) {
+        const variantId = breakItem.variantId.replace(
+          "gid://shopify/ProductVariant/",
+          ""
+        );
+        const quantity = 1;
+
+        console.log(
+          `Adding Volume Discount variant: ${variantId} | quantity: ${quantity}`
+        );
+
         items.push({
-          id: selectedVariant.id,
-          quantity: parseInt(breakItem.quantity, 10) || 1,
+          id: variantId,
+          quantity,
         });
+      } else {
+        console.warn("No valid variant found for selected quantity break.");
+        alert("Please select a valid quantity break option.");
+        return;
       }
     } else if (this.bundleType === "buy_one_get_one") {
       // Add X products (full price)
@@ -2524,23 +2705,30 @@ class BOGOBundle {
         if (variantInfo.id && variantInfo.available) {
           items.push({
             id: variantInfo.id,
-            quantity: variantInfo.quantity || 1,
+            // quantity: variantInfo.quantity || 1,
+            quantity: 1,
           });
         }
       });
-      
+
       // Add Y products (discounted)
       this.selectedYProducts.forEach((variantInfo) => {
         if (variantInfo.id && variantInfo.available) {
           items.push({
             id: variantInfo.id,
-            quantity: variantInfo.quantity || 1,
+            // quantity: variantInfo.quantity || 1,
+            quantity: 1,
           });
         }
       });
     } else {
       this.selectedProducts.forEach((variantInfo) => {
         if (variantInfo.id && variantInfo.available) {
+          if (this.bundleType === "mix_and_match") {
+            if (items.some((item) => item.id === variantInfo.id)) return;
+            if (variantInfo.id === this.currentProduct?.variants?.[0]?.id)
+              return;
+          }
           items.push({
             id: variantInfo.id,
             quantity: 1,
@@ -2548,7 +2736,6 @@ class BOGOBundle {
         }
       });
     }
-
     if (items.length === 0) {
       console.warn("No valid products selected to add to cart.");
       alert("Please select available products to add to cart.");

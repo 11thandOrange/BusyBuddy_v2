@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Image,
-  Collapse,
-} from "react-bootstrap";
+import { Container, Row, Col, Form, Image, Collapse, Spinner } from "react-bootstrap";
 import Button from "../../components/Button";
 
 export default function Products({ onClose, setSelectedProducts, selectedProducts = [], setVariantPricing }) {
@@ -18,6 +11,10 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   const [collections, setCollections] = useState([]);
   const [activeCollection, setActiveCollection] = useState(null);
   const [baseProducts, setBaseProducts] = useState([]); // store all products from API
+  const [pageInfo, setPageInfo] = useState({ hasNextPage: false, endCursor: null });
+  const loaderRef = useRef(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   // Refs for indeterminate checkboxes
   const checkboxRefs = useRef({});
 
@@ -37,28 +34,24 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     }
 
     if (!products.length) return [];
-    
+
     let filtered = products;
-    
+
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(({ node }) => 
-        node.title.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(({ node }) => node.title.toLowerCase().includes(searchLower));
     }
-    
+
     // Apply tab filter (Selected Products)
     if (activeTab === "Selected Products") {
       filtered = filtered.filter(({ node }) => {
         const productVariants = selectedVariants[node.id] || {};
         // Check if any variant is selected (excluding optionInfo)
-        return Object.entries(productVariants).some(([key, value]) => 
-          key !== "optionInfo" && value === true
-        );
+        return Object.entries(productVariants).some(([key, value]) => key !== "optionInfo" && value === true);
       });
     }
-    
+
     return filtered;
   }, [products, searchTerm, activeTab, selectedVariants, collections, activeCollection]);
 
@@ -96,13 +89,13 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       }
 
       // Set the updated state
-      setSelectedVariants(prev => ({
+      setSelectedVariants((prev) => ({
         ...prev,
         [productId]: {
           ...prev[productId],
           ...updatedVariantState,
-          optionInfo: prev[productId]?.optionInfo // Preserve optionInfo if present
-        }
+          optionInfo: prev[productId]?.optionInfo, // Preserve optionInfo if present
+        },
       }));
     } else {
       // This is an option checkbox
@@ -112,32 +105,31 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
           ...existingOptions,
           [variantIndex]: !currentState,
         };
-        
+
         // Get all option keys (excluding the main checkbox key "0" and "optionInfo")
-        const optionKeys = Object.keys(updatedOptions)
-          .filter(key => key !== "0" && key !== "optionInfo");
-        
+        const optionKeys = Object.keys(updatedOptions).filter((key) => key !== "0" && key !== "optionInfo");
+
         // Find the product to count total possible options
         const productDetails = products.find(({ node }) => node.id === productId)?.node;
         let totalPossibleOptions = 0;
-        
+
         if (productDetails) {
           // Count total number of option values across all options
           totalPossibleOptions = productDetails.options.reduce((total, option, optIdx) => {
             return total + option.values.length;
           }, 0);
         }
-        
+
         // Only set main checkbox to true if ALL possible options are selected
-        const selectedCount = optionKeys.filter(key => updatedOptions[key]).length;
+        const selectedCount = optionKeys.filter((key) => updatedOptions[key]).length;
         const allSelected = totalPossibleOptions > 0 && selectedCount === totalPossibleOptions;
-        
+
         return {
           ...prev,
           [productId]: {
             ...updatedOptions,
-            0: allSelected // Only checked if ALL possible values are selected
-          }
+            0: allSelected, // Only checked if ALL possible values are selected
+          },
         };
       });
     }
@@ -146,31 +138,31 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   // Function to check if a product has indeterminate state
   const isIndeterminate = (productId) => {
     const variantState = selectedVariants[productId] || {};
-    
+
     // Get all option keys (excluding the main checkbox key "0" and "optionInfo")
-    const optionKeys = Object.keys(variantState).filter(key => key !== "0" && key !== "optionInfo");
-    
+    const optionKeys = Object.keys(variantState).filter((key) => key !== "0" && key !== "optionInfo");
+
     if (optionKeys.length === 0) return false;
-    
+
     // Find the product to count total possible options
     const productDetails = products.find(({ node }) => node.id === productId)?.node;
     if (!productDetails) return false;
-    
+
     // Count total number of option values across all options
     const totalPossibleOptions = productDetails.options.reduce((total, option, optIdx) => {
       return total + option.values.length;
     }, 0);
-    
+
     // Count selected options
-    const selectedCount = optionKeys.filter(key => variantState[key]).length;
-    
+    const selectedCount = optionKeys.filter((key) => variantState[key]).length;
+
     // Indeterminate if some (but not all) options are selected
     return selectedCount > 0 && selectedCount < totalPossibleOptions;
   };
 
   // Update indeterminate state
   useEffect(() => {
-    Object.keys(selectedVariants).forEach(productId => {
+    Object.keys(selectedVariants).forEach((productId) => {
       const checkboxRef = checkboxRefs.current[productId];
       if (checkboxRef) {
         checkboxRef.indeterminate = isIndeterminate(productId);
@@ -196,9 +188,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     return Object.keys(selectedVariants).filter((productId) => {
       // Check if this product has at least one selected variant
       const productVariants = selectedVariants[productId] || {};
-      return Object.entries(productVariants).some(([key, value]) => 
-        key !== "optionInfo" && value === true
-      );
+      return Object.entries(productVariants).some(([key, value]) => key !== "optionInfo" && value === true);
     }).length;
   };
 
@@ -212,22 +202,38 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       setActiveCollection(null);
     }
   }, [activeTab]);
-  async function getProducts() {
+  useEffect(() => {
+    if (!loaderRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting && pageInfo.hasNextPage && !isLoadingMore) {
+          setIsLoadingMore(true);
+          getProducts(pageInfo.endCursor, true).then(() => setIsLoadingMore(false));
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [pageInfo, isLoadingMore]);
+
+  async function getProducts(cursor = null, append = false) {
     try {
-      const response = await fetch("/api/products", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
+      const response = await fetch(`/api/products${cursor ? `?cursor=${cursor}` : ""}`);
+      if (!response.ok) throw new Error("Failed to fetch products");
+
       const data = await response.json();
-      console.log("Products data:", data.data.products.edges);
-      const edges = data.data.products.edges || [];
-      setProducts(edges);
-      setBaseProducts(edges); // store original all products
+      const edges = data.data.edges || [];
+      const newPageInfo = data.data.pageInfo || {};
+
+      setPageInfo(newPageInfo);
+      console.log("Fetched Products:", data);
+      console.log("Fetched Products edges:", edges);
+      setProducts((prev) => (append ? [...prev, ...edges] : edges));
+      setBaseProducts((prev) => (append ? [...prev, ...edges] : edges));
     } catch (error) {
       console.log("GetProductsError", error);
     }
@@ -259,36 +265,36 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   useEffect(() => {
     if (selectedProducts && selectedProducts.length > 0) {
       const initialSelection = {};
-      
+
       // Process each selected product
-      selectedProducts.forEach(product => {
+      selectedProducts.forEach((product) => {
         const productId = product.productId;
         initialSelection[productId] = initialSelection[productId] || {};
-        
+
         // Mark product as selected (main checkbox)
         initialSelection[productId][0] = true;
-        
+
         // Automatically expand products that are already selected
-        setExpandedProducts(prev => ({
+        setExpandedProducts((prev) => ({
           ...prev,
-          [productId]: true
+          [productId]: true,
         }));
-        
+
         // Mark selected options when product details are loaded
-        product.optionSelections.forEach(optionSelection => {
+        product.optionSelections.forEach((optionSelection) => {
           // We'll need to find the corresponding option and values in the loaded products
           const optionName = optionSelection.name;
           const selectedValues = optionSelection.values;
-          
+
           // This will be populated when products are loaded
           // We're setting up the structure to be filled later
           initialSelection[productId].optionInfo = {
             name: optionName,
-            values: selectedValues
+            values: selectedValues,
           };
         });
       });
-      
+
       setSelectedVariants(initialSelection);
     }
   }, [selectedProducts]);
@@ -296,33 +302,31 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
   // Match selected options to actual product data when products are loaded
   useEffect(() => {
     if (products.length > 0 && Object.keys(selectedVariants).length > 0) {
-      const updatedSelection = {...selectedVariants};
-      
+      const updatedSelection = { ...selectedVariants };
+
       // Process each pre-selected product
-      Object.keys(selectedVariants).forEach(productId => {
-        const productData = products.find(({node}) => node.id === productId)?.node;
+      Object.keys(selectedVariants).forEach((productId) => {
+        const productData = products.find(({ node }) => node.id === productId)?.node;
         const productVariants = selectedVariants[productId];
-        
+
         if (productData && selectedProducts) {
           // Find this product in the selectedProducts array
-          const selectedProduct = selectedProducts.find(p => p.productId === productId);
-          
+          const selectedProduct = selectedProducts.find((p) => p.productId === productId);
+
           if (selectedProduct) {
             // For each option selection in the selected product
-            selectedProduct.optionSelections.forEach(optionSelection => {
+            selectedProduct.optionSelections.forEach((optionSelection) => {
               // Find the matching option in product data
-              const optionIndex = productData.options.findIndex(opt => 
-                opt.name === optionSelection.name
-              );
-              
+              const optionIndex = productData.options.findIndex((opt) => opt.name === optionSelection.name);
+
               if (optionIndex !== -1) {
                 // For each selected value in this option
-                optionSelection.values.forEach(selectedValue => {
+                optionSelection.values.forEach((selectedValue) => {
                   // Find the value index in the product data
-                  const valueIndex = productData.options[optionIndex].values.findIndex(v => 
-                    v === selectedValue
+                  const valueIndex = productData.options[optionIndex].values.findIndex(
+                    (v) => v === selectedValue
                   );
-                  
+
                   if (valueIndex !== -1) {
                     // Create the key in our selection format "optIdx-valueIdx"
                     const selectionKey = `${optionIndex}-${valueIndex}`;
@@ -332,7 +336,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
                 });
               }
             });
-            
+
             // After adding all selections, check if we should mark the main checkbox
             const productDetails = products.find(({ node }) => node.id === productId)?.node;
             if (productDetails) {
@@ -340,68 +344,70 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
               const totalPossibleOptions = productDetails.options.reduce((total, option, optIdx) => {
                 return total + option.values.length;
               }, 0);
-              
+
               // Count selected options
-              const optionKeys = Object.keys(updatedSelection[productId])
-                .filter(key => key !== "0" && key !== "optionInfo");
-              const selectedCount = optionKeys.filter(key => updatedSelection[productId][key]).length;
-              
+              const optionKeys = Object.keys(updatedSelection[productId]).filter(
+                (key) => key !== "0" && key !== "optionInfo"
+              );
+              const selectedCount = optionKeys.filter((key) => updatedSelection[productId][key]).length;
+
               // Mark main checkbox checked only if all options are selected
-              updatedSelection[productId][0] = (selectedCount === totalPossibleOptions);
+              updatedSelection[productId][0] = selectedCount === totalPossibleOptions;
             }
           }
         }
       });
-      
+
       setSelectedVariants(updatedSelection);
     }
   }, [products, selectedProducts]);
 
   const prepareSelectedProductData = () => {
     const components = [];
-    
+
     // Go through each product
-    Object.keys(selectedVariants).forEach(productId => {
+    Object.keys(selectedVariants).forEach((productId) => {
       const productVariants = selectedVariants[productId];
       if (!productVariants) return;
-      
+
       // Check if any variant is selected for this product
-      const hasSelectedVariant = Object.entries(productVariants).some(([key, value]) => 
-        key !== "optionInfo" && value === true
+      const hasSelectedVariant = Object.entries(productVariants).some(
+        ([key, value]) => key !== "optionInfo" && value === true
       );
       if (!hasSelectedVariant) return;
-      
+
       // Find the product details
       const productDetails = products.find(({ node }) => node.id === productId)?.node;
       if (!productDetails) return;
-      
+
       // Create option selections for this product
       const optionSelections = [];
-      
+
       // First, gather all options that have at least one selected value
       const optionsWithSelections = new Set();
-      
+
       // Check which options have selections
       productDetails.options.forEach((option, optIdx) => {
         const hasSelection = option.values.some((_, valueIdx) => {
           const selectionKey = `${optIdx}-${valueIdx}`;
           return productVariants[selectionKey];
         });
-        
+
         if (hasSelection) {
           optionsWithSelections.add(optIdx);
         }
       });
-      
+
       // Process all options
       productDetails.options.forEach((option, optIdx) => {
         // If no options selected and we have multiple options, assume all values are selected for this option
-        const shouldSelectAll = optionsWithSelections.size > 0 && 
-                               !optionsWithSelections.has(optIdx) && 
-                               productDetails.options.length > 1;
-        
+        const shouldSelectAll =
+          optionsWithSelections.size > 0 &&
+          !optionsWithSelections.has(optIdx) &&
+          productDetails.options.length > 1;
+
         let selectedValues = [];
-        
+
         if (shouldSelectAll) {
           // Select all values for this option
           selectedValues = [...option.values];
@@ -414,34 +420,35 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
             }
           });
         }
-        
+
         if (selectedValues.length > 0) {
           optionSelections.push({
             componentOptionId: option.id,
-            name: option.name, 
+            name: option.name,
             uniqueName: `${productDetails.title} ${option.name}`,
-            values: selectedValues
+            values: selectedValues,
           });
         }
       });
-      
+
       // Skip products with no option selections
       if (optionSelections.length === 0) return;
-      
+
       // Get product media
-      const mediaUrl = productDetails?.featuredMedia?.image?.url || 
-                      'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292';
-      
+      const mediaUrl =
+        productDetails?.featuredMedia?.image?.url ||
+        "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292";
+
       // Create component object with additional info
       components.push({
         productId: productId,
         title: productDetails.title,
         media: mediaUrl,
         quantity: 1, // Default quantity
-        optionSelections: optionSelections
+        optionSelections: optionSelections,
       });
     });
-    
+
     return components;
   };
 
@@ -450,50 +457,53 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
     console.log("Bundle Data:", bundleData);
 
     // If there's a callback to pass the data to the parent component
-    if (typeof setSelectedProducts === 'function') {
+    if (typeof setSelectedProducts === "function") {
       setSelectedProducts(bundleData);
     }
 
     // set variantPricing to the selected products
-    if (typeof setVariantPricing === 'function') {
-        // Proper cartesian product function that handles 1+ arrays
-        function cartesianProduct(arrays) {
-            if (arrays.length === 0) return [];
-            if (arrays.length === 1) return arrays[0].map(value => [value]);
-            
-            return arrays.reduce((acc, curr) => {
-            const res = [];
-            acc.forEach(a => {
-                curr.forEach(b => {
-                res.push([...a, b]);
-                });
-            });
-            
-            return res;
-            }, [[]]);
-        }
-        
-        // Final output
-        const variantTitles = [];
+    if (typeof setVariantPricing === "function") {
+      // Proper cartesian product function that handles 1+ arrays
+      function cartesianProduct(arrays) {
+        if (arrays.length === 0) return [];
+        if (arrays.length === 1) return arrays[0].map((value) => [value]);
 
-        bundleData.forEach(product => {
-            const optionValues = product.optionSelections.map(opt => opt.values);
-            const combinations = cartesianProduct(optionValues);
-            const productDetails = products.find(({ node }) => node.id === product.productId)?.node;
-            combinations.forEach(combo => {
-                let title = combo.join(" / ");
-                // Find the variant that matches this combination
-                const variant = productDetails.variants.nodes.find((variant) => variant.title == title);
-                variantTitles.push({ 
-                    productId: product.productId,
-                    title: title,
-                    price: parseFloat(variant.price) || 0
-                });
+        return arrays.reduce(
+          (acc, curr) => {
+            const res = [];
+            acc.forEach((a) => {
+              curr.forEach((b) => {
+                res.push([...a, b]);
+              });
             });
+
+            return res;
+          },
+          [[]]
+        );
+      }
+
+      // Final output
+      const variantTitles = [];
+
+      bundleData.forEach((product) => {
+        const optionValues = product.optionSelections.map((opt) => opt.values);
+        const combinations = cartesianProduct(optionValues);
+        const productDetails = products.find(({ node }) => node.id === product.productId)?.node;
+        combinations.forEach((combo) => {
+          let title = combo.join(" / ");
+          // Find the variant that matches this combination
+          const variant = productDetails.variants.nodes.find((variant) => variant.title == title);
+          variantTitles.push({
+            productId: product.productId,
+            title: title,
+            price: parseFloat(variant.price) || 0,
+          });
         });
-        setVariantPricing(variantTitles);
+      });
+      setVariantPricing(variantTitles);
     }
-    
+
     onClose();
   };
 
@@ -587,92 +597,95 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
         {filteredProducts.length > 0 ? (
           filteredProducts.map(({ node: product }, idx) => {
             return (
-              <div key={product.id} className="p-3 mb-3 rounded">
-                <div className="d-flex align-items-center">
-                  <div onClick={handleCheckboxClick}>
-                    <Form.Check
-                      type="checkbox"
-                      ref={(ref) => (checkboxRefs.current[product.id] = ref)}
-                      checked={selectedVariants[product.id]?.[0] || false}
-                      onChange={() => handleToggleVariant(product.id, 0)}
-                      className="me-2"
-                      style={{
-                        transform: "scale(1.3)",
-                        accentColor: "black",
-                      }}
-                    />
-                  </div>
-                  <div
-                    className="d-flex align-items-center flex-grow-1"
-                    onClick={() => handleToggleProduct(product.id)}
-                  >
-                    <Image
-                      src={
-                        product?.featuredMedia?.image?.url ||
-                        "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"
-                      }
-                      width={80}
-                      height={80}
-                      className="me-3 rounded img-fluid"
-                    />
-                    <div className="flex-grow-1">
-                      <div>{product.title}</div>
+              <>
+                <div key={product.id} className="p-3 mb-3 rounded">
+                  <div className="d-flex align-items-center">
+                    <div onClick={handleCheckboxClick}>
+                      <Form.Check
+                        type="checkbox"
+                        ref={(ref) => (checkboxRefs.current[product.id] = ref)}
+                        checked={selectedVariants[product.id]?.[0] || false}
+                        onChange={() => handleToggleVariant(product.id, 0)}
+                        className="me-2"
+                        style={{
+                          transform: "scale(1.3)",
+                          accentColor: "black",
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="d-flex align-items-center flex-grow-1"
+                      onClick={() => handleToggleProduct(product.id)}
+                    >
+                      <Image
+                        src={
+                          product?.featuredMedia?.image?.url ||
+                          "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"
+                        }
+                        width={80}
+                        height={80}
+                        className="me-3 rounded img-fluid"
+                      />
+                      <div className="flex-grow-1">
+                        <div>{product.title}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <Collapse in={expandedProducts[product.id]}>
-                  <div className="mt-3">
-                    {/* Display each option separately */}
-                    {product.options.map((option, optIdx) => {
-                      // Find matching option in selectedProducts
-                      const selectedProduct = selectedProducts.find((p) => p.productId === product.id);
-                      const selectedOption = selectedProduct?.optionSelections.find(
-                        (o) => o.name === option.name
-                      );
+                  <Collapse in={expandedProducts[product.id]}>
+                    <div className="mt-3">
+                      {/* Display each option separately */}
+                      {product.options.map((option, optIdx) => {
+                        // Find matching option in selectedProducts
+                        const selectedProduct = selectedProducts.find((p) => p.productId === product.id);
+                        const selectedOption = selectedProduct?.optionSelections.find(
+                          (o) => o.name === option.name
+                        );
 
-                      return (
-                        <div key={optIdx} className="mb-3">
-                          <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>
-                            {option.name}
-                          </div>
+                        return (
+                          <div key={optIdx} className="mb-3">
+                            <div className="fw-bold mb-2" style={{ paddingLeft: "80px" }}>
+                              {option.name}
+                            </div>
 
-                          {/* Display individual values for each option */}
-                          {option.values.map((value, valueIdx) => {
-                            // Check if this specific value is selected in selectedProducts
-                            const isValueSelected = selectedOption?.values.includes(value);
-                            const variantIndex = `${optIdx}-${valueIdx}`;
+                            {/* Display individual values for each option */}
+                            {option.values.map((value, valueIdx) => {
+                              // Check if this specific value is selected in selectedProducts
+                              const isValueSelected = selectedOption?.values.includes(value);
+                              const variantIndex = `${optIdx}-${valueIdx}`;
 
-                            return (
-                              <div
-                                key={valueIdx}
-                                className="d-flex align-items-center"
-                                style={{
-                                  border: "1px solid lightgrey",
-                                  padding: "10px 100px",
-                                  borderWidth: valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0",
-                                }}
-                              >
-                                <Form.Check
-                                  type="checkbox"
-                                  checked={selectedVariants[product.id]?.[variantIndex] || false}
-                                  onChange={() => handleToggleVariant(product.id, variantIndex)}
-                                  className="me-2"
+                              return (
+                                <div
+                                  key={valueIdx}
+                                  className="d-flex align-items-center"
                                   style={{
-                                    transform: "scale(1.3)",
-                                    accentColor: "black",
+                                    border: "1px solid lightgrey",
+                                    padding: "10px 100px",
+                                    borderWidth:
+                                      valueIdx === option.values.length - 1 ? "1px 0" : "1px 0 0 0",
                                   }}
-                                />
-                                <div className="fw-bold">{value}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Collapse>
-              </div>
+                                >
+                                  <Form.Check
+                                    type="checkbox"
+                                    checked={selectedVariants[product.id]?.[variantIndex] || false}
+                                    onChange={() => handleToggleVariant(product.id, variantIndex)}
+                                    className="me-2"
+                                    style={{
+                                      transform: "scale(1.3)",
+                                      accentColor: "black",
+                                    }}
+                                  />
+                                  <div className="fw-bold">{value}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Collapse>
+                </div>
+              </>
             );
           })
         ) : (
@@ -684,6 +697,9 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
                 : "No products available"}
           </div>
         )}
+        <div ref={loaderRef} className="text-center p-3">
+          {isLoadingMore ? <Spinner animation="border" variant="primary" /> : ""}
+        </div>
       </div>
 
       {/* Footer */}

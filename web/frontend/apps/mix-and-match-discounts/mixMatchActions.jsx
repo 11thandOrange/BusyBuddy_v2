@@ -45,7 +45,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
     "Review Settings",
   ];
   const [selectedType, setSelectedType] = useState("Percentage");
-  const [discountType, setDiscountType] = useState("");
+  const [discountType, setDiscountType] = useState("Percentage");
   const [inputValue, setInputValue] = useState("4");
   const [showProductPage, setShowProductPage] = useState(false);
   const [bundleTitle, setBundleTitle] = useState("Buy Together & Save More!🔥");
@@ -69,6 +69,10 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
     seconds: "59",
   });
   const [isCountdownActive, setIsCountdownActive] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savingToastId, setSavingToastId] = useState(null);
+  const [currency, setCurrency] = useState("$");
   // Countdown timer effect
   useEffect(() => {
     if (!showCountdown) {
@@ -123,7 +127,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
       // Populate form fields with existing data
       setBundleTitle(editData.title || "");
       setBundleInternalName(editData.internalName || "");
-      setBundlePriority(editData.bundlePriority || 0);
+      setBundlePriority(editData.priority || 0);
       setStatusToggle(editData.status || false);
       setDiscountType(editData.discountType || "");
       setInputValue(String(editData.discountValue) || "");
@@ -173,6 +177,35 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
       fetchProductPricesForEdit(editData);
     }
   }, [editData]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (savingToastId) {
+        dismissToast(savingToastId);
+      }
+    };
+  }, [savingToastId]);
+  useEffect(() => {
+    getCurrency();
+  }, []);
+  async function getCurrency() {
+    try {
+      const response = await fetch("/api/products/currency", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+      const data = await response.json();
+      console.log("Products data in BundleDiscountActions:", data);
+      setCurrency(data.symbol || "$");
+    } catch (error) {
+      console.log("GetProductsError in BundleDiscountActions", error);
+    }
+  }
   // Function to fetch product prices when editing using your existing products API
   const fetchProductPricesForEdit = async (editData) => {
     try {
@@ -225,7 +258,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
     // } else if (value === "Fixed Amount") {
     //   setInputValue("499");
     // } else if (value === "Free Gift") {
-    //   setInputValue("Rs 0");
+    //   setInputValue("{currency} 0");
     // } else {
     //   setInputValue("");
     // }
@@ -269,28 +302,20 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
         });
         return;
       }
-      // if (!discountType) {
-      //   shopify.toast.show("Please select a discount type.", {
-      //     duration: 4000,
-      //     style: { backgroundColor: "#f44336", color: "#fff" },
-      //   });
-      //   return;
-      // }
-
-      // if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      //   shopify.toast.show("End date must be after start date.", {
-      //     duration: 4000,
-      //     style: { backgroundColor: "#f44336", color: "#fff" },
-      //   });
-      //   return;
-      // }
+      setIsSaving(true);
+      const toastId = showPersistentToast("Saving bundle...");
+      setSavingToastId(toastId);
+      const internalNameToUse =
+        bundleInternalName && bundleInternalName.trim() !== ""
+          ? bundleInternalName.trim()
+          : bundleTitle.trim();
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
         discountType: discountType,
         discountValue: inputValue,
         status: statusToggle,
-        internalName: bundleInternalName,
+        internalName: internalNameToUse,
         type: "Mix and Match",
         bundlePriority: bundlePriority,
         selectedTier: selectedTier, // Add selected tier to bundle data
@@ -320,40 +345,60 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
       const url = isEditing ? `/api/bundles/mix-and-match/${editData._id}` : "/api/bundles/mix-and-match";
       const method = isEditing ? "POST" : "POST";
 
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(bundleData),
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
-          duration: 5000,
-          style: {
-            backgroundColor: "#4CAF50",
-            color: "#fff",
-            fontSize: "16px",
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify(bundleData),
         });
-        if (onSuccess) {
-          onSuccess();
+        let responseData;
+        try {
+          responseData = await response.json();
+        } catch (jsonErr) {
+          console.warn("Response is not valid JSON:", jsonErr);
+          responseData = { message: "Unexpected server response." };
         }
-      } else {
-        console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
-        shopify.toast.show(
-          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
-          {
+        if (response.ok) {
+          dismissToast(savingToastId);
+          shopify.toast.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
             duration: 5000,
-            style: {
-              backgroundColor: "#f44336",
-              color: "#fff",
-              fontSize: "16px",
-            },
-          }
-        );
+            style: { backgroundColor: "#4CAF50", color: "#fff", fontSize: "16px" },
+          });
+          if (onSuccess) onSuccess();
+        } else {
+          console.error("Backend error response:", responseData);
+          dismissToast(savingToastId);
+
+          const errorMessage =
+            responseData?.message ||
+            responseData?.error ||
+            `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`;
+
+          // Force flush to ensure toast shows even during rapid state updates
+          setTimeout(() => {
+            shopify.toast.show(errorMessage, {
+              duration: 8000,
+              style: { backgroundColor: "#f44336", color: "#fff", fontSize: "16px" },
+            });
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Network or parsing error:", error);
+        dismissToast(savingToastId);
+
+        const errorMessage = error?.message || "Network error. Please check your connection and try again.";
+
+        setTimeout(() => {
+          shopify.toast.show(errorMessage, {
+            duration: 8000,
+            style: { backgroundColor: "#f44336", color: "#fff", fontSize: "16px" },
+          });
+        }, 100);
+      } finally {
+        setIsSaving(false);
+        setSavingToastId(null);
       }
     }
   };
@@ -604,6 +649,21 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
       const quantity = productQuantities[product.productId] || 1;
       return total + product.compareAtPrice * quantity;
     }, 0);
+  };
+  const showPersistentToast = (message, style = {}) => {
+    // Show toast and store the ID to dismiss later
+    const toastId = shopify.toast.show(message, {
+      duration: 86400000, // Very long duration (24 hours)
+      style: { backgroundColor: "#2196F3", color: "#fff", ...style },
+      isError: false,
+    });
+    return toastId;
+  };
+
+  const dismissToast = (toastId) => {
+    if (toastId) {
+      shopify.toast.hide(toastId);
+    }
   };
   return (
     <>
@@ -1829,11 +1889,13 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                   <Button
                     text={
                       <>
-                        {selectedIndex === tabs.length - 1
-                          ? isEditing
-                            ? "Update Bundle"
-                            : "Confirm and Publish Bundle"
-                          : "Next to Continue"}
+                        {isSaving
+                          ? "Saving..."
+                          : selectedIndex === tabs.length - 1
+                            ? isEditing
+                              ? "Update Bundle"
+                              : "Confirm and Publish Bundle"
+                            : "Next to Continue"}
                       </>
                     }
                     onClick={handleNext}
@@ -2139,7 +2201,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                           color: colorSettings["Primary Text Color"],
                                         }}
                                       >
-                                        Rs.{price}
+                                        {currency}.{price}
                                       </p>
                                       {compareAtPrice != price && (
                                         <>
@@ -2159,7 +2221,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                               margin: 0,
                                             }}
                                           >
-                                            Rs.{compareAtPrice}
+                                            {currency}.{compareAtPrice}
                                           </p>
                                         </>
                                       )}
@@ -2313,7 +2375,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                 margin: "5px 0 0 0",
                               }}
                             >
-                              Save {bundlePricing.discountPercentage}% (Rs.
+                              Save {bundlePricing.discountPercentage}% ({currency}.
                               {bundlePricing.saved})
                             </p>
                           )}
@@ -2331,7 +2393,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                               margin: 0,
                             }}
                           >
-                            Rs.{bundlePricing.finalPrice}
+                            {currency}.{bundlePricing.finalPrice}
                           </p>
                           {bundlePricing.discountPercentage > 0 && (
                             <p
@@ -2345,7 +2407,7 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                 margin: "5px 0 0 0",
                               }}
                             >
-                              Rs.{bundlePricing.compareAtPrice}
+                              {currency}.{bundlePricing.compareAtPrice}
                             </p>
                           )}
                         </div>
