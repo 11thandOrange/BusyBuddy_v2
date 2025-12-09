@@ -19,6 +19,9 @@ import InactiveTabMessageForm from "../apps/inactive-tab-message/InactiveTabMess
 import CarNoticeForm from "../apps/car-notice/CarNoticeForm";
 import CountdownTimerForm from "../apps/car-notice/CarNoticeForm";
 import tshirtImg from "../assets/tshirt.png";
+import inactiveTabMessageVideo from "../assets/inactive_tab_message.mp4";
+import mixAndMatchVideo from "../assets/mix_and_match.mp4";
+import volumeDiscountsVideo from "../assets/volume_discounts.mp4";
 
 const initialCart = [
   {
@@ -54,6 +57,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Boost engagement by highlighting offers or announcements without interrupting shopping.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Inactive Tab Message": {
       title: "Inactive Tab Message",
@@ -74,6 +78,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Activate in seconds—no coding required, just pick your message and go live.",
         },
       ],
+      imageSRC: inactiveTabMessageVideo
     },
     "Bundle Discount": {
       title: "Bundle Discount",
@@ -94,6 +99,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Discounts apply automatically at checkout for a frictionless experience.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Buy 'X' Get 'Y'": {
       title: "Buy One Get One",
@@ -114,6 +120,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Encourages larger purchases and repeat customers with irresistible deals.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Volume Discounts": {
       title: "Volume Discounts",
@@ -134,6 +141,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Boost cart size and profit margins by motivating shoppers to buy more per order.",
         },
       ],
+      imageSRC: volumeDiscountsVideo
     },
     "Mix & Match": {
       title: "Mix & Match",
@@ -154,6 +162,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
             "Increase average order value by making it fun and rewarding to bundle products.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
   };
 
@@ -547,7 +556,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                       <div className="video-container position-relative">
                         <video
                           controls
-                          poster={videoimg}
+                          // poster={videoimg}
                           style={{
                             width: "100%",
                             height: "auto",
@@ -556,19 +565,19 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                           }}
                         >
                           <source
-                            src="/videos/marshall-promo.mp4"
+                            src={tabData[activeTab].imageSRC}
                             type="video/mp4"
                           />
                           Your browser does not support the video tag.
                         </video>
-                        <div className="position-absolute top-50 start-50 translate-middle">
+                        {/* <div className="position-absolute top-50 start-50 translate-middle">
                           <Button
                             variant="light"
                             className="rounded-circle p-3"
                           >
                             <Play size={24} />
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </Card.Body>
                   </Card>

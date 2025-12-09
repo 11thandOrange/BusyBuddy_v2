@@ -87,9 +87,7 @@ export default function BundleForm({ goBack, setActiveAction }) {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar lets you
-              display important alerts right at the top of your store. Whether it's a sale, promotion, or
-              update, it's impossible to ignore!
+              Boost average order value by letting customers buy related products together at a discount.
             </p>
           </Col>
 
