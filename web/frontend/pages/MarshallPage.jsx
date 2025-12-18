@@ -108,7 +108,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
       features: [
         {
           title: "Versatile Setup",
-          description: "Create ‘Buy X Get Y’ offers for any product combination.",
+          description: "Create 'Buy X Get Y' offers for any product combination.",
         },
         {
           title: "Auto Application",
