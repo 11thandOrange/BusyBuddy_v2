@@ -399,7 +399,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Discount, Display style & Priority.
+                        Bundle & promote discounts easily!
                       </p>
                     </div>
                   </div>
@@ -442,7 +442,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Looks great on any device.
+                        Looks great with any number of products.
                       </p>
                     </div>
                   </div>
@@ -484,7 +484,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Keep your customers informed without disrupting their shopping.
+                        Boost AOV in just a few clicks.
                       </p>
                     </div>
                   </div>
