@@ -1,4 +1,4 @@
-import React, { useState, useRef,useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 // import DiscountModal from "../../pages/DiscountModal";
@@ -15,13 +15,13 @@ export default function BundleForm({ goBack, setActiveAction }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Add refresh trigger state
   const [autoTriggerActions, setAutoTriggerActions] = useState(true); // Add this state
   const discountActionsRef = useRef();
-    useEffect(() => {
-      if (autoTriggerActions) {
-        // Automatically set fromDiscountPage to true and trigger the flow
-        setFromDiscountPage(true);
-        setAutoTriggerActions(false); // Prevent infinite loop
-      }
-    }, [autoTriggerActions]);
+  useEffect(() => {
+    if (autoTriggerActions) {
+      // Automatically set fromDiscountPage to true and trigger the flow
+      setFromDiscountPage(true);
+      setAutoTriggerActions(false); // Prevent infinite loop
+    }
+  }, [autoTriggerActions]);
   const handleOpenDiscountModal = () => {
     setShowDiscountModal(true);
   };
@@ -87,9 +87,7 @@ export default function BundleForm({ goBack, setActiveAction }) {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar lets you
-              display important alerts right at the top of your store. Whether it's a sale, promotion, or
-              update, it's impossible to ignore!
+              Boost average order value by letting customers buy related products together at a discount.
             </p>
           </Col>
 

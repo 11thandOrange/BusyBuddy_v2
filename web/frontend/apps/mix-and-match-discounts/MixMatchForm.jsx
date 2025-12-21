@@ -83,10 +83,7 @@ export default function MixMatchForm({goBack, setActiveAction}) {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed?
-              Announcement Bar lets you display important alerts right at the
-              top of your store. Whether it's a sale, promotion, or update, it's
-              impossible to ignore!
+              Let shoppers build their own custom bundles by mixing products at a special combined price.
             </p>
           </Col>
 

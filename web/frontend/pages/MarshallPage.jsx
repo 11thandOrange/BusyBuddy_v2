@@ -19,6 +19,9 @@ import InactiveTabMessageForm from "../apps/inactive-tab-message/InactiveTabMess
 import CarNoticeForm from "../apps/car-notice/CarNoticeForm";
 import CountdownTimerForm from "../apps/car-notice/CarNoticeForm";
 import tshirtImg from "../assets/tshirt.png";
+import inactiveTabMessageVideo from "../assets/inactive_tab_message.mp4";
+import mixAndMatchVideo from "../assets/mix_and_match.mp4";
+import volumeDiscountsVideo from "../assets/volume_discounts.mp4";
 
 const initialCart = [
   {
@@ -38,103 +41,129 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     "Announcement Bar": {
       title: "Announcement Bar",
       description:
-        "Bundle products together and sell them at a discount price.",
+        "Display important updates, promotions, or messages across your store to capture visitors’ attention instantly.",
       features: [
         {
           title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          description: "Easily adjust text, colors, style, and placement to match your brand.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
+
         {
-          title: "Attention grabbing",
+          title: "Responsive",
+          description: "Automatically adapts to any screen size for a seamless customer experience.",
+        },
+        {
+          title: "Attention Grabbing",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Boost engagement by highlighting offers or announcements without interrupting shopping.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Inactive Tab Message": {
       title: "Inactive Tab Message",
-      description:
-        "Bundle products together and sell them at a discount price.",
+      description: "Bring customers back when they switch tabs by showing a playful or promotional browser title message.",
       features: [
         {
           title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          description: "Set your own messages, emojis, and triggers to suit your brand’s tone.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
+
         {
-          title: "Attention grabbing",
+          title: "Engaging",
+          description: "Encourages users to return to your store and complete their purchase.",
+        },
+        {
+          title: "Simple Setup",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Activate in seconds—no coding required, just pick your message and go live.",
         },
       ],
+      imageSRC: inactiveTabMessageVideo
     },
     "Bundle Discount": {
       title: "Bundle Discount",
       description:
-        "Bundle products together and sell them at a discount price.",
+        "Boost average order value by letting customers buy related products together at a discount.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Flexible Discounts",
+          description: "Offer percentage or fixed discounts for product bundles.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Customizable Display",
+          description: "Choose where and how bundles appear on your store pages.",
+        },
+
+        {
+          title: "Automated Savings",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Discounts apply automatically at checkout for a frictionless experience.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Buy One Get One": {
-      title: "Buy One Get One",
+      title: "Buy 'X' Get 'Y'",
       description:
-        "Provide discounts when a customer purchases a qualifying product.",
+        "Run classic BOGO campaigns that reward shoppers with free or discounted products automatically.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Versatile Setup",
+          description: "Create ‘Buy X Get Y’ offers for any product combination.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Auto Application",
+          description: "No discount codes needed—Shopify applies the deal instantly.",
+        },
+        {
+          title: "Conversion Boosting",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Encourages larger purchases and repeat customers with irresistible deals.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
     "Volume Discounts": {
       title: "Volume Discounts",
-      description: "Offer tiered discounts based on quantity purchased.",
+      description: "Encourage bulk buying by offering tiered discounts based on the quantity purchased.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Tiered Pricing",
+          description: "Set dynamic price breaks to reward higher order quantities.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Visual Display",
+          description: "Show customers how much they’ll save as they add more items.",
+        },
+        {
+          title: "Increased Revenue",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Boost cart size and profit margins by motivating shoppers to buy more per order.",
         },
       ],
+      imageSRC: volumeDiscountsVideo
     },
     "Mix & Match": {
       title: "Mix & Match",
       description:
-        "Let customers create bundles by choosing products at a discount.",
+        "Let shoppers build their own custom bundles by mixing products at a special combined price.",
       features: [
         {
-          title: "Customizable",
-          description: "Discount, Display style & Priority.",
+          title: "Flexible Rules",
+          description: "Define eligible products and discounts for any combination.",
         },
-        { title: "Responsive", description: "Looks great on any device." },
         {
-          title: "Attention grabbing",
+          title: "Engaging Experience",
+          description: "Encourages exploration and personalization while shopping.",
+        },
+        {
+          title: "Sales Growth",
           description:
-            "Keep your customers informed without disrupting their shopping.",
+            "Increase average order value by making it fun and rewarding to bundle products.",
         },
       ],
+      imageSRC: mixAndMatchVideo
     },
   };
 
@@ -528,7 +557,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                       <div className="video-container position-relative">
                         <video
                           controls
-                          poster={videoimg}
+                          // poster={videoimg}
                           style={{
                             width: "100%",
                             height: "auto",
@@ -537,19 +566,19 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                           }}
                         >
                           <source
-                            src="/videos/marshall-promo.mp4"
+                            src={tabData[activeTab].imageSRC}
                             type="video/mp4"
                           />
                           Your browser does not support the video tag.
                         </video>
-                        <div className="position-absolute top-50 start-50 translate-middle">
-                          <Button
+                        {/* <div className="position-absolute top-50 start-50 translate-middle"> */}
+                          {/* <Button
                             variant="light"
                             className="rounded-circle p-3"
                           >
                             <Play size={24} />
-                          </Button>
-                        </div>
+                          </Button> */}
+                        {/* </div> */}
                       </div>
                     </Card.Body>
                   </Card>

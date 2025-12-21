@@ -12,6 +12,7 @@ import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
+import mixAndMatchVideo from "../../assets/mix_and_match.mp4";
 
 export default function DiscountList({
   onMakeBundleClick,
@@ -35,6 +36,7 @@ export default function DiscountList({
   const [itemsPerPage, setItemsPerPage] = useState(5); // You can make this configurable
   const [totalItems, setTotalItems] = useState(0);
   const [editingBar, setEditingBar] = useState(null);
+  
   // Fetch announcement bars when component mounts
   // Handle auto-trigger with loader
   useEffect(() => {
@@ -224,33 +226,33 @@ export default function DiscountList({
                   style={
                     selectedTab === tab
                       ? {
-                          backgroundColor: "black",
-                          borderColor: "black",
-                          borderRadius: "15px",
-                          width: "180px",
-                          // height: "43px",
-                          padding: "15px 12px",
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "white",
-                          margin: "0px",
-                        }
+                        backgroundColor: "black",
+                        borderColor: "black",
+                        borderRadius: "15px",
+                        width: "180px",
+                        // height: "43px",
+                        padding: "15px 12px",
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                        lineHeight: "100%",
+                        color: "white",
+                        margin: "0px",
+                      }
                       : {
-                          borderRadius: "15px",
-                          width: "180px",
-                          // height: "43px",
-                          padding: "15px 12px",
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "#4A4A4A",
-                          margin: "0px",
-                        }
+                        borderRadius: "15px",
+                        width: "180px",
+                        // height: "43px",
+                        padding: "15px 12px",
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                        lineHeight: "100%",
+                        color: "#4A4A4A",
+                        margin: "0px",
+                      }
                   }
                   className="d-flex justify-content-center align-items-center"
                 >
@@ -335,12 +337,12 @@ export default function DiscountList({
                 padding: "50px",
               }}
             >
-              <Card className="border-0 h-100 " style={{ background: "transparent !important" }}>
-                <Card.Body className="p-0 " style={{ background: "transparent !important" }}>
+              <Card className="border-0 h-100 " style={{ backgroundColor: "transparent" }}>
+                <Card.Body className="p-0 " >
                   <div className="position-relative h-100">
                     <video
                       controls
-                      poster={videoimg}
+                      // poster={videoimg}
                       style={{
                         width: "100%",
                         height: "auto",
@@ -348,17 +350,17 @@ export default function DiscountList({
                         padding: "4px",
                       }}
                     >
-                      <source src="/videos/marshall-promo.mp4" type="video/mp4" />
+                      <source src={mixAndMatchVideo} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                      <Button
-                        text={<Play size={24} />}
-                        onClick={() => console.log("Discard")}
-                        variant="light"
-                        className="rounded-circle p-3 opacity-75"
-                      />
-                    </div>
+                    {/* <div className="position-absolute top-50 start-50 translate-middle"> */}
+                    {/* <Button
+                      text={<Play size={24} />}
+                      onClick={() => console.log("Discard")}
+                      variant="light"
+                      className="rounded-circle p-3 opacity-75"
+                    /> */}
+                    {/* </div> */}
                   </div>
                 </Card.Body>
               </Card>
@@ -414,7 +416,7 @@ export default function DiscountList({
                           color: "#616161",
                         }}
                       >
-                        Discount, Display style & Priority.
+                        Create banners that match your brand.
                       </p>
                     </div>
                   </div>

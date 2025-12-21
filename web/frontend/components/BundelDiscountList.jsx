@@ -11,6 +11,7 @@ import BuyoneGetoneActionsActions from "../apps/buy-one-get-one/buyoneGetoneActi
 import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
 import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
+import mixAndMatchVideo from "../assets/mix_and_match.mp4";
 
 export default function DiscountList({
   onMakeBundleClick,
@@ -204,34 +205,34 @@ export default function DiscountList({
   if (showAction) {
     if (discountType === "Volume Discount") {
       return (
-        <VolumeDiscountActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
+        <VolumeDiscountActions
+          ref={discountActionsRef}
+          onSuccess={handleActionSuccess}
+          editData={editingDiscount}
         />
       );
     } else if (discountType === "Buy One Get One") {
       return (
-        <BuyoneGetoneActionsActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
+        <BuyoneGetoneActionsActions
+          ref={discountActionsRef}
+          onSuccess={handleActionSuccess}
+          editData={editingDiscount}
         />
       );
     } else if (discountType === "Bundle Discount") {
       return (
-        <BundleDiscountActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
+        <BundleDiscountActions
+          ref={discountActionsRef}
+          onSuccess={handleActionSuccess}
+          editData={editingDiscount}
         />
       );
     } else if (discountType === "Mix and Match") {
       return (
-        <MixAndMatchActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
+        <MixAndMatchActions
+          ref={discountActionsRef}
+          onSuccess={handleActionSuccess}
+          editData={editingDiscount}
         />
       );
     }
@@ -283,31 +284,31 @@ export default function DiscountList({
                   style={
                     selectedTab === tab
                       ? {
-                          backgroundColor: "black",
-                          borderColor: "black",
-                          borderRadius: "15px",
-                          width: "130px",
-                          padding: "15px 12px",
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "white",
-                          margin: "0px",
-                        }
+                        backgroundColor: "black",
+                        borderColor: "black",
+                        borderRadius: "15px",
+                        width: "130px",
+                        padding: "15px 12px",
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                        lineHeight: "100%",
+                        color: "white",
+                        margin: "0px",
+                      }
                       : {
-                          borderRadius: "15px",
-                          width: "130px",
-                          padding: "15px 12px",
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "600",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "#4A4A4A",
-                          margin: "0px",
-                        }
+                        borderRadius: "15px",
+                        width: "130px",
+                        padding: "15px 12px",
+                        fontFamily: "Inter",
+                        fontStyle: "normal",
+                        fontWeight: "600",
+                        fontSize: "13px",
+                        lineHeight: "100%",
+                        color: "#4A4A4A",
+                        margin: "0px",
+                      }
                   }
                   className="d-flex justify-content-center align-items-center"
                 >
@@ -356,12 +357,12 @@ export default function DiscountList({
         {selectedTab === "Overview" && (
           <>
             <Col lg={6} md={12} style={{ padding: "50px" }}>
-              <Card className="border-0 h-100" style={{ background: "transparent !important" }}>
-                <Card.Body className="p-0" style={{ background: "transparent !important" }}>
+              <Card className="border-0 h-100" style={{ backgroundColor: "transparent" }}>
+                <Card.Body className="p-0">
                   <div className="position-relative h-100">
                     <video
                       controls
-                      poster={videoimg}
+                      // poster={videoimg}
                       style={{
                         width: "100%",
                         height: "auto",
@@ -369,17 +370,17 @@ export default function DiscountList({
                         padding: "4px",
                       }}
                     >
-                      <source src="/videos/marshall-promo.mp4" type="video/mp4" />
+                      <source src={mixAndMatchVideo} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                      <Button
-                        text={<Play size={24} />}
-                        onClick={() => console.log("Discard")}
-                        variant="light"
-                        className="rounded-circle p-3 opacity-75"
-                      />
-                    </div>
+                    {/* <div className="position-absolute top-50 start-50 translate-middle"> */}
+                    {/* <Button
+                      text={<Play size={24} />}
+                      onClick={() => console.log("Discard")}
+                      variant="light"
+                      className="rounded-circle p-3 opacity-75"
+                    /> */}
+                    {/* </div> */}
                   </div>
                 </Card.Body>
               </Card>
@@ -416,7 +417,7 @@ export default function DiscountList({
                         className="text-secondary mb-0"
                         style={{ fontWeight: 500, fontSize: "14px", letterSpacing: "0", color: "#616161" }}
                       >
-                        Discount, Display style & Priority.
+                        Bundle & promote discounts easily!
                       </p>
                     </div>
                   </div>
@@ -447,7 +448,7 @@ export default function DiscountList({
                         className="text-secondary mb-0"
                         style={{ fontWeight: 500, fontSize: "14px", letterSpacing: "0", color: "#616161" }}
                       >
-                        Looks great on any device.
+                        Boost AOV in just a few clicks.
                       </p>
                     </div>
                   </div>
