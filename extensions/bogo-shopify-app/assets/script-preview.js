@@ -1604,11 +1604,12 @@ class BOGOBundle {
 
     // Y Products Section (Get)
     if (yArr.length > 0) {
-      const label = this.bundleConfig.discountType === 'Percentage'
-        ? `YOU GET ${this.bundleConfig.discountPercent || 0}% OFF ON`
-        : this.bundleConfig.discountType === 'Free Gift'
-          ? 'GET FREE GIFT!'
-          : `YOU GET $${this.bundleConfig.discountPercent || 0} OFF ON`;
+      const label =
+        this.bundleConfig.discountType === "Percentage"
+          ? `YOU GET ${this.bundleConfig.discountPercent || 0}% OFF ON`
+          : this.bundleConfig.discountType === "Free Gift"
+          ? "YOU WILL GET FREE GIFT ON"
+          : `YOU GET Rs.${this.bundleConfig.discountPercent || 0} OFF ON`;
       html += `
         <div style=\"margin-bottom: 20px;\">
           <div style=\"

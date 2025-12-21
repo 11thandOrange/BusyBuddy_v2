@@ -87,7 +87,9 @@ export default function VolumeForm({ goBack, setActiveAction }) {
                 color: "#616161",
               }}
             >
-              Encourage bulk buying by offering tiered discounts based on the quantity purchased.
+              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar lets you
+              display important alerts right at the top of your store. Whether it's a sale, promotion, or
+              update, it's impossible to ignore!
             </p>
           </Col>
 

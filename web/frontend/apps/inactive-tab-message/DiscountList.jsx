@@ -19,7 +19,6 @@ import { X, Trash, Upload } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import EmojiPicker from "emoji-picker-react";
-import inactiveTabMessageVideo from "../../assets/inactive_tab_message.mp4";
 
 export default function DiscountList({ onMakeBundleClick }) {
   const tabs = ["Overview", "Setting"];
@@ -338,7 +337,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                   <div className="position-relative h-100">
                     <video
                       controls
-                      // poster={videoimg}
+                      poster={videoimg}
                       style={{
                         width: "100%",
                         height: "auto",
@@ -347,19 +346,19 @@ export default function DiscountList({ onMakeBundleClick }) {
                       }}
                     >
                       <source
-                        src={inactiveTabMessageVideo}
+                        src="/videos/marshall-promo.mp4"
                         type="video/mp4"
                       />
                       Your browser does not support the video tag.
                     </video>
-                    {/* <div className="position-absolute top-50 start-50 translate-middle">
+                    <div className="position-absolute top-50 start-50 translate-middle">
                       <Button
                         text={<Play size={24} />}
                         onClick={() => console.log("Discard")}
                         variant="light"
                         className="rounded-circle p-3 opacity-75"
                       />
-                    </div> */}
+                    </div>
                   </div>
                 </Card.Body>
               </Card>
@@ -415,7 +414,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Show off custom messages & sales!
+                        Message, Display timing & Images.
                       </p>
                     </div>
                   </div>
@@ -465,7 +464,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Works in any browser.
+                        Looks great on any device.
                       </p>
                     </div>
                   </div>
@@ -507,7 +506,8 @@ export default function DiscountList({ onMakeBundleClick }) {
                           color: "#616161",
                         }}
                       >
-                        Keep your customers coming back for more!
+                        Keep your customers informed without disrupting their
+                        shopping.
                       </p>
                     </div>
                   </div>
