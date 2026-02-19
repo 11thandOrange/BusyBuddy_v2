@@ -48,8 +48,7 @@
             ],
             behavior: [
                 { title: 'Display', items: [
-                    { id: 'position', icon: '📍', label: 'Position', iconClass: 'icon-type' },
-                    { id: 'animation', icon: '✨', label: 'Animation', iconClass: 'icon-button' }
+                    { id: 'position', icon: '📍', label: 'Position', iconClass: 'icon-type' }
                 ]}
             ],
             schedule: [
@@ -317,25 +316,6 @@
                                             <option value="bottom">Bottom</option>
                                         </select>
                                     </div>
-                                </div>
-                            </div>
-                        );
-                    case 'animation':
-                        return (
-                            <div>
-                                <div className="config-header"><h2>Animation</h2><p>Add motion to your message</p></div>
-                                <div className="config-content">
-                                    <div className="toggle-row" style={{borderTop:'none',paddingTop:0}}>
-                                        <span className="toggle-label">Animate Message</span>
-                                        <label className="toggle-switch"><input type="checkbox" checked={animateMessage} onChange={(e) => setAnimateMessage(e.target.checked)} /><span className="toggle-slider" /></label>
-                                    </div>
-                                    {animateMessage && (
-                                        <div className="form-group">
-                                            <label className="form-label">Animation Speed (seconds)</label>
-                                            <input type="number" className="form-input" value={animationSpeed} onChange={(e) => setAnimationSpeed(Number(e.target.value))} min="5" max="60" />
-                                            <small className="form-hint">Lower = faster scroll</small>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         );
