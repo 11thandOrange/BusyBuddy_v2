@@ -19,6 +19,7 @@
     "@formatjs/intl-locale": "^3.3.2",
     "@formatjs/intl-localematcher": "^0.5.4",
     "@formatjs/intl-pluralrules": "^5.2.4",
+    "@liquidglass/react": "^0.1.3",
     "@reduxjs/toolkit": "^2.7.0",
     "@shopify/app-bridge": "3.7.7",
     "@shopify/app-bridge-react": "4.1.3",
