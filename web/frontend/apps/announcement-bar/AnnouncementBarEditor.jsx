@@ -16,6 +16,7 @@ import {
 } from '../../components/Editor';
 
 // Announcement Bar specific settings configuration
+// Settings configuration for AnnouncementBar editor - Animation removed
 const ANNOUNCEMENT_BAR_SETTINGS = {
   content: [
     {
