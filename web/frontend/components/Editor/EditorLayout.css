@@ -899,16 +899,17 @@
 }
 
 /* Scrolling Animation - Marquee: 
-   - Enter from right edge
+   - Enter from right edge of bar
    - Exit completely off left edge  
    - When 40% off-screen, next copy enters from right
+   - Seamless loop with no flash on restart (uses 3 copies)
 */
 @keyframes scrollText {
     0% {
         transform: translateX(0);
     }
     100% {
-        transform: translateX(-50%);
+        transform: translateX(-33.333%); /* Move by 1/3 since we have 3 copies */
     }
 }
 
@@ -928,23 +929,17 @@
     animation: scrollText var(--scroll-duration, 20s) linear infinite;
     will-change: transform;
     align-items: center;
-    /* Start from right edge of container */
-    padding-left: 100%;
 }
 
 .scrolling-text span {
     display: inline-block;
     flex-shrink: 0;
+    /* Each span has 40vw gap before it - creates 40% trigger effect
+       With 3 identical copies, -33.333% creates seamless loop */
+    padding-left: 40vw;
 }
 
-/* First copy - followed by gap so next enters when first is 40% off-screen */
+/* First span starts from right edge for initial entry effect */
 .scrolling-text span:first-child {
-    /* Gap after first message = container width * 0.40 
-       This creates the "40% off-screen" trigger effect */
-    margin-right: 40vw;
-}
-
-/* Second copy - no extra margin needed */
-.scrolling-text span:last-child {
-    margin-right: 0;
+    padding-left: 100%;
 }
