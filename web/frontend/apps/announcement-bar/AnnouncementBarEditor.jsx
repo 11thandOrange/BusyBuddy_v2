@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   EditorLayout,
   EditorSidepane,
@@ -59,6 +59,12 @@ const ANNOUNCEMENT_BAR_SETTINGS = {
         { id: 'font', icon: '🔤', label: 'Font Settings', iconClass: 'icon-emoji' },
       ],
     },
+    {
+      title: 'Dimensions',
+      items: [
+        { id: 'dimensions', icon: '📐', label: 'Bar Size', iconClass: 'icon-timer' },
+      ],
+    },
   ],
   behavior: [
     {
@@ -94,6 +100,36 @@ const BAR_TYPE_OPTIONS = [
   { value: 'orders', label: 'Orders Counter' },
 ];
 
+const POSITION_OPTIONS = [
+  { value: 'top', label: 'Top' },
+  { value: 'top-fixed', label: 'Top (Fixed)' },
+  { value: 'bottom', label: 'Bottom' },
+];
+
+const FONT_FAMILY_OPTIONS = [
+  { value: 'Inter', label: 'Inter' },
+  { value: 'Arial', label: 'Arial' },
+  { value: 'Helvetica', label: 'Helvetica' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Roboto', label: 'Roboto' },
+  { value: 'Open Sans', label: 'Open Sans' },
+];
+
+const FONT_WEIGHT_OPTIONS = [
+  { value: '400', label: 'Normal' },
+  { value: '500', label: 'Medium' },
+  { value: '600', label: 'Semi Bold' },
+  { value: '700', label: 'Bold' },
+];
+
+const THEME_OPTIONS = [
+  { value: 'solid', label: 'Solid Color' },
+  { value: 'gradient', label: 'Gradient' },
+  { value: 'sunshine', label: 'Sunshine' },
+  { value: 'watercolor', label: 'Watercolor' },
+  { value: 'abstract', label: 'Abstract' },
+];
+
 /**
  * AnnouncementBarEditor - Editor for Announcement Bar app
  * Uses reusable Editor components with app-specific configuration
@@ -108,16 +144,105 @@ export const AnnouncementBarEditor = ({
   const [activeSetting, setActiveSetting] = useState('type');
   const [device, setDevice] = useState('desktop');
   
-  // Form state
-  const [title, setTitle] = useState(editingBar?.name || 'Summer Sale Banner');
+  // === CONTENT SETTINGS ===
+  // Bar Type
   const [barEnabled, setBarEnabled] = useState(editingBar?.status === 'active' ?? true);
   const [barType, setBarType] = useState(editingBar?.barType || 'text');
   const [internalName, setInternalName] = useState(editingBar?.name || 'Summer Sale Banner');
+  const [title, setTitle] = useState(editingBar?.name || 'Summer Sale Banner');
+  
+  // Message
   const [message, setMessage] = useState(editingBar?.message || '🔥 Summer Sale - Up to 50% OFF!');
-  const [backgroundColor, setBackgroundColor] = useState(editingBar?.backgroundColor || '#667eea');
+  const [showMessage, setShowMessage] = useState(true);
+  
+  // Emoji
+  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
+  const [emojiPosition, setEmojiPosition] = useState('start');
+  
+  // Timer
+  const [showTimer, setShowTimer] = useState(false);
+  const [timerEndDate, setTimerEndDate] = useState('');
+  const [timerEndTime, setTimerEndTime] = useState('');
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  
+  // Shop Now Button
+  const [showShopNowButton, setShowShopNowButton] = useState(false);
+  const [shopNowButtonText, setShopNowButtonText] = useState('Shop Now');
+  const [shopNowButtonColor, setShopNowButtonColor] = useState('#ffffff');
+  const [shopNowButtonBgColor, setShopNowButtonBgColor] = useState('#000000');
+  
+  // Save Badge
+  const [showSaveBox, setShowSaveBox] = useState(false);
+  const [saveBoxText, setSaveBoxText] = useState('SAVE 30%');
+  const [saveBoxBgColor, setSaveBoxBgColor] = useState('#ff4444');
+  const [saveBoxTextColor, setSaveBoxTextColor] = useState('#ffffff');
+
+  // === APPEARANCE SETTINGS ===
+  // Background
+  const [backgroundType, setBackgroundType] = useState('gradient');
+  const [backgroundColor, setBackgroundColor] = useState('#667eea');
+  const [gradientEndColor, setGradientEndColor] = useState('#764ba2');
+  
+  // Text Color
+  const [textColor, setTextColor] = useState('#ffffff');
+  
+  // Typography
+  const [fontSize, setFontSize] = useState('16');
+  const [fontFamily, setFontFamily] = useState('Inter');
+  const [fontWeight, setFontWeight] = useState('600');
+  
+  // Dimensions
+  const [barHeight, setBarHeight] = useState(50);
+  const [barPadding, setBarPadding] = useState(12);
+
+  // === BEHAVIOR SETTINGS ===
+  // Position
+  const [barPosition, setBarPosition] = useState('top');
+  
+  // Animation
+  const [animateMessage, setAnimateMessage] = useState(false);
+  const [animationSpeed, setAnimationSpeed] = useState(20);
+
+  // === SCHEDULE SETTINGS ===
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!showTimer || !timerEndDate || !timerEndTime) return;
+    
+    const targetDate = new Date(`${timerEndDate}T${timerEndTime}`);
+    
+    const interval = setInterval(() => {
+      const now = new Date();
+      const diff = targetDate - now;
+      
+      if (diff <= 0) {
+        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        clearInterval(interval);
+        return;
+      }
+      
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [showTimer, timerEndDate, timerEndTime]);
 
   // Get settings for current tab
   const currentSettings = ANNOUNCEMENT_BAR_SETTINGS[activeTab] || [];
+
+  // Handle tab change - reset to first setting
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const firstSetting = ANNOUNCEMENT_BAR_SETTINGS[tabId]?.[0]?.items?.[0]?.id;
+    if (firstSetting) setActiveSetting(firstSetting);
+  };
 
   // Handle save
   const handleSave = () => {
@@ -126,14 +251,47 @@ export const AnnouncementBarEditor = ({
       status: barEnabled ? 'active' : 'inactive',
       barType,
       message,
+      showMessage,
       backgroundColor,
+      gradientEndColor,
+      backgroundType,
+      textColor,
+      fontSize,
+      fontFamily,
+      fontWeight,
+      barHeight,
+      barPosition,
+      animateMessage,
+      animationSpeed,
+      showTimer,
+      timerEndDate,
+      timerEndTime,
+      showShopNowButton,
+      shopNowButtonText,
+      shopNowButtonColor,
+      shopNowButtonBgColor,
+      showSaveBox,
+      saveBoxText,
+      saveBoxBgColor,
+      saveBoxTextColor,
+      startDate,
+      endDate,
     };
     onSave?.(data);
+  };
+
+  // Get background style
+  const getBackgroundStyle = () => {
+    if (backgroundType === 'gradient') {
+      return `linear-gradient(135deg, ${backgroundColor}, ${gradientEndColor})`;
+    }
+    return backgroundColor;
   };
 
   // Render config panel content based on active setting
   const renderConfigContent = () => {
     switch (activeSetting) {
+      // === CONTENT TAB ===
       case 'type':
         return (
           <EditorConfigPanel
@@ -151,7 +309,10 @@ export const AnnouncementBarEditor = ({
             <ConfigFormGroup label="Internal Name" hint="Only visible to you">
               <ConfigInput
                 value={internalName}
-                onChange={(e) => setInternalName(e.target.value)}
+                onChange={(e) => {
+                  setInternalName(e.target.value);
+                  setTitle(e.target.value);
+                }}
                 placeholder="e.g., Summer Sale Banner"
               />
             </ConfigFormGroup>
@@ -170,6 +331,12 @@ export const AnnouncementBarEditor = ({
             title="Message Text"
             description="Configure your announcement message"
           >
+            <ConfigToggleRow
+              label="Show Message"
+              checked={showMessage}
+              onChange={setShowMessage}
+            />
+            
             <ConfigFormGroup label="Message">
               <ConfigTextarea
                 value={message}
@@ -181,33 +348,464 @@ export const AnnouncementBarEditor = ({
           </EditorConfigPanel>
         );
 
+      case 'emoji':
+        return (
+          <EditorConfigPanel
+            title="Emoji & Icons"
+            description="Add emojis to your announcement"
+          >
+            <ConfigFormGroup label="Quick Emojis">
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['🔥', '⭐', '🎉', '💥', '🚀', '💰', '🎁', '⚡', '❤️', '✨'].map((emoji) => (
+                  <button
+                    key={emoji}
+                    onClick={() => setMessage(prev => prev + emoji)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '20px',
+                      background: 'rgba(255,255,255,0.1)',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'timer':
+        return (
+          <EditorConfigPanel
+            title="Countdown Timer"
+            description="Add urgency with a countdown timer"
+          >
+            <ConfigToggleRow
+              label="Show Timer"
+              checked={showTimer}
+              onChange={setShowTimer}
+            />
+            
+            {showTimer && (
+              <>
+                <ConfigFormGroup label="End Date">
+                  <ConfigInput
+                    type="date"
+                    value={timerEndDate}
+                    onChange={(e) => setTimerEndDate(e.target.value)}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="End Time">
+                  <ConfigInput
+                    type="time"
+                    value={timerEndTime}
+                    onChange={(e) => setTimerEndTime(e.target.value)}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
+      case 'button':
+        return (
+          <EditorConfigPanel
+            title="Shop Now Button"
+            description="Add a call-to-action button"
+          >
+            <ConfigToggleRow
+              label="Show Button"
+              checked={showShopNowButton}
+              onChange={setShowShopNowButton}
+            />
+            
+            {showShopNowButton && (
+              <>
+                <ConfigFormGroup label="Button Text">
+                  <ConfigInput
+                    value={shopNowButtonText}
+                    onChange={(e) => setShopNowButtonText(e.target.value)}
+                    placeholder="Shop Now"
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Text Color">
+                  <ConfigInput
+                    type="color"
+                    value={shopNowButtonColor}
+                    onChange={(e) => setShopNowButtonColor(e.target.value)}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Background Color">
+                  <ConfigInput
+                    type="color"
+                    value={shopNowButtonBgColor}
+                    onChange={(e) => setShopNowButtonBgColor(e.target.value)}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
+      case 'savebox':
+        return (
+          <EditorConfigPanel
+            title="Save Badge"
+            description="Highlight your discount with a badge"
+          >
+            <ConfigToggleRow
+              label="Show Save Badge"
+              checked={showSaveBox}
+              onChange={setShowSaveBox}
+            />
+            
+            {showSaveBox && (
+              <>
+                <ConfigFormGroup label="Badge Text">
+                  <ConfigInput
+                    value={saveBoxText}
+                    onChange={(e) => setSaveBoxText(e.target.value)}
+                    placeholder="SAVE 30%"
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Badge Color">
+                  <ConfigInput
+                    type="color"
+                    value={saveBoxBgColor}
+                    onChange={(e) => setSaveBoxBgColor(e.target.value)}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Text Color">
+                  <ConfigInput
+                    type="color"
+                    value={saveBoxTextColor}
+                    onChange={(e) => setSaveBoxTextColor(e.target.value)}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
+      // === APPEARANCE TAB ===
+      case 'background':
+        return (
+          <EditorConfigPanel
+            title="Background"
+            description="Customize the bar background"
+          >
+            <ConfigFormGroup label="Background Type">
+              <ConfigSelect
+                value={backgroundType}
+                onChange={(e) => setBackgroundType(e.target.value)}
+                options={THEME_OPTIONS}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Primary Color">
+              <ConfigInput
+                type="color"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+              />
+            </ConfigFormGroup>
+            
+            {backgroundType === 'gradient' && (
+              <ConfigFormGroup label="Gradient End Color">
+                <ConfigInput
+                  type="color"
+                  value={gradientEndColor}
+                  onChange={(e) => setGradientEndColor(e.target.value)}
+                />
+              </ConfigFormGroup>
+            )}
+          </EditorConfigPanel>
+        );
+
+      case 'text-color':
+        return (
+          <EditorConfigPanel
+            title="Text Color"
+            description="Customize the text color"
+          >
+            <ConfigFormGroup label="Message Text Color">
+              <ConfigInput
+                type="color"
+                value={textColor}
+                onChange={(e) => setTextColor(e.target.value)}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'font':
+        return (
+          <EditorConfigPanel
+            title="Font Settings"
+            description="Customize typography"
+          >
+            <ConfigFormGroup label="Font Family">
+              <ConfigSelect
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                options={FONT_FAMILY_OPTIONS}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Font Size (px)">
+              <ConfigInput
+                type="number"
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                min="10"
+                max="32"
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Font Weight">
+              <ConfigSelect
+                value={fontWeight}
+                onChange={(e) => setFontWeight(e.target.value)}
+                options={FONT_WEIGHT_OPTIONS}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'dimensions':
+        return (
+          <EditorConfigPanel
+            title="Bar Size"
+            description="Adjust bar dimensions"
+          >
+            <ConfigFormGroup label="Bar Height (px)">
+              <ConfigInput
+                type="number"
+                value={barHeight}
+                onChange={(e) => setBarHeight(Number(e.target.value))}
+                min="30"
+                max="200"
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Padding (px)">
+              <ConfigInput
+                type="number"
+                value={barPadding}
+                onChange={(e) => setBarPadding(Number(e.target.value))}
+                min="0"
+                max="40"
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      // === BEHAVIOR TAB ===
+      case 'position':
+        return (
+          <EditorConfigPanel
+            title="Position"
+            description="Where should the bar appear?"
+          >
+            <ConfigFormGroup label="Bar Position">
+              <ConfigSelect
+                value={barPosition}
+                onChange={(e) => setBarPosition(e.target.value)}
+                options={POSITION_OPTIONS}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'animation':
+        return (
+          <EditorConfigPanel
+            title="Animation"
+            description="Add motion to your message"
+          >
+            <ConfigToggleRow
+              label="Animate Message"
+              checked={animateMessage}
+              onChange={setAnimateMessage}
+            />
+            
+            {animateMessage && (
+              <ConfigFormGroup label="Animation Speed (seconds)">
+                <ConfigInput
+                  type="number"
+                  value={animationSpeed}
+                  onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                  min="5"
+                  max="60"
+                />
+              </ConfigFormGroup>
+            )}
+          </EditorConfigPanel>
+        );
+
+      // === SCHEDULE TAB ===
+      case 'start-date':
+        return (
+          <EditorConfigPanel
+            title="Start Date"
+            description="When should the bar start showing?"
+          >
+            <ConfigFormGroup label="Start Date">
+              <ConfigInput
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'end-date':
+        return (
+          <EditorConfigPanel
+            title="End Date"
+            description="When should the bar stop showing?"
+          >
+            <ConfigFormGroup label="End Date">
+              <ConfigInput
+                type="datetime-local"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
       default:
         return (
           <EditorConfigPanel
-            title="Coming Soon"
-            description="This setting panel is under development"
+            title="Settings"
+            description="Configure this setting"
           >
             <p style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Configure {activeSetting} settings here.
+              Select a setting from the left panel.
             </p>
           </EditorConfigPanel>
         );
     }
   };
 
+  // Render timer display
+  const renderTimer = () => {
+    if (!showTimer) return null;
+    
+    return (
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        marginLeft: '12px',
+      }}>
+        {[
+          { value: countdown.days, label: 'D' },
+          { value: countdown.hours, label: 'H' },
+          { value: countdown.minutes, label: 'M' },
+          { value: countdown.seconds, label: 'S' },
+        ].map((item, idx) => (
+          <div key={idx} style={{
+            background: 'rgba(0,0,0,0.2)',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            textAlign: 'center',
+            minWidth: '36px',
+          }}>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: textColor }}>
+              {String(item.value).padStart(2, '0')}
+            </div>
+            <div style={{ fontSize: '9px', color: textColor, opacity: 0.8 }}>
+              {item.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   // Render announcement bar preview
-  const renderAnnouncementBar = () => (
-    <div
-      className="announcement-bar-preview"
-      style={{
-        background: `linear-gradient(135deg, ${backgroundColor}, #764ba2)`,
-      }}
-    >
-      <span className="announcement-message" style={{ color: '#fff' }}>
-        {message}
-      </span>
-    </div>
-  );
+  const renderAnnouncementBar = () => {
+    if (!barEnabled) return null;
+    
+    return (
+      <div
+        className="announcement-bar-preview"
+        style={{
+          background: getBackgroundStyle(),
+          height: `${barHeight}px`,
+          padding: `${barPadding}px 16px`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          position: barPosition === 'bottom' ? 'absolute' : 'relative',
+          bottom: barPosition === 'bottom' ? 0 : 'auto',
+          width: '100%',
+        }}
+      >
+        {/* Save Badge */}
+        {showSaveBox && (
+          <div style={{
+            background: saveBoxBgColor,
+            color: saveBoxTextColor,
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: '700',
+            whiteSpace: 'nowrap',
+          }}>
+            {saveBoxText}
+          </div>
+        )}
+        
+        {/* Message */}
+        {showMessage && (
+          <span 
+            className={animateMessage ? 'scrolling-text' : ''}
+            style={{ 
+              color: textColor,
+              fontSize: `${fontSize}px`,
+              fontFamily: fontFamily,
+              fontWeight: fontWeight,
+            }}
+          >
+            {message}
+          </span>
+        )}
+        
+        {/* Timer */}
+        {renderTimer()}
+        
+        {/* Shop Now Button */}
+        {showShopNowButton && (
+          <button style={{
+            background: shopNowButtonBgColor,
+            color: shopNowButtonColor,
+            border: 'none',
+            padding: '6px 14px',
+            borderRadius: '4px',
+            fontSize: '13px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}>
+            {shopNowButtonText}
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <EditorLayout>
@@ -215,7 +813,7 @@ export const AnnouncementBarEditor = ({
       <EditorSidepane
         tabs={TABS}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
       >
         <EditorSettingsPane
           groups={currentSettings}
