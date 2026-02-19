@@ -898,18 +898,18 @@
     padding: 16px;
 }
 
-/* Scrolling Animation - Marquee: 
-   - Enter from right edge of bar
-   - Scroll across full width of bar
-   - Exit completely off left edge  
-   - When ~40% off-screen, next copy enters from right
+/* Scrolling Animation - Simple marquee: 
+   - Text enters from right edge
+   - Scrolls across full width
+   - Exits off left edge
+   - Repeats
 */
 @keyframes scrollText {
     0% {
         transform: translateX(0);
     }
     100% {
-        transform: translateX(-50%);
+        transform: translateX(calc(-100% - 100vw));
     }
 }
 
@@ -924,19 +924,14 @@
 }
 
 .scrolling-text {
-    display: inline-flex;
+    display: inline-block;
     white-space: nowrap;
     animation: scrollText var(--scroll-duration, 20s) linear infinite;
     will-change: transform;
-    align-items: center;
-    /* Start content from right edge of container */
-    padding-left: 100%;
+    /* Start from right edge of container */
+    margin-left: 100%;
 }
 
 .scrolling-text span {
     display: inline-block;
-    flex-shrink: 0;
-    /* Gap after each message - when first text is ~60% across bar,
-       second text starts entering from right */
-    margin-right: 60%;
 }
