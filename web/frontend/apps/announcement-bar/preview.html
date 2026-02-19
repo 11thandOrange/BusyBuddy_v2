@@ -12,6 +12,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
         input[type="color"] { width: 100%; height: 40px; border: none; border-radius: 8px; cursor: pointer; }
+        @keyframes scrollText {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .scrolling-text-container { overflow: hidden; width: 100%; flex: 1; }
+        .scrolling-text { display: inline-block; white-space: nowrap; animation: scrollText var(--scroll-duration, 20s) linear infinite; }
+        .scrolling-text span { display: inline-block; padding-right: 80px; }
     </style>
 </head>
 <body>
@@ -21,7 +28,6 @@
 
         const SETTINGS = {
             content: [
-                { title: 'Bar Type', items: [{ id: 'type', icon: '📝', label: 'Announcement Type', iconClass: 'icon-type' }] },
                 { title: 'Message', items: [
                     { id: 'message', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
                     { id: 'emoji', icon: '😀', label: 'Emoji & Icons', iconClass: 'icon-emoji' }
@@ -64,16 +70,19 @@
         const AnnouncementBarEditor = () => {
             // Navigation
             const [activeTab, setActiveTab] = useState('content');
-            const [activeSetting, setActiveSetting] = useState('type');
+            const [activeSetting, setActiveSetting] = useState('message');
             const [device, setDevice] = useState('desktop');
             const [isEditingTitle, setIsEditingTitle] = useState(false);
             
             // Content Settings
             const [barEnabled, setBarEnabled] = useState(true);
-            const [barType, setBarType] = useState('text');
             const [title, setTitle] = useState('Summer Sale Banner');
             const [message, setMessage] = useState('🔥 Summer Sale - Up to 50% OFF!');
             const [showMessage, setShowMessage] = useState(true);
+            
+            // Schedule
+            const [startDate, setStartDate] = useState('');
+            const [endDate, setEndDate] = useState('');
             
             // Timer
             const [showTimer, setShowTimer] = useState(false);
@@ -104,6 +113,7 @@
             // Behavior
             const [barPosition, setBarPosition] = useState('top');
             const [animateMessage, setAnimateMessage] = useState(false);
+            const [animationSpeed, setAnimationSpeed] = useState(20);
 
             // Timer effect
             useEffect(() => {
@@ -142,32 +152,6 @@
 
             const renderConfigContent = () => {
                 switch (activeSetting) {
-                    case 'type':
-                        return (
-                            <div>
-                                <div className="config-header"><h2>Announcement Type</h2><p>Choose what type of announcement to display</p></div>
-                                <div className="config-content">
-                                    <div className="form-group">
-                                        <label className="form-label">Bar Type</label>
-                                        <select className="form-select" value={barType} onChange={(e) => setBarType(e.target.value)}>
-                                            <option value="text">Text Message</option>
-                                            <option value="countdown">Countdown Timer</option>
-                                            <option value="freeshipping">Free Shipping Progress</option>
-                                            <option value="orders">Orders Counter</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Internal Name</label>
-                                        <input type="text" className="form-input" value={title} onChange={(e) => setTitle(e.target.value)} />
-                                        <small className="form-hint">Only visible to you</small>
-                                    </div>
-                                    <div className="toggle-row">
-                                        <span className="toggle-label">Enable Bar</span>
-                                        <label className="toggle-switch"><input type="checkbox" checked={barEnabled} onChange={(e) => setBarEnabled(e.target.checked)} /><span className="toggle-slider" /></label>
-                                    </div>
-                                </div>
-                            </div>
-                        );
                     case 'message':
                         return (
                             <div>
@@ -345,6 +329,35 @@
                                         <span className="toggle-label">Animate Message</span>
                                         <label className="toggle-switch"><input type="checkbox" checked={animateMessage} onChange={(e) => setAnimateMessage(e.target.checked)} /><span className="toggle-slider" /></label>
                                     </div>
+                                    {animateMessage && (
+                                        <div className="form-group">
+                                            <label className="form-label">Animation Speed (seconds)</label>
+                                            <input type="number" className="form-input" value={animationSpeed} onChange={(e) => setAnimationSpeed(Number(e.target.value))} min="5" max="60" />
+                                            <small className="form-hint">Lower = faster scroll</small>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    case 'start-date':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Start Date</h2><p>When should the bar start showing?</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={startDate.split('T')[0] || ''} onChange={(e) => { const time = startDate.split('T')[1] || '00:00'; setStartDate(e.target.value ? `${e.target.value}T${time}` : ''); }} /></div>
+                                    <div className="form-group"><label className="form-label">Time</label><input type="time" className="form-input" value={startDate.split('T')[1] || ''} onChange={(e) => { const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0]; setStartDate(`${date}T${e.target.value}`); }} /></div>
+                                    {startDate && <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>📅 Starts: {new Date(startDate).toLocaleString()}</div>}
+                                </div>
+                            </div>
+                        );
+                    case 'end-date':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>End Date</h2><p>When should the bar stop showing?</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={endDate.split('T')[0] || ''} onChange={(e) => { const time = endDate.split('T')[1] || '23:59'; setEndDate(e.target.value ? `${e.target.value}T${time}` : ''); }} /></div>
+                                    <div className="form-group"><label className="form-label">Time</label><input type="time" className="form-input" value={endDate.split('T')[1] || ''} onChange={(e) => { const date = endDate.split('T')[0] || new Date().toISOString().split('T')[0]; setEndDate(`${date}T${e.target.value}`); }} /></div>
+                                    {endDate && <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(255, 59, 48, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>🏁 Ends: {new Date(endDate).toLocaleString()}</div>}
                                 </div>
                             </div>
                         );
@@ -370,11 +383,22 @@
             const renderAnnouncementBar = () => {
                 if (!barEnabled) return null;
                 return (
-                    <div className="announcement-bar-preview" style={{ background: getBackgroundStyle(), height: `${barHeight}px`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', position: barPosition === 'bottom' ? 'absolute' : 'relative', bottom: barPosition === 'bottom' ? 0 : 'auto', width: '100%' }}>
-                        {showSaveBox && <div style={{ background: saveBoxBgColor, color: saveBoxTextColor, padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap' }}>{saveBoxText}</div>}
-                        {showMessage && <span style={{ color: textColor, fontSize: `${fontSize}px`, fontFamily: fontFamily, fontWeight: fontWeight }}>{message}</span>}
+                    <div className="announcement-bar-preview" style={{ background: getBackgroundStyle(), height: `${barHeight}px`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', position: barPosition === 'bottom' ? 'absolute' : 'relative', bottom: barPosition === 'bottom' ? 0 : 'auto', width: '100%', overflow: 'hidden' }}>
+                        {showSaveBox && <div style={{ background: saveBoxBgColor, color: saveBoxTextColor, padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap', flexShrink: 0 }}>{saveBoxText}</div>}
+                        {showMessage && (
+                            animateMessage ? (
+                                <div className="scrolling-text-container">
+                                    <div className="scrolling-text" style={{ color: textColor, fontSize: `${fontSize}px`, fontFamily: fontFamily, fontWeight: fontWeight, '--scroll-duration': `${animationSpeed}s` }}>
+                                        <span>{message}</span>
+                                        <span>{message}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <span style={{ color: textColor, fontSize: `${fontSize}px`, fontFamily: fontFamily, fontWeight: fontWeight }}>{message}</span>
+                            )
+                        )}
                         {renderTimer()}
-                        {showShopNowButton && <button style={{ background: shopNowButtonBgColor, color: shopNowButtonColor, border: 'none', padding: '6px 14px', borderRadius: '4px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>{shopNowButtonText}</button>}
+                        {showShopNowButton && <button style={{ background: shopNowButtonBgColor, color: shopNowButtonColor, border: 'none', padding: '6px 14px', borderRadius: '4px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{shopNowButtonText}</button>}
                     </div>
                 );
             };

@@ -742,3 +742,30 @@
 .device-icon {
   font-size: 14px;
 }
+
+/* Scrolling Animation */
+@keyframes scrollText {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.scrolling-text-container {
+  overflow: hidden;
+  width: 100%;
+  flex: 1;
+}
+
+.scrolling-text {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scrollText var(--scroll-duration, 20s) linear infinite;
+}
+
+.scrolling-text span {
+  display: inline-block;
+  padding-right: 80px;
+}

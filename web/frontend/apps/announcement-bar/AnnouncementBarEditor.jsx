@@ -19,12 +19,6 @@ import {
 const ANNOUNCEMENT_BAR_SETTINGS = {
   content: [
     {
-      title: 'Bar Type',
-      items: [
-        { id: 'type', icon: '📝', label: 'Announcement Type', iconClass: 'icon-type' },
-      ],
-    },
-    {
       title: 'Message',
       items: [
         { id: 'message', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
@@ -141,7 +135,7 @@ export const AnnouncementBarEditor = ({
 }) => {
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
-  const [activeSetting, setActiveSetting] = useState('type');
+  const [activeSetting, setActiveSetting] = useState('message');
   const [device, setDevice] = useState('desktop');
   
   // === CONTENT SETTINGS ===
@@ -658,13 +652,38 @@ export const AnnouncementBarEditor = ({
             title="Start Date"
             description="When should the bar start showing?"
           >
-            <ConfigFormGroup label="Start Date">
+            <ConfigFormGroup label="Date">
               <ConfigInput
-                type="datetime-local"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                type="date"
+                value={startDate.split('T')[0] || ''}
+                onChange={(e) => {
+                  const time = startDate.split('T')[1] || '00:00';
+                  setStartDate(e.target.value ? `${e.target.value}T${time}` : '');
+                }}
               />
             </ConfigFormGroup>
+            <ConfigFormGroup label="Time">
+              <ConfigInput
+                type="time"
+                value={startDate.split('T')[1] || ''}
+                onChange={(e) => {
+                  const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0];
+                  setStartDate(`${date}T${e.target.value}`);
+                }}
+              />
+            </ConfigFormGroup>
+            {startDate && (
+              <div style={{ 
+                marginTop: '12px', 
+                padding: '10px', 
+                background: 'rgba(52, 199, 89, 0.1)', 
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                📅 Starts: {new Date(startDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -674,13 +693,38 @@ export const AnnouncementBarEditor = ({
             title="End Date"
             description="When should the bar stop showing?"
           >
-            <ConfigFormGroup label="End Date">
+            <ConfigFormGroup label="Date">
               <ConfigInput
-                type="datetime-local"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                type="date"
+                value={endDate.split('T')[0] || ''}
+                onChange={(e) => {
+                  const time = endDate.split('T')[1] || '23:59';
+                  setEndDate(e.target.value ? `${e.target.value}T${time}` : '');
+                }}
               />
             </ConfigFormGroup>
+            <ConfigFormGroup label="Time">
+              <ConfigInput
+                type="time"
+                value={endDate.split('T')[1] || ''}
+                onChange={(e) => {
+                  const date = endDate.split('T')[0] || new Date().toISOString().split('T')[0];
+                  setEndDate(`${date}T${e.target.value}`);
+                }}
+              />
+            </ConfigFormGroup>
+            {endDate && (
+              <div style={{ 
+                marginTop: '12px', 
+                padding: '10px', 
+                background: 'rgba(255, 59, 48, 0.1)', 
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🏁 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -752,6 +796,7 @@ export const AnnouncementBarEditor = ({
           position: barPosition === 'bottom' ? 'absolute' : 'relative',
           bottom: barPosition === 'bottom' ? 0 : 'auto',
           width: '100%',
+          overflow: 'hidden',
         }}
       >
         {/* Save Badge */}
@@ -764,6 +809,7 @@ export const AnnouncementBarEditor = ({
             fontSize: '12px',
             fontWeight: '700',
             whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}>
             {saveBoxText}
           </div>
@@ -771,17 +817,34 @@ export const AnnouncementBarEditor = ({
         
         {/* Message */}
         {showMessage && (
-          <span 
-            className={animateMessage ? 'scrolling-text' : ''}
-            style={{ 
-              color: textColor,
-              fontSize: `${fontSize}px`,
-              fontFamily: fontFamily,
-              fontWeight: fontWeight,
-            }}
-          >
-            {message}
-          </span>
+          animateMessage ? (
+            <div className="scrolling-text-container">
+              <div 
+                className="scrolling-text"
+                style={{ 
+                  color: textColor,
+                  fontSize: `${fontSize}px`,
+                  fontFamily: fontFamily,
+                  fontWeight: fontWeight,
+                  '--scroll-duration': `${animationSpeed}s`,
+                }}
+              >
+                <span>{message}</span>
+                <span>{message}</span>
+              </div>
+            </div>
+          ) : (
+            <span 
+              style={{ 
+                color: textColor,
+                fontSize: `${fontSize}px`,
+                fontFamily: fontFamily,
+                fontWeight: fontWeight,
+              }}
+            >
+              {message}
+            </span>
+          )
         )}
         
         {/* Timer */}
@@ -799,6 +862,7 @@ export const AnnouncementBarEditor = ({
             fontWeight: '600',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}>
             {shopNowButtonText}
           </button>
