@@ -8,15 +8,29 @@
   overflow: hidden;
 }
 
-/* Gradient Background */
+/* Gradient Background - Black to Grey */
 .gradient-bg {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+  background: linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 25%, #2d2d2d 50%, #3a3a3a 75%, #1f1f1f 100%);
   z-index: -1;
+}
+
+/* Subtle noise texture overlay for depth */
+.gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse 100% 80% at 20% 0%, rgba(60, 60, 60, 0.3) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 80% 100%, rgba(50, 50, 50, 0.2) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 /* Main Container */
@@ -36,7 +50,7 @@
 }
 
 /* ==========================================
-   LEFT SIDEPANE - Liquid Glass
+   LEFT SIDEPANE - Liquid Glass with Shine
    ========================================== */
 
 .sidepane-container {
@@ -47,20 +61,22 @@
   max-width: 560px;
   flex-shrink: 0;
   margin: 4px 0 4px 0;
-  background: rgba(28, 28, 30, 0.8);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(60px) saturate(200%);
+  -webkit-backdrop-filter: blur(60px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-left: none;
-  border-radius: 0 20px 20px 0;
+  border-radius: 0 24px 24px 0;
   position: relative;
   box-shadow: 
-    0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 12px 24px -8px rgba(0, 0, 0, 0.4),
-    0 4px 8px rgba(0, 0, 0, 0.3);
+    0 25px 50px -12px rgba(0, 0, 0, 0.6),
+    0 12px 24px -8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
-/* Glass shine - top edge */
+/* Glass shine - top edge highlight */
 .sidepane-container::before {
   content: '';
   position: absolute;
@@ -70,15 +86,15 @@
   height: 1px;
   background: linear-gradient(90deg, 
     transparent 0%,
-    rgba(255, 255, 255, 0.2) 20%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0.2) 80%,
+    rgba(255, 255, 255, 0.15) 15%,
+    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.15) 85%,
     transparent 100%);
-  border-radius: 0 20px 0 0;
-  z-index: 2;
+  border-radius: 0 24px 0 0;
+  z-index: 10;
 }
 
-/* Glass shine spots */
+/* Glass shine spots - multiple light reflections */
 .sidepane-container::after {
   content: '';
   position: absolute;
@@ -87,9 +103,17 @@
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(ellipse 80% 30% at 50% 0%, rgba(255,255,255,0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 20% at 30% 100%, rgba(255,255,255,0.04) 0%, transparent 50%);
-  border-radius: 0 20px 20px 0;
+    /* Top-left shine spot */
+    radial-gradient(ellipse 120% 40% at 30% -10%, rgba(255, 255, 255, 0.12) 0%, transparent 50%),
+    /* Top-right subtle glow */
+    radial-gradient(ellipse 80% 30% at 85% 5%, rgba(255, 255, 255, 0.08) 0%, transparent 40%),
+    /* Center-left soft shine */
+    radial-gradient(ellipse 50% 80% at -5% 40%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
+    /* Bottom-right reflection */
+    radial-gradient(ellipse 100% 50% at 90% 100%, rgba(255, 255, 255, 0.05) 0%, transparent 40%),
+    /* Diagonal light streak */
+    linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, transparent 30%, transparent 70%, rgba(255, 255, 255, 0.02) 100%);
+  border-radius: 0 24px 24px 0;
   pointer-events: none;
   z-index: 1;
 }
