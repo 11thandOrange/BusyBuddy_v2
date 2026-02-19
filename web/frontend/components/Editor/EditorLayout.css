@@ -898,13 +898,13 @@
     padding: 16px;
 }
 
-/* Scrolling Animation - Marquee style (enters from right, exits left) */
+/* Scrolling Animation - Seamless marquee (continuous loop) */
 @keyframes scrollText {
     0% {
-        transform: translateX(100%); /* Start off-screen to the right of container */
+        transform: translateX(0%);
     }
     100% {
-        transform: translateX(-100%); /* End off-screen to the left */
+        transform: translateX(-50%); /* Move by half since we have 2 copies */
     }
 }
 
@@ -923,13 +923,12 @@
     white-space: nowrap;
     animation: scrollText var(--scroll-duration, 20s) linear infinite;
     will-change: transform;
-    position: absolute;
-    left: 100%; /* Start positioned at right edge of container */
     align-items: center;
+    /* Text starts visible, two copies side by side create seamless loop */
 }
 
 .scrolling-text span {
     display: inline-block;
-    padding-right: 80px; /* Gap between repeated messages */
+    padding-right: 100px; /* Gap between repeated messages */
     flex-shrink: 0;
 }
