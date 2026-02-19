@@ -65,7 +65,6 @@ const ANNOUNCEMENT_BAR_SETTINGS = {
       title: 'Display',
       items: [
         { id: 'position', icon: '📍', label: 'Position', iconClass: 'icon-type' },
-        { id: 'animation', icon: '✨', label: 'Animation', iconClass: 'icon-button' },
       ],
     },
   ],
@@ -194,7 +193,7 @@ export const AnnouncementBarEditor = ({
   const [barPosition, setBarPosition] = useState('top');
   
   // Animation
-  const [animateMessage, setAnimateMessage] = useState(false);
+  const [animateMessage] = useState(false); // Animation disabled - not exposed to users
   const [animationSpeed, setAnimationSpeed] = useState(20);
 
   // === SCHEDULE SETTINGS ===
@@ -616,32 +615,6 @@ export const AnnouncementBarEditor = ({
                 options={POSITION_OPTIONS}
               />
             </ConfigFormGroup>
-          </EditorConfigPanel>
-        );
-
-      case 'animation':
-        return (
-          <EditorConfigPanel
-            title="Animation"
-            description="Add motion to your message"
-          >
-            <ConfigToggleRow
-              label="Animate Message"
-              checked={animateMessage}
-              onChange={setAnimateMessage}
-            />
-            
-            {animateMessage && (
-              <ConfigFormGroup label="Animation Speed (seconds)">
-                <ConfigInput
-                  type="number"
-                  value={animationSpeed}
-                  onChange={(e) => setAnimationSpeed(Number(e.target.value))}
-                  min="5"
-                  max="60"
-                />
-              </ConfigFormGroup>
-            )}
           </EditorConfigPanel>
         );
 
