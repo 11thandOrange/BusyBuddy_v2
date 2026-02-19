@@ -1,287 +1,251 @@
 import React, { useState } from 'react';
-import './AnnouncementBarEditor.css';
+import {
+  EditorLayout,
+  EditorSidepane,
+  EditorSettingsPane,
+  EditorConfigPanel,
+  ConfigFormGroup,
+  ConfigInput,
+  ConfigSelect,
+  ConfigTextarea,
+  ConfigToggleRow,
+  EditorPreviewPanel,
+  StorePreview,
+  EditorHeader,
+  EditorRightContent
+} from '../../components/Editor';
 
-const contentSettings = [
-  {
-    title: 'Bar Type',
-    items: [
-      { id: 'type', icon: '📝', label: 'Announcement Type', iconClass: 'icon-type' },
-    ],
-  },
-  {
-    title: 'Message',
-    items: [
-      { id: 'message', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
-      { id: 'emoji', icon: '😀', label: 'Emoji & Icons', iconClass: 'icon-emoji' },
-    ],
-  },
-  {
-    title: 'Timer',
-    items: [
-      { id: 'timer', icon: '⏱️', label: 'Countdown Timer', iconClass: 'icon-timer' },
-    ],
-  },
-  {
-    title: 'Call to Action',
-    items: [
-      { id: 'button', icon: '🔘', label: 'Shop Now Button', iconClass: 'icon-button' },
-      { id: 'savebox', icon: '🏷️', label: 'Save Badge', iconClass: 'icon-badge' },
-    ],
-  },
+// Announcement Bar specific settings configuration
+const ANNOUNCEMENT_BAR_SETTINGS = {
+  content: [
+    {
+      title: 'Bar Type',
+      items: [
+        { id: 'type', icon: '📝', label: 'Announcement Type', iconClass: 'icon-type' },
+      ],
+    },
+    {
+      title: 'Message',
+      items: [
+        { id: 'message', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
+        { id: 'emoji', icon: '😀', label: 'Emoji & Icons', iconClass: 'icon-emoji' },
+      ],
+    },
+    {
+      title: 'Timer',
+      items: [
+        { id: 'timer', icon: '⏱️', label: 'Countdown Timer', iconClass: 'icon-timer' },
+      ],
+    },
+    {
+      title: 'Call to Action',
+      items: [
+        { id: 'button', icon: '🔘', label: 'Shop Now Button', iconClass: 'icon-button' },
+        { id: 'savebox', icon: '🏷️', label: 'Save Badge', iconClass: 'icon-badge' },
+      ],
+    },
+  ],
+  appearance: [
+    {
+      title: 'Colors',
+      items: [
+        { id: 'background', icon: '🎨', label: 'Background', iconClass: 'icon-type' },
+        { id: 'text-color', icon: '✏️', label: 'Text Color', iconClass: 'icon-message' },
+      ],
+    },
+    {
+      title: 'Typography',
+      items: [
+        { id: 'font', icon: '🔤', label: 'Font Settings', iconClass: 'icon-emoji' },
+      ],
+    },
+  ],
+  behavior: [
+    {
+      title: 'Display',
+      items: [
+        { id: 'position', icon: '📍', label: 'Position', iconClass: 'icon-type' },
+        { id: 'animation', icon: '✨', label: 'Animation', iconClass: 'icon-button' },
+      ],
+    },
+  ],
+  schedule: [
+    {
+      title: 'Timing',
+      items: [
+        { id: 'start-date', icon: '📅', label: 'Start Date', iconClass: 'icon-timer' },
+        { id: 'end-date', icon: '🏁', label: 'End Date', iconClass: 'icon-badge' },
+      ],
+    },
+  ],
+};
+
+const TABS = [
+  { id: 'content', label: 'Content' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'behavior', label: 'Behavior' },
+  { id: 'schedule', label: 'Schedule' },
 ];
 
-export const AnnouncementBarEditor = () => {
+const BAR_TYPE_OPTIONS = [
+  { value: 'text', label: 'Text Message' },
+  { value: 'countdown', label: 'Countdown Timer' },
+  { value: 'freeshipping', label: 'Free Shipping Progress' },
+  { value: 'orders', label: 'Orders Counter' },
+];
+
+/**
+ * AnnouncementBarEditor - Editor for Announcement Bar app
+ * Uses reusable Editor components with app-specific configuration
+ */
+export const AnnouncementBarEditor = ({ 
+  editingBar,
+  onSave,
+  onDiscard 
+}) => {
+  // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
   const [activeSetting, setActiveSetting] = useState('type');
-  const [barEnabled, setBarEnabled] = useState(true);
-  const [title, setTitle] = useState('Summer Sale Banner');
-  const [barType, setBarType] = useState('text');
-  const [internalName, setInternalName] = useState('Summer Sale Banner');
   const [device, setDevice] = useState('desktop');
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  
+  // Form state
+  const [title, setTitle] = useState(editingBar?.name || 'Summer Sale Banner');
+  const [barEnabled, setBarEnabled] = useState(editingBar?.status === 'active' ?? true);
+  const [barType, setBarType] = useState(editingBar?.barType || 'text');
+  const [internalName, setInternalName] = useState(editingBar?.name || 'Summer Sale Banner');
+  const [message, setMessage] = useState(editingBar?.message || '🔥 Summer Sale - Up to 50% OFF!');
+  const [backgroundColor, setBackgroundColor] = useState(editingBar?.backgroundColor || '#667eea');
 
-  const tabs = [
-    { id: 'content', label: 'Content' },
-    { id: 'appearance', label: 'Appearance' },
-    { id: 'behavior', label: 'Behavior' },
-    { id: 'schedule', label: 'Schedule' },
-  ];
+  // Get settings for current tab
+  const currentSettings = ANNOUNCEMENT_BAR_SETTINGS[activeTab] || [];
 
-  const handleTitleFocus = () => setIsEditingTitle(true);
-  const handleTitleBlur = () => setIsEditingTitle(false);
+  // Handle save
+  const handleSave = () => {
+    const data = {
+      name: internalName,
+      status: barEnabled ? 'active' : 'inactive',
+      barType,
+      message,
+      backgroundColor,
+    };
+    onSave?.(data);
+  };
+
+  // Render config panel content based on active setting
+  const renderConfigContent = () => {
+    switch (activeSetting) {
+      case 'type':
+        return (
+          <EditorConfigPanel
+            title="Announcement Type"
+            description="Choose what type of announcement to display"
+          >
+            <ConfigFormGroup label="Bar Type">
+              <ConfigSelect
+                value={barType}
+                onChange={(e) => setBarType(e.target.value)}
+                options={BAR_TYPE_OPTIONS}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Internal Name" hint="Only visible to you">
+              <ConfigInput
+                value={internalName}
+                onChange={(e) => setInternalName(e.target.value)}
+                placeholder="e.g., Summer Sale Banner"
+              />
+            </ConfigFormGroup>
+
+            <ConfigToggleRow
+              label="Enable Bar"
+              checked={barEnabled}
+              onChange={setBarEnabled}
+            />
+          </EditorConfigPanel>
+        );
+
+      case 'message':
+        return (
+          <EditorConfigPanel
+            title="Message Text"
+            description="Configure your announcement message"
+          >
+            <ConfigFormGroup label="Message">
+              <ConfigTextarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Enter your announcement message..."
+                rows={3}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      default:
+        return (
+          <EditorConfigPanel
+            title="Coming Soon"
+            description="This setting panel is under development"
+          >
+            <p style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Configure {activeSetting} settings here.
+            </p>
+          </EditorConfigPanel>
+        );
+    }
+  };
+
+  // Render announcement bar preview
+  const renderAnnouncementBar = () => (
+    <div
+      className="announcement-bar-preview"
+      style={{
+        background: `linear-gradient(135deg, ${backgroundColor}, #764ba2)`,
+      }}
+    >
+      <span className="announcement-message" style={{ color: '#fff' }}>
+        {message}
+      </span>
+    </div>
+  );
 
   return (
-    <div className="editor-wrapper">
-      <div className="gradient-bg" />
-      
-      <div className="editor-container">
-        <div className="editor-content">
-          {/* Left Sidepane */}
-          <div className="sidepane-container">
-            {/* Category Tabs */}
-            <div className="category-tab-header">
-              <div className="category-tabs">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    className={`category-tab ${activeTab === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+    <EditorLayout>
+      {/* Left Sidepane */}
+      <EditorSidepane
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      >
+        <EditorSettingsPane
+          groups={currentSettings}
+          activeSetting={activeSetting}
+          onSettingChange={setActiveSetting}
+        />
+        {renderConfigContent()}
+      </EditorSidepane>
 
-            {/* Panels Row */}
-            <div className="panels-row">
-              {/* Settings Pane */}
-              <div className="settings-pane">
-                <div className="settings-list">
-                  {activeTab === 'content' && contentSettings.map((group) => (
-                    <div key={group.title} className="settings-group">
-                      <div className="settings-group-title">{group.title}</div>
-                      {group.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`settings-item ${activeSetting === item.id ? 'active' : ''}`}
-                          onClick={() => setActiveSetting(item.id)}
-                        >
-                          <div className={`settings-item-icon ${item.iconClass}`}>
-                            {item.icon}
-                          </div>
-                          <span>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Config Panel */}
-              <div className="config-panel">
-                {activeSetting === 'type' && (
-                  <div id="config-type">
-                    <div className="config-header">
-                      <h2>Announcement Type</h2>
-                      <p>Choose what type of announcement to display</p>
-                    </div>
-                    <div className="config-content">
-                      <div className="form-group">
-                        <label className="form-label">Bar Type</label>
-                        <select
-                          className="form-select"
-                          value={barType}
-                          onChange={(e) => setBarType(e.target.value)}
-                        >
-                          <option value="text">Text Message</option>
-                          <option value="countdown">Countdown Timer</option>
-                          <option value="freeshipping">Free Shipping Progress</option>
-                          <option value="orders">Orders Counter</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label className="form-label">Internal Name</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="e.g., Summer Sale Banner"
-                          value={internalName}
-                          onChange={(e) => setInternalName(e.target.value)}
-                        />
-                        <small className="form-hint">Only visible to you</small>
-                      </div>
-
-                      <div className="toggle-row">
-                        <span className="toggle-label">Enable Bar</span>
-                        <label className="toggle-switch">
-                          <input
-                            type="checkbox"
-                            checked={barEnabled}
-                            onChange={(e) => setBarEnabled(e.target.checked)}
-                          />
-                          <span className="toggle-slider" />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeSetting === 'message' && (
-                  <div id="config-message">
-                    <div className="config-header">
-                      <h2>Message Text</h2>
-                      <p>Configure your announcement message</p>
-                    </div>
-                    <div className="config-content">
-                      <div className="form-group">
-                        <label className="form-label">Message</label>
-                        <textarea
-                          className="form-textarea"
-                          placeholder="Enter your announcement message..."
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Content Area */}
-          <div className="right-content">
-            {/* Title Header */}
-            <div className="title-header">
-              <div className="title-left">
-                <div className="editable-title-wrapper">
-                  <input
-                    type="text"
-                    className="editable-title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onFocus={handleTitleFocus}
-                    onBlur={handleTitleBlur}
-                  />
-                  {!isEditingTitle && (
-                    <span className="pencil-icon">✏️</span>
-                  )}
-                </div>
-                <label className="header-toggle" title="Enable Bar">
-                  <input
-                    type="checkbox"
-                    checked={barEnabled}
-                    onChange={(e) => setBarEnabled(e.target.checked)}
-                  />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-              <div className="header-right">
-                <button className="btn-discard">Discard</button>
-                <button className="btn-save">Save</button>
-              </div>
-            </div>
-
-            {/* Preview Panel */}
-            <div className="preview-panel">
-              <div className="preview-content">
-                <div className={`device-frame ${device}`}>
-                  {/* Announcement Bar */}
-                  <div
-                    className="announcement-bar-preview"
-                    style={{
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                    }}
-                  >
-                    <span className="announcement-message" style={{ color: '#fff' }}>
-                      🔥 Summer Sale - Up to 50% OFF!
-                    </span>
-                  </div>
-
-                  {/* Store Preview */}
-                  <div className="store-preview">
-                    <div className="store-header">
-                      <div className="store-logo">STORE</div>
-                      <div className="store-nav">
-                        <a href="#">Home</a>
-                        <a href="#">Shop</a>
-                        <a href="#">About</a>
-                        <a href="#">Contact</a>
-                      </div>
-                    </div>
-
-                    <div className="product-grid">
-                      <div className="product-card">
-                        <div className="product-image" />
-                        <div className="product-info">
-                          <div className="product-name">Classic T-Shirt</div>
-                          <div className="product-price">$29.99</div>
-                        </div>
-                      </div>
-                      <div className="product-card">
-                        <div className="product-image" />
-                        <div className="product-info">
-                          <div className="product-name">Denim Jacket</div>
-                          <div className="product-price">$89.99</div>
-                        </div>
-                      </div>
-                      <div className="product-card">
-                        <div className="product-image" />
-                        <div className="product-info">
-                          <div className="product-name">Sneakers</div>
-                          <div className="product-price">$119.99</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Device Toggle */}
-              <div className="preview-footer">
-                <div className="device-toggle">
-                  <button
-                    className={`device-btn ${device === 'desktop' ? 'active' : ''}`}
-                    onClick={() => setDevice('desktop')}
-                  >
-                    <span className="device-icon">🖥</span>
-                    Desktop
-                  </button>
-                  <button
-                    className={`device-btn ${device === 'mobile' ? 'active' : ''}`}
-                    onClick={() => setDevice('mobile')}
-                  >
-                    <span className="device-icon">📱</span>
-                    Mobile
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Right Content Area */}
+      <EditorRightContent>
+        <EditorHeader
+          title={title}
+          onTitleChange={setTitle}
+          enabled={barEnabled}
+          onEnabledChange={setBarEnabled}
+          onSave={handleSave}
+          onDiscard={onDiscard}
+        />
+        
+        <EditorPreviewPanel
+          device={device}
+          onDeviceChange={setDevice}
+        >
+          <StorePreview
+            announcementBar={renderAnnouncementBar()}
+          />
+        </EditorPreviewPanel>
+      </EditorRightContent>
+    </EditorLayout>
   );
 };
 
