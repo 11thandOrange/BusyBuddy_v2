@@ -901,7 +901,7 @@
 /* Scrolling Animation - Marquee: 
    - Enter from right edge
    - Exit completely off left edge  
-   - When 75% off-screen, next copy enters from right
+   - When 40% off-screen, next copy enters from right
 */
 @keyframes scrollText {
     0% {
@@ -937,11 +937,11 @@
     flex-shrink: 0;
 }
 
-/* First copy - followed by large gap so it exits before next enters */
+/* First copy - followed by gap so next enters when first is 40% off-screen */
 .scrolling-text span:first-child {
-    /* Gap after first message = container width * 0.75 
-       This creates the "75% off-screen" trigger effect */
-    margin-right: 75vw;
+    /* Gap after first message = container width * 0.40 
+       This creates the "40% off-screen" trigger effect */
+    margin-right: 40vw;
 }
 
 /* Second copy - no extra margin needed */
