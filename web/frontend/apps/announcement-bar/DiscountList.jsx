@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, ButtonGroup, ToggleButton } from "react-boot
 import { Play, ArrowRight } from "react-bootstrap-icons";
 import { Form } from "react-bootstrap";
 import AnnouncementBarActions from "./announcementBarActions";
+import AnnouncementBarEditor from "./AnnouncementBarEditor";
 import tshirt from "./tshirt.png";
 import "./announcementBarStyles.css";
 import Button from "../../components/Button";
@@ -12,6 +13,9 @@ import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
+
+// Feature flag to toggle between old and new editor
+const USE_NEW_EDITOR = true;
 
 export default function DiscountList({
   onMakeBundleClick,
@@ -118,14 +122,45 @@ export default function DiscountList({
       </Container>
     );
   }
-  // if (showBundleAction) {
-  //   return <AnnouncementBarActions />;
-  // }
-  // With this:
+  // Show editor when creating/editing announcement bar
   if (showBundleAction) {
+    // Use new editor or old editor based on feature flag
+    if (USE_NEW_EDITOR) {
+      return (
+        <AnnouncementBarEditor
+          editingBar={editingBar}
+          onSave={async (data) => {
+            try {
+              const url = editingBar 
+                ? `/api/announcement-bars/${editingBar._id}` 
+                : '/api/announcement-bars';
+              const method = editingBar ? 'PUT' : 'POST';
+              
+              const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+              });
+              
+              if (!response.ok) throw new Error('Save failed');
+              handleActionSuccess();
+            } catch (err) {
+              console.error('Save error:', err);
+              alert('Failed to save announcement bar');
+            }
+          }}
+          onDiscard={() => {
+            setShowBundleAction(false);
+            setEditingBar(null);
+          }}
+        />
+      );
+    }
+    
+    // Old editor (fallback)
     return (
       <AnnouncementBarActions
-        ref={discountActionsRef} // Pass the ref here
+        ref={discountActionsRef}
         onMakeBundleClick={onMakeBundleClick}
         editingBar={editingBar}
         onSuccess={handleActionSuccess}
