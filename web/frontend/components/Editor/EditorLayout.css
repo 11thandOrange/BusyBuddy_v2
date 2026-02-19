@@ -898,10 +898,10 @@
     padding: 16px;
 }
 
-/* Scrolling Animation - Seamless marquee (continuous loop) */
+/* Scrolling Animation - Marquee that starts from right edge */
 @keyframes scrollText {
     0% {
-        transform: translateX(0%);
+        transform: translateX(0);
     }
     100% {
         transform: translateX(-50%); /* Move by half since we have 2 copies */
@@ -924,7 +924,8 @@
     animation: scrollText var(--scroll-duration, 20s) linear infinite;
     will-change: transform;
     align-items: center;
-    /* Text starts visible, two copies side by side create seamless loop */
+    /* padding-left pushes text to start from right edge of container */
+    padding-left: 100%;
 }
 
 .scrolling-text span {
