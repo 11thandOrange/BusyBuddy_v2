@@ -37,6 +37,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
   const tabData = {
     "Announcement Bar": {
       title: "Announcement Bar",
+      video: "/videos/announcement-bar-demo.mp4",
       description:
         "Display important updates, promotions, or messages across your store to capture visitors’ attention instantly.",
       features: [
@@ -57,6 +58,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     },
     "Inactive Tab Message": {
       title: "Inactive Tab Message",
+      video: "/videos/inactive-tab-message-demo.mp4",
       description:
         "Bring customers back when they switch tabs by showing a playful or promotional browser title message.",
       features: [
@@ -77,6 +79,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     },
     "Bundle Discount": {
       title: "Bundle Discount",
+      video: "/videos/bundle-discount-demo.mp4",
       description:
         "Boost average order value by letting customers buy related products together at a discount.",
       features: [
@@ -97,6 +100,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     },
     "Buy 'X' Get 'Y'": {
       title: "Buy One Get One",
+      video: "/videos/buy-x-get-y-demo.mp4",
       description:
         "Run classic BOGO campaigns that reward shoppers with free or discounted products automatically.",
       features: [
@@ -117,6 +121,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     },
     "Volume Discounts": {
       title: "Volume Discounts",
+      video: "/videos/volume-discounts-demo.mp4",
       description:
         "Encourage bulk buying by offering tiered discounts based on the quantity purchased.",
       features: [
@@ -137,6 +142,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
     },
     "Mix & Match": {
       title: "Mix & Match",
+      video: "/videos/mix-and-match-demo.mp4",
       description:
         "Let shoppers build their own custom bundles by mixing products at a special combined price.",
       features: [
@@ -556,7 +562,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
                           }}
                         >
                           <source
-                            src="/videos/marshall-promo.mp4"
+                            src={tabData[activeTab].video}
                             type="video/mp4"
                           />
                           Your browser does not support the video tag.
