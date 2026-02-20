@@ -706,7 +706,14 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
     }
   };
 
-  // Render Mix & Match preview widget
+  // Tier configurations matching production
+  const tiers = {
+    2: { label: 'Buy 2', sublabel: `Save ${tierDiscounts[2] || 10}%`, discount: tierDiscounts[2] || 10 },
+    3: { label: 'Buy 3', sublabel: `Save ${tierDiscounts[3] || 15}%`, discount: tierDiscounts[3] || 15 },
+    4: { label: 'Buy 4', sublabel: `Save ${tierDiscounts[4] || 20}%`, discount: tierDiscounts[4] || 20 },
+  };
+
+  // Render Mix & Match preview widget (matching production)
   const renderMixMatchPreview = () => {
     const hasProducts = selectedProducts.length > 0;
     const currentDiscount = tierDiscounts[selectedTier] || discountValue;
@@ -730,47 +737,28 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
         }}>
           {bundleTitle || 'Mix & Match - Save More! 🔥'}
         </h3>
-        {secondaryMessage && (
-          <p style={{
-            color: colorSettings.secondaryTextColor,
-            fontSize: '13px',
-            marginBottom: '15px',
-            paddingRight: showCountdown ? '150px' : '0',
-          }}>
-            {secondaryMessage}
-          </p>
-        )}
 
-        {/* Countdown Timer */}
+        {/* Countdown Timer - Production Style */}
         {showCountdown && (
           <div style={{
             position: 'absolute',
-            top: '15px',
-            right: '15px',
+            top: '0.5px',
+            right: '0px',
             background: colorSettings.countdownBgColor,
             color: colorSettings.countdownTextColor,
-            padding: '6px 10px',
-            borderRadius: '8px',
+            padding: '8px 10px',
+            borderRadius: '8px 18px 8px 8px',
             fontSize: '12px',
             fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            border: `1px solid ${colorSettings.borderColor}`,
+            zIndex: 3,
           }}>
             {showEmoji && '🔥 '}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
           </div>
         )}
-
-        {/* Tier Badge */}
-        <div style={{
-          display: 'inline-block',
-          padding: '6px 12px',
-          background: '#5169DD',
-          color: '#fff',
-          borderRadius: '20px',
-          fontSize: '12px',
-          fontWeight: 600,
-          marginBottom: '15px',
-        }}>
-          Buy {selectedTier}+ Get {currentDiscount}{discountType === 'Percentage' ? '%' : '$'} Off
-        </div>
 
         {!hasProducts ? (
           <div style={{
@@ -779,6 +767,7 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
             backgroundColor: colorSettings.primaryBackgroundColor,
             borderRadius: `${Math.max(0, cornerRadius - 5)}px`,
             border: `1px solid ${colorSettings.borderColor}`,
+            marginTop: '15px',
           }}>
             <p style={{ fontSize: '14px', color: colorSettings.secondaryTextColor, margin: 0 }}>
               Select products to see the preview
@@ -786,51 +775,155 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
           </div>
         ) : (
           <>
-            {/* Products Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '15px' }}>
-              {selectedProducts.slice(0, 4).map((product, index) => (
-                <div key={product.productId || index} style={{
-                  padding: '10px',
+            {/* Tier Selection Buttons - Production Style */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', marginTop: '10px', overflowX: 'auto', paddingBottom: '5px' }}>
+              {Object.entries(tiers).map(([tierKey, tierConfig]) => {
+                const isSelected = selectedTier === parseInt(tierKey);
+                return (
+                  <button
+                    key={tierKey}
+                    onClick={() => setSelectedTier(parseInt(tierKey))}
+                    style={{
+                      minWidth: '120px',
+                      height: '60px',
+                      padding: '12px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      backgroundColor: isSelected ? '#5169DD' : 'white',
+                      color: isSelected ? 'white' : '#222222',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                    }}
+                  >
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '4px',
+                      backgroundColor: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: !isSelected ? '1px solid #222222' : 'none',
+                    }}>
+                      {isSelected && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5169DD" strokeWidth="3">
+                          <path d="M5 12l5 5L20 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{tierConfig.label}</span>
+                      <span style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.8)' : '#616161' }}>{tierConfig.sublabel}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Selected Info Text */}
+            <div style={{ fontSize: '12px', color: colorSettings.secondaryTextColor, marginBottom: '12px' }}>
+              You have selected {selectedProducts.length} Products.<br />
+              {currentDiscount}% Discount is applied on the selected products.
+            </div>
+
+            {/* Products List - Production Style (vertical cards) */}
+            {selectedProducts.map((product, index) => (
+              <div
+                key={product.productId || index}
+                style={{
+                  padding: '15px',
                   borderRadius: `${Math.max(0, cornerRadius - 5)}px`,
+                  marginBottom: '12px',
                   backgroundColor: colorSettings.primaryBackgroundColor,
                   border: `1px solid ${colorSettings.borderColor}`,
-                }}>
-                  <img src={product.media || tshirt} alt={product.title} style={{ width: '100%', aspectRatio: '1', borderRadius: '6px', objectFit: 'cover', marginBottom: '8px' }} />
-                  <p style={{ fontWeight: 500, fontSize: '12px', marginBottom: '4px', color: colorSettings.primaryTextColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {product.title}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '13px', color: '#4CAF50' }}>${calculateDiscountedPrice(product.price)}</span>
-                    <span style={{ fontSize: '11px', textDecoration: 'line-through', color: '#999' }}>${product.price}</span>
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <img
+                    src={product.media || tshirt}
+                    alt={product.title}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '10px',
+                      marginRight: '15px',
+                      objectFit: 'cover',
+                      border: `1px solid ${colorSettings.borderColor}`,
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
+                      {product.title}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontWeight: 600, fontSize: '14px', color: colorSettings.primaryTextColor }}>
+                        ${calculateDiscountedPrice(product.price)}
+                      </span>
+                      <span style={{ width: '1.5px', height: '10px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
+                      <span style={{ color: colorSettings.secondaryTextColor, fontSize: '12px', textDecoration: 'line-through' }}>
+                        ${product.price}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
+                {/* Variant Selector */}
+                {product.optionSelections?.length > 0 && product.optionSelections[0].values?.length > 1 && (
+                  <div style={{ marginTop: '10px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 500, color: colorSettings.secondaryTextColor, display: 'block', marginBottom: '4px' }}>
+                      {product.optionSelections[0].name || 'Size'}
+                    </label>
+                    <select style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: `1px solid ${colorSettings.borderColor}`,
+                      backgroundColor: colorSettings.primaryBackgroundColor,
+                      color: colorSettings.primaryTextColor,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}>
+                      {product.optionSelections[0].values.map((val, vIdx) => (
+                        <option key={vIdx}>{val}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            ))}
 
             {/* Total Section */}
             <div style={{
-              padding: '12px',
+              padding: '15px',
               backgroundColor: colorSettings.primaryBackgroundColor,
               borderRadius: `${Math.max(0, cornerRadius - 5)}px`,
               border: `1px solid ${colorSettings.borderColor}`,
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <span style={{ fontWeight: 600, color: colorSettings.primaryTextColor }}>Total ({selectedProducts.length} items)</span>
-                <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontWeight: 600, color: colorSettings.primaryTextColor }}>Total</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {(() => {
                     const originalTotal = selectedProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
                     const discountedTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
                     const hasSavings = discountedTotal < originalTotal;
-
                     return (
                       <>
-                        <span style={{ fontWeight: 700, fontSize: '16px', color: colorSettings.primaryTextColor }}>
+                        <span style={{ fontWeight: 700, fontSize: '18px', color: colorSettings.primaryTextColor }}>
                           ${discountedTotal.toFixed(2)}
                         </span>
                         {hasSavings && (
-                          <span style={{ marginLeft: '8px', fontSize: '13px', textDecoration: 'line-through', color: '#999' }}>
-                            ${originalTotal.toFixed(2)}
-                          </span>
+                          <>
+                            <span style={{ width: '1.5px', height: '12px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
+                            <span style={{ fontSize: '14px', textDecoration: 'line-through', color: '#999' }}>
+                              ${originalTotal.toFixed(2)}
+                            </span>
+                          </>
                         )}
                       </>
                     );
@@ -839,12 +932,13 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
               </div>
               <button style={{
                 width: '100%',
-                padding: '12px',
+                padding: '14px',
                 backgroundColor: addToCartBgColor,
                 color: addToCartTextColor,
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 600,
+                fontSize: '14px',
                 cursor: 'pointer',
               }}>
                 {addToCartText}
