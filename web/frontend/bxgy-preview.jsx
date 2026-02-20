@@ -57,6 +57,13 @@ const BXGY_SETTINGS = {
         { id: 'countdown-timer', icon: '⏱️', label: 'Countdown Timer', iconClass: 'icon-timer' },
       ],
     },
+    {
+      title: 'Buttons',
+      items: [
+        { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
+        { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -154,6 +161,15 @@ const BuyXGetYEditorPreview = () => {
   const [cornerRadius, setCornerRadius] = useState(20);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Button settings
+  const [addToCartText, setAddToCartText] = useState('Add Bundle to Cart');
+  const [addToCartBgColor, setAddToCartBgColor] = useState('#000000');
+  const [addToCartTextColor, setAddToCartTextColor] = useState('#FFFFFF');
+  const [showSkipButton, setShowSkipButton] = useState(true);
+  const [skipButtonText, setSkipButtonText] = useState('Skip Offer');
+  const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
+  const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
   const [timeLeft] = useState({ hours: '23', minutes: '45', seconds: '30' });
 
@@ -493,6 +509,41 @@ const BuyXGetYEditorPreview = () => {
           </EditorConfigPanel>
         );
 
+      case 'add-to-cart-button':
+        return (
+          <EditorConfigPanel title="Add to Cart Button" description="Customize the main action button">
+            <ConfigFormGroup label="Button Text">
+              <ConfigInput type="text" value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add Bundle to Cart" />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Background Color">
+              <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Text Color">
+              <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'skip-offer-button':
+        return (
+          <EditorConfigPanel title="Skip Offer Button" description="Optional button to dismiss the offer">
+            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={(e) => setShowSkipButton(e.target.checked)} />
+            {showSkipButton && (
+              <>
+                <ConfigFormGroup label="Button Text">
+                  <ConfigInput type="text" value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Background Color">
+                  <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Text Color">
+                  <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
       default:
         return <EditorConfigPanel title="Settings"><p style={{ color: 'rgba(255,255,255,0.5)' }}>Select a setting</p></EditorConfigPanel>;
     }
@@ -564,9 +615,14 @@ const BuyXGetYEditorPreview = () => {
               {total < originalTotal && <span style={{ marginLeft: '8px', fontSize: '13px', textDecoration: 'line-through', color: '#999' }}>${originalTotal.toFixed(2)}</span>}
             </div>
           </div>
-          <button style={{ width: '100%', padding: '12px', backgroundColor: colorSettings.buttonColor, color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
-            Add Bundle to Cart
+          <button style={{ width: '100%', padding: '12px', backgroundColor: addToCartBgColor, color: addToCartTextColor, border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+            {addToCartText}
           </button>
+          {showSkipButton && (
+            <button style={{ width: '100%', padding: '10px', backgroundColor: skipButtonBgColor, color: skipButtonTextColor, border: 'none', borderRadius: '8px', fontWeight: 500, cursor: 'pointer', marginTop: '8px', fontSize: '13px' }}>
+              {skipButtonText}
+            </button>
+          )}
         </div>
       </div>
     );
