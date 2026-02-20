@@ -231,166 +231,236 @@ const VolumeDiscountEditorPreview = () => {
     switch (activeSetting) {
       case 'select-products':
         return (
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Select Products</h3>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>Add products to your volume discount offer</p>
-            <button onClick={() => setShowProductPicker(true)} style={{ width: '100%', padding: '12px', backgroundColor: '#f8f9fa', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', marginBottom: '16px', fontSize: '14px', fontWeight: 500 }}>+ Add Products</button>
-            {showProductPicker && (
-              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
-                <input type="text" placeholder="Search products..." value={productSearchQuery} onChange={(e) => setProductSearchQuery(e.target.value)} style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px', marginBottom: '8px' }} />
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          <EditorConfigPanel title="Select Products" description="Add products to your volume discount offer">
+            {showProductPicker ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '600' }}>Select from Inventory</span>
+                  <button onClick={() => setShowProductPicker(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', color: 'rgba(255,255,255,0.7)', padding: '6px 12px', cursor: 'pointer', fontSize: '12px' }}>✕ Close</button>
+                </div>
+                <ConfigFormGroup label="Search Products">
+                  <ConfigInput type="text" placeholder="Search by product name..." value={productSearchQuery} onChange={(e) => setProductSearchQuery(e.target.value)} />
+                </ConfigFormGroup>
+                <div>
                   {MOCK_PRODUCTS.filter(p => p.title.toLowerCase().includes(productSearchQuery.toLowerCase())).map(product => (
-                    <div key={product.productId} onClick={() => handleAddProduct(product)} style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', borderRadius: '6px', marginBottom: '4px', backgroundColor: '#fff', border: '1px solid #eee' }}>
-                      <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}><p style={{ fontSize: '13px', fontWeight: 500, margin: 0 }}>{product.title}</p><p style={{ fontSize: '12px', color: '#666', margin: 0 }}>${product.price}</p></div>
+                    <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => handleAddProduct(product)} style={{ background: 'rgba(81, 105, 221, 0.2)', border: '1px solid #5169DD', borderRadius: '4px', color: '#5169DD', padding: '4px 12px', cursor: 'pointer', fontSize: '12px' }}>+ Add</button>
                     </div>
                   ))}
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setShowProductPicker(true)} style={{ width: '100%', padding: '12px', background: 'rgba(81, 105, 221, 0.1)', border: '1px solid #5169DD', borderRadius: '8px', color: '#5169DD', fontWeight: '600', cursor: 'pointer', marginBottom: '16px' }}>
+                  + Add Products
+                </button>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Selected Products ({selectedProducts.length})
+                </div>
+                {selectedProducts.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
+                    No products selected.
+                  </div>
+                ) : (
+                  selectedProducts.map(product => (
+                    <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(81, 105, 221, 0.3)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => handleRemoveProduct(product.productId)} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
+                    </div>
+                  ))
+                )}
+              </>
             )}
-            <p style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>SELECTED PRODUCTS ({selectedProducts.length})</p>
-            {selectedProducts.map((product, index) => (
-              <div key={product.productId || index} style={{ display: 'flex', alignItems: 'center', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '8px', marginBottom: '8px' }}>
-                <div style={{ width: '40px', height: '40px', backgroundColor: '#e9ecef', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '10px' }}><span style={{ fontSize: '18px' }}>📦</span></div>
-                <div style={{ flex: 1 }}><p style={{ fontSize: '13px', fontWeight: 500, margin: 0 }}>{product.title}</p><p style={{ fontSize: '12px', color: '#666', margin: 0 }}>${product.price}</p></div>
-                <button onClick={() => handleRemoveProduct(product.productId)} style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer', fontSize: '18px' }}>✕</button>
-              </div>
-            ))}
-          </div>
+          </EditorConfigPanel>
         );
 
       case 'quantity-breaks':
         return (
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Quantity Breaks</h3>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '16px' }}>Set different discounts based on quantity</p>
+          <EditorConfigPanel title="Quantity Breaks" description="Set different discounts based on quantity purchased">
             {quantityBreaks.map((qb, index) => (
-              <div key={index} style={{ padding: '16px', backgroundColor: qb.default ? '#f0f4ff' : '#f8f9fa', borderRadius: '8px', marginBottom: '12px', border: qb.default ? '2px solid #5169DD' : '1px solid #eee' }}>
+              <div key={index} style={{ padding: '16px', background: qb.default ? 'rgba(81, 105, 221, 0.15)' : 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', border: qb.default ? '2px solid #5169DD' : '1px solid rgba(255,255,255,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600 }}>{qb.default && <span style={{ color: '#5169DD', marginRight: '8px' }}>★</span>}Tier {index + 1}</span>
-                  {quantityBreaks.length > 1 && <button onClick={() => { const newBreaks = [...quantityBreaks]; newBreaks.splice(index, 1); setQuantityBreaks(newBreaks); }} style={{ background: 'none', border: 'none', color: '#dc3545', cursor: 'pointer' }}>✕</button>}
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{qb.default && <span style={{ color: '#5169DD', marginRight: '8px' }}>★</span>}Tier {index + 1}</span>
+                  {quantityBreaks.length > 1 && <button onClick={() => { const newBreaks = [...quantityBreaks]; newBreaks.splice(index, 1); setQuantityBreaks(newBreaks); }} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <div><label style={{ fontSize: '12px', fontWeight: 500, color: '#666', display: 'block', marginBottom: '4px' }}>Quantity</label><input type="number" value={qb.quantity} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].quantity = parseInt(e.target.value) || 1; setQuantityBreaks(newBreaks); }} style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }} /></div>
-                  <div><label style={{ fontSize: '12px', fontWeight: 500, color: '#666', display: 'block', marginBottom: '4px' }}>Discount %</label><input type="number" value={qb.discount} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].discount = parseInt(e.target.value) || 0; setQuantityBreaks(newBreaks); }} style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }} /></div>
+                  <ConfigFormGroup label="Quantity">
+                    <ConfigInput type="number" value={qb.quantity} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].quantity = parseInt(e.target.value) || 1; setQuantityBreaks(newBreaks); }} />
+                  </ConfigFormGroup>
+                  <ConfigFormGroup label="Discount %">
+                    <ConfigInput type="number" value={qb.discount} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].discount = parseInt(e.target.value) || 0; setQuantityBreaks(newBreaks); }} />
+                  </ConfigFormGroup>
                 </div>
-                <div style={{ marginBottom: '12px' }}><label style={{ fontSize: '12px', fontWeight: 500, color: '#666', display: 'block', marginBottom: '4px' }}>Display Name</label><input type="text" value={qb.name} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].name = e.target.value; setQuantityBreaks(newBreaks); }} style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }} /></div>
-                <div style={{ marginBottom: '12px' }}><label style={{ fontSize: '12px', fontWeight: 500, color: '#666', display: 'block', marginBottom: '4px' }}>Banner Text</label><input type="text" value={qb.banner} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].banner = e.target.value; setQuantityBreaks(newBreaks); }} placeholder="e.g., MOST POPULAR" style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '6px' }} /></div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}><input type="checkbox" checked={qb.default} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks.forEach((b, i) => b.default = i === index && e.target.checked); setQuantityBreaks(newBreaks); }} /><span style={{ fontSize: '13px' }}>Set as default</span></label>
+                <ConfigFormGroup label="Display Name">
+                  <ConfigInput type="text" value={qb.name} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].name = e.target.value; setQuantityBreaks(newBreaks); }} />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Banner Text">
+                  <ConfigInput type="text" value={qb.banner} onChange={(e) => { const newBreaks = [...quantityBreaks]; newBreaks[index].banner = e.target.value; setQuantityBreaks(newBreaks); }} placeholder="e.g., MOST POPULAR" />
+                </ConfigFormGroup>
+                <ConfigToggleRow label="Set as default" checked={qb.default} onChange={(checked) => { const newBreaks = [...quantityBreaks]; newBreaks.forEach((b, i) => b.default = i === index && checked); setQuantityBreaks(newBreaks); }} />
               </div>
             ))}
-            <button onClick={() => { const last = quantityBreaks[quantityBreaks.length - 1]; setQuantityBreaks([...quantityBreaks, { quantity: (last?.quantity || 1) + 1, discount: Math.min((last?.discount || 0) + 5, 100), name: `Buy ${(last?.quantity || 1) + 1}, get ${Math.min((last?.discount || 0) + 5, 100)}% OFF`, banner: '', default: false }]); }} style={{ width: '100%', padding: '12px', backgroundColor: '#f8f9fa', border: '1px dashed #ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: 500 }}>+ Add Quantity Break</button>
-          </div>
-        );
-
-      case 'discount-settings':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Discount Settings</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Discount Type</label>
-            <select value={discountType} onChange={(e) => setDiscountType(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }}><option value="Percentage">Percentage Discount</option><option value="Fixed Amount">Fixed Amount</option></select>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Default Discount Value</label>
-            <input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'message-text':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Message Text</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Primary Message</label>
-            <input value={bundleTitle} onChange={(e) => setBundleTitle(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Secondary Message</label>
-            <input value={secondaryMessage} onChange={(e) => setSecondaryMessage(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'countdown-timer':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Countdown Timer</h3>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}><div style={{ width: '44px', height: '24px', backgroundColor: showCountdown ? '#5169DD' : '#ccc', borderRadius: '12px', position: 'relative', transition: 'all 0.2s' }} onClick={() => setShowCountdown(!showCountdown)}><div style={{ width: '20px', height: '20px', backgroundColor: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: showCountdown ? '22px' : '2px', transition: 'all 0.2s' }} /></div><span>Show Countdown Timer</span></label>
-            {showCountdown && (<><label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Background Color</label><input type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} /><label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Text Color</label><input type="color" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd' }} /></>)}
-          </div>
-        );
-
-      case 'add-to-cart-button':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Add to Cart Button</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Button Text</label>
-            <input value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Background Color</label>
-            <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Text Color</label>
-            <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'skip-offer-button':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Skip Offer Button</h3>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', cursor: 'pointer' }}><div style={{ width: '44px', height: '24px', backgroundColor: showSkipButton ? '#5169DD' : '#ccc', borderRadius: '12px', position: 'relative', transition: 'all 0.2s' }} onClick={() => setShowSkipButton(!showSkipButton)}><div style={{ width: '20px', height: '20px', backgroundColor: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: showSkipButton ? '22px' : '2px', transition: 'all 0.2s' }} /></div><span>Show Skip Button</span></label>
-            {showSkipButton && (<><label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Button Text</label><input value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} /><label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Background Color</label><input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} /><label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Text Color</label><input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd' }} /></>)}
-          </div>
-        );
-
-      case 'primary-colors':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Primary Colors</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Primary Text Color</label>
-            <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Primary Background</label>
-            <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'secondary-colors':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Secondary Colors</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Secondary Text Color</label>
-            <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Secondary Background</label>
-            <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Border Color</label>
-            <input type="color" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'margins':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Margins</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Top Margin (px)</label>
-            <input type="number" value={margins.top} onChange={(e) => setMargins({ ...margins, top: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', marginBottom: '12px' }} />
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Bottom Margin (px)</label>
-            <input type="number" value={margins.bottom} onChange={(e) => setMargins({ ...margins, bottom: parseInt(e.target.value) || 0 })} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-        );
-
-      case 'card-settings':
-        return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Card Settings</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Corner Radius (px)</label>
-            <input type="number" value={cornerRadius} onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
+            <button onClick={() => { const last = quantityBreaks[quantityBreaks.length - 1]; setQuantityBreaks([...quantityBreaks, { quantity: (last?.quantity || 1) + 1, discount: Math.min((last?.discount || 0) + 5, 100), name: `Buy ${(last?.quantity || 1) + 1}, get ${Math.min((last?.discount || 0) + 5, 100)}% OFF`, banner: '', default: false }]); }} style={{ width: '100%', padding: '12px', background: 'rgba(81, 105, 221, 0.1)', border: '1px solid #5169DD', borderRadius: '8px', color: '#5169DD', fontWeight: '600', cursor: 'pointer' }}>+ Add Quantity Break</button>
+          </EditorConfigPanel>
         );
 
       case 'bundle-priority':
         return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Priority</h3>
-            <label style={{ fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '4px' }}>Priority Order</label>
-            <input type="number" value={bundlePriority} onChange={(e) => setBundlePriority(parseInt(e.target.value) || 0)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
+          <EditorConfigPanel title="Priority Settings" description="Control bundle display order">
+            <ConfigFormGroup label="Bundle Priority" description="Higher priority bundles are displayed first">
+              <ConfigInput type="number" value={bundlePriority} onChange={(e) => setBundlePriority(parseInt(e.target.value) || 0)} placeholder="0" />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'message-text':
+        return (
+          <EditorConfigPanel title="Message Text" description="Customize the bundle message">
+            <ConfigFormGroup label="Primary Message">
+              <ConfigInput type="text" value={bundleTitle} onChange={(e) => setBundleTitle(e.target.value)} placeholder="Buy More & Save More!" />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Secondary Message">
+              <ConfigInput type="text" value={secondaryMessage} onChange={(e) => setSecondaryMessage(e.target.value)} placeholder="The more you buy, the more you save" />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'emoji-icons':
+        return (
+          <EditorConfigPanel title="Emoji & Icons" description="Add visual elements to your bundle">
+            <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
+          </EditorConfigPanel>
+        );
+
+      case 'countdown-timer':
+        return (
+          <EditorConfigPanel title="Countdown Timer" description="Create urgency with a countdown">
+            <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
+            {showCountdown && (
+              <>
+                <ConfigFormGroup label="Background Color">
+                  <ConfigInput type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Text Color">
+                  <ConfigInput type="color" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
+      case 'add-to-cart-button':
+        return (
+          <EditorConfigPanel title="Add to Cart Button" description="Customize the add to cart button">
+            <ConfigFormGroup label="Button Text">
+              <ConfigInput type="text" value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add to Cart" />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Background Color">
+              <ConfigInput type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Text Color">
+              <ConfigInput type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'skip-offer-button':
+        return (
+          <EditorConfigPanel title="Skip Offer Button" description="Customize the skip offer option">
+            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={setShowSkipButton} />
+            {showSkipButton && (
+              <>
+                <ConfigFormGroup label="Button Text">
+                  <ConfigInput type="text" value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Background Color">
+                  <ConfigInput type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Text Color">
+                  <ConfigInput type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
+        );
+
+      case 'primary-colors':
+        return (
+          <EditorConfigPanel title="Primary Colors" description="Set the main color scheme">
+            <ConfigFormGroup label="Primary Text Color">
+              <ConfigInput type="color" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Primary Background">
+              <ConfigInput type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'secondary-colors':
+        return (
+          <EditorConfigPanel title="Secondary Colors" description="Set the secondary color scheme">
+            <ConfigFormGroup label="Secondary Text Color">
+              <ConfigInput type="color" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Secondary Background">
+              <ConfigInput type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Border Color">
+              <ConfigInput type="color" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'margins':
+        return (
+          <EditorConfigPanel title="Margins" description="Control spacing around the widget">
+            <ConfigFormGroup label="Top Margin (px)">
+              <ConfigInput type="number" value={margins.top} onChange={(e) => setMargins({ ...margins, top: parseInt(e.target.value) || 0 })} />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Bottom Margin (px)">
+              <ConfigInput type="number" value={margins.bottom} onChange={(e) => setMargins({ ...margins, bottom: parseInt(e.target.value) || 0 })} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'card-settings':
+        return (
+          <EditorConfigPanel title="Card Settings" description="Customize the widget card appearance">
+            <ConfigFormGroup label="Corner Radius (px)">
+              <ConfigInput type="number" value={cornerRadius} onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
         );
 
       case 'start-date':
         return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Start Date</h3>
-            <input type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
+          <EditorConfigPanel title="Start Date" description="When the bundle becomes active">
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
         );
 
       case 'end-date':
         return (
-          <div><h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>End Date</h3>
-            <input type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
+          <EditorConfigPanel title="End Date" description="When the bundle expires">
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
         );
 
       default:
