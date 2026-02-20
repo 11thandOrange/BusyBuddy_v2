@@ -58,6 +58,7 @@ const BXGY_SETTINGS = {
       title: 'Buttons',
       items: [
         { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
+        { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
   ],
@@ -112,6 +113,7 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
   // Bundle data states
   const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More! 🎁');
   const [bundleInternalName, setBundleInternalName] = useState('');
+  const [secondaryMessage, setSecondaryMessage] = useState('Get this bundle and save on your purchase');
   const [bundleEnabled, setBundleEnabled] = useState(true);
   const [bundlePriority, setBundlePriority] = useState(0);
   
@@ -151,6 +153,19 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   
+  // Button settings
+  const [addToCartText, setAddToCartText] = useState('Add Bundle to Cart');
+  const [addToCartBgColor, setAddToCartBgColor] = useState('#000000');
+  const [addToCartTextColor, setAddToCartTextColor] = useState('#FFFFFF');
+  const [showSkipButton, setShowSkipButton] = useState(true);
+  const [skipButtonText, setSkipButtonText] = useState('Skip Offer');
+  const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
+  const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
+
+  // Product picker modals
+  const [showXProductPicker, setShowXProductPicker] = useState(false);
+  const [showYProductPicker, setShowYProductPicker] = useState(false);
+  
   // Loading states
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -163,6 +178,7 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
     if (editingBundle) {
       setBundleTitle(editingBundle.title || 'Buy X Get Y - Save More! 🎁');
       setBundleInternalName(editingBundle.internalName || '');
+      setSecondaryMessage(editingBundle.secondaryMessage || 'Get this bundle and save on your purchase');
       setBundleEnabled(editingBundle.status ?? true);
       setBundlePriority(editingBundle.bundlePriority || editingBundle.priority || 0);
       setDiscountType(editingBundle.discountType || '');
@@ -197,6 +213,15 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
           bottom: editingBundle.widgetAppearance.bottomMargin || 20,
         });
         setCornerRadius(editingBundle.widgetAppearance.cardCornerRadius || 20);
+        
+        // Button settings
+        setAddToCartText(editingBundle.widgetAppearance.addToCartText || 'Add Bundle to Cart');
+        setAddToCartBgColor(editingBundle.widgetAppearance.addToCartBgColor || '#000000');
+        setAddToCartTextColor(editingBundle.widgetAppearance.addToCartTextColor || '#FFFFFF');
+        setShowSkipButton(editingBundle.widgetAppearance.showSkipButton ?? true);
+        setSkipButtonText(editingBundle.widgetAppearance.skipButtonText || 'Skip Offer');
+        setSkipButtonBgColor(editingBundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
+        setSkipButtonTextColor(editingBundle.widgetAppearance.skipButtonTextColor || '#666666');
       }
       
       // Set dates
@@ -323,9 +348,17 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
     setActiveSettingId(settingId);
     if (settingId === 'customer-buys') {
       setActiveProductSection('X');
+      setShowXProductPicker(false);
     } else if (settingId === 'customer-gets') {
       setActiveProductSection('Y');
+      setShowYProductPicker(false);
     }
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const firstSetting = BXGY_SETTINGS[tabId]?.[0]?.items?.[0]?.id;
+    if (firstSetting) setActiveSettingId(firstSetting);
   };
 
   const handleColorChange = (colorKey, value) => {
@@ -373,6 +406,7 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
 
     const bundleData = {
       title: bundleTitle,
+      secondaryMessage: secondaryMessage,
       productsX: selectedXProducts,
       productsY: selectedYProducts,
       discountType: discountType,
@@ -397,6 +431,14 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
         topMargin: margins.top,
         bottomMargin: margins.bottom,
         cardCornerRadius: cornerRadius,
+        // Button settings
+        addToCartText: addToCartText,
+        addToCartBgColor: addToCartBgColor,
+        addToCartTextColor: addToCartTextColor,
+        showSkipButton: showSkipButton,
+        skipButtonText: skipButtonText,
+        skipButtonBgColor: skipButtonBgColor,
+        skipButtonTextColor: skipButtonTextColor,
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
@@ -615,22 +657,22 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
 
       case 'message-text':
         return (
-          <div className="config-section">
-            <ConfigFormGroup label="Bundle Title">
+          <EditorConfigPanel title="Message Text" description="Configure bundle messages shown to customers">
+            <ConfigFormGroup label="Primary Message" hint="Main headline for the bundle">
               <ConfigInput
                 value={bundleTitle}
                 onChange={(e) => setBundleTitle(e.target.value)}
                 placeholder="Buy X Get Y - Save More!"
               />
             </ConfigFormGroup>
-            <ConfigFormGroup label="Internal Name" helpText="For your reference only, not shown to customers">
+            <ConfigFormGroup label="Secondary Message" hint="Supporting text below the headline">
               <ConfigInput
-                value={bundleInternalName}
-                onChange={(e) => setBundleInternalName(e.target.value)}
-                placeholder="e.g., Summer BOGO Promo"
+                value={secondaryMessage}
+                onChange={(e) => setSecondaryMessage(e.target.value)}
+                placeholder="Get this bundle and save on your purchase"
               />
             </ConfigFormGroup>
-          </div>
+          </EditorConfigPanel>
         );
 
       case 'emoji-icons':
@@ -677,16 +719,69 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
 
       case 'add-to-cart-button':
         return (
-          <div className="config-section">
-            <ConfigFormGroup label="Button Color">
+          <EditorConfigPanel title="Add to Cart Button" description="Customize the main action button">
+            <ConfigFormGroup label="Button Text">
+              <ConfigInput
+                value={addToCartText}
+                onChange={(e) => setAddToCartText(e.target.value)}
+                placeholder="Add Bundle to Cart"
+              />
+            </ConfigFormGroup>
+            <ConfigFormGroup label="Background Color">
               <input
                 type="color"
-                value={colorSettings.buttonColor}
-                onChange={(e) => handleColorChange('buttonColor', e.target.value)}
+                value={addToCartBgColor}
+                onChange={(e) => setAddToCartBgColor(e.target.value)}
                 style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
               />
             </ConfigFormGroup>
-          </div>
+            <ConfigFormGroup label="Text Color">
+              <input
+                type="color"
+                value={addToCartTextColor}
+                onChange={(e) => setAddToCartTextColor(e.target.value)}
+                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+              />
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
+      case 'skip-offer-button':
+        return (
+          <EditorConfigPanel title="Skip Offer Button" description="Optional button to dismiss the offer">
+            <ConfigToggleRow
+              label="Show Skip Button"
+              checked={showSkipButton}
+              onChange={(e) => setShowSkipButton(e.target.checked)}
+            />
+            {showSkipButton && (
+              <>
+                <ConfigFormGroup label="Button Text">
+                  <ConfigInput
+                    value={skipButtonText}
+                    onChange={(e) => setSkipButtonText(e.target.value)}
+                    placeholder="Skip Offer"
+                  />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Background Color">
+                  <input
+                    type="color"
+                    value={skipButtonBgColor}
+                    onChange={(e) => setSkipButtonBgColor(e.target.value)}
+                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                  />
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Text Color">
+                  <input
+                    type="color"
+                    value={skipButtonTextColor}
+                    onChange={(e) => setSkipButtonTextColor(e.target.value)}
+                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
+          </EditorConfigPanel>
         );
 
       case 'primary-colors':
@@ -835,11 +930,21 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
           color: colorSettings.primaryTextColor,
           fontSize: '16px',
           fontWeight: 600,
-          marginBottom: '15px',
+          marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
           {bundleTitle || 'Buy X Get Y - Save More! 🎁'}
         </h3>
+        {secondaryMessage && (
+          <p style={{
+            color: colorSettings.secondaryTextColor,
+            fontSize: '13px',
+            marginBottom: '15px',
+            paddingRight: showCountdown ? '150px' : '0',
+          }}>
+            {secondaryMessage}
+          </p>
+        )}
 
         {/* Countdown Timer */}
         {showCountdown && (
@@ -1025,15 +1130,31 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
               <button style={{
                 width: '100%',
                 padding: '12px',
-                backgroundColor: colorSettings.buttonColor,
-                color: '#fff',
+                backgroundColor: addToCartBgColor,
+                color: addToCartTextColor,
                 border: 'none',
                 borderRadius: '8px',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}>
-                Add Bundle to Cart
+                {addToCartText}
               </button>
+              {showSkipButton && (
+                <button style={{
+                  width: '100%',
+                  padding: '10px',
+                  backgroundColor: skipButtonBgColor,
+                  color: skipButtonTextColor,
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  marginTop: '8px',
+                  fontSize: '13px',
+                }}>
+                  {skipButtonText}
+                </button>
+              )}
             </div>
           </>
         )}
@@ -1041,59 +1162,104 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
     );
   };
 
+  // Render product page preview (same two-column layout as StandardBundleEditor)
+  const renderProductPagePreview = () => (
+    <div className="product-page-preview" style={{ padding: '24px', background: '#fff', minHeight: '100%' }}>
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+        {/* Left Column - Product Image */}
+        <div style={{ flex: '0 0 45%', maxWidth: '45%' }}>
+          <div style={{
+            width: '100%', aspectRatio: '1', background: '#f8f8f8', borderRadius: '12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
+            border: '1px solid #eee'
+          }}>
+            <span style={{ fontSize: '64px', opacity: 0.4 }}>📦</span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} style={{
+                width: '50px', height: '50px', background: '#f8f8f8', borderRadius: '8px',
+                border: i === 1 ? '2px solid #1a1a1a' : '1px solid #eee',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+              }}>
+                <span style={{ fontSize: '16px', opacity: 0.3 }}>📦</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column - Product Info + Bundle Widget */}
+        <div style={{ flex: '1', minWidth: 0 }}>
+          <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px', lineHeight: '1.3' }}>
+            Premium Wireless Headphones Pro
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <span style={{ color: '#f5a623', fontSize: '12px' }}>★★★★★</span>
+            <span style={{ fontSize: '11px', color: '#666' }}>4.8 (2,847 reviews)</span>
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>$1,299.00</span>
+            <span style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>$1,599.00</span>
+          </div>
+          <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+            Experience premium sound quality with active noise cancellation. 40-hour battery life, comfortable over-ear design.
+          </p>
+          <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>Specifications</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px', color: '#666' }}>
+              <div>• Battery: 40 hours</div>
+              <div>• Bluetooth: 5.2</div>
+              <div>• Weight: 250g</div>
+              <div>• Driver: 40mm</div>
+            </div>
+          </div>
+          <button style={{
+            width: '100%', padding: '12px', background: '#1a1a1a', color: 'white', border: 'none',
+            borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', marginBottom: '16px'
+          }}>Add to Cart</button>
+          <div style={{ borderTop: '1px dashed #ddd', paddingTop: '12px', position: 'relative' }}>
+            <div style={{
+              position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)',
+              background: '#fff', padding: '0 8px', fontSize: '9px', color: '#999',
+              textTransform: 'uppercase', letterSpacing: '0.5px'
+            }}>
+              Bundle Offer
+            </div>
+            {renderBXGYPreview()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Get current settings based on active tab
+  const currentSettings = BXGY_SETTINGS[activeTab] || [];
+
   return (
     <EditorLayout>
-      <EditorHeader
-        title={bundleTitle}
-        onTitleChange={setBundleTitle}
-        status={bundleEnabled}
-        onStatusChange={setBundleEnabled}
-        onSave={handleSave}
-        onCancel={onCancel}
-        isSaving={isSaving}
-      />
-      
-      <div className="editor-main-content">
-        <EditorSidepane
-          tabs={TABS}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        >
-          <EditorSettingsPane
-            settings={BXGY_SETTINGS[activeTab] || []}
-            activeSettingId={activeSettingId}
-            onSettingClick={handleSettingClick}
-          />
-        </EditorSidepane>
-        
-        <EditorRightContent>
-          <EditorConfigPanel title={
-            activeSettingId === 'customer-buys' ? 'Customer Buys (X)' :
-            activeSettingId === 'customer-gets' ? 'Customer Gets (Y)' :
-            activeSettingId === 'discount-settings' ? 'Discount Settings' :
-            activeSettingId === 'bundle-priority' ? 'Priority Settings' :
-            activeSettingId === 'message-text' ? 'Message Settings' :
-            activeSettingId === 'emoji-icons' ? 'Emoji Settings' :
-            activeSettingId === 'countdown-timer' ? 'Countdown Timer' :
-            activeSettingId === 'add-to-cart-button' ? 'Button Settings' :
-            activeSettingId === 'primary-colors' ? 'Primary Colors' :
-            activeSettingId === 'secondary-colors' ? 'Secondary Colors' :
-            activeSettingId === 'margins' ? 'Margin Settings' :
-            activeSettingId === 'card-settings' ? 'Card Settings' :
-            activeSettingId === 'start-date' ? 'Start Date' :
-            activeSettingId === 'end-date' ? 'End Date' :
-            'Settings'
-          }>
-            {renderConfigContent()}
-          </EditorConfigPanel>
-          
-          <EditorPreviewPanel title="Preview">
-            <StorePreview>
-              {renderBXGYPreview()}
-            </StorePreview>
-          </EditorPreviewPanel>
-        </EditorRightContent>
-      </div>
+      <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
+        <EditorSettingsPane 
+          groups={currentSettings} 
+          activeSetting={activeSettingId} 
+          onSettingChange={handleSettingClick} 
+        />
+        {renderConfigContent()}
+      </EditorSidepane>
+
+      <EditorRightContent>
+        <EditorHeader
+          title={bundleInternalName || 'New BXGY Bundle'}
+          onTitleChange={setBundleInternalName}
+          enabled={bundleEnabled}
+          onEnabledChange={setBundleEnabled}
+          onSave={handleSave}
+          onDiscard={onCancel}
+          isSaving={isSaving}
+        />
+        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
+          {renderProductPagePreview()}
+        </EditorPreviewPanel>
+      </EditorRightContent>
     </EditorLayout>
   );
 }
