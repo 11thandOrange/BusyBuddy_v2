@@ -590,12 +590,12 @@ const MixMatchEditorPreview = () => {
           </div>
         ) : (
           <>
-            {/* Tier Selection Pills - Updates based on products selected */}
+            {/* Tier Selection Pills - Only one active at a time based on selection */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', marginTop: '10px', overflowX: 'auto', paddingBottom: '5px' }}>
               {Object.entries(tiers).map(([tierKey, tierConfig]) => {
                 const tierNum = parseInt(tierKey);
-                const isActive = selectedCount >= tierNum;
-                const isCurrentTier = currentTier === tierNum && selectedCount >= 2;
+                // Only the current tier (matching selection count) is active
+                const isActive = currentTier === tierNum && selectedCount >= 2;
                 return (
                   <div
                     key={tierKey}
