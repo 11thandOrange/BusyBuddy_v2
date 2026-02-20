@@ -27,7 +27,6 @@ const VOLUME_SETTINGS = {
     {
       title: 'Discount',
       items: [
-        { id: 'discount-settings', icon: '💰', label: 'Discount Settings', iconClass: 'icon-discount' },
         { id: 'quantity-breaks', icon: '📊', label: 'Quantity Breaks', iconClass: 'icon-quantity' },
       ],
     },
@@ -516,25 +515,6 @@ export default function VolumeDiscountEditor({ editingBundle, onSave, onCancel }
               ))}
             </div>
           </div>
-        );
-
-      case 'discount-settings':
-        return (
-          <ConfigFormGroup title="Discount Settings" description="Configure the discount type">
-            <ConfigSelect
-              label="Discount Type"
-              value={discountType}
-              onChange={setDiscountType}
-              options={DISCOUNT_TYPE_OPTIONS}
-            />
-            <ConfigInput
-              label={discountType === 'Percentage' ? 'Default Discount (%)' : 'Default Discount Amount ($)'}
-              type="number"
-              value={discountValue}
-              onChange={setDiscountValue}
-              placeholder={discountType === 'Percentage' ? '10' : '5.00'}
-            />
-          </ConfigFormGroup>
         );
 
       case 'quantity-breaks':
