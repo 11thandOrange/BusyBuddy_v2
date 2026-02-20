@@ -352,10 +352,10 @@ const VolumeDiscountEditorPreview = () => {
             {showCountdown && (
               <>
                 <ConfigFormGroup label="Background Color">
-                  <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <input type="color" className="form-input" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <input type="color" className="form-input" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} />
                 </ConfigFormGroup>
               </>
             )}
@@ -369,10 +369,10 @@ const VolumeDiscountEditorPreview = () => {
               <ConfigInput type="text" value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add to Cart" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -387,10 +387,10 @@ const VolumeDiscountEditorPreview = () => {
                   <ConfigInput type="text" value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <input type="color" className="form-input" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <input type="color" className="form-input" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
                 </ConfigFormGroup>
               </>
             )}
@@ -401,10 +401,10 @@ const VolumeDiscountEditorPreview = () => {
         return (
           <EditorConfigPanel title="Primary Colors" description="Set the main color scheme">
             <ConfigFormGroup label="Primary Text Color">
-              <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background">
-              <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -413,13 +413,13 @@ const VolumeDiscountEditorPreview = () => {
         return (
           <EditorConfigPanel title="Secondary Colors" description="Set the secondary color scheme">
             <ConfigFormGroup label="Secondary Text Color">
-              <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background">
-              <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <input type="color" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <input type="color" className="form-input" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
