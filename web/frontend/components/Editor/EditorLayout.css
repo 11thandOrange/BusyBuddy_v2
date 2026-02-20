@@ -296,6 +296,29 @@
     color: #555;
 }
 
+/* Color input styling - shows selected color */
+.form-input[type="color"] {
+    padding: 4px;
+    height: 44px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.form-input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.form-input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+.form-input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
 .form-select {
     width: 100%;
     padding: 12px 14px;
