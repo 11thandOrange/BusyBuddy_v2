@@ -112,8 +112,8 @@ const TIER_OPTIONS = [
   { value: 5, label: 'Buy 5' },
 ];
 
-// Mock products
-const MOCK_PRODUCTS = [
+// Mock products for the bundle (available products)
+const MOCK_BUNDLE_PRODUCTS = [
   { id: 'gid://shopify/Product/1', productId: 'gid://shopify/Product/1', title: 'Classic T-Shirt', price: '29.99', media: tshirt },
   { id: 'gid://shopify/Product/2', productId: 'gid://shopify/Product/2', title: 'Premium Hoodie', price: '59.99', media: tshirt },
   { id: 'gid://shopify/Product/3', productId: 'gid://shopify/Product/3', title: 'Slim Fit Jeans', price: '49.99', media: tshirt },
@@ -121,6 +121,9 @@ const MOCK_PRODUCTS = [
   { id: 'gid://shopify/Product/5', productId: 'gid://shopify/Product/5', title: 'Baseball Cap', price: '19.99', media: tshirt },
   { id: 'gid://shopify/Product/6', productId: 'gid://shopify/Product/6', title: 'Leather Belt', price: '34.99', media: tshirt },
 ];
+
+// Mock products for config panel (store inventory)
+const MOCK_PRODUCTS = MOCK_BUNDLE_PRODUCTS;
 
 const MixMatchEditorPreview = () => {
   // Tab and setting state
@@ -135,10 +138,13 @@ const MixMatchEditorPreview = () => {
   const [bundleEnabled, setBundleEnabled] = useState(true);
   const [bundlePriority, setBundlePriority] = useState(0);
 
-  // Products states
-  const [selectedProducts, setSelectedProducts] = useState([MOCK_PRODUCTS[0], MOCK_PRODUCTS[1], MOCK_PRODUCTS[2]]);
+  // Products states (for config panel - products in the bundle offer)
+  const [selectedProducts, setSelectedProducts] = useState([MOCK_PRODUCTS[0], MOCK_PRODUCTS[1], MOCK_PRODUCTS[2], MOCK_PRODUCTS[3]]);
   const [showProductPicker, setShowProductPicker] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState('');
+  
+  // Widget interaction state - which products user has selected in the widget preview
+  const [widgetSelectedProducts, setWidgetSelectedProducts] = useState([]);
 
   // Discount states
   const [discountType, setDiscountType] = useState('Percentage');
@@ -220,13 +226,48 @@ const MixMatchEditorPreview = () => {
 
   const calculateDiscountedPrice = (originalPrice) => {
     const price = parseFloat(originalPrice) || 0;
-    const discount = parseFloat(tierDiscounts[selectedTier]) || parseFloat(discountValue) || 0;
+    // Use the discount based on how many products are selected in the widget
+    const applicableTier = Math.max(2, Math.min(widgetSelectedProducts.length, 4));
+    const discount = parseFloat(tierDiscounts[applicableTier]) || parseFloat(discountValue) || 0;
     if (discountType === 'Percentage') return (price * (1 - discount / 100)).toFixed(2);
     if (discountType === 'Fixed Amount') return Math.max(0, price - discount).toFixed(2);
     return price.toFixed(2);
   };
 
+  // Toggle product selection in widget
+  const toggleWidgetProductSelection = (product) => {
+    const isSelected = widgetSelectedProducts.some(p => p.productId === product.productId);
+    if (isSelected) {
+      setWidgetSelectedProducts(widgetSelectedProducts.filter(p => p.productId !== product.productId));
+    } else {
+      setWidgetSelectedProducts([...widgetSelectedProducts, product]);
+    }
+  };
+
+  // Check if product is selected in widget
+  const isProductSelectedInWidget = (productId) => {
+    return widgetSelectedProducts.some(p => p.productId === productId);
+  };
+
+  // Get current tier based on widget selection
+  const getCurrentTier = () => {
+    const count = widgetSelectedProducts.length;
+    if (count >= 4) return 4;
+    if (count >= 3) return 3;
+    if (count >= 2) return 2;
+    return 2; // Default
+  };
+
+  // Check if can add to cart (minimum 2 products)
+  const canAddToCart = widgetSelectedProducts.length >= 2;
+
   const handleSave = () => alert('Bundle saved! (Demo mode)');
+  
+  const handleAddToCart = () => {
+    if (canAddToCart) {
+      alert(`Added ${widgetSelectedProducts.length} products to cart with ${tierDiscounts[getCurrentTier()]}% discount!`);
+    }
+  };
 
   // Get current settings
   const currentSettings = MIXMATCH_SETTINGS[activeTab] || [];
@@ -494,10 +535,12 @@ const MixMatchEditorPreview = () => {
     4: { label: 'Buy 4', sublabel: `Save ${tierDiscounts[4] || 20}%`, discount: tierDiscounts[4] || 20 },
   };
 
-  // Render Mix & Match widget preview (matching production)
+  // Render Mix & Match widget preview (matching production with interactive selection)
   const renderMixMatchPreview = () => {
     const hasProducts = selectedProducts.length > 0;
-    const currentDiscount = tierDiscounts[selectedTier] || discountValue;
+    const currentTier = getCurrentTier();
+    const currentDiscount = tierDiscounts[currentTier] || discountValue;
+    const selectedCount = widgetSelectedProducts.length;
 
     return (
       <div style={{
@@ -547,31 +590,32 @@ const MixMatchEditorPreview = () => {
           </div>
         ) : (
           <>
-            {/* Tier Selection Buttons - Production Style */}
+            {/* Tier Selection Pills - Updates based on products selected */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '15px', marginTop: '10px', overflowX: 'auto', paddingBottom: '5px' }}>
               {Object.entries(tiers).map(([tierKey, tierConfig]) => {
-                const isSelected = selectedTier === parseInt(tierKey);
+                const tierNum = parseInt(tierKey);
+                const isActive = selectedCount >= tierNum;
+                const isCurrentTier = currentTier === tierNum && selectedCount >= 2;
                 return (
-                  <button
+                  <div
                     key={tierKey}
-                    onClick={() => setSelectedTier(parseInt(tierKey))}
                     style={{
                       minWidth: '120px',
                       height: '60px',
                       padding: '12px',
                       borderRadius: '20px',
                       border: 'none',
-                      backgroundColor: isSelected ? '#5169DD' : 'white',
-                      color: isSelected ? 'white' : '#222222',
+                      backgroundColor: isActive ? '#5169DD' : 'white',
+                      color: isActive ? 'white' : '#222222',
                       fontSize: '14px',
                       fontWeight: 600,
-                      cursor: 'pointer',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
                       transition: 'all 0.2s ease',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '10px',
+                      opacity: isActive ? 1 : 0.6,
                     }}
                   >
                     {/* Checkbox */}
@@ -583,9 +627,9 @@ const MixMatchEditorPreview = () => {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      border: !isSelected ? '1px solid #222222' : 'none',
+                      border: !isActive ? '1px solid #ccc' : 'none',
                     }}>
-                      {isSelected && (
+                      {isActive && (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5169DD" strokeWidth="3">
                           <path d="M5 12l5 5L20 7" />
                         </svg>
@@ -594,82 +638,132 @@ const MixMatchEditorPreview = () => {
                     {/* Label */}
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                       <span style={{ fontWeight: 'bold', fontSize: '14px' }}>{tierConfig.label}</span>
-                      <span style={{ fontSize: '11px', color: isSelected ? 'rgba(255,255,255,0.8)' : '#616161' }}>{tierConfig.sublabel}</span>
+                      <span style={{ fontSize: '11px', color: isActive ? 'rgba(255,255,255,0.8)' : '#999' }}>{tierConfig.sublabel}</span>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
 
-            {/* Selected Info Text */}
+            {/* Selected Info Text - Dynamic based on selection */}
             <div style={{ fontSize: '12px', color: colorSettings.secondaryTextColor, marginBottom: '12px' }}>
-              You have selected {selectedProducts.length} Products.<br />
-              {currentDiscount}% Discount is applied on the selected products.
+              {selectedCount === 0 ? (
+                <span>Select at least 2 products to unlock the discount.</span>
+              ) : selectedCount === 1 ? (
+                <span>Select 1 more product to unlock <strong>{tierDiscounts[2]}% off</strong>!</span>
+              ) : (
+                <span>
+                  You have selected <strong>{selectedCount}</strong> Products.<br />
+                  <strong>{currentDiscount}%</strong> Discount is applied on the selected products.
+                  {selectedCount < 4 && (
+                    <span style={{ color: '#5169DD', marginLeft: '4px' }}>
+                      (Select {currentTier + 1 - selectedCount > 0 ? `${4 - selectedCount} more for ${tierDiscounts[Math.min(selectedCount + 1, 4)]}% off` : ''})
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
 
-            {/* Products List - Production Style (vertical cards) */}
-            {selectedProducts.map((product, index) => (
-              <div 
-                key={product.productId || index} 
-                style={{ 
-                  padding: '15px', 
-                  borderRadius: `${Math.max(0, cornerRadius - 5)}px`, 
-                  marginBottom: '12px',
-                  backgroundColor: colorSettings.primaryBackgroundColor, 
-                  border: `1px solid ${colorSettings.borderColor}` 
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <img 
-                    src={product.media || tshirt} 
-                    alt={product.title} 
-                    style={{ 
-                      width: '80px', 
-                      height: '80px', 
-                      borderRadius: '10px', 
-                      marginRight: '15px',
-                      objectFit: 'cover',
-                      border: `1px solid ${colorSettings.borderColor}`,
-                    }} 
-                  />
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
-                      {product.title}
-                    </p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 600, fontSize: '14px', color: colorSettings.primaryTextColor }}>
-                        ${calculateDiscountedPrice(product.price)}
-                      </span>
-                      <span style={{ width: '1.5px', height: '10px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
-                      <span style={{ color: colorSettings.secondaryTextColor, fontSize: '12px', textDecoration: 'line-through' }}>
-                        ${product.price}
-                      </span>
+            {/* Products List - Clickable cards for selection */}
+            {selectedProducts.map((product, index) => {
+              const isSelected = isProductSelectedInWidget(product.productId);
+              return (
+                <div 
+                  key={product.productId || index} 
+                  onClick={() => toggleWidgetProductSelection(product)}
+                  style={{ 
+                    padding: '15px', 
+                    borderRadius: `${Math.max(0, cornerRadius - 5)}px`, 
+                    marginBottom: '12px',
+                    backgroundColor: isSelected ? 'rgba(81, 105, 221, 0.08)' : colorSettings.primaryBackgroundColor, 
+                    border: isSelected ? '2px solid #5169DD' : `1px solid ${colorSettings.borderColor}`,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Selection checkbox */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '6px',
+                    backgroundColor: isSelected ? '#5169DD' : 'white',
+                    border: isSelected ? 'none' : '2px solid #ddd',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s ease',
+                  }}>
+                    {isSelected && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                        <path d="M5 12l5 5L20 7" />
+                      </svg>
+                    )}
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', paddingRight: '40px' }}>
+                    <img 
+                      src={product.media || tshirt} 
+                      alt={product.title} 
+                      style={{ 
+                        width: '80px', 
+                        height: '80px', 
+                        borderRadius: '10px', 
+                        marginRight: '15px',
+                        objectFit: 'cover',
+                        border: isSelected ? '2px solid #5169DD' : `1px solid ${colorSettings.borderColor}`,
+                      }} 
+                    />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
+                        {product.title}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {isSelected && selectedCount >= 2 ? (
+                          <>
+                            <span style={{ fontWeight: 600, fontSize: '14px', color: '#4CAF50' }}>
+                              ${calculateDiscountedPrice(product.price)}
+                            </span>
+                            <span style={{ width: '1.5px', height: '10px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
+                            <span style={{ color: colorSettings.secondaryTextColor, fontSize: '12px', textDecoration: 'line-through' }}>
+                              ${product.price}
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ fontWeight: 600, fontSize: '14px', color: colorSettings.primaryTextColor }}>
+                            ${product.price}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {/* Variant Selector (mock) */}
+                  <div style={{ marginTop: '10px' }} onClick={(e) => e.stopPropagation()}>
+                    <label style={{ fontSize: '11px', fontWeight: 500, color: colorSettings.secondaryTextColor, display: 'block', marginBottom: '4px' }}>Size</label>
+                    <select style={{ 
+                      width: '100%', 
+                      padding: '8px 12px', 
+                      borderRadius: '8px', 
+                      border: `1px solid ${colorSettings.borderColor}`,
+                      backgroundColor: colorSettings.primaryBackgroundColor,
+                      color: colorSettings.primaryTextColor,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}>
+                      <option>Medium</option>
+                      <option>Small</option>
+                      <option>Large</option>
+                      <option>X-Large</option>
+                    </select>
+                  </div>
                 </div>
-                {/* Variant Selector (mock) */}
-                <div style={{ marginTop: '10px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 500, color: colorSettings.secondaryTextColor, display: 'block', marginBottom: '4px' }}>Size</label>
-                  <select style={{ 
-                    width: '100%', 
-                    padding: '8px 12px', 
-                    borderRadius: '8px', 
-                    border: `1px solid ${colorSettings.borderColor}`,
-                    backgroundColor: colorSettings.primaryBackgroundColor,
-                    color: colorSettings.primaryTextColor,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                  }}>
-                    <option>Medium</option>
-                    <option>Small</option>
-                    <option>Large</option>
-                    <option>X-Large</option>
-                  </select>
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
-            {/* Total Section */}
+            {/* Total Section - Only shows selected products */}
             <div style={{ 
               padding: '15px', 
               backgroundColor: colorSettings.primaryBackgroundColor, 
@@ -677,37 +771,50 @@ const MixMatchEditorPreview = () => {
               border: `1px solid ${colorSettings.borderColor}` 
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontWeight: 600, color: colorSettings.primaryTextColor }}>Total</span>
+                <span style={{ fontWeight: 600, color: colorSettings.primaryTextColor }}>
+                  Total {selectedCount > 0 && `(${selectedCount} items)`}
+                </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {(() => {
-                    const originalTotal = selectedProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
-                    const discountedTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
-                    return (
-                      <>
-                        <span style={{ fontWeight: 700, fontSize: '18px', color: colorSettings.primaryTextColor }}>${discountedTotal.toFixed(2)}</span>
-                        {discountedTotal < originalTotal && (
-                          <>
-                            <span style={{ width: '1.5px', height: '12px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
-                            <span style={{ fontSize: '14px', textDecoration: 'line-through', color: '#999' }}>${originalTotal.toFixed(2)}</span>
-                          </>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {selectedCount === 0 ? (
+                    <span style={{ fontWeight: 500, fontSize: '14px', color: '#999' }}>Select products</span>
+                  ) : (
+                    (() => {
+                      const originalTotal = widgetSelectedProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+                      const discountedTotal = selectedCount >= 2 
+                        ? widgetSelectedProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0)
+                        : originalTotal;
+                      return (
+                        <>
+                          <span style={{ fontWeight: 700, fontSize: '18px', color: colorSettings.primaryTextColor }}>${discountedTotal.toFixed(2)}</span>
+                          {selectedCount >= 2 && discountedTotal < originalTotal && (
+                            <>
+                              <span style={{ width: '1.5px', height: '12px', background: colorSettings.primaryTextColor, opacity: 0.3 }}></span>
+                              <span style={{ fontSize: '14px', textDecoration: 'line-through', color: '#999' }}>${originalTotal.toFixed(2)}</span>
+                            </>
+                          )}
+                        </>
+                      );
+                    })()
+                  )}
                 </div>
               </div>
-              <button style={{ 
-                width: '100%', 
-                padding: '14px', 
-                backgroundColor: addToCartBgColor, 
-                color: addToCartTextColor, 
-                border: 'none', 
-                borderRadius: '8px', 
-                fontWeight: 600, 
-                fontSize: '14px',
-                cursor: 'pointer' 
-              }}>
-                {addToCartText}
+              <button 
+                onClick={handleAddToCart}
+                disabled={!canAddToCart}
+                style={{ 
+                  width: '100%', 
+                  padding: '14px', 
+                  backgroundColor: canAddToCart ? addToCartBgColor : '#ccc', 
+                  color: canAddToCart ? addToCartTextColor : '#888', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  fontWeight: 600, 
+                  fontSize: '14px',
+                  cursor: canAddToCart ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {canAddToCart ? addToCartText : `Select ${2 - selectedCount} more to add`}
               </button>
               {showSkipButton && (
                 <button style={{ 
