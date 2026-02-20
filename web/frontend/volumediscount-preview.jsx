@@ -1,43 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import tshirt from './apps/volume-discounts/tshirt.png';
+import './components/Editor/EditorLayout.css';
+
+// Import Editor components
+import {
+  EditorLayout,
+  EditorSidepane,
+  EditorSettingsPane,
+  EditorConfigPanel,
+  ConfigFormGroup,
+  ConfigInput,
+  ConfigSelect,
+  ConfigToggleRow,
+  EditorPreviewPanel,
+  EditorHeader,
+  EditorRightContent
+} from './components/Editor';
+
+// Mock product image
+const tshirt = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
 
 // Volume Discount settings configuration
 const VOLUME_SETTINGS = {
   bundle: [
-    { title: 'Products', items: [{ id: 'select-products', icon: '📦', label: 'Select Products' }] },
-    { title: 'Discount', items: [
-      { id: 'discount-settings', icon: '💰', label: 'Discount Settings' },
-      { id: 'quantity-breaks', icon: '📊', label: 'Quantity Breaks' },
-    ]},
-    { title: 'Settings', items: [{ id: 'bundle-priority', icon: '⬆️', label: 'Priority' }] },
+    {
+      title: 'Products',
+      items: [
+        { id: 'select-products', icon: '📦', label: 'Select Products', iconClass: 'icon-products' },
+      ],
+    },
+    {
+      title: 'Discount',
+      items: [
+        { id: 'quantity-breaks', icon: '📊', label: 'Quantity Breaks', iconClass: 'icon-quantity' },
+      ],
+    },
+    {
+      title: 'Settings',
+      items: [
+        { id: 'bundle-priority', icon: '⬆️', label: 'Priority', iconClass: 'icon-priority' },
+      ],
+    },
   ],
   content: [
-    { title: 'Message', items: [
-      { id: 'message-text', icon: '💬', label: 'Message Text' },
-      { id: 'emoji-icons', icon: '😀', label: 'Emoji & Icons' },
-    ]},
-    { title: 'Timer', items: [{ id: 'countdown-timer', icon: '⏱️', label: 'Countdown Timer' }] },
-    { title: 'Buttons', items: [
-      { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button' },
-      { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button' },
-    ]},
+    {
+      title: 'Message',
+      items: [
+        { id: 'message-text', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
+        { id: 'emoji-icons', icon: '😀', label: 'Emoji & Icons', iconClass: 'icon-emoji' },
+      ],
+    },
+    {
+      title: 'Timer',
+      items: [
+        { id: 'countdown-timer', icon: '⏱️', label: 'Countdown Timer', iconClass: 'icon-timer' },
+      ],
+    },
+    {
+      title: 'Buttons',
+      items: [
+        { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
+        { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
+      ],
+    },
   ],
   appearance: [
-    { title: 'Colors', items: [
-      { id: 'primary-colors', icon: '🎨', label: 'Primary Colors' },
-      { id: 'secondary-colors', icon: '🖌️', label: 'Secondary Colors' },
-    ]},
-    { title: 'Layout', items: [
-      { id: 'margins', icon: '📐', label: 'Margins' },
-      { id: 'card-settings', icon: '🃏', label: 'Card Settings' },
-    ]},
+    {
+      title: 'Colors',
+      items: [
+        { id: 'primary-colors', icon: '🎨', label: 'Primary Colors', iconClass: 'icon-colors' },
+        { id: 'secondary-colors', icon: '🖌️', label: 'Secondary Colors', iconClass: 'icon-secondary' },
+      ],
+    },
+    {
+      title: 'Layout',
+      items: [
+        { id: 'margins', icon: '📐', label: 'Margins', iconClass: 'icon-margins' },
+        { id: 'card-settings', icon: '🃏', label: 'Card Settings', iconClass: 'icon-card' },
+      ],
+    },
   ],
   schedule: [
-    { title: 'Timing', items: [
-      { id: 'start-date', icon: '🚀', label: 'Start Date' },
-      { id: 'end-date', icon: '🏁', label: 'End Date' },
-    ]},
+    {
+      title: 'Timing',
+      items: [
+        { id: 'start-date', icon: '🚀', label: 'Start Date', iconClass: 'icon-start' },
+        { id: 'end-date', icon: '🏁', label: 'End Date', iconClass: 'icon-end' },
+      ],
+    },
   ],
 };
 
@@ -53,11 +103,14 @@ const MOCK_PRODUCTS = [
   { id: 'gid://shopify/Product/1', productId: 'gid://shopify/Product/1', title: 'Classic T-Shirt', price: '29.99', media: tshirt },
   { id: 'gid://shopify/Product/2', productId: 'gid://shopify/Product/2', title: 'Premium Hoodie', price: '59.99', media: tshirt },
   { id: 'gid://shopify/Product/3', productId: 'gid://shopify/Product/3', title: 'Slim Fit Jeans', price: '49.99', media: tshirt },
+  { id: 'gid://shopify/Product/4', productId: 'gid://shopify/Product/4', title: 'Running Sneakers', price: '89.99', media: tshirt },
 ];
 
 const VolumeDiscountEditorPreview = () => {
+  // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
-  const [activeSettingId, setActiveSettingId] = useState('select-products');
+  const [activeSetting, setActiveSetting] = useState('select-products');
+  const [device, setDevice] = useState('desktop');
 
   // Bundle data states
   const [bundleTitle, setBundleTitle] = useState('Buy More & Save More! 🔥');
@@ -166,9 +219,16 @@ const VolumeDiscountEditorPreview = () => {
 
   const currentSettings = VOLUME_SETTINGS[activeTab] || [];
 
+  // Handle tab change
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const firstSetting = VOLUME_SETTINGS[tabId]?.[0]?.items?.[0];
+    if (firstSetting) setActiveSetting(firstSetting.id);
+  };
+
   // Render config panel
   const renderConfigContent = () => {
-    switch (activeSettingId) {
+    switch (activeSetting) {
       case 'select-products':
         return (
           <div>
@@ -431,94 +491,84 @@ const VolumeDiscountEditorPreview = () => {
     );
   };
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#1a1a2e', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>
-      {/* Left Sidebar */}
-      <div style={{ width: '430px', display: 'flex', flexShrink: 0, borderRight: '1px solid #2d2d44' }}>
-        {/* Settings Navigation */}
-        <div style={{ width: '170px', backgroundColor: '#16162a', padding: '15px 0', borderRight: '1px solid #2d2d44' }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #2d2d44', marginBottom: '10px', padding: '0 10px' }}>
-            {TABS.map((tab) => (
-              <button key={tab.id} onClick={() => { setActiveTab(tab.id); const firstSetting = VOLUME_SETTINGS[tab.id]?.[0]?.items?.[0]; if (firstSetting) setActiveSettingId(firstSetting.id); }} style={{ flex: 1, padding: '10px 5px', backgroundColor: 'transparent', border: 'none', borderBottom: activeTab === tab.id ? '2px solid #5169DD' : '2px solid transparent', color: activeTab === tab.id ? '#fff' : '#888', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>{tab.label}</button>
+  // Render product page preview
+  const renderProductPagePreview = () => (
+    <div className="product-page-preview" style={{ padding: '24px', background: '#fff', minHeight: '100%' }}>
+      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+        <div style={{ flex: '0 0 45%', maxWidth: '45%' }}>
+          <div style={{ width: '100%', aspectRatio: '1', background: '#f8f8f8', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px', border: '1px solid #eee' }}>
+            <span style={{ fontSize: '64px', opacity: 0.4 }}>📦</span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} style={{ width: '50px', height: '50px', background: '#f8f8f8', borderRadius: '8px', border: i === 1 ? '2px solid #1a1a1a' : '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <span style={{ fontSize: '16px', opacity: 0.3 }}>📦</span>
+              </div>
             ))}
           </div>
-          {/* Settings List */}
-          {currentSettings.map((group, groupIndex) => (
-            <div key={groupIndex} style={{ marginBottom: '15px' }}>
-              <p style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase', padding: '0 15px', marginBottom: '8px' }}>{group.title}</p>
-              {group.items.map((item) => (
-                <div key={item.id} onClick={() => setActiveSettingId(item.id)} style={{ display: 'flex', alignItems: 'center', padding: '10px 15px', cursor: 'pointer', backgroundColor: activeSettingId === item.id ? '#252544' : 'transparent', borderLeft: activeSettingId === item.id ? '3px solid #5169DD' : '3px solid transparent' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '6px', backgroundColor: activeSettingId === item.id ? '#5169DD' : '#2d2d44', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '10px', fontSize: '14px' }}>{item.icon}</div>
-                  <span style={{ color: activeSettingId === item.id ? '#fff' : '#aaa', fontSize: '13px' }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        {/* Config Panel */}
-        <div style={{ flex: 1, backgroundColor: '#1e1e38', padding: '20px', overflowY: 'auto' }}>
-          <h2 style={{ color: '#fff', fontSize: '16px', marginBottom: '20px', fontWeight: 600 }}>{currentSettings.flatMap(g => g.items).find(i => i.id === activeSettingId)?.label || 'Settings'}</h2>
-          <div style={{ color: '#ccc' }}>{renderConfigContent()}</div>
-        </div>
-      </div>
-
-      {/* Right Content - Preview */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f5f5f5' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', backgroundColor: '#1a1a2e', borderBottom: '1px solid #2d2d44' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <input value={bundleInternalName} onChange={(e) => setBundleInternalName(e.target.value)} placeholder="Bundle name..." style={{ backgroundColor: 'transparent', border: 'none', color: '#fff', fontSize: '16px', fontWeight: 500, outline: 'none', width: '250px' }} />
-            <span style={{ color: '#666', cursor: 'pointer' }}>✏️</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{ width: '44px', height: '24px', backgroundColor: bundleEnabled ? '#4CAF50' : '#666', borderRadius: '12px', position: 'relative', cursor: 'pointer' }} onClick={() => setBundleEnabled(!bundleEnabled)}><div style={{ width: '20px', height: '20px', backgroundColor: 'white', borderRadius: '50%', position: 'absolute', top: '2px', left: bundleEnabled ? '22px' : '2px', transition: 'all 0.2s' }} /></div>
-            <button onClick={onCancel} style={{ padding: '8px 16px', backgroundColor: '#2d2d44', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>Discard</button>
-            <button onClick={handleSave} style={{ padding: '8px 20px', backgroundColor: '#5169DD', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500 }}>Save</button>
-          </div>
         </div>
 
-        {/* Preview Area */}
-        <div style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
-          <div style={{ maxWidth: previewMode === 'mobile' ? '400px' : '900px', margin: '0 auto', backgroundColor: '#fff', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-            {/* Mock Product Page */}
-            <div style={{ display: 'grid', gridTemplateColumns: previewMode === 'mobile' ? '1fr' : '1fr 1fr', gap: '0' }}>
-              {/* Product Images */}
-              <div style={{ padding: '30px', borderRight: previewMode === 'mobile' ? 'none' : '1px solid #eee', borderBottom: previewMode === 'mobile' ? '1px solid #eee' : 'none' }}>
-                <div style={{ width: '100%', aspectRatio: '1', backgroundColor: '#f8f8f8', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
-                  <div style={{ width: '60px', height: '80px', border: '2px solid #ddd', borderRadius: '4px' }}></div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  {[1, 2, 3, 4].map(i => <div key={i} style={{ width: '60px', height: '60px', backgroundColor: '#f0f0f0', borderRadius: '6px', border: i === 1 ? '2px solid #333' : '1px solid #ddd' }}></div>)}
-                </div>
-              </div>
-              {/* Product Details */}
-              <div style={{ padding: '30px' }}>
-                <div style={{ marginBottom: '10px' }}><span style={{ color: '#f5a623' }}>★★★★★</span><span style={{ marginLeft: '8px', color: '#666', fontSize: '14px' }}>4.8 (2,847 reviews)</span></div>
-                <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '10px', color: '#333' }}>Premium Wireless Headphones Pro</h1>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '15px' }}><span style={{ fontSize: '28px', fontWeight: 700 }}>$1,299.00</span><span style={{ fontSize: '18px', color: '#999', textDecoration: 'line-through' }}>$1,599.00</span></div>
-                <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '20px' }}>Experience premium sound quality with active noise cancellation, 40-hour battery life, comfortable over-ear design.</p>
-                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f8f8', borderRadius: '8px' }}><p style={{ fontWeight: 600, marginBottom: '10px', fontSize: '14px' }}>Specifications</p><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px', color: '#666' }}><span>• Battery: 40 hours</span><span>• Bluetooth: 5.2</span><span>• Weight: 250g</span><span>• Driver: 40mm</span></div></div>
-                <button style={{ width: '100%', padding: '15px', backgroundColor: '#333', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 600, cursor: 'pointer', marginBottom: '15px' }}>Add to Cart</button>
-                <div style={{ textAlign: 'center', fontSize: '12px', color: '#999', marginBottom: '15px' }}>─────────── VOLUME DISCOUNT OFFER ───────────</div>
-                {renderVolumePreview()}
-              </div>
+        <div style={{ flex: '1', minWidth: 0 }}>
+          <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px', lineHeight: '1.3' }}>Premium Wireless Headphones Pro</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <span style={{ color: '#f5a623', fontSize: '12px' }}>★★★★★</span>
+            <span style={{ fontSize: '11px', color: '#666' }}>4.8 (2,847 reviews)</span>
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>$1,299.00</span>
+            <span style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>$1,599.00</span>
+          </div>
+          <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+            Experience premium sound quality with active noise cancellation. 40-hour battery life, comfortable over-ear design.
+          </p>
+          <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>Specifications</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px', color: '#666' }}>
+              <div>• Battery: 40 hours</div>
+              <div>• Bluetooth: 5.2</div>
+              <div>• Weight: 250g</div>
+              <div>• Driver: 40mm</div>
             </div>
           </div>
-        </div>
-
-        {/* Preview Mode Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '15px', backgroundColor: '#fff', borderTop: '1px solid #eee' }}>
-          <div style={{ display: 'flex', gap: '8px', backgroundColor: '#f0f0f0', padding: '4px', borderRadius: '8px' }}>
-            <button onClick={() => setPreviewMode('desktop')} style={{ padding: '8px 16px', backgroundColor: previewMode === 'desktop' ? '#fff' : 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500, boxShadow: previewMode === 'desktop' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>🖥 Desktop</button>
-            <button onClick={() => setPreviewMode('mobile')} style={{ padding: '8px 16px', backgroundColor: previewMode === 'mobile' ? '#fff' : 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 500, boxShadow: previewMode === 'mobile' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>📱 Mobile</button>
+          <button style={{ width: '100%', padding: '12px', background: '#1a1a1a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', marginBottom: '16px' }}>Add to Cart</button>
+          <div style={{ borderTop: '1px dashed #ddd', paddingTop: '12px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', background: '#fff', padding: '0 8px', fontSize: '9px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Volume Discount Offer
+            </div>
+            {renderVolumePreview()}
           </div>
         </div>
       </div>
     </div>
   );
+
+  return (
+    <EditorLayout>
+      <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
+        <EditorSettingsPane groups={currentSettings} activeSetting={activeSetting} onSettingChange={setActiveSetting} />
+        {renderConfigContent()}
+      </EditorSidepane>
+
+      <EditorRightContent>
+        <EditorHeader
+          title={bundleInternalName}
+          onTitleChange={setBundleInternalName}
+          enabled={bundleEnabled}
+          onEnabledChange={setBundleEnabled}
+          onSave={handleSave}
+          onDiscard={() => alert('Discard clicked')}
+        />
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
+          {renderProductPagePreview()}
+        </EditorPreviewPanel>
+      </EditorRightContent>
+    </EditorLayout>
+  );
 };
 
-// Render
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<VolumeDiscountEditorPreview />);
+// Mount the preview
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <VolumeDiscountEditorPreview />
+  </React.StrictMode>
+);
