@@ -48,9 +48,14 @@ export const EditorPreviewPanel = ({
 
 /**
  * StorePreview - Default store preview layout
+ * 
+ * @param {React.ReactNode} announcementBar - Announcement bar component (top of page)
+ * @param {React.ReactNode} children - Custom content to render (e.g., bundle widgets)
+ * @param {Array} products - Product list for default product grid
  */
 export const StorePreview = ({ 
   announcementBar,
+  children,
   products = []
 }) => {
   const defaultProducts = [
@@ -77,6 +82,9 @@ export const StorePreview = ({
             <a href="#">Contact</a>
           </div>
         </div>
+
+        {/* Custom Content Slot (e.g., bundle widgets) */}
+        {children}
 
         <div className="product-grid">
           {displayProducts.map((product, index) => (

@@ -546,10 +546,10 @@
 .preview-content {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 24px;
-    overflow: hidden;
+    overflow: auto;
     min-height: 0;
 }
 
@@ -558,10 +558,11 @@
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-    overflow: hidden;
+    overflow: auto;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
+    max-height: 100%;
 }
 
 .device-frame.desktop {
@@ -824,7 +825,11 @@
     font-weight: 600;
     padding: 4px 8px;
     border-radius: 4px;
-    min-width: 180px;
+    min-width: 320px;
+    max-width: 320px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .editable-title:hover {

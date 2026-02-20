@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 /**
  * EditorHeader - Header with title, enable toggle, and action buttons
@@ -25,12 +25,20 @@ export const EditorHeader = ({
   discardText = 'Discard'
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const titleInputRef = useRef(null);
+
+  const handlePencilClick = () => {
+    if (titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  };
 
   return (
     <div className="title-header">
       <div className="title-left">
         <div className="editable-title-wrapper">
           <input
+            ref={titleInputRef}
             type="text"
             className="editable-title"
             value={title}
@@ -39,7 +47,7 @@ export const EditorHeader = ({
             onBlur={() => setIsEditingTitle(false)}
           />
           {!isEditingTitle && (
-            <span className="pencil-icon">✏️</span>
+            <span className="pencil-icon" onClick={handlePencilClick} style={{ cursor: 'pointer' }}>✏️</span>
           )}
         </div>
         
