@@ -1,33 +1,43 @@
 import { useState, useEffect } from "react";
 
 const ToggleSwitch = ({ appId }) => {
-  const [active, setActive] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // Start with null to indicate "loading" state - prevents flash
+  const [active, setActive] = useState(null);
+  const [loading, setLoading] = useState(true); // Start loading as true
   const [error, setError] = useState(null);
   const [hasAppAccess, setHasAppAccess] = useState(true);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [isDisabledButton, setIsDisabledButton] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     fetchInitialStatus();
     fetchSubscriptionInfo();
-    isDisabled();
   }, [appId]);
 
   useEffect(() => {
-    isDisabled();
-  }, [subscriptionInfo, active, loading, hasAppAccess]);
+    if (initialLoadComplete) {
+      isDisabled();
+    }
+  }, [subscriptionInfo, active, loading, hasAppAccess, initialLoadComplete]);
 
   const fetchInitialStatus = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/subscription/app-status?appId=${appId}`);
       const data = await response.json();
 
       if (data.status === "SUCCESS") {
         setActive(data.data.isEnabled || false);
+      } else {
+        setActive(false);
       }
     } catch (error) {
       console.error("Error fetching app status:", error);
+      setActive(false);
+    } finally {
+      setLoading(false);
+      setInitialLoadComplete(true);
     }
   };
 
@@ -184,12 +194,15 @@ const ToggleSwitch = ({ appId }) => {
     return "Click to enable";
   };
 
+  // Show neutral loading state during initial load to prevent flash
+  const isInitialLoading = active === null || !initialLoadComplete;
+  
   return (
     <div
       className="d-flex align-items-center"
-      style={{ cursor: isDisabledButton ? "not-allowed" : "pointer" }}
-      onClick={isDisabledButton && !active ? undefined : toggleSwitch}
-      title={isDisabledButton && !active ? "Upgrade your plan to enable more apps" : getToggleTitle()}
+      style={{ cursor: isInitialLoading || isDisabledButton ? "not-allowed" : "pointer" }}
+      onClick={isInitialLoading || (isDisabledButton && !active) ? undefined : toggleSwitch}
+      title={isInitialLoading ? "Loading..." : (isDisabledButton && !active ? "Upgrade your plan to enable more apps" : getToggleTitle())}
     >
       {error && (
         <div
@@ -211,7 +224,7 @@ const ToggleSwitch = ({ appId }) => {
       )}
 
       <div
-        className={`position-relative ${active ? "bg-success" : "bg-danger"} ${
+        className={`position-relative ${isInitialLoading ? "bg-secondary" : (active ? "bg-success" : "bg-danger")} ${
           isDisabledButton ? "opacity-50" : ""
         }`}
         style={{
@@ -220,10 +233,10 @@ const ToggleSwitch = ({ appId }) => {
           padding: "4px",
           borderRadius: "15px",
         }}
-        onClick={isDisabledButton ? undefined : toggleSwitch}
+        onClick={isInitialLoading || isDisabledButton ? undefined : toggleSwitch}
       >
-        {/* loading overlay */}
-        {loading && (
+        {/* loading overlay - shows during initial load and toggle operations */}
+        {(loading || isInitialLoading) && (
           <div
             className="position-absolute w-100 h-100 d-flex align-items-center justify-content-center"
             style={{
@@ -258,14 +271,14 @@ const ToggleSwitch = ({ appId }) => {
           </div>
         )}
 
-        {/* switch slider */}
+        {/* switch slider - centered during loading, positioned based on state after */}
         <div
           className="bg-white position-absolute"
           style={{
             width: "50px",
             height: "40px",
             transition: "all 0.3s ease",
-            left: active ? "78px" : "5px",
+            left: isInitialLoading ? "41px" : (active ? "78px" : "5px"),
             top: "4px",
             borderRadius: "11px",
             zIndex: 1,
@@ -276,13 +289,13 @@ const ToggleSwitch = ({ appId }) => {
         <div className="d-flex align-items-center justify-content-between h-100 px-3">
           <span
             className="text-white fw-medium"
-            style={{ visibility: active ? "visible" : "hidden", zIndex: 1 }}
+            style={{ visibility: isInitialLoading ? "hidden" : (active ? "visible" : "hidden"), zIndex: 1 }}
           >
             Active
           </span>
           <span
             className="text-white fw-medium ms-auto"
-            style={{ visibility: active ? "hidden" : "visible", zIndex: 1 }}
+            style={{ visibility: isInitialLoading ? "hidden" : (active ? "hidden" : "visible"), zIndex: 1 }}
           >
             Inactive
           </span>

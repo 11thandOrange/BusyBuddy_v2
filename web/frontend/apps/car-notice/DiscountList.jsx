@@ -16,6 +16,43 @@ import Button from "../../components/Button";
 import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
+import VideoList from "../../components/VideoList";
+
+// Cart Notice specific videos
+const cartNoticeVideos = [
+  {
+    id: 1,
+    title: "Cart Notice Basics",
+    description: "Create your first cart notification",
+    src: "/videos/cart-notice-getting-started.mp4",
+    poster: null,
+    duration: "2:25"
+  },
+  {
+    id: 2,
+    title: "Customization",
+    description: "Style your cart notices",
+    src: "/videos/cart-notice-styling.mp4",
+    poster: null,
+    duration: "3:10"
+  },
+  {
+    id: 3,
+    title: "Upsell Strategies",
+    description: "Increase cart value with notices",
+    src: "/videos/cart-notice-upsell.mp4",
+    poster: null,
+    duration: "3:35"
+  },
+  {
+    id: 4,
+    title: "Display Rules",
+    description: "Control when notices appear",
+    src: "/videos/cart-notice-rules.mp4",
+    poster: null,
+    duration: "2:50"
+  }
+];
 
 export default function DiscountList({ onMakeBundleClick }) {
   const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
@@ -197,252 +234,7 @@ export default function DiscountList({ onMakeBundleClick }) {
         }}
       >
         {selectedTab === "Overview" && (
-          <>
-          {/* Video Display */}
-          <Col
-              lg={6} md={12}
-              style={{
-                padding: "50px",
-              }}
-            >
-              <Card
-                className="border-0 h-100 "
-                style={{ background: "transparent !important" }}
-              >
-                <Card.Body
-                  className="p-0 "
-                  style={{ background: "transparent !important" }}
-                >
-                  <div className="position-relative h-100">
-                    <video
-                      controls
-                      poster={videoimg}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: "15px",
-                        padding: "4px",
-                      }}
-                    >
-                      <source
-                        src="/videos/marshall-promo.mp4"
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                      <Button
-                        text={<Play size={24} />}
-                        onClick={() => console.log("Discard")}
-                        variant="light"
-                        className="rounded-circle p-3 opacity-75"
-                      />
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            {/* Side Features */}
-            <Col
-              lg={6} md={12}
-              style={{
-                padding: "50px 0",
-              }}
-            >
-              <div
-                className="d-flex justify-content-between flex-column linrrowleft"
-                style={{ height: "100%" }}
-              >
-                <div>
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path>
-                        <polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Customizable
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Discount, Display style & Priority.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <rect
-                          x="2"
-                          y="3"
-                          width="20"
-                          height="14"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Responsive
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Looks great on any device.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-5 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                        <path d="M13 2v7h7"></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Attention grabbing
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Keep your customers informed without disrupting their
-                        shopping.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex align-items-start flex-column">
-                  <Button
-                    variant="dark"
-                    className="mb-3 d-flex align-items-center justify-content-center"
-                    text=" Make your Bundle Now!"
-                    style={{
-                      maxWidth: "220px",
-                      borderRadius: "40px",
-                      height: "45px",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                      letterSpacing: "0",
-                      backgroundColor: "black",
-                      borderColor: "black",
-                      color: "white",
-                      padding: "15px 25px",
-                    }}
-                    onClick={() => {
-                      setShowBundleAction(true);
-                      onMakeBundleClick();
-                    }}
-                  />
-
-                  <div>
-                    <span
-                      className="text-secondary"
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        letterSpacing: "0",
-                        textAlign: "center",
-                      }}
-                    >
-                      Learn More about{" "}
-                    </span>
-                    <a
-                      href="#"
-                      className="text-primary"
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        letterSpacing: "0",
-                        textAlign: "center",
-                        color: "#5169DD",
-                      }}
-                    >
-                      How to create bundle?
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </Col>
-          </>
+          <VideoList videos={cartNoticeVideos} appName="Cart Notice" />
         )}
 
         {selectedTab === "Discounts" && (

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusyBuddy - Issue #28 Demo: Homepage & App Refinements</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #303030;
+            --secondary-gray: #616161;
+            --bg-light: #f1f2f4;
+            --border-color: #e3e3e3;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #fafafa;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .demo-header {
+            border-bottom: 2px solid var(--primary-dark);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .demo-header h2 {
+            color: var(--primary-dark);
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .demo-note {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 12px 16px;
+            margin: 16px 0;
+            font-size: 14px;
+            color: var(--secondary-gray);
+        }
+        
+        .plan-banner {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #90caf9;
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toggle-switch {
+            width: 132px;
+            height: 48px;
+            border-radius: 15px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .toggle-switch.active { background-color: #198754; }
+        .toggle-switch.inactive { background-color: #dc3545; }
+        .toggle-switch.loading { background-color: #6c757d; }
+        
+        .toggle-slider {
+            width: 50px;
+            height: 40px;
+            background: white;
+            border-radius: 11px;
+            position: absolute;
+            top: 4px;
+            transition: left 0.3s ease;
+        }
+        
+        .toggle-switch.active .toggle-slider { left: 78px; }
+        .toggle-switch.inactive .toggle-slider { left: 5px; }
+        .toggle-switch.loading .toggle-slider { left: 41px; }
+        
+        .toggle-label {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .toggle-label.left { left: 16px; }
+        .toggle-label.right { right: 16px; }
+        
+        .video-container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .video-list-item {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .video-list-item:hover { border-color: var(--primary-dark); background: #f8f9fa; }
+        .video-list-item.active { border: 2px solid var(--primary-dark); background: #f8f9fa; }
+        
+        .video-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-icon.active { background: var(--primary-dark); color: white; }
+        .video-icon.inactive { background: var(--bg-light); color: var(--secondary-gray); }
+        
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+        }
+        
+        .app-title-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .app-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin: 0;
+        }
+        
+        .create-btn {
+            background: var(--primary-dark);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 180px;
+        }
+        
+        .app-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-light);
+            padding: 4px;
+            border-radius: 15px;
+        }
+        
+        .app-tab {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            background: transparent;
+            color: #4A4A4A;
+        }
+        
+        .app-tab.active { background: var(--primary-dark); color: white; }
+        
+        .comparison-row { display: flex; gap: 24px; margin-bottom: 24px; }
+        .comparison-col { flex: 1; padding: 20px; border-radius: 12px; }
+        .before { background: #ffebee; border: 2px solid #ef5350; }
+        .after { background: #e8f5e9; border: 2px solid #66bb6a; }
+        
+        .comparison-label {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .before .comparison-label { color: #c62828; }
+        .after .comparison-label { color: #2e7d32; }
+        
+        .checklist { list-style: none; padding: 0; margin: 0; }
+        .checklist li {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .checklist li:last-child { border-bottom: none; }
+        
+        .check-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e8f5e9;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #007bff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Issue #28 Implementation Demo</h1>
+            <p class="lead text-muted">[FE] App Homepage & BusyBuddy Homepage Refinements</p>
+            <a href="https://github.com/11thandOrange/BusyBuddy_v2/issues/28" target="_blank" class="btn btn-outline-dark">
+                <i class="bi bi-github"></i> View Issue on GitHub
+            </a>
+        </div>
+
+        <!-- Acceptance Criteria -->
+        <div class="demo-section">
+            <div class="demo-header">
+                <h2><i class="bi bi-check2-square"></i> Acceptance Criteria</h2>
+            </div>
+            <ul class="checklist">
+                <li><span class="check-icon"><i class="bi bi-check"></i></span><div><strong>Subtask #37:</strong> Hide Plan Banner When User Is On the Highest Plan</div></li>
+                <li><span class="check-icon"><i class="bi bi-check"></i></span><div><strong>Subtask #38:</strong> App Overview Tabs Render A List Of Videos</div></li>
+                <li><span class="check-icon"><i class="bi bi-check"></i></span><div><strong>Subtask #39:</strong> Re-Order App Header Buttons</div></li>
+                <li><span class="check-icon"><i class="bi bi-check"></i></span><div><strong>Subtask #40:</strong> Fix Active/Inactive Toggle Flash On Load</div></li>
+            </ul>
+        </div>
+
+        <!-- Subtask #37 -->
+        <div class="demo-section">
+            <div class="demo-header d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-eye-slash"></i> Subtask #37: Hide Plan Banner</h2>
+                <span class="badge bg-success">Completed</span>
+            </div>
+            <div class="demo-note">When a merchant is on the Advanced plan (highest tier), the plan upgrade banner is hidden.</div>
+            <div class="comparison-row">
+                <div class="comparison-col before">
+                    <div class="comparison-label"><i class="bi bi-x-circle"></i> BEFORE (Advanced Plan)</div>
+                    <div class="plan-banner">
+                        <div><strong>Current Plan: Advanced</strong><p class="mb-0 small text-muted">You have full access.</p></div>
+                        <button class="btn btn-primary btn-sm">View Plans</button>
+                    </div>
+                </div>
+                <div class="comparison-col after">
+                    <div class="comparison-label"><i class="bi bi-check-circle"></i> AFTER (Advanced Plan)</div>
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-eye-slash" style="font-size: 32px;"></i>
+                        <p class="mb-0 mt-2">Banner Hidden</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subtask #38 -->
+        <div class="demo-section">
+            <div class="demo-header d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-play-circle"></i> Subtask #38: Video List in Overview</h2>
+                <span class="badge bg-success">Completed</span>
+            </div>
+            <div class="demo-note">Each app's Overview tab now renders a clickable list of videos. Video on left, list on right.</div>
+            <div class="comparison-row">
+                <div class="comparison-col before">
+                    <div class="comparison-label"><i class="bi bi-x-circle"></i> BEFORE</div>
+                    <div class="video-container" style="height: 150px;">
+                        <div class="text-center"><i class="bi bi-play-circle" style="font-size: 48px;"></i><p class="mb-0 mt-2">Single video</p></div>
+                    </div>
+                </div>
+                <div class="comparison-col after">
+                    <div class="comparison-label"><i class="bi bi-check-circle"></i> AFTER</div>
+                    <div class="row g-2">
+                        <div class="col-7">
+                            <div class="video-container" style="height: 120px;"><i class="bi bi-play-circle" style="font-size: 32px;"></i></div>
+                        </div>
+                        <div class="col-5">
+                            <div class="video-list-item active p-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="video-icon active" style="width:30px;height:30px;"><i class="bi bi-play-fill"></i></div>
+                                    <small><strong>Getting Started</strong></small>
+                                </div>
+                            </div>
+                            <div class="video-list-item p-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="video-icon inactive" style="width:30px;height:30px;"><i class="bi bi-play-fill"></i></div>
+                                    <small><strong>Customization</strong></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subtask #39 -->
+        <div class="demo-section">
+            <div class="demo-header d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-arrows-move"></i> Subtask #39: Re-Order Header Buttons</h2>
+                <span class="badge bg-success">Completed</span>
+            </div>
+            <div class="demo-note">Create button now in top right. Active/Inactive toggle inline with app title.</div>
+            <div class="comparison-row">
+                <div class="comparison-col before">
+                    <div class="comparison-label"><i class="bi bi-x-circle"></i> BEFORE</div>
+                    <div style="background: var(--bg-light); padding: 12px; border-radius: 12px;">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div class="app-tabs"><button class="app-tab active">Overview</button></div>
+                            <button class="create-btn btn-sm" style="padding:8px 16px;">Create</button>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Bundle Discount</strong>
+                            <div class="toggle-switch inactive" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="comparison-col after">
+                    <div class="comparison-label"><i class="bi bi-check-circle"></i> AFTER</div>
+                    <div style="background: var(--bg-light); padding: 12px; border-radius: 12px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid var(--border-color);">
+                            <div class="d-flex align-items-center gap-2">
+                                <strong>Bundle Discount</strong>
+                                <div class="toggle-switch active" style="transform: scale(0.5);"><div class="toggle-slider"></div></div>
+                            </div>
+                            <button class="create-btn btn-sm" style="padding:6px 12px;font-size:12px;">Create Bundle</button>
+                        </div>
+                        <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subtask #40 -->
+        <div class="demo-section">
+            <div class="demo-header d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-lightning"></i> Subtask #40: Toggle Flash Fix</h2>
+                <span class="badge bg-success">Completed</span>
+            </div>
+            <div class="demo-note">Toggle no longer flashes red/inactive on load. Shows neutral gray loading state.</div>
+            <div class="comparison-row">
+                <div class="comparison-col before">
+                    <div class="comparison-label"><i class="bi bi-x-circle"></i> BEFORE</div>
+                    <div class="text-center">
+                        <div class="toggle-switch inactive mx-auto mb-2"><div class="toggle-slider"></div><span class="toggle-label right">Inactive</span></div>
+                        <i class="bi bi-arrow-down"></i>
+                        <div class="toggle-switch active mx-auto mt-2"><div class="toggle-slider"></div><span class="toggle-label left">Active</span></div>
+                        <small class="text-muted d-block mt-2">Flashes red first</small>
+                    </div>
+                </div>
+                <div class="comparison-col after">
+                    <div class="comparison-label"><i class="bi bi-check-circle"></i> AFTER</div>
+                    <div class="text-center">
+                        <div class="toggle-switch loading mx-auto mb-2"><div class="toggle-slider"></div><div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center" style="top:0;left:0;"><div class="loading-spinner"></div></div></div>
+                        <i class="bi bi-arrow-down"></i>
+                        <div class="toggle-switch active mx-auto mt-2"><div class="toggle-slider"></div><span class="toggle-label left">Active</span></div>
+                        <small class="text-success d-block mt-2">Neutral gray loading</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Files Changed -->
+        <div class="demo-section">
+            <div class="demo-header"><h2><i class="bi bi-file-earmark-code"></i> Files Changed</h2></div>
+            <table class="table table-hover">
+                <thead><tr><th>File</th><th>Change</th><th>Subtask</th></tr></thead>
+                <tbody>
+                    <tr><td><code>web/frontend/pages/index.jsx</code></td><td>Hide plan banner for Advanced plan</td><td><span class="badge bg-primary">#37</span></td></tr>
+                    <tr><td><code>web/frontend/components/VideoList.jsx</code></td><td>New video list component</td><td><span class="badge bg-primary">#38</span></td></tr>
+                    <tr><td><code>web/frontend/apps/*/DiscountList.jsx</code></td><td>Updated 7 files with VideoList</td><td><span class="badge bg-primary">#38</span></td></tr>
+                    <tr><td><code>web/frontend/components/AppHeader.jsx</code></td><td>New header component</td><td><span class="badge bg-primary">#39</span></td></tr>
+                    <tr><td><code>web/frontend/components/ToggelSwitch.jsx</code></td><td>Fixed flash issue</td><td><span class="badge bg-primary">#40</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="text-center text-muted py-4">
+            <p class="mb-1">BusyBuddy v2 - Issue #28 Implementation</p>
+            <small>Demo page showcasing UI changes - Shopify app not required</small>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
