@@ -95,7 +95,7 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         },
       ],
     },
-    "Buy 'X' Get 'Y'": {
+    "Buy One Get One": {
       title: "Buy One Get One",
       description:
         "Run classic BOGO campaigns that reward shoppers with free or discounted products automatically.",
