@@ -13,6 +13,7 @@ import {
   Line,
   Cell,
 } from "recharts";
+import GoogleAnalyticsSection from "./GoogleAnalyticsSection";
 
 // Color palette for charts
 const CHART_COLORS = {
@@ -464,6 +465,13 @@ export default function AnnouncementBarAnalytics() {
           </Row>
         </>
       )}
+
+      {/* Google Analytics Section - Always renders with empty state when not connected */}
+      <Row className="mt-5">
+        <Col>
+          <GoogleAnalyticsSection />
+        </Col>
+      </Row>
 
       <style>{`
         .card {

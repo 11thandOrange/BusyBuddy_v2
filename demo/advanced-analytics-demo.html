@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusyBuddy - Advanced Analytics Feature Demo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .demo-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 0;
+            margin-bottom: 30px;
+        }
+        .demo-section {
+            margin-bottom: 50px;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .demo-section-title {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            color: #2c3e50;
+        }
+        .feature-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #4285f4;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .state-tabs .nav-link {
+            border-radius: 8px;
+            margin-right: 10px;
+            padding: 8px 20px;
+        }
+        .state-tabs .nav-link.active {
+            background: #4285f4;
+        }
+        .google-icon-circle {
+            width: 40px;
+            height: 40px;
+            background-color: #4285f4;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%);
+            background-size: 20px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+        .metric-card {
+            transition: transform 0.2s;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            background: #f8f9fa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .acceptance-criteria {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .criteria-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        .criteria-check {
+            color: #28a745;
+            margin-right: 10px;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="demo-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold mb-3">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Advanced Analytics Feature Demo
+                    </h1>
+                    <p class="lead mb-0">
+                        GitHub Issue #17: Add Google Analytics integration to BusyBuddy settings
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                        <i class="bi bi-github me-2"></i>
+                        BusyBuddy_v2
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Acceptance Criteria Section -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-check2-square text-success me-2"></i>
+                Acceptance Criteria
+            </h2>
+            <div class="acceptance-criteria">
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>The "Advanced Analytics" section is added to the settings tab for each bundle app and the announcement bar app</div>
+                </div>
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>Merchants can connect their Google Analytics account to BusyBuddy via the settings tab</div>
+                </div>
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>Once connected, the Google data is populated on the Analytics tab</div>
+                </div>
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>Merchants can disconnect their Google account via the settings tab</div>
+                </div>
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>Merchants can update / switch their Google account via the settings tab</div>
+                </div>
+                <div class="criteria-item">
+                    <i class="bi bi-check-circle-fill criteria-check"></i>
+                    <div>The Google data sections on the Analytics tab always render, even when no Google account is connected. These sections render with an empty state ("No Google Analytics data")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab - Advanced Analytics Section -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-gear text-primary me-2"></i>
+                Settings Tab - Advanced Analytics Section
+                <span class="feature-badge">NEW</span>
+            </h2>
+            
+            <!-- State Toggle -->
+            <ul class="nav nav-pills state-tabs mb-4" id="settingsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="disconnected-tab" data-bs-toggle="tab" data-bs-target="#disconnected" type="button">
+                        Not Connected
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="connected-tab" data-bs-toggle="tab" data-bs-target="#connected" type="button">
+                        Connected
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="settingsTabContent">
+                <!-- Disconnected State -->
+                <div class="tab-pane fade show active" id="disconnected" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="google-icon-circle">
+                                        <i class="bi bi-google"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">Advanced Analytics</h5>
+                                        <small class="text-muted">Connect Google Analytics to view your data alongside Shopify analytics</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-secondary px-3 py-2">Not Connected</span>
+                            </div>
+
+                            <div class="text-center py-5">
+                                <div class="mb-4">
+                                    <i class="bi bi-google text-muted" style="font-size: 48px;"></i>
+                                    <h6 class="mt-3">Connect Your Google Analytics Account</h6>
+                                    <p class="text-muted small mb-0" style="max-width: 400px; margin: 0 auto;">
+                                        View your Google Analytics data alongside Shopify data in one place.
+                                        Connect your account to get started.
+                                    </p>
+                                </div>
+                                <button class="btn btn-primary btn-lg d-inline-flex align-items-center gap-2">
+                                    <i class="bi bi-google"></i>
+                                    Connect Google Analytics
+                                    <i class="bi bi-box-arrow-up-right"></i>
+                                </button>
+                            </div>
+
+                            <div class="row mt-4 g-3">
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <div class="mb-2">📊</div>
+                                        <small class="text-muted">View traffic data alongside Shopify analytics</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <div class="mb-2">🔄</div>
+                                        <small class="text-muted">Automatic data sync with your store</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded bg-light">
+                                        <div class="mb-2">🔒</div>
+                                        <small class="text-muted">Secure OAuth connection to Google</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connected State -->
+                <div class="tab-pane fade" id="connected" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="google-icon-circle">
+                                        <i class="bi bi-google"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">Advanced Analytics</h5>
+                                        <small class="text-muted">Connect Google Analytics to view your data alongside Shopify analytics</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-success px-3 py-2">Connected</span>
+                            </div>
+
+                            <!-- Connected Account Info -->
+                            <div class="card border bg-light mb-3">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <i class="bi bi-person-circle text-primary" style="font-size: 40px;"></i>
+                                        <div>
+                                            <h6 class="mb-0">merchant@example.com</h6>
+                                            <small class="text-muted">Property: My Store Analytics</small><br>
+                                            <small class="text-muted">Connected: January 15, 2024</small>
+                                        </div>
+                                    </div>
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 24px;"></i>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <button class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        Switch Account
+                                    </button>
+                                </div>
+                                <div class="col-sm-6">
+                                    <button class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+                                        <i class="bi bi-x-circle"></i>
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info mt-3 mb-0">
+                                <small>
+                                    <strong>Note:</strong> Google Analytics data will appear on the Analytics tab.
+                                    Data may take a few minutes to sync after connecting.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab - Google Analytics Section -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-bar-chart-line text-info me-2"></i>
+                Analytics Tab - Google Analytics Section
+                <span class="feature-badge">NEW</span>
+            </h2>
+
+            <!-- State Toggle -->
+            <ul class="nav nav-pills state-tabs mb-4" id="analyticsTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="empty-state-tab" data-bs-toggle="tab" data-bs-target="#empty-state" type="button">
+                        Empty State (Not Connected)
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="data-state-tab" data-bs-toggle="tab" data-bs-target="#data-state" type="button">
+                        With Data (Connected)
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="analyticsTabContent">
+                <!-- Empty State -->
+                <div class="tab-pane fade show active" id="empty-state" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <div class="empty-state-icon">
+                                <i class="bi bi-google text-muted" style="font-size: 40px;"></i>
+                            </div>
+                            <h5 class="text-muted mb-3">No Google Analytics Data</h5>
+                            <p class="text-muted mb-4" style="max-width: 400px; margin: 0 auto;">
+                                Connect your Google Analytics account in the Settings tab to view
+                                traffic and engagement data alongside your Shopify analytics.
+                            </p>
+                            <button class="btn btn-outline-primary d-inline-flex align-items-center gap-2">
+                                Go to Settings
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- With Data State -->
+                <div class="tab-pane fade" id="data-state" role="tabpanel">
+                    <!-- Google Analytics Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="google-icon-circle" style="width: 36px; height: 36px;">
+                                <i class="bi bi-google" style="font-size: 16px;"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0">Google Analytics</h4>
+                                <small class="text-muted">Traffic and engagement metrics from your website</small>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary btn-sm">7D</button>
+                            <button class="btn btn-primary btn-sm">30D</button>
+                            <button class="btn btn-outline-primary btn-sm">90D</button>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Cards -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-3">
+                            <div class="card metric-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-muted text-uppercase small mb-0">Total Sessions</h6>
+                                        <i class="bi bi-globe text-primary"></i>
+                                    </div>
+                                    <h3 class="fw-bold">12,458</h3>
+                                    <small class="text-success"><i class="bi bi-arrow-up"></i> 12.5% from last period</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card metric-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-muted text-uppercase small mb-0">Total Users</h6>
+                                        <i class="bi bi-people text-success"></i>
+                                    </div>
+                                    <h3 class="fw-bold">8,942</h3>
+                                    <small class="text-success"><i class="bi bi-arrow-up"></i> 8.3% from last period</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card metric-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-muted text-uppercase small mb-0">Page Views</h6>
+                                        <i class="bi bi-graph-up text-info"></i>
+                                    </div>
+                                    <h3 class="fw-bold">45,230</h3>
+                                    <small class="text-success"><i class="bi bi-arrow-up"></i> 15.2% from last period</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card metric-card h-100">
+                                <div class="card-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="text-muted text-uppercase small mb-0">Avg. Duration</h6>
+                                        <i class="bi bi-clock text-warning"></i>
+                                    </div>
+                                    <h3 class="fw-bold">2:34</h3>
+                                    <small class="text-muted">Average time on site</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-lg-8">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3">Traffic Trend</h5>
+                                    <div class="chart-placeholder">
+                                        <span><i class="bi bi-graph-up me-2"></i>Line Chart: Sessions, Page Views, Users over time</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-3">Traffic Sources</h5>
+                                    <div class="chart-placeholder">
+                                        <span><i class="bi bi-pie-chart me-2"></i>Pie Chart: Organic, Direct, Social, Referral</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Pages Table -->
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">Top Pages</h5>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Page Path</th>
+                                            <th class="text-end">Page Views</th>
+                                            <th class="text-end">Unique Views</th>
+                                            <th class="text-end">Avg. Time</th>
+                                            <th class="text-end">Bounce Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div style="width: 12px; height: 12px; background: #4285f4; border-radius: 2px; margin-right: 8px;"></div>
+                                                    /products/summer-collection
+                                                </div>
+                                            </td>
+                                            <td class="text-end">5,234</td>
+                                            <td class="text-end">3,421</td>
+                                            <td class="text-end">3:45</td>
+                                            <td class="text-end">32.5%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div style="width: 12px; height: 12px; background: #34a853; border-radius: 2px; margin-right: 8px;"></div>
+                                                    /collections/bundles
+                                                </div>
+                                            </td>
+                                            <td class="text-end">4,102</td>
+                                            <td class="text-end">2,891</td>
+                                            <td class="text-end">2:30</td>
+                                            <td class="text-end">28.1%</td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div style="width: 12px; height: 12px; background: #fbbc04; border-radius: 2px; margin-right: 8px;"></div>
+                                                    /cart
+                                                </div>
+                                            </td>
+                                            <td class="text-end">3,856</td>
+                                            <td class="text-end">2,654</td>
+                                            <td class="text-end">1:15</td>
+                                            <td class="text-end">15.3%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Files Modified Section -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-file-code text-secondary me-2"></i>
+                Files Created / Modified
+            </h2>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <i class="bi bi-plus-circle me-2"></i>New Files Created
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <code>components/Settings/AdvancedAnalyticsSettings.jsx</code>
+                                <br><small class="text-muted">Main settings component for Google Analytics connection</small>
+                            </li>
+                            <li class="list-group-item">
+                                <code>components/Analytics/GoogleAnalyticsSection.jsx</code>
+                                <br><small class="text-muted">Analytics display component with empty state handling</small>
+                            </li>
+                            <li class="list-group-item">
+                                <code>demo/advanced-analytics-demo.html</code>
+                                <br><small class="text-muted">This demo page</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning">
+                            <i class="bi bi-pencil me-2"></i>Files Modified
+                        </div>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <code>components/Settings.jsx</code>
+                                <br><small class="text-muted">Added AdvancedAnalyticsSettings import and section</small>
+                            </li>
+                            <li class="list-group-item">
+                                <code>components/Analytics/BundleAnalytics.jsx</code>
+                                <br><small class="text-muted">Added GoogleAnalyticsSection to bundle analytics</small>
+                            </li>
+                            <li class="list-group-item">
+                                <code>components/Analytics/AnnouncementAnalytics.jsx</code>
+                                <br><small class="text-muted">Added GoogleAnalyticsSection to announcement analytics</small>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backend API Requirements -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-server text-purple me-2"></i>
+                Backend API Endpoints Required
+            </h2>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/api/analytics/google/status</code></td>
+                            <td><span class="badge bg-info">GET</span></td>
+                            <td>Check if Google Analytics is connected, returns account email and property info</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/analytics/google/connect</code></td>
+                            <td><span class="badge bg-success">POST</span></td>
+                            <td>Initiate OAuth flow, returns Google OAuth URL for authentication</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/analytics/google/disconnect</code></td>
+                            <td><span class="badge bg-success">POST</span></td>
+                            <td>Disconnect the Google Analytics account</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/analytics/google/data</code></td>
+                            <td><span class="badge bg-info">GET</span></td>
+                            <td>Fetch Google Analytics data (sessions, pageviews, users, traffic sources, top pages)</td>
+                        </tr>
+                        <tr>
+                            <td><code>/api/analytics/google/callback</code></td>
+                            <td><span class="badge bg-info">GET</span></td>
+                            <td>OAuth callback endpoint for Google authentication</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Implementation Notes -->
+        <div class="demo-section">
+            <h2 class="demo-section-title">
+                <i class="bi bi-info-circle text-info me-2"></i>
+                Implementation Notes
+            </h2>
+            
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5><i class="bi bi-shield-check text-success me-2"></i>Security</h5>
+                            <ul class="mb-0">
+                                <li>OAuth 2.0 for secure Google authentication</li>
+                                <li>Tokens stored securely in database</li>
+                                <li>API endpoints protected by session middleware</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5><i class="bi bi-arrow-repeat text-primary me-2"></i>Data Sync</h5>
+                            <ul class="mb-0">
+                                <li>Data fetched on-demand when Analytics tab is viewed</li>
+                                <li>Supports 7-day, 30-day, and 90-day time ranges</li>
+                                <li>Graceful error handling with user feedback</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center py-5">
+            <p class="text-muted">
+                <i class="bi bi-github me-2"></i>
+                BusyBuddy_v2 - Advanced Analytics Feature
+                <br>
+                <small>GitHub Issue #17</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

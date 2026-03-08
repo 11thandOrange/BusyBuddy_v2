@@ -16,6 +16,7 @@ import {
   XCircle,
   ExclamationTriangle,
 } from "react-bootstrap-icons";
+import AdvancedAnalyticsSettings from "./Settings/AdvancedAnalyticsSettings";
 
 export default function Settings() {
   const [smartBundle, setSmartBundle] = useState("enabled");
@@ -24,6 +25,12 @@ export default function Settings() {
 
   return (
     <Container fluid className="py-4">
+      {/* Advanced Analytics Section */}
+      <Row className="g-4 mb-4">
+        <Col xs={12}>
+          <AdvancedAnalyticsSettings />
+        </Col>
+      </Row>
       <Row className="g-4">
         {/* Smart Bundle Detection */}
         <Col xs={12}>
