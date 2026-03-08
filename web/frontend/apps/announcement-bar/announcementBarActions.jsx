@@ -28,6 +28,7 @@ import { SketchPicker } from "react-color";
 import AnnouncementBarActions from "./announcementBarActions";
 import "./announcementBarStyles.css";
 import dropdown from "../../assets/Vector.png";
+import EmailBarSettings from "./components/EmailBarSettings";
 
 // export default function BundleDiscountActions({ onMakeBundleClick, editingBar ,onSuccess}) {
 const BundleDiscountActions = React.forwardRef(
@@ -260,6 +261,33 @@ const BundleDiscountActions = React.forwardRef(
     const [successMessage, setSuccessMessage] = useState("");
     const [totalOrderCount, setTotalOrderCount] = useState("");
     const [targetAmount, setTargetAmount] = useState("2");
+    
+    // Email bar settings
+    const [emailSettings, setEmailSettings] = useState({
+      templateId: "",
+      templateName: "",
+      listId: "",
+      listName: "",
+      emailSuccessMessage: "Thank you for subscribing!",
+      buttonText: "Subscribe",
+      placeholderText: "Enter your email",
+      inputStyles: {
+        backgroundColor: "#ffffff",
+        borderColor: "#cccccc",
+        borderRadius: "4px",
+        fontColor: "#000000",
+        fontSize: "14px",
+        padding: "10px 15px",
+      },
+      buttonStyles: {
+        backgroundColor: "#000000",
+        fontColor: "#ffffff",
+        borderRadius: "4px",
+        fontSize: "14px",
+        padding: "10px 20px",
+        hoverBackgroundColor: "#333333",
+      },
+    });
     // NEW: "End Sale" Message State
     const [endSaleMessage, setEndSaleMessage] = useState("End Sale in");
     const [showEndSaleMessage, setShowEndSaleMessage] = useState(false);
@@ -1072,6 +1100,8 @@ const BundleDiscountActions = React.forwardRef(
           showEmojiPickerMessage,
           selectedIndex,
           timeRemaining,
+          // Email Settings
+          emailSettings,
         };
 
         // ✅ Frontend validation
@@ -1421,6 +1451,9 @@ const BundleDiscountActions = React.forwardRef(
                                     </option>
                                     <option value="Orders Counter">
                                       Orders Counter
+                                    </option>
+                                    <option value="Email">
+                                      Email Subscription
                                     </option>
                                   </Form.Select>
                                   <span className="dropdown-icon">
@@ -2043,6 +2076,16 @@ const BundleDiscountActions = React.forwardRef(
                                     />
                                   </InputGroup>
                                 </Form.Group>
+                              )}
+                              
+                              {/* Email Bar Settings Section */}
+                              {selectedOption === "Email" && (
+                                <div className="mt-3">
+                                  <EmailBarSettings
+                                    emailSettings={emailSettings}
+                                    onEmailSettingsChange={setEmailSettings}
+                                  />
+                                </div>
                               )}
                             </div>
                           </div>

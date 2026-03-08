@@ -120,6 +120,45 @@ const countdownSettingsSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const emailInputStylesSchema = new mongoose.Schema(
+  {
+    backgroundColor: { type: String, default: "#ffffff" },
+    borderColor: { type: String, default: "#cccccc" },
+    borderRadius: { type: String, default: "4px" },
+    fontColor: { type: String, default: "#000000" },
+    fontSize: { type: String, default: "14px" },
+    padding: { type: String, default: "10px 15px" },
+  },
+  { _id: false }
+);
+
+const emailButtonStylesSchema = new mongoose.Schema(
+  {
+    backgroundColor: { type: String, default: "#000000" },
+    fontColor: { type: String, default: "#ffffff" },
+    borderRadius: { type: String, default: "4px" },
+    fontSize: { type: String, default: "14px" },
+    padding: { type: String, default: "10px 20px" },
+    hoverBackgroundColor: { type: String, default: "#333333" },
+  },
+  { _id: false }
+);
+
+const emailSettingsSchema = new mongoose.Schema(
+  {
+    templateId: { type: String, default: "" },
+    templateName: { type: String, default: "" },
+    listId: { type: String, default: "" },
+    listName: { type: String, default: "" },
+    emailSuccessMessage: { type: String, default: "Thank you for subscribing!" },
+    buttonText: { type: String, default: "Subscribe" },
+    placeholderText: { type: String, default: "Enter your email" },
+    inputStyles: { type: emailInputStylesSchema, default: () => ({}) },
+    buttonStyles: { type: emailButtonStylesSchema, default: () => ({}) },
+  },
+  { _id: false }
+);
+
 const announcementBarSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
@@ -128,7 +167,12 @@ const announcementBarSchema = new mongoose.Schema(
     progressMessage: { type: String, default: "" },
     successMessage: { type: String, default: "" },
     totalOrderCount: { type: String, default: "" },
-    type: { type: String, default: "Text" },
+    type: { 
+      type: String, 
+      enum: ["Text", "Countdown Timer", "Free Shipping", "Orders Counter", "Email"],
+      default: "Text" 
+    },
+    emailSettings: { type: emailSettingsSchema, default: () => ({}) },
     internalName: { type: String },
     priority: { type: Number, default: 1 },
     barPosition: { type: String, default: "top" },

@@ -4,6 +4,8 @@ import Bundle from "../../models/bundle.model.js";
 import InactiveTab from "../../models/inactiveTab.model.js";
 import AnnouncementBar from "../../models/announcementBar.model.js";
 import Shop from "../../models/shop.model.js";
+import EmailProvider from "../../models/emailProvider.model.js";
+import EmailService, { EmailServiceError } from "../../services/emailService.js";
 import { checkSubscriptionAccess, getFeatureNameFromEndpoint } from "../../configs/subscriptionUtils.js";
 // async function getActiveBundle(req, res) {
 //   // In your backend route handler
@@ -270,4 +272,111 @@ async function getAnnouncementBar(req, res) {
     res.status(500).json({ error: "Failed to load Inactive tab content" });
   }
 }
-export { getActiveBundle, getInactiveTab, getAnnouncementBar };
+/**
+ * Subscribe customer email from announcement bar
+ */
+async function subscribeEmail(req, res) {
+  try {
+    const { email, announcementBarId, listId } = req.body;
+    const shopDomain = res.locals.shopify.session.shop;
+
+    // Validate email
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid email address",
+      });
+    }
+
+    // Get shop data
+    const shopData = await Shop.findOne({ shopDomain });
+    if (!shopData) {
+      return res.status(404).json({
+        success: false,
+        message: "Shop not found",
+      });
+    }
+
+    // Get announcement bar
+    const announcementBar = await AnnouncementBar.findById(announcementBarId);
+    if (!announcementBar) {
+      return res.status(404).json({
+        success: false,
+        message: "Announcement bar not found",
+      });
+    }
+
+    // Get email provider for this shop
+    const emailProvider = await EmailProvider.findOne({ 
+      shopId: shopData._id,
+      isConnected: true 
+    });
+
+    if (!emailProvider) {
+      return res.status(400).json({
+        success: false,
+        message: "Email provider not configured",
+      });
+    }
+
+    // Determine which list to use
+    const targetListId = listId || announcementBar.emailSettings?.listId || emailProvider.defaultListId;
+    
+    if (!targetListId) {
+      return res.status(400).json({
+        success: false,
+        message: "No email list configured",
+      });
+    }
+
+    // Subscribe the email
+    const options = {};
+    if (emailProvider.serverPrefix) {
+      options.serverPrefix = emailProvider.serverPrefix;
+    }
+
+    await EmailService.subscribe(
+      emailProvider.provider,
+      emailProvider.apiKey,
+      options,
+      email,
+      targetListId,
+      {
+        tags: ['announcement-bar', `bar-${announcementBarId}`],
+      }
+    );
+
+    // Increment subscription count
+    await EmailProvider.findByIdAndUpdate(emailProvider._id, {
+      $inc: { subscriptionCount: 1 }
+    });
+
+    // Track conversion for analytics
+    await AnnouncementBar.findByIdAndUpdate(announcementBarId, {
+      $inc: { conversions: 1 }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: announcementBar.emailSettings?.emailSuccessMessage || "Thank you for subscribing!",
+    });
+
+  } catch (error) {
+    console.error("Error subscribing email:", error);
+
+    if (error instanceof EmailServiceError) {
+      return res.status(error.statusCode || 400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to subscribe. Please try again later.",
+      error: error.message,
+    });
+  }
+}
+
+export { getActiveBundle, getInactiveTab, getAnnouncementBar, subscribeEmail };

@@ -12,6 +12,7 @@ import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
+import EmailIntegration from "./components/EmailIntegration";
 
 export default function DiscountList({
   onMakeBundleClick,
@@ -630,11 +631,9 @@ export default function DiscountList({
         )}
         {selectedTab === "Setting" && (
           <div className="d-flex flex-column gap-3 ">
-            {" "}
+            {/* General Settings */}
             <>
               <Row className="g-0 linrrow">
-                {" "}
-                {/* Each bundle in a separate row */}
                 <Card className="border-0 w-full" style={{ background: "rgb(241, 242, 244)" }}>
                   <Card.Body className="d-flex align-items-center justify-content-between">
                     <div className="d-flex flex-column gap-[10px]">
@@ -676,6 +675,13 @@ export default function DiscountList({
                 </Card>
               </Row>
             </>
+            
+            {/* Email Integration Section */}
+            <Row className="g-0 mt-3">
+              <Col xs={12}>
+                <EmailIntegration />
+              </Col>
+            </Row>
           </div>
         )}
         {selectedTab === "Analytics" && (
