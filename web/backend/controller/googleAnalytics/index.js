@@ -75,9 +75,11 @@ async function initiateGoogleConnect(req, res) {
     const shopDomain = session.shop;
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      return res.status(500).json({
+      console.error("Google OAuth credentials not configured. Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables.");
+      return res.status(400).json({
         success: false,
-        error: "Google OAuth credentials not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.",
+        error: "Google Analytics integration is not configured. Please contact the app administrator to set up Google OAuth credentials.",
+        details: "Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET environment variables.",
       });
     }
 

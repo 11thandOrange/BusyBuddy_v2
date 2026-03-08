@@ -71,12 +71,13 @@ export default function AdvancedAnalyticsSettings() {
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to initiate Google connection");
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to initiate Google connection");
       }
 
-      const result = await response.json();
-      if (result.success && result.data?.authUrl) {
+      if (result.data?.authUrl) {
         // Open Google OAuth in a new window
         window.open(result.data.authUrl, "_blank", "width=600,height=700");
         // Poll for connection status
