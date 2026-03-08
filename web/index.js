@@ -14,6 +14,7 @@ import shopData from "./middleware/shopData.js";
 import { verifySHA256 } from "./middleware/verify-signature.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
+import { handleGoogleCallback } from "./backend/controller/googleAnalytics/index.js";
 dotenv.config();
 const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || "3000", 10);
 
@@ -51,6 +52,10 @@ app.get(
   shopify.redirectToShopifyOrAppRoot()
 );
 app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
+
+// Google OAuth callback - must be BEFORE Shopify auth middleware
+// since Google redirects directly to this URL without Shopify credentials
+app.get("/api/analytics/google/callback", handleGoogleCallback);
 
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
