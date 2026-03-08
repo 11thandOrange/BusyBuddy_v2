@@ -17,7 +17,7 @@ class BOGOBundle {
     this.selectedXProducts = new Map();
     this.selectedYProducts = new Map();
     this.init();
-  }ou
+  }
 
   async init() {
     this.container = document.querySelector(".bogo-bundle-container");
