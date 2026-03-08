@@ -20,7 +20,6 @@ import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import EmojiPicker from "emoji-picker-react";
 import VideoList from "../../components/VideoList";
-import ToggleSwitch from "../../components/ToggelSwitch";
 
 // Inactive Tab Message specific videos
 const inactiveTabVideos = [
@@ -267,36 +266,6 @@ export default function DiscountList({ onMakeBundleClick }) {
         padding: "5px 15px",
       }}
     >
-      {/* App Header - Two columns: [Title + Toggle] | [Create Button] */}
-      <Row className="align-items-center mb-3" style={{ padding: "20px 0", borderBottom: "1px solid #e3e3e3" }}>
-        {/* Left Column: Title (left) + Toggle (right) */}
-        <Col xs={12} md={6} className="d-flex align-items-center justify-content-between mb-3 mb-md-0">
-          <h2 style={{ fontWeight: 600, fontSize: "24px", margin: 0, color: "#303030" }}>
-            Inactive Tab Message
-          </h2>
-          <ToggleSwitch appId="inactive_tab_message" />
-        </Col>
-        {/* Right Column: Create Button */}
-        <Col xs={12} md={6} className="d-flex justify-content-end">
-          <Button
-            text="Create Message"
-            onClick={() => {
-              setShowBundleAction(true);
-              if (onMakeBundleClick) onMakeBundleClick();
-            }}
-            style={{
-              background: "black",
-              borderRadius: "12px",
-              padding: "12px 24px",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "14px",
-              height: "48px",
-            }}
-          />
-        </Col>
-      </Row>
-
       {/* Alert Notification */}
       {alert.show && (
         <Alert variant={alert.type} className="mt-3">

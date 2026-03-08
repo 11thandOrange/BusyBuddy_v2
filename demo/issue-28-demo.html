@@ -328,38 +328,44 @@
                 <span class="badge bg-success">Completed</span>
             </div>
             <div class="demo-note">
-                <strong>Header Layout:</strong><br>
-                • Left Column: Title (left) + Toggle (right)<br>
-                • Right Column: Create button (regular apps) OR "Create Another Discount" + "Create" (bundle apps)
+                <strong>Page Structure:</strong><br>
+                • ONE header at the top (in parent component, e.g., BundleForm.jsx)<br>
+                • Header: [Title | Toggle] on left, [Create Another Discount (bundle only) | Toggle] on right<br>
+                • Body: Just tabs (Overview, Discounts, Settings, Analytics) - NO buttons in tab row<br>
+                • DiscountList.jsx only contains tabs + content (no header)
             </div>
             
-            <!-- Regular App Example -->
-            <h5 class="mt-4 mb-3">Regular App (e.g., Announcement Bar)</h5>
-            <div style="background: var(--bg-light); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-                <div class="d-flex justify-content-between align-items-center pb-3 mb-3" style="border-bottom: 1px solid var(--border-color);">
-                    <div class="d-flex justify-content-between align-items-center" style="flex: 1; max-width: 50%;">
-                        <strong style="font-size: 18px;">Announcement Bar</strong>
-                        <div class="toggle-switch active" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
-                    </div>
-                    <button class="create-btn" style="padding:10px 20px;">Create Announcement</button>
-                </div>
-                <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button><button class="app-tab" style="padding:8px 16px;">Settings</button></div>
-            </div>
-            
-            <!-- Bundle App Example -->
-            <h5 class="mb-3">Bundle App (e.g., Bundle Discount)</h5>
-            <div style="background: var(--bg-light); padding: 16px; border-radius: 12px;">
-                <div class="d-flex justify-content-between align-items-center pb-3 mb-3" style="border-bottom: 1px solid var(--border-color);">
-                    <div class="d-flex justify-content-between align-items-center" style="flex: 1; max-width: 50%;">
-                        <strong style="font-size: 18px;">Bundle Discount</strong>
-                        <div class="toggle-switch active" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button style="background: white; border: 1px solid #e3e3e3; border-radius: 12px; padding: 10px 16px; font-weight: 600; font-size: 13px;">Create Another Discount</button>
-                        <button class="create-btn" style="padding:10px 20px;">Create Bundle</button>
+            <!-- Page Structure Example -->
+            <h5 class="mt-4 mb-3">Complete Page Layout</h5>
+            <div style="background: var(--bg-light); padding: 20px; border-radius: 12px;">
+                <!-- Header (in parent component) -->
+                <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 2px dashed #4CAF50;">
+                    <small style="color: #4CAF50; font-weight: 600;">← HEADER (in BundleForm.jsx / parent)</small>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <div>
+                            <strong style="font-size: 20px;">Bundle Discount</strong>
+                            <p style="color: #616161; font-size: 14px; margin: 4px 0 0 0;">Get Noticed! Want to make sure your message...</p>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <button style="background: black; color: white; border: none; border-radius: 15px; padding: 15px 25px; font-weight: 500;">Create Another Discount</button>
+                            <div class="toggle-switch active" style="transform: scale(0.8);"><div class="toggle-slider"></div></div>
+                        </div>
                     </div>
                 </div>
-                <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button><button class="app-tab" style="padding:8px 16px;">Discounts</button></div>
+                
+                <!-- Body (DiscountList.jsx) -->
+                <div style="background: white; padding: 16px; border-radius: 8px; border: 2px dashed #2196F3;">
+                    <small style="color: #2196F3; font-weight: 600;">← BODY (DiscountList.jsx - tabs only, no header)</small>
+                    <div class="app-tabs mt-2" style="background: #F1F2F4; padding: 8px; border-radius: 15px;">
+                        <button class="app-tab active" style="padding:10px 20px;">Overview</button>
+                        <button class="app-tab" style="padding:10px 20px;">Discounts</button>
+                        <button class="app-tab" style="padding:10px 20px;">Settings</button>
+                        <button class="app-tab" style="padding:10px 20px;">Analytics</button>
+                    </div>
+                    <div style="margin-top: 16px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #666;">
+                        Tab content area...
+                    </div>
+                </div>
             </div>
         </div>
 

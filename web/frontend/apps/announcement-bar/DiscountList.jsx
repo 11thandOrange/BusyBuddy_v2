@@ -13,7 +13,6 @@ import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
 import VideoList from "../../components/VideoList";
-import ToggleSwitch from "../../components/ToggelSwitch";
 
 // Announcement Bar specific videos
 const announcementBarVideos = [
@@ -229,36 +228,6 @@ export default function DiscountList({
         padding: "5px 15px",
       }}
     >
-      {/* App Header - Two columns: [Title + Toggle] | [Create Button] */}
-      <Row className="align-items-center mb-3" style={{ padding: "20px 0", borderBottom: "1px solid #e3e3e3" }}>
-        {/* Left Column: Title (left) + Toggle (right) */}
-        <Col xs={12} md={6} className="d-flex align-items-center justify-content-between mb-3 mb-md-0">
-          <h2 style={{ fontWeight: 600, fontSize: "24px", margin: 0, color: "#303030" }}>
-            Announcement Bar
-          </h2>
-          <ToggleSwitch appId="announcement_bar" />
-        </Col>
-        {/* Right Column: Create Button */}
-        <Col xs={12} md={6} className="d-flex justify-content-end">
-          <Button
-            text="Create Announcement"
-            onClick={() => {
-              setShowBundleAction(true);
-              if (onMakeBundleClick) onMakeBundleClick();
-            }}
-            style={{
-              background: "black",
-              borderRadius: "12px",
-              padding: "12px 24px",
-              color: "white",
-              fontWeight: 600,
-              fontSize: "14px",
-              height: "48px",
-            }}
-          />
-        </Col>
-      </Row>
-
       {/* Navigation Tabs */}
       <Row>
         <div className="d-flex gap-1">
