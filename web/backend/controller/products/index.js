@@ -1,44 +1,26 @@
 import { GET_PRODUCTS, GET_BUNDLE_PRODUCTS, GET_COLLECTIONS } from "../../services/mutations.js";
 import shopify from "../../../shopify.js";
-
 async function getProducts(_, res) {
-  try {
-    const session = res.locals.shopify.session;
-    const client = new shopify.api.clients.Graphql({
-      session: session,
-      apiVersion: "2024-10",
-    });
+  const session = res.locals.shopify.session;
+  const client = new shopify.api.clients.Graphql({
+    session: session,
+    apiVersion: "2024-10",
+  });
 
-    const data = await client.request(GET_PRODUCTS);
-    res.status(200).json({ status: true, data: data?.data });
-  } catch (error) {
-    console.error("Error fetching products:", error.message);
-    res.status(200).json({ 
-      status: false, 
-      data: { products: { edges: [] } },
-      error: "Unable to fetch products. Please check app permissions."
-    });
-  }
+  const data = await client.request(GET_PRODUCTS);
+
+  res.status(200).json({ status: true, data: data?.data });
 }
 
 async function getCollections(_, res) {
-  try {
-    const session = res.locals.shopify.session;
-    const client = new shopify.api.clients.Graphql({
-      session: session,
-      apiVersion: "2025-10",
-    });
+  const session = res.locals.shopify.session;
+  const client = new shopify.api.clients.Graphql({
+    session: session,
+    apiVersion: "2025-10",
+  });
 
-    const data = await client.request(GET_COLLECTIONS);
-    res.status(200).json({ status: true, data: data?.data });
-  } catch (error) {
-    console.error("Error fetching collections:", error.message);
-    res.status(200).json({ 
-      status: false, 
-      data: { collections: { edges: [] } },
-      error: "Unable to fetch collections. Please check app permissions."
-    });
-  }
+  const data = await client.request(GET_COLLECTIONS);
+  res.status(200).json({ status: true, data: data?.data });
 }
 async function getBundleProducts(req, res) {
   try {
