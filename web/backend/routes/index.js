@@ -7,6 +7,7 @@ import announcementBarRoutes from './announcementBars/index.js';
 import subscriptionRoutes from './subscription/index.js';
 import inactivetabRoutes from './inactivetabs/index.js';
 import analyticsRoutes from './analytics/index.js';
+import referralRoutes from './referrals/index.js';
 
 router.use('/products', productRoutes); 
 router.use('/bundles', bundleRoutes);
@@ -15,5 +16,6 @@ router.use('/announcement-bars', announcementBarRoutes);
 router.use('/subscription', subscriptionRoutes);
 router.use('/inactive-tab', inactivetabRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/referrals', referralRoutes);
 
 export default router;
