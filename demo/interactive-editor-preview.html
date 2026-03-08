@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusyBuddy Interactive Editor Preview - Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    
+    /* Header */
+    .demo-header {
+      background: linear-gradient(135deg, #5169DD 0%, #3b4eb8 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    
+    .demo-header h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+    
+    .demo-header p {
+      opacity: 0.9;
+      font-size: 16px;
+    }
+    
+    .demo-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    
+    /* Main Container */
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+    
+    .editor-layout {
+      display: flex;
+      gap: 20px;
+    }
+    
+    /* Config Panel */
+    .config-panel {
+      width: 350px;
+      flex-shrink: 0;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: none;
+    }
+    
+    .config-panel.visible {
+      display: block;
+    }
+    
+    .config-header {
+      background: #f8f9fa;
+      padding: 15px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .config-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .config-close {
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    
+    .config-close:hover {
+      background: #e0e0e0;
+    }
+    
+    .config-body {
+      padding: 20px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    .form-control:focus {
+      outline: none;
+      border-color: #5169DD;
+      box-shadow: 0 0 0 3px rgba(81, 105, 221, 0.1);
+    }
+    
+    .color-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .color-input {
+      width: 50px;
+      height: 40px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      padding: 2px;
+    }
+    
+    .color-text {
+      font-family: monospace;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .range-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .range-wrapper input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #e0e0e0;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+    .range-wrapper input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #5169DD;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .range-value {
+      min-width: 50px;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .btn-delete {
+      width: 100%;
+      padding: 12px;
+      background: rgba(196, 41, 14, 0.1);
+      color: #C4290E;
+      border: 1px solid #C4290E;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-delete:hover {
+      background: #C4290E;
+      color: white;
+    }
+    
+    /* Preview Panel */
+    .preview-panel {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    
+    .preview-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .preview-title {
+      font-weight: 600;
+      font-size: 18px;
+    }
+    
+    /* Viewport Toggle */
+    .viewport-toggle {
+      display: flex;
+      gap: 4px;
+      background: #f1f2f4;
+      padding: 4px;
+      border-radius: 10px;
+    }
+    
+    .viewport-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
+    }
+    
+    .viewport-btn.active {
+      background: #222;
+      color: white;
+    }
+    
+    .viewport-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    /* Preview Content */
+    .preview-content {
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    
+    .preview-viewport {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e0;
+      transition: max-width 0.3s ease;
+      margin: 0 auto;
+    }
+    
+    .preview-viewport.mobile {
+      max-width: 375px;
+    }
+    
+    /* Storefront Simulation */
+    .storefront-header {
+      background: #ffffff;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .storefront-logo {
+      font-weight: 700;
+      font-size: 18px;
+      color: #333;
+    }
+    
+    .storefront-nav {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .storefront-nav span {
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* Widget Preview Area */
+    .widget-area {
+      background: linear-gradient(135deg, #5169DD 0%, #3b4eb8 100%);
+      padding: 15px;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .empty-message {
+      color: rgba(255,255,255,0.7);
+      font-style: italic;
+    }
+    
+    /* Draggable Elements */
+    .draggable-element {
+      position: relative;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      padding: 4px;
+    }
+    
+    .draggable-element:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .draggable-element.selected {
+      border-color: white;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .draggable-element.dragging {
+      opacity: 0.6;
+      transform: scale(1.02);
+    }
+    
+    .draggable-element.drag-over {
+      border-color: #fff !important;
+      background: rgba(255, 255, 255, 0.3) !important;
+      transform: scale(1.05);
+    }
+    
+    /* Drag Handle */
+    .drag-handle {
+      position: absolute;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      color: #5169DD;
+      padding: 4px 10px;
+      border-radius: 4px 4px 0 0;
+      cursor: grab;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+    }
+    
+    .draggable-element:hover .drag-handle,
+    .draggable-element.selected .drag-handle {
+      opacity: 1;
+    }
+    
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    
+    /* Element Type Badge */
+    .element-badge {
+      position: absolute;
+      top: -28px;
+      right: 0;
+      background: white;
+      color: #5169DD;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .draggable-element.selected .element-badge {
+      opacity: 1;
+    }
+    
+    /* Preview Element Styles */
+    .preview-text {
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .preview-countdown {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: white;
+    }
+    
+    .countdown-segment {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    
+    .countdown-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .countdown-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      opacity: 0.8;
+    }
+    
+    .countdown-separator {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    
+    .preview-button {
+      background: white;
+      color: #5169DD;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .preview-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .preview-emoji {
+      font-size: 24px;
+    }
+    
+    /* Storefront Content */
+    .storefront-content {
+      background: #ffffff;
+      padding: 40px 20px;
+    }
+    
+    .storefront-hero {
+      text-align: center;
+      padding: 20px 0 40px;
+    }
+    
+    .storefront-hero h2 {
+      font-size: 28px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .storefront-hero p {
+      color: #666;
+      font-size: 16px;
+    }
+    
+    .storefront-products {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .product-card {
+      width: 150px;
+      height: 200px;
+      background: linear-gradient(135deg, #e8e8e8 0%, #f4f4f4 100%);
+      border-radius: 8px;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      padding: 20px;
+      border-top: 1px solid #e0e0e0;
+      justify-content: flex-end;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .btn-secondary {
+      background: #f1f2f4;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+    
+    .btn-secondary:hover {
+      background: #e8e9eb;
+    }
+    
+    .btn-primary {
+      background: #222;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #333;
+    }
+    
+    /* Element List Panel */
+    .element-list {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .element-list-title {
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .add-element-btn {
+      padding: 6px 12px;
+      background: #5169DD;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    
+    .add-element-btn:hover {
+      background: #4158c9;
+    }
+    
+    .element-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    
+    .element-item:hover {
+      border-color: #5169DD;
+    }
+    
+    .element-item.selected {
+      border-color: #5169DD;
+      background: rgba(81, 105, 221, 0.08);
+    }
+    
+    .element-icon {
+      width: 36px;
+      height: 36px;
+      background: #5169DD;
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    
+    .element-info {
+      flex: 1;
+    }
+    
+    .element-name {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .element-preview {
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 150px;
+    }
+    
+    .element-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .element-action-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .element-action-btn:hover {
+      background: #d0d0d0;
+    }
+    
+    .element-action-btn.delete:hover {
+      background: #ffdddd;
+      color: #C4290E;
+    }
+    
+    /* Add Element Dropdown */
+    .add-element-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 8px;
+      min-width: 160px;
+      z-index: 100;
+      display: none;
+    }
+    
+    .dropdown-menu.visible {
+      display: block;
+    }
+    
+    .dropdown-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    
+    .dropdown-item:hover {
+      background: #f1f2f4;
+    }
+    
+    .dropdown-item-icon {
+      width: 24px;
+      text-align: center;
+    }
+    
+    /* Unsaved Changes Indicator */
+    .unsaved-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #f59e0b;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .unsaved-dot {
+      width: 8px;
+      height: 8px;
+      background: #f59e0b;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Selection Animation */
+    @keyframes selectPulse {
+      0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+    
+    .draggable-element.selected {
+      animation: selectPulse 0.5s ease-out;
+    }
+    
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #222;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      font-size: 14px;
+      font-weight: 500;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    
+    .toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .toast.success {
+      background: #10b981;
+    }
+    
+    .toast.warning {
+      background: #f59e0b;
+    }
+  </style>
+</head>
+<body>
+  <!-- Demo Header -->
+  <div class="demo-header">
+    <h1>🎨 Interactive Editor Preview Demo</h1>
+    <p>GitHub Issue #49: Elements In The Editor's Live Preview Are Clickable & Draggable</p>
+    <div class="demo-badge">BusyBuddy v2 - Feature Demo</div>
+  </div>
+  
+  <!-- Main Container -->
+  <div class="main-container">
+    <div class="editor-layout">
+      <!-- Config Panel (hidden by default) -->
+      <div class="config-panel" id="configPanel">
+        <div class="config-header">
+          <span class="config-title" id="configTitle">Edit Element</span>
+          <div class="config-close" onclick="closeConfigPanel()">✕</div>
+        </div>
+        <div class="config-body" id="configBody">
+          <!-- Dynamic config will be inserted here -->
+        </div>
+      </div>
+      
+      <!-- Preview Panel -->
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span class="preview-title">Live Preview</span>
+          
+          <!-- Viewport Toggle -->
+          <div class="viewport-toggle">
+            <button class="viewport-btn active" data-viewport="desktop" onclick="setViewport('desktop')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+              </svg>
+              Desktop
+            </button>
+            <button class="viewport-btn" data-viewport="mobile" onclick="setViewport('mobile')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="2" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
+              Mobile
+            </button>
+          </div>
+        </div>
+        
+        <div class="preview-content">
+          <!-- Element List -->
+          <div class="element-list">
+            <div class="element-list-title">
+              <span>Widget Elements</span>
+              <div class="add-element-dropdown">
+                <button class="add-element-btn" onclick="toggleDropdown()">+ Add Element</button>
+                <div class="dropdown-menu" id="addElementDropdown">
+                  <div class="dropdown-item" onclick="addElement('text')">
+                    <span class="dropdown-item-icon">T</span> Text
+                  </div>
+                  <div class="dropdown-item" onclick="addElement('countdown')">
+                    <span class="dropdown-item-icon">⏱</span> Countdown
+                  </div>
+                  <div class="dropdown-item" onclick="addElement('button')">
+                    <span class="dropdown-item-icon">▢</span> Button
+                  </div>
+                  <div class="dropdown-item" onclick="addElement('emoji')">
+                    <span class="dropdown-item-icon">😀</span> Emoji
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="elementList">
+              <!-- Elements will be rendered here -->
+            </div>
+          </div>
+          
+          <!-- Preview Viewport -->
+          <div class="preview-viewport" id="previewViewport">
+            <!-- Simulated Storefront Header -->
+            <div class="storefront-header">
+              <div class="storefront-logo">Your Store</div>
+              <div class="storefront-nav">
+                <span>Home</span>
+                <span>Shop</span>
+                <span>About</span>
+                <span>Contact</span>
+              </div>
+            </div>
+            
+            <!-- Widget Area -->
+            <div class="widget-area" id="widgetArea" onclick="handleWidgetAreaClick(event)">
+              <p class="empty-message" id="emptyMessage">Click "+ Add Element" to start building your widget</p>
+            </div>
+            
+            <!-- Simulated Storefront Content -->
+            <div class="storefront-content">
+              <div class="storefront-hero">
+                <h2>Welcome to Your Store</h2>
+                <p>Discover our amazing products</p>
+              </div>
+              <div class="storefront-products">
+                <div class="product-card"></div>
+                <div class="product-card"></div>
+                <div class="product-card"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+          <div class="unsaved-indicator" id="unsavedIndicator" style="display: none;">
+            <span class="unsaved-dot"></span>
+            Unsaved changes
+          </div>
+          <button class="btn btn-secondary" onclick="discardChanges()">Discard</button>
+          <button class="btn btn-primary" onclick="saveChanges()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+  
+  <script>
+    // State Management
+    let state = {
+      viewportMode: 'desktop',
+      selectedElementId: null,
+      elements: [],
+      unsavedChanges: false,
+      lastSavedState: null
+    };
+    
+    // Default configs for each element type
+    const defaultConfigs = {
+      text: {
+        text: "🔥 Free Shipping on Orders Over $50!",
+        fontSize: "18",
+        fontFamily: "Inter",
+        fontWeight: "600",
+        fontColor: "#ffffff",
+        backgroundColor: "transparent"
+      },
+      countdown: {
+        theme: "classic",
+        digitColor: "#ffffff",
+        labelColor: "#ffffff",
+        backgroundColor: "rgba(255,255,255,0.15)",
+        showLabels: true
+      },
+      button: {
+        text: "Shop Now",
+        backgroundColor: "#ffffff",
+        textColor: "#5169DD",
+        borderRadius: "8",
+        padding: "10px 24px"
+      },
+      emoji: {
+        emoji: "🔔",
+        size: "24"
+      }
+    };
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      render();
+    });
+    
+    // Render functions
+    function render() {
+      renderElementList();
+      renderWidgetPreview();
+      updateUnsavedIndicator();
+    }
+    
+    function renderElementList() {
+      const container = document.getElementById('elementList');
+      
+      if (state.elements.length === 0) {
+        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No elements yet. Add one to get started!</p>';
+        return;
+      }
+      
+      container.innerHTML = state.elements.map((el, index) => `
+        <div class="element-item ${state.selectedElementId === el.id ? 'selected' : ''}" 
+             onclick="selectElement('${el.id}')" 
+             draggable="true"
+             ondragstart="handleDragStart(event, ${index})"
+             ondragover="handleDragOver(event)"
+             ondrop="handleDrop(event, ${index})">
+          <div class="element-icon">${getElementIcon(el.type)}</div>
+          <div class="element-info">
+            <div class="element-name">${capitalize(el.type)}</div>
+            <div class="element-preview">${getElementPreview(el)}</div>
+          </div>
+          <div class="element-actions">
+            <button class="element-action-btn delete" onclick="deleteElement(event, '${el.id}')">🗑</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function renderWidgetPreview() {
+      const container = document.getElementById('widgetArea');
+      
+      if (state.elements.length === 0) {
+        container.innerHTML = '<p class="empty-message">Click "+ Add Element" to start building your widget</p>';
+        return;
+      }
+      
+      const elementsHtml = state.elements.map((el, index) => `
+        <div class="draggable-element ${state.selectedElementId === el.id ? 'selected' : ''}" 
+             data-id="${el.id}"
+             data-index="${index}"
+             draggable="true"
+             ondragstart="handlePreviewDragStart(event, ${index})"
+             ondragover="handlePreviewDragOver(event)"
+             ondrop="handlePreviewDrop(event, ${index})"
+             ondragend="handlePreviewDragEnd(event)"
+             onclick="selectElement('${el.id}'); event.stopPropagation();">
+          <div class="drag-handle" 
+               onmousedown="event.target.parentElement.draggable = true"
+               style="cursor: grab;">⋮⋮ DRAG</div>
+          <div class="element-badge">${el.type}</div>
+          ${renderElement(el)}
+        </div>
+      `).join('');
+      
+      container.innerHTML = elementsHtml;
+    }
+    
+    function renderElement(el) {
+      const { type, config } = el;
+      
+      switch (type) {
+        case 'text':
+          return `<div class="preview-text" style="
+            font-size: ${config.fontSize}px;
+            font-family: ${config.fontFamily};
+            font-weight: ${config.fontWeight};
+            color: ${config.fontColor};
+            background-color: ${config.backgroundColor};
+          ">${config.text}</div>`;
+          
+        case 'countdown':
+          return `<div class="preview-countdown" style="color: ${config.digitColor};">
+            <div class="countdown-segment" style="background: ${config.backgroundColor};">
+              <span class="countdown-value">00</span>
+              ${config.showLabels ? `<span class="countdown-label" style="color: ${config.labelColor};">days</span>` : ''}
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-segment" style="background: ${config.backgroundColor};">
+              <span class="countdown-value">00</span>
+              ${config.showLabels ? `<span class="countdown-label" style="color: ${config.labelColor};">hours</span>` : ''}
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-segment" style="background: ${config.backgroundColor};">
+              <span class="countdown-value">00</span>
+              ${config.showLabels ? `<span class="countdown-label" style="color: ${config.labelColor};">mins</span>` : ''}
+            </div>
+            <span class="countdown-separator">:</span>
+            <div class="countdown-segment" style="background: ${config.backgroundColor};">
+              <span class="countdown-value">00</span>
+              ${config.showLabels ? `<span class="countdown-label" style="color: ${config.labelColor};">secs</span>` : ''}
+            </div>
+          </div>`;
+          
+        case 'button':
+          return `<button class="preview-button" style="
+            background-color: ${config.backgroundColor};
+            color: ${config.textColor};
+            border-radius: ${config.borderRadius}px;
+            padding: ${config.padding};
+          ">${config.text}</button>`;
+          
+        case 'emoji':
+          return `<span class="preview-emoji" style="font-size: ${config.size}px;">${config.emoji}</span>`;
+          
+        default:
+          return '<span>Unknown element</span>';
+      }
+    }
+    
+    function renderConfigPanel() {
+      const panel = document.getElementById('configPanel');
+      const title = document.getElementById('configTitle');
+      const body = document.getElementById('configBody');
+      
+      if (!state.selectedElementId) {
+        panel.classList.remove('visible');
+        return;
+      }
+      
+      const element = state.elements.find(el => el.id === state.selectedElementId);
+      if (!element) return;
+      
+      panel.classList.add('visible');
+      title.textContent = `Edit ${capitalize(element.type)}`;
+      body.innerHTML = getConfigFields(element);
+    }
+    
+    function getConfigFields(element) {
+      const { type, config } = element;
+      
+      let html = '';
+      
+      switch (type) {
+        case 'text':
+          html = `
+            <div class="form-group">
+              <label class="form-label">Text Content</label>
+              <textarea class="form-control" rows="2" onchange="updateConfig('text', this.value)">${config.text}</textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" class="color-input" value="${config.fontColor}" onchange="updateConfig('fontColor', this.value)">
+                <span class="color-text">${config.fontColor}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Size</label>
+              <div class="range-wrapper">
+                <input type="range" min="12" max="48" value="${config.fontSize}" onchange="updateConfig('fontSize', this.value); this.nextElementSibling.textContent = this.value + 'px'">
+                <span class="range-value">${config.fontSize}px</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Family</label>
+              <select class="form-control" onchange="updateConfig('fontFamily', this.value)">
+                <option value="Inter" ${config.fontFamily === 'Inter' ? 'selected' : ''}>Inter</option>
+                <option value="Arial" ${config.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                <option value="Georgia" ${config.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                <option value="Roboto" ${config.fontFamily === 'Roboto' ? 'selected' : ''}>Roboto</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Font Weight</label>
+              <select class="form-control" onchange="updateConfig('fontWeight', this.value)">
+                <option value="400" ${config.fontWeight === '400' ? 'selected' : ''}>Normal</option>
+                <option value="500" ${config.fontWeight === '500' ? 'selected' : ''}>Medium</option>
+                <option value="600" ${config.fontWeight === '600' ? 'selected' : ''}>Semi Bold</option>
+                <option value="700" ${config.fontWeight === '700' ? 'selected' : ''}>Bold</option>
+              </select>
+            </div>
+          `;
+          break;
+          
+        case 'countdown':
+          html = `
+            <div class="form-group">
+              <label class="form-label">Timer Theme</label>
+              <select class="form-control" onchange="updateConfig('theme', this.value)">
+                <option value="classic" ${config.theme === 'classic' ? 'selected' : ''}>Classic</option>
+                <option value="cards" ${config.theme === 'cards' ? 'selected' : ''}>Cards</option>
+                <option value="modern" ${config.theme === 'modern' ? 'selected' : ''}>Modern</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Digit Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" class="color-input" value="${config.digitColor}" onchange="updateConfig('digitColor', this.value)">
+                <span class="color-text">${config.digitColor}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Label Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" class="color-input" value="${config.labelColor}" onchange="updateConfig('labelColor', this.value)">
+                <span class="color-text">${config.labelColor}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Show Labels</label>
+              <input type="checkbox" ${config.showLabels ? 'checked' : ''} onchange="updateConfig('showLabels', this.checked)">
+            </div>
+          `;
+          break;
+          
+        case 'button':
+          html = `
+            <div class="form-group">
+              <label class="form-label">Button Text</label>
+              <input type="text" class="form-control" value="${config.text}" onchange="updateConfig('text', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Background Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" class="color-input" value="${config.backgroundColor}" onchange="updateConfig('backgroundColor', this.value)">
+                <span class="color-text">${config.backgroundColor}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Text Color</label>
+              <div class="color-input-wrapper">
+                <input type="color" class="color-input" value="${config.textColor}" onchange="updateConfig('textColor', this.value)">
+                <span class="color-text">${config.textColor}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Border Radius</label>
+              <div class="range-wrapper">
+                <input type="range" min="0" max="30" value="${config.borderRadius}" onchange="updateConfig('borderRadius', this.value); this.nextElementSibling.textContent = this.value + 'px'">
+                <span class="range-value">${config.borderRadius}px</span>
+              </div>
+            </div>
+          `;
+          break;
+          
+        case 'emoji':
+          html = `
+            <div class="form-group">
+              <label class="form-label">Emoji</label>
+              <input type="text" class="form-control" value="${config.emoji}" style="font-size: 24px; text-align: center;" onchange="updateConfig('emoji', this.value)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Size</label>
+              <div class="range-wrapper">
+                <input type="range" min="16" max="64" value="${config.size}" onchange="updateConfig('size', this.value); this.nextElementSibling.textContent = this.value + 'px'">
+                <span class="range-value">${config.size}px</span>
+              </div>
+            </div>
+          `;
+          break;
+      }
+      
+      html += `
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+        <button class="btn-delete" onclick="deleteElement(null, '${element.id}')">Delete Element</button>
+      `;
+      
+      return html;
+    }
+    
+    // Action handlers
+    function setViewport(mode) {
+      state.viewportMode = mode;
+      
+      // Update buttons
+      document.querySelectorAll('.viewport-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.viewport === mode);
+      });
+      
+      // Update preview
+      const viewport = document.getElementById('previewViewport');
+      viewport.classList.toggle('mobile', mode === 'mobile');
+      
+      showToast(`Switched to ${mode} view`);
+    }
+    
+    function selectElement(id) {
+      state.selectedElementId = id;
+      render();
+      renderConfigPanel();
+    }
+    
+    function closeConfigPanel() {
+      state.selectedElementId = null;
+      render();
+      document.getElementById('configPanel').classList.remove('visible');
+    }
+    
+    function handleWidgetAreaClick(event) {
+      if (event.target.classList.contains('widget-area') || event.target.id === 'widgetArea') {
+        closeConfigPanel();
+      }
+    }
+    
+    function addElement(type) {
+      const newElement = {
+        id: `element-${Date.now()}`,
+        type,
+        order: state.elements.length,
+        config: { ...defaultConfigs[type] }
+      };
+      
+      state.elements.push(newElement);
+      state.unsavedChanges = true;
+      state.selectedElementId = newElement.id;
+      
+      render();
+      renderConfigPanel();
+      toggleDropdown();
+      
+      showToast(`Added ${type} element`);
+    }
+    
+    function deleteElement(event, id) {
+      if (event) event.stopPropagation();
+      
+      state.elements = state.elements.filter(el => el.id !== id);
+      
+      if (state.selectedElementId === id) {
+        state.selectedElementId = null;
+        document.getElementById('configPanel').classList.remove('visible');
+      }
+      
+      state.unsavedChanges = true;
+      render();
+      
+      showToast('Element deleted', 'warning');
+    }
+    
+    function updateConfig(key, value) {
+      const element = state.elements.find(el => el.id === state.selectedElementId);
+      if (element) {
+        element.config[key] = value;
+        state.unsavedChanges = true;
+        renderWidgetPreview();
+        updateUnsavedIndicator();
+      }
+    }
+    
+    function toggleDropdown() {
+      const dropdown = document.getElementById('addElementDropdown');
+      dropdown.classList.toggle('visible');
+    }
+    
+    // Drag and Drop for Element List
+    let draggedIndex = null;
+    
+    function handleDragStart(event, index) {
+      draggedIndex = index;
+      event.target.classList.add('dragging');
+    }
+    
+    function handleDragOver(event) {
+      event.preventDefault();
+    }
+    
+    function handleDrop(event, dropIndex) {
+      event.preventDefault();
+      
+      if (draggedIndex !== null && draggedIndex !== dropIndex) {
+        const [draggedElement] = state.elements.splice(draggedIndex, 1);
+        state.elements.splice(dropIndex, 0, draggedElement);
+        state.unsavedChanges = true;
+        render();
+        showToast('Element reordered');
+      }
+      
+      draggedIndex = null;
+    }
+    
+    // Drag and Drop for Preview Elements
+    let previewDraggedIndex = null;
+    
+    function handlePreviewDragStart(event, index) {
+      previewDraggedIndex = index;
+      event.target.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', index);
+      
+      // Add visual feedback
+      setTimeout(() => {
+        event.target.style.opacity = '0.5';
+      }, 0);
+    }
+    
+    function handlePreviewDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      
+      // Add drop target indicator
+      const target = event.target.closest('.draggable-element');
+      if (target) {
+        document.querySelectorAll('.draggable-element').forEach(el => {
+          el.classList.remove('drag-over');
+        });
+        target.classList.add('drag-over');
+      }
+    }
+    
+    function handlePreviewDrop(event, dropIndex) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      // Remove drop indicators
+      document.querySelectorAll('.draggable-element').forEach(el => {
+        el.classList.remove('drag-over');
+        el.style.opacity = '1';
+      });
+      
+      if (previewDraggedIndex !== null && previewDraggedIndex !== dropIndex) {
+        const [draggedElement] = state.elements.splice(previewDraggedIndex, 1);
+        state.elements.splice(dropIndex, 0, draggedElement);
+        state.unsavedChanges = true;
+        render();
+        renderConfigPanel();
+        showToast('Element reordered in preview');
+      }
+      
+      previewDraggedIndex = null;
+    }
+    
+    function handlePreviewDragEnd(event) {
+      event.target.classList.remove('dragging');
+      event.target.style.opacity = '1';
+      document.querySelectorAll('.draggable-element').forEach(el => {
+        el.classList.remove('drag-over');
+      });
+      previewDraggedIndex = null;
+    }
+    
+    // Save/Discard
+    function saveChanges() {
+      state.lastSavedState = JSON.parse(JSON.stringify(state.elements));
+      state.unsavedChanges = false;
+      updateUnsavedIndicator();
+      showToast('Changes saved!', 'success');
+    }
+    
+    function discardChanges() {
+      if (state.lastSavedState) {
+        state.elements = JSON.parse(JSON.stringify(state.lastSavedState));
+      } else {
+        state.elements = [];
+      }
+      state.unsavedChanges = false;
+      state.selectedElementId = null;
+      
+      render();
+      document.getElementById('configPanel').classList.remove('visible');
+      
+      showToast('Changes discarded', 'warning');
+    }
+    
+    function updateUnsavedIndicator() {
+      const indicator = document.getElementById('unsavedIndicator');
+      indicator.style.display = state.unsavedChanges ? 'flex' : 'none';
+    }
+    
+    // Utilities
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    function getElementIcon(type) {
+      const icons = {
+        text: 'T',
+        countdown: '⏱',
+        button: '▢',
+        emoji: '😀'
+      };
+      return icons[type] || '?';
+    }
+    
+    function getElementPreview(element) {
+      const { type, config } = element;
+      switch (type) {
+        case 'text':
+          return config.text.substring(0, 30) + (config.text.length > 30 ? '...' : '');
+        case 'countdown':
+          return 'Timer: ' + config.theme;
+        case 'button':
+          return config.text;
+        case 'emoji':
+          return config.emoji;
+        default:
+          return '';
+      }
+    }
+    
+    function showToast(message, type = '') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast visible ' + type;
+      
+      setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 2500);
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      const dropdown = document.getElementById('addElementDropdown');
+      const addBtn = event.target.closest('.add-element-btn');
+      
+      if (!addBtn && dropdown.classList.contains('visible')) {
+        dropdown.classList.remove('visible');
+      }
+    });
+  </script>
+</body>
+</html>
