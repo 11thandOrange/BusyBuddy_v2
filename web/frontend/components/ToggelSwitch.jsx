@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 
-const ToggleSwitch = ({ appId, size = "large", showLabels = true }) => {
-  // Size configurations
-  const sizes = {
-    small: { width: "44px", height: "24px", sliderWidth: "18px", sliderHeight: "18px", padding: "3px", borderRadius: "12px" },
-    medium: { width: "52px", height: "28px", sliderWidth: "22px", sliderHeight: "22px", padding: "3px", borderRadius: "14px" },
-    large: { width: "132px", height: "48px", sliderWidth: "50px", sliderHeight: "40px", fontSize: "13px", padding: "4px", borderRadius: "15px" }
-  };
-  const sizeConfig = sizes[size] || sizes.large;
-  
+const ToggleSwitch = ({ appId, size = "large" }) => {
   // App name mapping for tooltip
   const appNames = {
     bundle_discount: "Bundle Discount",
@@ -248,10 +240,9 @@ const ToggleSwitch = ({ appId, size = "large", showLabels = true }) => {
           isDisabledButton ? "opacity-50" : ""
         }`}
         style={{
-          width: sizeConfig.width,
-          height: sizeConfig.height,
-          padding: sizeConfig.padding,
-          borderRadius: sizeConfig.borderRadius,
+          width: size === "small" ? "40px" : "132px",
+          height: size === "small" ? "22px" : "48px",
+          borderRadius: size === "small" ? "11px" : "15px",
           cursor: isInitialLoading || isDisabledButton ? "not-allowed" : "pointer",
         }}
         onClick={isInitialLoading || isDisabledButton ? undefined : toggleSwitch}
@@ -293,18 +284,18 @@ const ToggleSwitch = ({ appId, size = "large", showLabels = true }) => {
           </div>
         )}
 
-        {/* switch slider - centered during loading, positioned based on state after */}
+        {/* switch slider */}
         <div
           className="bg-white position-absolute"
           style={{
-            width: sizeConfig.sliderWidth,
-            height: sizeConfig.sliderHeight,
+            width: size === "small" ? "16px" : "50px",
+            height: size === "small" ? "16px" : "40px",
             transition: "all 0.3s ease",
-            left: isInitialLoading 
-              ? `calc(50% - ${parseInt(sizeConfig.sliderWidth) / 2}px)` 
-              : (active ? `calc(100% - ${parseInt(sizeConfig.sliderWidth) + 4}px)` : "4px"),
-            top: "4px",
-            borderRadius: size === "small" ? "6px" : (size === "medium" ? "8px" : "11px"),
+            left: size === "small" 
+              ? (isInitialLoading ? "12px" : (active ? "21px" : "3px"))
+              : (isInitialLoading ? "41px" : (active ? "78px" : "4px")),
+            top: size === "small" ? "3px" : "4px",
+            borderRadius: size === "small" ? "50%" : "11px",
             zIndex: 1,
           }}
         />
