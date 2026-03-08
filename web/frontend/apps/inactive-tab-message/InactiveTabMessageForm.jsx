@@ -1,32 +1,24 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-// import DiscountModal from "../../pages/DiscountModal";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
-import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
-  const handleOpenDiscountModal = () => {
-    setShowDiscountModal(true);
-  };
-
-  const handleCloseDiscountModal = () => {
-    setShowDiscountModal(false);
-  };
+  
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList((prev) => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev);
   };
 
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
-        <Row className="mb-4 align-items-start">
+        {/* Header Row: [Back] [Title ... Toggle] [Create Inactive Tab Message] */}
+        <Row className="mb-2 align-items-center">
           <Col xs="auto">
             {fromDiscountPage ? (
               <></>
@@ -47,9 +39,10 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
               </div>
             )}
           </Col>
-          <Col>
+          {/* Left Column: Title + Toggle */}
+          <Col className="d-flex align-items-center gap-3">
             <h5
-              className="mb-2"
+              className="mb-0"
               style={{
                 fontWeight: 600,
                 fontSize: "20px",
@@ -58,6 +51,14 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
             >
               Inactive Tab Message
             </h5>
+            <ToggleSwitch size="small" appId="inactive_tab" />
+          </Col>
+          {/* No create button for Inactive Tab Message */}
+        </Row>
+
+        {/* Description Row */}
+        <Row className="mb-4">
+          <Col>
             <p
               className="mb-0"
               style={{
@@ -67,76 +68,13 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
                 color: "#616161",
               }}
             >
-              Don’t Let Them Forget! 🔖 Keep your store top-of-mind – even when
+              Don't Let Them Forget! 🔖 Keep your store top-of-mind – even when
               customers switch tabs! Inactive Tab Message displays a custom
-              alert in the title of their browser tab, so they’ll remember their
+              alert in the title of their browser tab, so they'll remember their
               cart, discounts, or promotions!
             </p>
           </Col>
-
-          {fromDiscountPage ? (
-            <Col
-              xs="auto"
-              className="d-flex align-items-center"
-              style={{ maxWidth: "300px", width: "100%" }}
-            >
-              <Button
-                text="Discard"
-                onClick={handleDiscard}
-                style={{
-                  background: "white",
-                  border: "1px solid #dee2e6",
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  maxWidth: "95px",
-                  borderRadius: "8px",
-                  marginRight: "10px",
-                  padding: "10px 20px",
-                }}
-              />
-              <Button
-                text="Save Changes"
-                onClick={() => console.log("Save")}
-                style={{
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  borderRadius: "8px",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                  padding: "10px 20px",
-                }}
-              />
-            </Col>
-          ) : (
-            <Col xs="auto" className="d-flex align-items-center gap-2">
-              <Button
-                text="Create Another Discount"
-                onClick={handleOpenDiscountModal}
-                style={{
-                  borderRadius: "15px",
-
-                  backgroundColor: "#000",
-                  color: "#FFFFFF",
-                  padding: "15px 25px",
-                  fontFamily: "Inter",
-                  fontStyle: "normal",
-                  fontWeight: "500",
-                  fontSize: "15px",
-                  lineHeight: "100%",
-                }}
-              />
-              <ToggleSwitch appId="inactive_tab" />
-            </Col>
-          )}
         </Row>
-
-        <DiscountModal
-          show={showDiscountModal}
-          onHide={handleCloseDiscountModal}
-          setActiveAction={setActiveAction}
-        />
       </Container>
       <DiscountList
         key={resetDiscountList ? "reset" : "normal"}
@@ -145,5 +83,3 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
     </div>
   );
 }
-
-

@@ -314,24 +314,7 @@ export default function DiscountList({
               ))}
             </ButtonGroup>
           </div>
-          {selectedTab === "Discounts" && (
-            <Button
-              text="Create Discount"
-              onClick={() => {
-                setEditingDiscount(null); // Ensure we're creating new, not editing
-                setShowAction(true);
-                onMakeBundleClick();
-              }}
-              style={{
-                background: "black",
-                borderRadius: "12px",
-                padding: "15px 12px",
-                color: "white",
-                width: "200px",
-                height: "51px",
-              }}
-            />
-          )}
+
         </div>
       </Row>
 

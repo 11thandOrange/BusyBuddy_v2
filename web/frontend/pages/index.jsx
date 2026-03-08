@@ -265,24 +265,24 @@ export default function HomePage() {
                 </Banner>
               </div>
             )}
-            {/* Current Plan Banner */}
-            <div style={{ marginTop: "20px", marginBottom: "20px" }}>
-              <Banner
-                title={`Current Plan: ${currentPlan}`}
-                status="info"
-                action={{
-                  content: "View Plans",
-                  onAction: handleBannerAction,
-                }}
-              >
-                {currentPlan === "Free" &&
-                  "Upgrade to access more features and increase your app limits."}
-                {currentPlan === "Starter" &&
-                  "You have access to essential features. Upgrade to Advanced for full capabilities."}
-                {currentPlan === "Advanced" &&
-                  "You have full access to all features. Thank you for being a valued customer!"}
-              </Banner>
-            </div>
+            {/* Current Plan Banner - Hidden when user is on Advanced (highest) plan */}
+            {currentPlan !== "Advanced" && (
+              <div style={{ marginTop: "20px", marginBottom: "20px" }}>
+                <Banner
+                  title={`Current Plan: ${currentPlan}`}
+                  status="info"
+                  action={{
+                    content: "View Plans",
+                    onAction: handleBannerAction,
+                  }}
+                >
+                  {currentPlan === "Free" &&
+                    "Upgrade to access more features and increase your app limits."}
+                  {currentPlan === "Starter" &&
+                    "You have access to essential features. Upgrade to Advanced for full capabilities."}
+                </Banner>
+              </div>
+            )}
           </div>
         </>
       )}
