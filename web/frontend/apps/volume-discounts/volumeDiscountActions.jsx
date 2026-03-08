@@ -309,6 +309,10 @@ const volumeDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
         });
         return;
       }
+      const internalNameToUse =
+        bundleInternalName && bundleInternalName.trim() !== ""
+          ? bundleInternalName.trim()
+          : bundleTitle.trim();
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
@@ -316,7 +320,7 @@ const volumeDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
         discountType: discountType,
         discountValue: inputValue,
         status: statusToggle,
-        internalName: bundleInternalName,
+        internalName: internalNameToUse,
         type: "Volume Discount",
         bundlePriority: bundlePriority,
         widgetAppearance: {

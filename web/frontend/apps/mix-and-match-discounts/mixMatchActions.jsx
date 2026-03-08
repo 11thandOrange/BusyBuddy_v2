@@ -284,13 +284,17 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
       //   });
       //   return;
       // }
+      const internalNameToUse =
+        bundleInternalName && bundleInternalName.trim() !== ""
+          ? bundleInternalName.trim()
+          : bundleTitle.trim();
       const bundleData = {
         title: bundleTitle,
         products: selectedProducts,
         discountType: discountType,
         discountValue: inputValue,
         status: statusToggle,
-        internalName: bundleInternalName,
+        internalName: internalNameToUse,
         type: "Mix and Match",
         bundlePriority: bundlePriority,
         selectedTier: selectedTier, // Add selected tier to bundle data

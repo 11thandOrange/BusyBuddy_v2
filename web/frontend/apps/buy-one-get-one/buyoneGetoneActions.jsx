@@ -291,6 +291,10 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
         });
         return;
       }
+      const internalNameToUse =
+        bundleInternalName && bundleInternalName.trim() !== ""
+          ? bundleInternalName.trim()
+          : bundleTitle.trim();
       const bundleData = {
         title: bundleTitle,
         productsX: selectedXProducts, // Customer buys these
@@ -298,7 +302,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
         discountType: discountType,
         discountValue: inputValue,
         status: statusToggle,
-        internalName: bundleInternalName,
+        internalName: internalNameToUse,
         type: "Buy One Get One",
         bundlePriority: bundlePriority,
         widgetAppearance: {
