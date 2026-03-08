@@ -68,7 +68,7 @@ export default function BuyonegetoneForm({ goBack, setActiveAction }) {
             )}
           </Col>
           {/* Left Column: Title + Toggle */}
-          <Col className="d-flex align-items-center justify-content-between">
+          <Col className="d-flex align-items-center gap-3">
             <h5
               className="mb-0"
               style={{

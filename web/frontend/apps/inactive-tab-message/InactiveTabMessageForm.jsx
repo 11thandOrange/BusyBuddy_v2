@@ -40,7 +40,7 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
             )}
           </Col>
           {/* Left Column: Title + Toggle */}
-          <Col className="d-flex align-items-center justify-content-between">
+          <Col className="d-flex align-items-center gap-3">
             <h5
               className="mb-0"
               style={{
@@ -53,52 +53,7 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
             </h5>
             <ToggleSwitch appId="inactive_tab" />
           </Col>
-          {/* Right Column: Buttons */}
-          {fromDiscountPage ? (
-            <Col xs="auto" className="d-flex align-items-center gap-2">
-              <Button
-                text="Discard"
-                onClick={handleDiscard}
-                style={{
-                  background: "white",
-                  border: "1px solid #dee2e6",
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  borderRadius: "8px",
-                  padding: "10px 20px",
-                }}
-              />
-              <Button
-                text="Save Changes"
-                onClick={() => console.log("Save")}
-                style={{
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  borderRadius: "8px",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                  padding: "10px 20px",
-                }}
-              />
-            </Col>
-          ) : (
-            <Col xs="auto" className="d-flex align-items-center">
-              <Button
-                text="Create Inactive Tab Message"
-                onClick={() => setFromDiscountPage(true)}
-                style={{
-                  borderRadius: "15px",
-                  backgroundColor: "#000",
-                  color: "#FFFFFF",
-                  padding: "15px 25px",
-                  fontWeight: "500",
-                  fontSize: "15px",
-                }}
-              />
-            </Col>
-          )}
+          {/* No create button for Inactive Tab Message */}
         </Row>
 
         {/* Description Row */}
