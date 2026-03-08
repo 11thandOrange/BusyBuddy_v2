@@ -17,6 +17,7 @@ import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import VideoList from "../../components/VideoList";
+import ToggleSwitch from "../../components/ToggelSwitch";
 
 // Countdown Timer specific videos
 const countdownTimerVideos = [
@@ -91,6 +92,35 @@ export default function DiscountList({ onMakeBundleClick }) {
         padding: "5px 15px",
       }}
     >
+      {/* App Header - Title with Toggle on left, Create Button on right */}
+      <Row className="align-items-center mb-3" style={{ padding: "20px 0", borderBottom: "1px solid #e3e3e3" }}>
+        <Col xs={12} md={8} className="d-flex align-items-center gap-3">
+          <h2 style={{ fontWeight: 600, fontSize: "24px", margin: 0, color: "#303030" }}>
+            Countdown Timer
+          </h2>
+          <ToggleSwitch appId="countdown_timer" />
+        </Col>
+        <Col xs={12} md={4} className="d-flex justify-content-end mt-3 mt-md-0">
+          <Button
+            text="Create Timer"
+            onClick={() => {
+              setShowBundleAction(true);
+              if (onMakeBundleClick) onMakeBundleClick();
+            }}
+            style={{
+              background: "black",
+              borderRadius: "12px",
+              padding: "12px 24px",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "14px",
+              minWidth: "180px",
+              height: "48px",
+            }}
+          />
+        </Col>
+      </Row>
+
       {/* Navigation Tabs */}
       <Row>
         <div className="d-flex gap-1">
@@ -99,15 +129,13 @@ export default function DiscountList({ onMakeBundleClick }) {
             style={{
               marginLeft: "0",
               marginRight: "0",
-             
-                padding: "0px",
-                boxShadow: "1px 1px 4px 0px #0000001A inset",
-                backgroundColor: "#F1F2F4",
-                borderRadius: "15px",
-                marginBottom: "8px",
-                height: "51px",
-                width:"100%"
-              
+              padding: "0px",
+              boxShadow: "1px 1px 4px 0px #0000001A inset",
+              backgroundColor: "#F1F2F4",
+              borderRadius: "15px",
+              marginBottom: "8px",
+              height: "51px",
+              width: "100%",
             }}
           >
             {/* Left-aligned Toggle Buttons */}
@@ -132,7 +160,6 @@ export default function DiscountList({ onMakeBundleClick }) {
                           borderColor: "black",
                           borderRadius: "15px",
                           width: "130px",
-                          // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
                           fontStyle: "normal",
@@ -145,7 +172,6 @@ export default function DiscountList({ onMakeBundleClick }) {
                       : {
                           borderRadius: "15px",
                           width: "130px",
-                          // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
                           fontStyle: "normal",
@@ -162,23 +188,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                 </ToggleButton>
               ))}
             </ButtonGroup>
-
-            {/* Right-aligned Create Discount Button */}
           </div>
-          {selectedTab === "Discounts" && (
-            <Button
-              text="Create Discount"
-              onClick={() => console.log("Create Discount")}
-              style={{
-                background: "black",
-                borderRadius: "12px",
-                padding: "15px 12px",
-                color: "white",
-                width: "200px",
-                height: "51px",
-              }}
-            />
-          )}
         </div>
       </Row>
       {selectedTab === "Discounts" && (

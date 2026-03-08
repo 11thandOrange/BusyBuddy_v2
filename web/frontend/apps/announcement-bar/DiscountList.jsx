@@ -13,6 +13,7 @@ import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
 import VideoList from "../../components/VideoList";
+import ToggleSwitch from "../../components/ToggelSwitch";
 
 // Announcement Bar specific videos
 const announcementBarVideos = [
@@ -228,6 +229,35 @@ export default function DiscountList({
         padding: "5px 15px",
       }}
     >
+      {/* App Header - Title with Toggle on left, Create Button on right */}
+      <Row className="align-items-center mb-3" style={{ padding: "20px 0", borderBottom: "1px solid #e3e3e3" }}>
+        <Col xs={12} md={8} className="d-flex align-items-center gap-3">
+          <h2 style={{ fontWeight: 600, fontSize: "24px", margin: 0, color: "#303030" }}>
+            Announcement Bar
+          </h2>
+          <ToggleSwitch appId="announcement_bar" />
+        </Col>
+        <Col xs={12} md={4} className="d-flex justify-content-end mt-3 mt-md-0">
+          <Button
+            text="Create Announcement"
+            onClick={() => {
+              setShowBundleAction(true);
+              if (onMakeBundleClick) onMakeBundleClick();
+            }}
+            style={{
+              background: "black",
+              borderRadius: "12px",
+              padding: "12px 24px",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "14px",
+              minWidth: "180px",
+              height: "48px",
+            }}
+          />
+        </Col>
+      </Row>
+
       {/* Navigation Tabs */}
       <Row>
         <div className="d-flex gap-1">
@@ -236,7 +266,6 @@ export default function DiscountList({
             style={{
               marginLeft: "0",
               marginRight: "0",
-
               padding: "0px",
               boxShadow: "1px 1px 4px 0px #0000001A inset",
               backgroundColor: "#F1F2F4",
@@ -265,7 +294,6 @@ export default function DiscountList({
                           borderColor: "black",
                           borderRadius: "15px",
                           width: "180px",
-                          // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
                           fontStyle: "normal",
@@ -278,7 +306,6 @@ export default function DiscountList({
                       : {
                           borderRadius: "15px",
                           width: "180px",
-                          // height: "43px",
                           padding: "15px 12px",
                           fontFamily: "Inter",
                           fontStyle: "normal",
@@ -295,23 +322,7 @@ export default function DiscountList({
                 </ToggleButton>
               ))}
             </ButtonGroup>
-
-            {/* Right-aligned Create Discount Button */}
           </div>
-          {selectedTab === "Discounts" && (
-            <Button
-              text="Create Discount"
-              onClick={() => console.log("Create Discount")}
-              style={{
-                background: "black",
-                borderRadius: "12px",
-                padding: "15px 12px",
-                color: "white",
-                width: "200px",
-                height: "51px",
-              }}
-            />
-          )}
         </div>
       </Row>
       {selectedTab === "Discounts" && (
