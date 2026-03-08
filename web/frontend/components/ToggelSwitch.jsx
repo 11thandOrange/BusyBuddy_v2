@@ -1,13 +1,26 @@
 import { useState, useEffect } from "react";
 
-const ToggleSwitch = ({ appId, size = "large" }) => {
+const ToggleSwitch = ({ appId, size = "large", showLabels = true }) => {
   // Size configurations
   const sizes = {
-    small: { width: "70px", height: "28px", sliderWidth: "24px", sliderHeight: "20px", fontSize: "10px", padding: "4px", borderRadius: "10px" },
-    medium: { width: "90px", height: "34px", sliderWidth: "32px", sliderHeight: "26px", fontSize: "11px", padding: "4px", borderRadius: "12px" },
+    small: { width: "44px", height: "24px", sliderWidth: "18px", sliderHeight: "18px", padding: "3px", borderRadius: "12px" },
+    medium: { width: "52px", height: "28px", sliderWidth: "22px", sliderHeight: "22px", padding: "3px", borderRadius: "14px" },
     large: { width: "132px", height: "48px", sliderWidth: "50px", sliderHeight: "40px", fontSize: "13px", padding: "4px", borderRadius: "15px" }
   };
   const sizeConfig = sizes[size] || sizes.large;
+  
+  // App name mapping for tooltip
+  const appNames = {
+    bundle_discount: "Bundle Discount",
+    volume_discounts: "Volume Discount",
+    buy_one_get_one: "Buy One Get One",
+    mix_match: "Mix & Match",
+    announcement_bar: "Announcement Bar",
+    countdown_timer: "Countdown Timer",
+    cart_notice: "Cart Notice",
+    inactive_tab: "Inactive Tab Message"
+  };
+  const appName = appNames[appId] || "This app";
   // Start with null to indicate "loading" state - prevents flash
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true); // Start loading as true
@@ -239,8 +252,10 @@ const ToggleSwitch = ({ appId, size = "large" }) => {
           height: sizeConfig.height,
           padding: sizeConfig.padding,
           borderRadius: sizeConfig.borderRadius,
+          cursor: isInitialLoading || isDisabledButton ? "not-allowed" : "pointer",
         }}
         onClick={isInitialLoading || isDisabledButton ? undefined : toggleSwitch}
+        title={`If inactive, ${appName} widgets will not appear on your storefront.`}
       >
         {/* loading overlay - shows during initial load and toggle operations */}
         {(loading || isInitialLoading) && (
@@ -294,29 +309,31 @@ const ToggleSwitch = ({ appId, size = "large" }) => {
           }}
         />
 
-        {/* labels */}
-        <div className="d-flex align-items-center justify-content-between h-100 px-2">
-          <span
-            className="text-white fw-medium"
-            style={{ 
-              visibility: isInitialLoading ? "hidden" : (active ? "visible" : "hidden"), 
-              zIndex: 1,
-              fontSize: sizeConfig.fontSize
-            }}
-          >
-            Active
-          </span>
-          <span
-            className="text-white fw-medium ms-auto"
-            style={{ 
-              visibility: isInitialLoading ? "hidden" : (active ? "hidden" : "visible"), 
-              zIndex: 1,
-              fontSize: sizeConfig.fontSize
-            }}
-          >
-            Inactive
-          </span>
-        </div>
+        {/* labels - only show for large size */}
+        {size === "large" && (
+          <div className="d-flex align-items-center justify-content-between h-100 px-2">
+            <span
+              className="text-white fw-medium"
+              style={{ 
+                visibility: isInitialLoading ? "hidden" : (active ? "visible" : "hidden"), 
+                zIndex: 1,
+                fontSize: sizeConfig.fontSize
+              }}
+            >
+              Active
+            </span>
+            <span
+              className="text-white fw-medium ms-auto"
+              style={{ 
+                visibility: isInitialLoading ? "hidden" : (active ? "hidden" : "visible"), 
+                zIndex: 1,
+                fontSize: sizeConfig.fontSize
+              }}
+            >
+              Inactive
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
