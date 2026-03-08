@@ -79,7 +79,7 @@ export default function BuyonegetoneForm({ goBack, setActiveAction }) {
             >
               Buy One Get One
             </h5>
-            <ToggleSwitch appId="buy_one_get_one" />
+            <ToggleSwitch size="small" appId="buy_one_get_one" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

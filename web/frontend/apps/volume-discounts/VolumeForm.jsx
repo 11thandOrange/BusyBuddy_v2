@@ -80,7 +80,7 @@ export default function VolumeForm({ goBack, setActiveAction }) {
             >
               Volume Discount
             </h5>
-            <ToggleSwitch appId="volume_discounts" />
+            <ToggleSwitch size="small" appId="volume_discounts" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

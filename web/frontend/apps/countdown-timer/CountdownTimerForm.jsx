@@ -51,7 +51,7 @@ export default function CountdownTimerForm({ goBack, setActiveAction }) {
             >
               Countdown Timer
             </h5>
-            <ToggleSwitch appId="countdown_timer" />
+            <ToggleSwitch size="small" appId="countdown_timer" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

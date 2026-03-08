@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 
-const ToggleSwitch = ({ appId }) => {
+const ToggleSwitch = ({ appId, size = "large" }) => {
+  // Size configurations
+  const sizes = {
+    small: { width: "70px", height: "28px", sliderWidth: "24px", sliderHeight: "20px", fontSize: "10px", padding: "4px", borderRadius: "10px" },
+    medium: { width: "90px", height: "34px", sliderWidth: "32px", sliderHeight: "26px", fontSize: "11px", padding: "4px", borderRadius: "12px" },
+    large: { width: "132px", height: "48px", sliderWidth: "50px", sliderHeight: "40px", fontSize: "13px", padding: "4px", borderRadius: "15px" }
+  };
+  const sizeConfig = sizes[size] || sizes.large;
   // Start with null to indicate "loading" state - prevents flash
   const [active, setActive] = useState(null);
   const [loading, setLoading] = useState(true); // Start loading as true
@@ -228,10 +235,10 @@ const ToggleSwitch = ({ appId }) => {
           isDisabledButton ? "opacity-50" : ""
         }`}
         style={{
-          width: "132px",
-          height: "48px",
-          padding: "4px",
-          borderRadius: "15px",
+          width: sizeConfig.width,
+          height: sizeConfig.height,
+          padding: sizeConfig.padding,
+          borderRadius: sizeConfig.borderRadius,
         }}
         onClick={isInitialLoading || isDisabledButton ? undefined : toggleSwitch}
       >
@@ -275,27 +282,37 @@ const ToggleSwitch = ({ appId }) => {
         <div
           className="bg-white position-absolute"
           style={{
-            width: "50px",
-            height: "40px",
+            width: sizeConfig.sliderWidth,
+            height: sizeConfig.sliderHeight,
             transition: "all 0.3s ease",
-            left: isInitialLoading ? "41px" : (active ? "78px" : "5px"),
+            left: isInitialLoading 
+              ? `calc(50% - ${parseInt(sizeConfig.sliderWidth) / 2}px)` 
+              : (active ? `calc(100% - ${parseInt(sizeConfig.sliderWidth) + 4}px)` : "4px"),
             top: "4px",
-            borderRadius: "11px",
+            borderRadius: size === "small" ? "6px" : (size === "medium" ? "8px" : "11px"),
             zIndex: 1,
           }}
         />
 
         {/* labels */}
-        <div className="d-flex align-items-center justify-content-between h-100 px-3">
+        <div className="d-flex align-items-center justify-content-between h-100 px-2">
           <span
             className="text-white fw-medium"
-            style={{ visibility: isInitialLoading ? "hidden" : (active ? "visible" : "hidden"), zIndex: 1 }}
+            style={{ 
+              visibility: isInitialLoading ? "hidden" : (active ? "visible" : "hidden"), 
+              zIndex: 1,
+              fontSize: sizeConfig.fontSize
+            }}
           >
             Active
           </span>
           <span
             className="text-white fw-medium ms-auto"
-            style={{ visibility: isInitialLoading ? "hidden" : (active ? "hidden" : "visible"), zIndex: 1 }}
+            style={{ 
+              visibility: isInitialLoading ? "hidden" : (active ? "hidden" : "visible"), 
+              zIndex: 1,
+              fontSize: sizeConfig.fontSize
+            }}
           >
             Inactive
           </span>

@@ -80,7 +80,7 @@ export default function BundleForm({ goBack, setActiveAction }) {
             >
               Bundle Discount
             </h5>
-            <ToggleSwitch appId="bundle_discount" />
+            <ToggleSwitch size="small" appId="bundle_discount" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

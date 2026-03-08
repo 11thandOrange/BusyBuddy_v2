@@ -76,7 +76,7 @@ export default function MixMatchForm({goBack, setActiveAction}) {
             >
               Mix & Match
             </h5>
-            <ToggleSwitch appId="mix_match" />
+            <ToggleSwitch size="small" appId="mix_match" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

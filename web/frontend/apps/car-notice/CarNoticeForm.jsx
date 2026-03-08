@@ -51,7 +51,7 @@ export default function CarNoticeForm({ goBack, setActiveAction }) {
             >
               Cart Notice
             </h5>
-            <ToggleSwitch appId="cart_notice" />
+            <ToggleSwitch size="small" appId="cart_notice" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

@@ -76,7 +76,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
             >
               Announcement Bar
             </h5>
-            <ToggleSwitch appId="announcement_bar" />
+            <ToggleSwitch size="small" appId="announcement_bar" />
           </Col>
           {/* Right Column: Buttons */}
           {fromDiscountPage ? (

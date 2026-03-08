@@ -51,7 +51,7 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
             >
               Inactive Tab Message
             </h5>
-            <ToggleSwitch appId="inactive_tab" />
+            <ToggleSwitch size="small" appId="inactive_tab" />
           </Col>
           {/* No create button for Inactive Tab Message */}
         </Row>
