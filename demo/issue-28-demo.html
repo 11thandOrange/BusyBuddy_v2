@@ -327,34 +327,39 @@
                 <h2><i class="bi bi-arrows-move"></i> Subtask #39: Re-Order Header Buttons</h2>
                 <span class="badge bg-success">Completed</span>
             </div>
-            <div class="demo-note">Create button now in top right. Active/Inactive toggle inline with app title.</div>
-            <div class="comparison-row">
-                <div class="comparison-col before">
-                    <div class="comparison-label"><i class="bi bi-x-circle"></i> BEFORE</div>
-                    <div style="background: var(--bg-light); padding: 12px; border-radius: 12px;">
-                        <div class="d-flex justify-content-between mb-2">
-                            <div class="app-tabs"><button class="app-tab active">Overview</button></div>
-                            <button class="create-btn btn-sm" style="padding:8px 16px;">Create</button>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <strong>Bundle Discount</strong>
-                            <div class="toggle-switch inactive" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
-                        </div>
+            <div class="demo-note">
+                <strong>Header Layout:</strong><br>
+                • Left Column: Title (left) + Toggle (right)<br>
+                • Right Column: Create button (regular apps) OR "Create Another Discount" + "Create" (bundle apps)
+            </div>
+            
+            <!-- Regular App Example -->
+            <h5 class="mt-4 mb-3">Regular App (e.g., Announcement Bar)</h5>
+            <div style="background: var(--bg-light); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <div class="d-flex justify-content-between align-items-center pb-3 mb-3" style="border-bottom: 1px solid var(--border-color);">
+                    <div class="d-flex justify-content-between align-items-center" style="flex: 1; max-width: 50%;">
+                        <strong style="font-size: 18px;">Announcement Bar</strong>
+                        <div class="toggle-switch active" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
+                    </div>
+                    <button class="create-btn" style="padding:10px 20px;">Create Announcement</button>
+                </div>
+                <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button><button class="app-tab" style="padding:8px 16px;">Settings</button></div>
+            </div>
+            
+            <!-- Bundle App Example -->
+            <h5 class="mb-3">Bundle App (e.g., Bundle Discount)</h5>
+            <div style="background: var(--bg-light); padding: 16px; border-radius: 12px;">
+                <div class="d-flex justify-content-between align-items-center pb-3 mb-3" style="border-bottom: 1px solid var(--border-color);">
+                    <div class="d-flex justify-content-between align-items-center" style="flex: 1; max-width: 50%;">
+                        <strong style="font-size: 18px;">Bundle Discount</strong>
+                        <div class="toggle-switch active" style="transform: scale(0.6);"><div class="toggle-slider"></div></div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button style="background: white; border: 1px solid #e3e3e3; border-radius: 12px; padding: 10px 16px; font-weight: 600; font-size: 13px;">Create Another Discount</button>
+                        <button class="create-btn" style="padding:10px 20px;">Create Bundle</button>
                     </div>
                 </div>
-                <div class="comparison-col after">
-                    <div class="comparison-label"><i class="bi bi-check-circle"></i> AFTER</div>
-                    <div style="background: var(--bg-light); padding: 12px; border-radius: 12px;">
-                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid var(--border-color);">
-                            <div class="d-flex align-items-center gap-2">
-                                <strong>Bundle Discount</strong>
-                                <div class="toggle-switch active" style="transform: scale(0.5);"><div class="toggle-slider"></div></div>
-                            </div>
-                            <button class="create-btn btn-sm" style="padding:6px 12px;font-size:12px;">Create Bundle</button>
-                        </div>
-                        <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button></div>
-                    </div>
-                </div>
+                <div class="app-tabs"><button class="app-tab active" style="padding:8px 16px;">Overview</button><button class="app-tab" style="padding:8px 16px;">Discounts</button></div>
             </div>
         </div>
 

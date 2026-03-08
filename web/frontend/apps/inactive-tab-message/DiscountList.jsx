@@ -267,15 +267,17 @@ export default function DiscountList({ onMakeBundleClick }) {
         padding: "5px 15px",
       }}
     >
-      {/* App Header - Title with Toggle on left, Create Button on right */}
+      {/* App Header - Two columns: [Title + Toggle] | [Create Button] */}
       <Row className="align-items-center mb-3" style={{ padding: "20px 0", borderBottom: "1px solid #e3e3e3" }}>
-        <Col xs={12} md={8} className="d-flex align-items-center gap-3">
+        {/* Left Column: Title (left) + Toggle (right) */}
+        <Col xs={12} md={6} className="d-flex align-items-center justify-content-between mb-3 mb-md-0">
           <h2 style={{ fontWeight: 600, fontSize: "24px", margin: 0, color: "#303030" }}>
             Inactive Tab Message
           </h2>
           <ToggleSwitch appId="inactive_tab_message" />
         </Col>
-        <Col xs={12} md={4} className="d-flex justify-content-end mt-3 mt-md-0">
+        {/* Right Column: Create Button */}
+        <Col xs={12} md={6} className="d-flex justify-content-end">
           <Button
             text="Create Message"
             onClick={() => {
@@ -289,7 +291,6 @@ export default function DiscountList({ onMakeBundleClick }) {
               color: "white",
               fontWeight: 600,
               fontSize: "14px",
-              minWidth: "180px",
               height: "48px",
             }}
           />
