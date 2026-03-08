@@ -175,16 +175,21 @@ async function getActiveBundle(req, res) {
     const products = response.data.products.edges.map((edge) => edge.node);
     console.log("Products", products);
     // Map products to a more usable format
+    // Use numeric ID as key for consistent lookup (strip GID prefix)
     const productMap = {};
     products.forEach((product) => {
-      productMap[product.id] = {
+      // Extract numeric ID from GID format (gid://shopify/Product/12345 -> 12345)
+      const numericId = product.id.split('/').pop();
+      productMap[numericId] = {
         id: product.id,
         title: product.title,
-        price: product.variants[0]?.price,
-        compare_at_price: product.variants[0]?.compare_at_price,
-        image: (product.images && product.images[0]?.src) || null,
-        variant_id: product.variants[0]?.id,
-        available: product.variants[0]?.inventory_quantity > 0,
+        price: product.variants?.nodes?.[0]?.price,
+        compare_at_price: product.variants?.nodes?.[0]?.compare_at_price,
+        // Fix: Use featuredMedia.image.url instead of product.images[0].src
+        image: product.featuredMedia?.image?.url || null,
+        media: product.featuredMedia?.image?.url || null,
+        variant_id: product.variants?.nodes?.[0]?.id,
+        available: true, // Default to available, actual inventory check requires additional query
         handle: product.handle,
       };
     });
@@ -194,20 +199,30 @@ async function getActiveBundle(req, res) {
       let products = [];
       if (bundle.type === "Buy One Get One") {
         products = {
-          x: bundle.productsX.map((p) => ({
-            ...p,
-            ...(productMap[p.productId.replace("gid://shopify/Product/", "")] || {}),
-          })),
-          y: bundle.productsY.map((p) => ({
-            ...p,
-            ...(productMap[p.productId.replace("gid://shopify/Product/", "")] || {}),
-          })),
+          x: bundle.productsX.map((p) => {
+            // Extract numeric ID for lookup
+            const numericId = p.productId.split('/').pop();
+            return {
+              ...p,
+              ...(productMap[numericId] || {}),
+            };
+          }),
+          y: bundle.productsY.map((p) => {
+            const numericId = p.productId.split('/').pop();
+            return {
+              ...p,
+              ...(productMap[numericId] || {}),
+            };
+          }),
         };
       } else {
-        products = bundle.products.map((p) => ({
-          ...p,
-          ...(productMap[p.productId.replace("gid://shopify/Product/", "")] || {}),
-        }));
+        products = bundle.products.map((p) => {
+          const numericId = p.productId.split('/').pop();
+          return {
+            ...p,
+            ...(productMap[numericId] || {}),
+          };
+        });
       }
 
       return {
