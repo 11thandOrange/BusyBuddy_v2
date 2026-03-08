@@ -288,6 +288,10 @@ const BundleDiscountActions = React.forwardRef(
         hoverBackgroundColor: "#333333",
       },
     });
+    // Email provider connection state
+    const [isEmailProviderConnected, setIsEmailProviderConnected] = useState(false);
+    const [isCheckingEmailProvider, setIsCheckingEmailProvider] = useState(true);
+
     // NEW: "End Sale" Message State
     const [endSaleMessage, setEndSaleMessage] = useState("End Sale in");
     const [showEndSaleMessage, setShowEndSaleMessage] = useState(false);
@@ -363,6 +367,28 @@ const BundleDiscountActions = React.forwardRef(
       });
       setShowCountdown(true); // Show countdown once target date/time is set
     };
+
+    // Effect to check if email provider is connected
+    useEffect(() => {
+      const checkEmailProvider = async () => {
+        try {
+          setIsCheckingEmailProvider(true);
+          const response = await fetch('/api/email-provider');
+          const data = await response.json();
+          if (data.success && data.data && data.data.isConnected) {
+            setIsEmailProviderConnected(true);
+          } else {
+            setIsEmailProviderConnected(false);
+          }
+        } catch (err) {
+          console.error("Error checking email provider:", err);
+          setIsEmailProviderConnected(false);
+        } finally {
+          setIsCheckingEmailProvider(false);
+        }
+      };
+      checkEmailProvider();
+    }, []);
 
     // Effect to start and clear the countdown interval
     useEffect(() => {
@@ -1452,14 +1478,53 @@ const BundleDiscountActions = React.forwardRef(
                                     <option value="Orders Counter">
                                       Orders Counter
                                     </option>
-                                    <option value="Email">
-                                      Email Subscription
+                                    <option 
+                                      value="Email"
+                                      disabled={!isEmailProviderConnected}
+                                    >
+                                      Email Subscription {!isEmailProviderConnected && "(Not Available)"}
                                     </option>
                                   </Form.Select>
                                   <span className="dropdown-icon">
                                     <img src={dropdown} alt="dropdown icon" />
                                   </span>
                                 </div>
+                                
+                                {/* Email Provider Not Connected Warning */}
+                                {!isEmailProviderConnected && !isCheckingEmailProvider && (
+                                  <div
+                                    style={{
+                                      marginTop: "12px",
+                                      padding: "12px 15px",
+                                      backgroundColor: "rgba(255, 193, 7, 0.1)",
+                                      border: "1px solid #ffc107",
+                                      borderRadius: "8px",
+                                    }}
+                                  >
+                                    <p
+                                      style={{
+                                        margin: 0,
+                                        fontFamily: "Inter",
+                                        fontWeight: 600,
+                                        fontSize: "13px",
+                                        color: "#856404",
+                                      }}
+                                    >
+                                      ⚠️ Email Provider Not Connected
+                                    </p>
+                                    <p
+                                      style={{
+                                        margin: "5px 0 0 0",
+                                        fontFamily: "Inter",
+                                        fontWeight: 400,
+                                        fontSize: "12px",
+                                        color: "#856404",
+                                      }}
+                                    >
+                                      To use the Email announcement bar type, please connect an email provider in the Settings tab first.
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

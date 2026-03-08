@@ -630,10 +630,21 @@ export default function DiscountList({
           </>
         )}
         {selectedTab === "Setting" && (
-          <div className="d-flex flex-column gap-3 ">
-            {/* General Settings */}
-            <>
-              <Row className="g-0 linrrow">
+          <div className="d-flex flex-column gap-3">
+            {/* General Settings Section */}
+            <div>
+              <h6
+                style={{
+                  fontFamily: "Inter",
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  color: "#303030",
+                  marginBottom: "15px",
+                }}
+              >
+                ⚙️ General Settings
+              </h6>
+              <Row className="g-0">
                 <Card className="border-0 w-full" style={{ background: "rgb(241, 242, 244)" }}>
                   <Card.Body className="d-flex align-items-center justify-content-between">
                     <div className="d-flex flex-column gap-[10px]">
@@ -674,14 +685,12 @@ export default function DiscountList({
                   </Card.Body>
                 </Card>
               </Row>
-            </>
+            </div>
             
-            {/* Email Integration Section */}
-            <Row className="g-0 mt-3">
-              <Col xs={12}>
-                <EmailIntegration />
-              </Col>
-            </Row>
+            {/* Email Integration Section - Separate from General Settings */}
+            <div className="mt-4">
+              <EmailIntegration />
+            </div>
           </div>
         )}
         {selectedTab === "Analytics" && (
