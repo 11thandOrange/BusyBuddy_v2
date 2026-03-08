@@ -1,48 +1,49 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-// import DiscountModal from "../../pages/DiscountModal";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
-import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function AnnouncementBarForm({ goBack, setActiveAction }) {
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(1); // Add refresh trigger state
-  const [autoTriggerActions, setAutoTriggerActions] = useState(true); // Add this state
+  const [refreshTrigger, setRefreshTrigger] = useState(1);
+  const [autoTriggerActions, setAutoTriggerActions] = useState(true);
   const discountActionsRef = useRef();
-  // Add this useEffect to automatically trigger the flow
+  
   useEffect(() => {
     if (autoTriggerActions) {
-      // Automatically set fromDiscountPage to true and trigger the flow
       setFromDiscountPage(true);
-      setAutoTriggerActions(false); // Prevent infinite loop
+      setAutoTriggerActions(false);
     }
   }, [autoTriggerActions]);
+  
   const handleOpenDiscountModal = () => {
-    setAutoTriggerActions(true)
+    setAutoTriggerActions(true);
   };
+  
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList((prev) => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev);
   };
+  
   const handleBundleCreated = () => {
     setFromDiscountPage(false);
-    // Trigger refresh by incrementing the trigger value
     setRefreshTrigger((prev) => prev + 1);
   };
+  
   const handleSaveChanges = () => {
     if (discountActionsRef.current) {
       discountActionsRef.current.handleSaveChanges();
     }
   };
+  
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
-        <Row className="mb-4 align-items-start">
+        {/* Header Row: [Back] [Title ... Toggle] [Create Announcement Bar] */}
+        <Row className="mb-2 align-items-center">
           <Col xs="auto">
             {fromDiscountPage ? (
               <></>
@@ -63,9 +64,10 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
               </div>
             )}
           </Col>
-          <Col>
+          {/* Left Column: Title + Toggle */}
+          <Col className="d-flex align-items-center justify-content-between">
             <h5
-              className="mb-2"
+              className="mb-0"
               style={{
                 fontWeight: 600,
                 fontSize: "20px",
@@ -74,23 +76,11 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
             >
               Announcement Bar
             </h5>
-            <p
-              className="mb-0"
-              style={{
-                fontWeight: 500,
-                fontSize: "14px",
-                lineHeight: "1.3",
-                color: "#616161",
-              }}
-            >
-              Get Noticed! 🔔 Want to make sure your message doesn’t get missed? Announcement Bar lets you
-              display important alerts right at the top of your store. Whether it’s a sale, promotion, or
-              update, it’s impossible to ignore!
-            </p>
+            <ToggleSwitch appId="announcement_bar" />
           </Col>
-
+          {/* Right Column: Buttons */}
           {fromDiscountPage ? (
-            <Col xs="auto" className="d-flex align-items-center" style={{ maxWidth: "300px", width: "100%" }}>
+            <Col xs="auto" className="d-flex align-items-center gap-2">
               <Button
                 text="Discard"
                 onClick={handleDiscard}
@@ -100,9 +90,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                   height: "45px",
                   fontWeight: 500,
                   fontSize: "15px",
-                  maxWidth: "95px",
                   borderRadius: "8px",
-                  marginRight: "10px",
                   padding: "10px 20px",
                 }}
               />
@@ -121,26 +109,40 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
               />
             </Col>
           ) : (
-            <Col xs="auto" className="d-flex align-items-center gap-2">
+            <Col xs="auto" className="d-flex align-items-center">
               <Button
                 text="Create Announcement Bar"
                 onClick={handleOpenDiscountModal}
                 style={{
                   borderRadius: "15px",
-
                   backgroundColor: "#000",
                   color: "#FFFFFF",
                   padding: "15px 25px",
-                  fontFamily: "Inter",
-                  fontStyle: "normal",
                   fontWeight: "500",
                   fontSize: "15px",
-                  lineHeight: "100%",
                 }}
               />
-              <ToggleSwitch appId="announcement_bar" />
             </Col>
           )}
+        </Row>
+
+        {/* Description Row */}
+        <Row className="mb-4">
+          <Col>
+            <p
+              className="mb-0"
+              style={{
+                fontWeight: 500,
+                fontSize: "14px",
+                lineHeight: "1.3",
+                color: "#616161",
+              }}
+            >
+              Get Noticed! 🔔 Want to make sure your message doesn't get missed? Announcement Bar lets you
+              display important alerts right at the top of your store. Whether it's a sale, promotion, or
+              update, it's impossible to ignore!
+            </p>
+          </Col>
         </Row>
       </Container>
       <DiscountList
