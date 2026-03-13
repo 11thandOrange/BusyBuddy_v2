@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useAppBridge } from '@shopify/app-bridge-react';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import createApp from '@shopify/app-bridge';
+import { Fullscreen } from '@shopify/app-bridge/actions';
 
 /**
  * Hook for navigating to/from the announcement bar editor.
- * Uses App Bridge v4 fullscreen API to cover Shopify sidebar.
+ * Uses App Bridge v3 Fullscreen API to cover Shopify sidebar.
  * 
  * @returns {Object} Navigation functions
  * @returns {Function} openEditor - Opens editor in fullscreen (optionally with bar ID for editing)
@@ -12,43 +13,54 @@ import { useCallback } from 'react';
  */
 export const useEditorNavigation = () => {
   const navigate = useNavigate();
-  const shopify = useAppBridge();
+  const fullscreenRef = useRef(null);
 
-  const openEditor = useCallback(async (barId = null) => {
+  // Create App Bridge app instance (v3 pattern - same as Plan.jsx)
+  const getAppBridge = useCallback(() => {
+    const config = {
+      apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
+      host: new URLSearchParams(location.search).get('host') || window.__SHOPIFY_DEV_HOST,
+    };
+    return createApp(config);
+  }, []);
+
+  const openEditor = useCallback((barId = null) => {
     const path = barId
       ? `/announcement-bar/editor/${barId}`
       : '/announcement-bar/editor';
     
-    // Enter fullscreen mode (App Bridge v4 API)
     try {
-      console.log('Shopify object:', shopify);
-      console.log('Fullscreen API:', shopify?.fullscreen);
+      const app = getAppBridge();
+      const fullscreen = Fullscreen.create(app);
+      fullscreenRef.current = fullscreen;
       
-      if (shopify?.fullscreen?.enter) {
-        await shopify.fullscreen.enter();
-        console.log('Fullscreen entered successfully');
-      } else {
-        console.warn('Fullscreen API not available');
-      }
+      // Enter fullscreen mode
+      fullscreen.dispatch(Fullscreen.Action.ENTER);
+      console.log('Fullscreen ENTER dispatched');
     } catch (error) {
       console.error('Fullscreen enter error:', error);
     }
     
     navigate(path);
-  }, [navigate, shopify]);
+  }, [navigate, getAppBridge]);
 
-  const closeEditor = useCallback(async () => {
-    // Exit fullscreen mode (App Bridge v4 API)
+  const closeEditor = useCallback(() => {
     try {
-      if (shopify?.fullscreen?.exit) {
-        await shopify.fullscreen.exit();
+      if (fullscreenRef.current) {
+        fullscreenRef.current.dispatch(Fullscreen.Action.EXIT);
+        console.log('Fullscreen EXIT dispatched');
+      } else {
+        // Create new instance if ref not available
+        const app = getAppBridge();
+        const fullscreen = Fullscreen.create(app);
+        fullscreen.dispatch(Fullscreen.Action.EXIT);
       }
     } catch (error) {
       console.error('Fullscreen exit error:', error);
     }
     
     navigate('/announcement-bar');
-  }, [navigate, shopify]);
+  }, [navigate, getAppBridge]);
 
   return { openEditor, closeEditor };
 };
