@@ -1,11 +1,10 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import createApp from '@shopify/app-bridge';
 import { Fullscreen } from '@shopify/app-bridge/actions';
 
-// Store app and fullscreen instances at module level to persist across renders
-let appInstance = null;
-let fullscreenInstance = null;
+// Store host param at module level to persist even when URL changes
+let storedHost = null;
 
 /**
  * Hook for navigating to/from the announcement bar editor.
@@ -18,29 +17,55 @@ let fullscreenInstance = null;
 export const useEditorNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Store references to app and fullscreen instances
+  const appRef = useRef(null);
+  const fullscreenRef = useRef(null);
+  
+  // Capture host from current URL or use stored value
+  const getHost = useCallback(() => {
+    const urlHost = new URLSearchParams(location.search).get('host');
+    if (urlHost) {
+      storedHost = urlHost;
+    }
+    return storedHost || window.__SHOPIFY_DEV_HOST;
+  }, [location.search]);
 
   // Get or create App Bridge app instance
   const getAppBridge = useCallback(() => {
-    if (!appInstance) {
+    if (!appRef.current) {
+      const host = getHost();
       const config = {
         apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
-        host: new URLSearchParams(location.search).get('host') || window.__SHOPIFY_DEV_HOST,
+        host: host,
       };
-      appInstance = createApp(config);
+      appRef.current = createApp(config);
     }
-    return appInstance;
-  }, [location.search]);
+    return appRef.current;
+  }, [getHost]);
 
   // Get or create Fullscreen instance
   const getFullscreen = useCallback(() => {
-    if (!fullscreenInstance) {
+    if (!fullscreenRef.current) {
       const app = getAppBridge();
-      fullscreenInstance = Fullscreen.create(app);
+      fullscreenRef.current = Fullscreen.create(app);
     }
-    return fullscreenInstance;
+    return fullscreenRef.current;
   }, [getAppBridge]);
 
+  // Build query string with host param
+  const getQueryString = useCallback(() => {
+    const host = getHost();
+    if (host) {
+      return `?host=${encodeURIComponent(host)}`;
+    }
+    return location.search || '';
+  }, [getHost, location.search]);
+
   const openEditor = useCallback((barId = null) => {
+    // Capture current host before navigation
+    const queryString = getQueryString();
+    
     const path = barId
       ? `/announcement-bar/editor/${barId}`
       : '/announcement-bar/editor';
@@ -52,12 +77,14 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen enter error:', error);
     }
     
-    // Preserve query params (especially 'host' for App Bridge)
-    navigate(path + location.search);
-  }, [navigate, getFullscreen, location.search]);
+    navigate(path + queryString);
+  }, [navigate, getFullscreen, getQueryString]);
 
   const closeEditor = useCallback(() => {
-    // Exit fullscreen first
+    // Capture host before any navigation
+    const queryString = getQueryString();
+    
+    // Exit fullscreen
     try {
       const fullscreen = getFullscreen();
       fullscreen.dispatch(Fullscreen.Action.EXIT);
@@ -65,9 +92,9 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen exit error:', error);
     }
     
-    // Navigate back to announcement bar list page, preserving query params
-    navigate('/announcement-bar' + location.search);
-  }, [navigate, getFullscreen, location.search]);
+    // Navigate back to announcement bar list page
+    navigate('/announcement-bar' + queryString);
+  }, [navigate, getFullscreen, getQueryString]);
 
   return { openEditor, closeEditor };
 };
