@@ -1,18 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import createApp from '@shopify/app-bridge';
 import { Fullscreen } from '@shopify/app-bridge/actions';
 
 // Store app and fullscreen instances at module level to persist across renders
 let appInstance = null;
 let fullscreenInstance = null;
-let allowExit = false; // Flag to allow intentional exits (save/discard)
-let exitSubscription = null;
 
 /**
  * Hook for navigating to/from the announcement bar editor.
  * Uses App Bridge v3 Fullscreen API to cover Shopify sidebar.
- * X button is disabled by re-entering fullscreen when clicked.
  * 
  * @returns {Object} Navigation functions
  * @returns {Function} openEditor - Opens editor in fullscreen (optionally with bar ID for editing)
@@ -42,40 +39,23 @@ export const useEditorNavigation = () => {
     return fullscreenInstance;
   }, [getAppBridge]);
 
-  // Setup exit listener to block X button clicks
-  const setupExitBlocker = useCallback(() => {
-    if (exitSubscription) return; // Already subscribed
-    
-    const fullscreen = getFullscreen();
-    exitSubscription = fullscreen.subscribe(Fullscreen.Action.EXIT, () => {
-      if (!allowExit) {
-        // X button was clicked - re-enter fullscreen immediately
-        fullscreen.dispatch(Fullscreen.Action.ENTER);
-      }
-    });
-  }, [getFullscreen]);
-
   const openEditor = useCallback((barId = null) => {
     const path = barId
       ? `/announcement-bar/editor/${barId}`
       : '/announcement-bar/editor';
     
-    allowExit = false; // Reset flag
-    
     try {
       const fullscreen = getFullscreen();
       fullscreen.dispatch(Fullscreen.Action.ENTER);
-      setupExitBlocker(); // Setup listener to block X button
     } catch (error) {
       console.error('Fullscreen enter error:', error);
     }
     
     navigate(path);
-  }, [navigate, getFullscreen, setupExitBlocker]);
+  }, [navigate, getFullscreen]);
 
   const closeEditor = useCallback(() => {
-    allowExit = true; // Allow this exit
-    
+    // Exit fullscreen first
     try {
       const fullscreen = getFullscreen();
       fullscreen.dispatch(Fullscreen.Action.EXIT);
