@@ -14,13 +14,3 @@
     flex-direction: column;
     align-items: flex-start;
   }
-
-/* Hide Shopify's native fullscreen header */
-[class*="_Header_"][class*="_max_"] {
-  display: none !important;
-}
-
-/* Alternative selectors for Shopify fullscreen header */
-div[class^="_Header_"] {
-  display: none !important;
-}
