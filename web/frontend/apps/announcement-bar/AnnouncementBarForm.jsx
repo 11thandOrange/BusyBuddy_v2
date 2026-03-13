@@ -7,9 +7,6 @@ import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
-// Feature flag - must match DiscountList.jsx
-const USE_NEW_EDITOR = true;
-
 export default function AnnouncementBarForm({ goBack, setActiveAction }) {
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
@@ -42,13 +39,8 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
       discountActionsRef.current.handleSaveChanges();
     }
   };
-
-  // Hide the entire form header when using the new editor and in edit mode
-  const showHeader = !(USE_NEW_EDITOR && fromDiscountPage);
-
   return (
     <div>
-      {showHeader ? (
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
@@ -151,7 +143,6 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
           )}
         </Row>
       </Container>
-      ) : null}
       <DiscountList
         key={resetDiscountList ? "reset" : "normal"}
         onMakeBundleClick={() => setFromDiscountPage(true)}
