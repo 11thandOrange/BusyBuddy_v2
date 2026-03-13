@@ -14,19 +14,39 @@ export const useEditorNavigation = () => {
   const navigate = useNavigate();
   const shopify = useAppBridge();
 
-  const openEditor = useCallback((barId = null) => {
+  const openEditor = useCallback(async (barId = null) => {
     const path = barId
       ? `/announcement-bar/editor/${barId}`
       : '/announcement-bar/editor';
     
     // Enter fullscreen mode (App Bridge v4 API)
-    shopify.fullscreen.enter();
+    try {
+      console.log('Shopify object:', shopify);
+      console.log('Fullscreen API:', shopify?.fullscreen);
+      
+      if (shopify?.fullscreen?.enter) {
+        await shopify.fullscreen.enter();
+        console.log('Fullscreen entered successfully');
+      } else {
+        console.warn('Fullscreen API not available');
+      }
+    } catch (error) {
+      console.error('Fullscreen enter error:', error);
+    }
+    
     navigate(path);
   }, [navigate, shopify]);
 
-  const closeEditor = useCallback(() => {
+  const closeEditor = useCallback(async () => {
     // Exit fullscreen mode (App Bridge v4 API)
-    shopify.fullscreen.exit();
+    try {
+      if (shopify?.fullscreen?.exit) {
+        await shopify.fullscreen.exit();
+      }
+    } catch (error) {
+      console.error('Fullscreen exit error:', error);
+    }
+    
     navigate('/announcement-bar');
   }, [navigate, shopify]);
 
