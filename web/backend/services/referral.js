@@ -5,6 +5,7 @@ import subscriptionModel from "../models/subscription.model.js";
 import { subscriptionConfig } from "../configs/subscriptionConfig.js";
 
 const BASE_URL = process.env.HOST || "https://busybuddy.app";
+const SHOPIFY_APP_HANDLE = process.env.SHOPIFY_APP_HANDLE || "busybuddy";
 
 /**
  * Create a new referral partner
@@ -26,6 +27,8 @@ export async function createReferral(data) {
 
 /**
  * Generate referral URL with tracking parameters
+ * Returns URL to the app's referral landing page which tracks the click
+ * and redirects to Shopify app store
  */
 export function generateReferralUrl(referral) {
   const params = new URLSearchParams({
@@ -33,7 +36,18 @@ export function generateReferralUrl(referral) {
     source: referral.source,
     campaign: referral.campaign,
   });
-  return `${BASE_URL}?${params.toString()}`;
+  
+  // URL to referral landing/redirect endpoint
+  return `${BASE_URL}/api/referrals/${referral.code}/redirect?${params.toString()}`;
+}
+
+/**
+ * Get the Shopify App Store install URL
+ */
+export function getShopifyAppStoreUrl(referralCode, source, campaign) {
+  // Shopify App Store URL with referral tracking in URL params
+  // Note: Shopify may not pass custom params through, but we track via our redirect
+  return `https://apps.shopify.com/${SHOPIFY_APP_HANDLE}`;
 }
 
 /**

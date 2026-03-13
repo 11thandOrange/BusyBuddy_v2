@@ -311,6 +311,46 @@ async function getDashboardMetrics(req, res) {
   }
 }
 
+/**
+ * Redirect endpoint for referral tracking
+ * Tracks the click event and redirects to Shopify App Store
+ */
+async function redirectToAppStore(req, res) {
+  try {
+    const { code } = req.params;
+    const referral = await referralService.getReferralByCode(code);
+
+    if (!referral) {
+      // Redirect to app store anyway, just don't track
+      const appStoreUrl = referralService.getShopifyAppStoreUrl();
+      return res.redirect(302, appStoreUrl);
+    }
+
+    // Track the click event
+    await referralService.trackReferralEvent(code, "click", {
+      metadata: {
+        user_agent: req.headers["user-agent"],
+        ip: req.ip,
+        referer: req.headers["referer"],
+      },
+    });
+
+    // Redirect to Shopify App Store
+    const appStoreUrl = referralService.getShopifyAppStoreUrl(
+      referral.code,
+      referral.source,
+      referral.campaign
+    );
+
+    res.redirect(302, appStoreUrl);
+  } catch (error) {
+    console.error("Error in referral redirect:", error);
+    // Still redirect to app store on error
+    const appStoreUrl = referralService.getShopifyAppStoreUrl();
+    res.redirect(302, appStoreUrl);
+  }
+}
+
 export {
   createReferral,
   getAllReferrals,
@@ -325,4 +365,5 @@ export {
   getCommission,
   getFraudDetection,
   getDashboardMetrics,
+  redirectToAppStore,
 };

@@ -14,6 +14,7 @@ import {
   getCommission,
   getFraudDetection,
   getDashboardMetrics,
+  redirectToAppStore,
 } from "../../controller/referrals/index.js";
 
 const router = express.Router();
@@ -70,5 +71,9 @@ router.get("/:code/dashboard", getDashboardMetrics);
 
 // Track referral event (clicks, installs, etc.)
 router.post("/:code/track", trackReferralEvent);
+
+// Redirect to Shopify App Store (tracks click and redirects)
+// This is the URL partners share: /api/referrals/:code/redirect
+router.get("/:code/redirect", redirectToAppStore);
 
 export default router;
