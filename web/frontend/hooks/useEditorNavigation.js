@@ -17,26 +17,51 @@ export const useEditorNavigation = () => {
   const fullscreenRef = useRef(null);
 
   const openEditor = useCallback((barId = null) => {
-    const fullscreen = Fullscreen.create(app);
-    fullscreenRef.current = fullscreen;
+    const path = barId
+      ? `/announcement-bar/editor/${barId}`
+      : '/announcement-bar/editor';
 
-    // Subscribe to fullscreen entry confirmation
-    const unsubscribe = fullscreen.subscribe(Fullscreen.Action.ENTER, () => {
-      unsubscribe();
-      // Navigate AFTER fullscreen is ready (no flash)
-      const path = barId
-        ? `/announcement-bar/editor/${barId}`
-        : '/announcement-bar/editor';
+    try {
+      const fullscreen = Fullscreen.create(app);
+      fullscreenRef.current = fullscreen;
+
+      let hasNavigated = false;
+
+      // Subscribe to fullscreen entry confirmation
+      const unsubscribe = fullscreen.subscribe(Fullscreen.Action.ENTER, () => {
+        if (!hasNavigated) {
+          hasNavigated = true;
+          unsubscribe();
+          navigate(path);
+        }
+      });
+
+      // Dispatch fullscreen enter
+      fullscreen.dispatch(Fullscreen.Action.ENTER);
+
+      // Fallback: If fullscreen doesn't respond within 500ms, navigate anyway
+      // This handles cases where the app isn't embedded in Shopify admin
+      setTimeout(() => {
+        if (!hasNavigated) {
+          hasNavigated = true;
+          console.log('Fullscreen timeout - navigating without fullscreen');
+          navigate(path);
+        }
+      }, 500);
+    } catch (error) {
+      // If App Bridge fails entirely, just navigate
+      console.error('App Bridge error:', error);
       navigate(path);
-    });
-
-    // Dispatch fullscreen enter
-    fullscreen.dispatch(Fullscreen.Action.ENTER);
+    }
   }, [app, navigate]);
 
   const closeEditor = useCallback(() => {
-    const fullscreen = fullscreenRef.current || Fullscreen.create(app);
-    fullscreen.dispatch(Fullscreen.Action.EXIT);
+    try {
+      const fullscreen = fullscreenRef.current || Fullscreen.create(app);
+      fullscreen.dispatch(Fullscreen.Action.EXIT);
+    } catch (error) {
+      console.error('Fullscreen exit error:', error);
+    }
     navigate('/announcement-bar');
   }, [app, navigate]);
 
