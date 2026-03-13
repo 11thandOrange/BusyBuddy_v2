@@ -55,16 +55,16 @@ export const useEditorNavigation = () => {
   }, [navigate, getFullscreen]);
 
   const closeEditor = useCallback(() => {
-    // Exit fullscreen first
-    try {
-      const fullscreen = getFullscreen();
-      fullscreen.dispatch(Fullscreen.Action.EXIT);
-    } catch (error) {
-      console.error('Fullscreen exit error:', error);
-    }
+    const fullscreen = getFullscreen();
     
-    // Navigate back to home page
-    navigate('/');
+    // Subscribe to EXIT event to navigate after fullscreen exits
+    const unsubscribe = fullscreen.subscribe(Fullscreen.Action.EXIT, () => {
+      unsubscribe();
+      navigate('/');
+    });
+    
+    // Dispatch EXIT action
+    fullscreen.dispatch(Fullscreen.Action.EXIT);
   }, [navigate, getFullscreen]);
 
   return { openEditor, closeEditor };
