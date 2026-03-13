@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-// import DiscountModal from "../../pages/DiscountModal";
+import { useNavigate } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
-export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
+export default function InactiveTabMessageForm() {
+  const navigate = useNavigate();
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
+  
   const handleOpenDiscountModal = () => {
     setShowDiscountModal(true);
   };
@@ -18,9 +20,14 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
   const handleCloseDiscountModal = () => {
     setShowDiscountModal(false);
   };
+  
   const handleDiscard = () => {
     setFromDiscountPage(false);
-    setResetDiscountList((prev) => !prev); // Toggle to force re-render
+    setResetDiscountList((prev) => !prev);
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   return (
@@ -38,10 +45,7 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => {
-                  goBack(true);
-                  setActiveAction(null);
-                }}
+                onClick={handleBack}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -135,7 +139,6 @@ export default function InactiveTabMessageForm({ goBack, setActiveAction }) {
         <DiscountModal
           show={showDiscountModal}
           onHide={handleCloseDiscountModal}
-          setActiveAction={setActiveAction}
         />
       </Container>
       <DiscountList

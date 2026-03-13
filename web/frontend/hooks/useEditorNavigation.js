@@ -63,8 +63,8 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen exit error:', error);
     }
     
-    // Navigate back to home page
-    navigate('/');
+    // Navigate back to announcement bar list page
+    navigate('/announcement-bar');
   }, [navigate, getFullscreen]);
 
   return { openEditor, closeEditor };

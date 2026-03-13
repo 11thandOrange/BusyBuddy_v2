@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
 import { useEditorNavigation } from "../../hooks";
 
-export default function AnnouncementBarForm({ goBack, setActiveAction }) {
+export default function AnnouncementBarForm() {
+  const navigate = useNavigate();
   const [refreshTrigger, setRefreshTrigger] = useState(1);
   const { openEditor } = useEditorNavigation();
 
@@ -16,6 +18,10 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
 
   const handleRefreshList = () => {
     setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const handleBack = () => {
+    navigate('/');
   };
 
   return (
@@ -30,10 +36,7 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
                 border: "none",
                 cursor: "pointer",
               }}
-              onClick={() => {
-                goBack(true);
-                setActiveAction(null);
-              }}
+              onClick={handleBack}
             >
               <ArrowLeft size={24} />
             </div>

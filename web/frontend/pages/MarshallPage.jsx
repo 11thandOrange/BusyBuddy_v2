@@ -9,15 +9,8 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import { Play } from "react-bootstrap-icons";
-import AnnouncementBarForm from "../apps/announcement-bar/AnnouncementBarForm";
-import BundleForm from "../apps/bundle-discounts/BundleForm";
-import MixMatchForm from "../apps/mix-and-match-discounts/MixMatchForm";
-import VolumeForm from "../apps/volume-discounts/VolumeForm";
-import BuyonegetoneForm from "../apps/buy-one-get-one/buyoneGetone";
+import { useNavigate } from "react-router-dom";
 import videoimg from "../assets/videoimg.png";
-import InactiveTabMessageForm from "../apps/inactive-tab-message/InactiveTabMessageForm";
-import CarNoticeForm from "../apps/car-notice/CarNoticeForm";
-import CountdownTimerForm from "../apps/car-notice/CarNoticeForm";
 import tshirtImg from "../assets/tshirt.png";
 
 const initialCart = [
@@ -31,8 +24,18 @@ const initialCart = [
 ];
 
 const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
-  const [activeAction, setActiveAction] = useState(null);
+  const navigate = useNavigate();
   const [cartItems, setCartItems] = useState(initialCart);
+
+  // Route mapping for each app
+  const appRoutes = {
+    "Announcement Bar": "/announcement-bar",
+    "Inactive Tab Message": "/inactive-tab-message",
+    "Bundle Discount": "/bundle-discount",
+    "Buy One Get One": "/buy-one-get-one",
+    "Volume Discounts": "/volume-discounts",
+    "Mix & Match": "/mix-and-match",
+  };
 
   const tabData = {
     "Announcement Bar": {
@@ -158,31 +161,10 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
   };
 
   const handleMakeBundleNowClick = () => {
-    switch (activeTab) {
-      case "Announcement Bar":
-        setActiveAction("announcementBar");
-        break;
-      case "Inactive Tab Message":
-        setActiveAction("inactiveTabMessage");
-        break;
-
-      case "Bundle Discount":
-        setActiveAction("bundleDiscount");
-        break;
-      case "Buy One Get One":
-        setActiveAction("bogo");
-        break;
-      case "Volume Discounts":
-        setActiveAction("volumeDiscount");
-        break;
-      case "Mix & Match":
-        setActiveAction("mixMatch");
-        break;
-      default:
-        setActiveAction(null);
-        break;
+    const route = appRoutes[activeTab];
+    if (route) {
+      navigate(route);
     }
-    onMakeBundleNowClick(); // Call the function passed from HomePage
   };
   const getButtonLabel = () => {
     switch (activeTab) {
@@ -202,51 +184,6 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
         return "Make your Bundle Now!";
     }
   };
-
-  // Render the selected action component
-  if (activeAction === "bundleDiscount") {
-    return (
-      <BundleForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  } else if (activeAction === "bogo") {
-    return (
-      <BuyonegetoneForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  } else if (activeAction === "volumeDiscount") {
-    return (
-      <VolumeForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  } else if (activeAction === "mixMatch") {
-    return (
-      <MixMatchForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  } else if (activeAction === "announcementBar") {
-    return (
-      <AnnouncementBarForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  } else if (activeAction === "inactiveTabMessage") {
-    return (
-      <InactiveTabMessageForm
-        setActiveAction={setActiveAction}
-        goBack={onMakeBundleNowClick}
-      />
-    );
-  }
 
   const updateQuantity = (id, amount) => {
     setCartItems((prev) =>
