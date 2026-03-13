@@ -59,7 +59,8 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen exit error:', error);
     }
     
-    navigate('/announcement-bar');
+    // Navigate back to home page (announcement bar is shown via state in MarshallPage)
+    navigate('/');
   }, [navigate, getAppBridge]);
 
   return { openEditor, closeEditor };

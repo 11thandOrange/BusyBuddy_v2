@@ -11,7 +11,6 @@ export default function AnnouncementBarForm({ goBack, setActiveAction }) {
   const { openEditor } = useEditorNavigation();
 
   const handleCreateNew = () => {
-    console.log('handleCreateNew called');
     openEditor(); // Opens editor in fullscreen (no bar ID = create new)
   };
 
