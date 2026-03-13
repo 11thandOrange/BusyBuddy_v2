@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import createApp from '@shopify/app-bridge';
 import { Fullscreen } from '@shopify/app-bridge/actions';
+
+// Store app and fullscreen instances at module level to persist across renders
+let appInstance = null;
+let fullscreenInstance = null;
 
 /**
  * Hook for navigating to/from the announcement bar editor.
@@ -13,16 +17,27 @@ import { Fullscreen } from '@shopify/app-bridge/actions';
  */
 export const useEditorNavigation = () => {
   const navigate = useNavigate();
-  const fullscreenRef = useRef(null);
 
-  // Create App Bridge app instance (v3 pattern - same as Plan.jsx)
+  // Get or create App Bridge app instance
   const getAppBridge = useCallback(() => {
-    const config = {
-      apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
-      host: new URLSearchParams(location.search).get('host') || window.__SHOPIFY_DEV_HOST,
-    };
-    return createApp(config);
+    if (!appInstance) {
+      const config = {
+        apiKey: import.meta.env.VITE_SHOPIFY_API_KEY,
+        host: new URLSearchParams(location.search).get('host') || window.__SHOPIFY_DEV_HOST,
+      };
+      appInstance = createApp(config);
+    }
+    return appInstance;
   }, []);
+
+  // Get or create Fullscreen instance
+  const getFullscreen = useCallback(() => {
+    if (!fullscreenInstance) {
+      const app = getAppBridge();
+      fullscreenInstance = Fullscreen.create(app);
+    }
+    return fullscreenInstance;
+  }, [getAppBridge]);
 
   const openEditor = useCallback((barId = null) => {
     const path = barId
@@ -30,38 +45,27 @@ export const useEditorNavigation = () => {
       : '/announcement-bar/editor';
     
     try {
-      const app = getAppBridge();
-      const fullscreen = Fullscreen.create(app);
-      fullscreenRef.current = fullscreen;
-      
-      // Enter fullscreen mode
+      const fullscreen = getFullscreen();
       fullscreen.dispatch(Fullscreen.Action.ENTER);
-      console.log('Fullscreen ENTER dispatched');
     } catch (error) {
       console.error('Fullscreen enter error:', error);
     }
     
     navigate(path);
-  }, [navigate, getAppBridge]);
+  }, [navigate, getFullscreen]);
 
   const closeEditor = useCallback(() => {
+    // Exit fullscreen first
     try {
-      if (fullscreenRef.current) {
-        fullscreenRef.current.dispatch(Fullscreen.Action.EXIT);
-        console.log('Fullscreen EXIT dispatched');
-      } else {
-        // Create new instance if ref not available
-        const app = getAppBridge();
-        const fullscreen = Fullscreen.create(app);
-        fullscreen.dispatch(Fullscreen.Action.EXIT);
-      }
+      const fullscreen = getFullscreen();
+      fullscreen.dispatch(Fullscreen.Action.EXIT);
     } catch (error) {
       console.error('Fullscreen exit error:', error);
     }
     
-    // Navigate back to home page (announcement bar is shown via state in MarshallPage)
+    // Navigate back to home page
     navigate('/');
-  }, [navigate, getAppBridge]);
+  }, [navigate, getFullscreen]);
 
   return { openEditor, closeEditor };
 };
