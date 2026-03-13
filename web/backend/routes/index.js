@@ -7,7 +7,7 @@ import announcementBarRoutes from './announcementBars/index.js';
 import subscriptionRoutes from './subscription/index.js';
 import inactivetabRoutes from './inactivetabs/index.js';
 import analyticsRoutes from './analytics/index.js';
-import webhookRoutes from './webhooks/index.js';
+// Note: webhookRoutes are mounted separately in web/index.js to bypass session auth
 
 router.use('/products', productRoutes); 
 router.use('/bundles', bundleRoutes);
@@ -16,6 +16,5 @@ router.use('/announcement-bars', announcementBarRoutes);
 router.use('/subscription', subscriptionRoutes);
 router.use('/inactive-tab', inactivetabRoutes);
 router.use('/analytics', analyticsRoutes);
-router.use('/webhooks', webhookRoutes);
 
 export default router;
