@@ -5,10 +5,8 @@ import { Fullscreen } from '@shopify/app-bridge/actions';
 
 // Store host param at module level to persist even when URL changes
 let storedHost = null;
-// Track if we're currently in editor to handle X button clicks
-let isInEditor = false;
-// Store unsubscribe function
-let fullscreenUnsubscribe = null;
+// Track if we intentionally exited (Save/Discard) vs X button
+let intentionalExit = false;
 
 /**
  * Hook for navigating to/from the announcement bar editor.
@@ -25,6 +23,7 @@ export const useEditorNavigation = () => {
   // Store references to app and fullscreen instances
   const appRef = useRef(null);
   const fullscreenRef = useRef(null);
+  const unsubscribeRef = useRef(null);
   
   // Capture host from current URL or use stored value
   const getHost = useCallback(() => {
@@ -66,43 +65,50 @@ export const useEditorNavigation = () => {
     return location.search || '';
   }, [getHost, location.search]);
 
-  // Subscribe to fullscreen exit events (handles X button clicks)
+  // Handle X button click - subscribe to fullscreen changes
   useEffect(() => {
-    // Only set up subscription if we're in the editor
+    // Only set up if we're in the editor
     if (!location.pathname.includes('/announcement-bar/editor')) {
+      intentionalExit = false;
       return;
     }
 
-    try {
-      const fullscreen = getFullscreen();
-      
-      // Unsubscribe from previous subscription if exists
-      if (fullscreenUnsubscribe) {
-        fullscreenUnsubscribe();
+    const setupSubscription = () => {
+      try {
+        const fullscreen = getFullscreen();
+        
+        // Clean up previous subscription
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+        }
+        
+        // Subscribe to fullscreen exit
+        unsubscribeRef.current = fullscreen.subscribe(Fullscreen.Action.EXIT, () => {
+          // Only redirect if this wasn't triggered by our own closeEditor
+          if (!intentionalExit) {
+            const host = storedHost || window.__SHOPIFY_DEV_HOST;
+            const queryString = host ? `?host=${encodeURIComponent(host)}` : '';
+            // Use window.location for more reliable navigation after X click
+            window.location.href = `/announcement-bar${queryString}`;
+          }
+          intentionalExit = false;
+        });
+      } catch (error) {
+        console.error('Fullscreen subscription error:', error);
       }
-      
-      // Subscribe to fullscreen state changes
-      fullscreenUnsubscribe = fullscreen.subscribe(Fullscreen.Action.EXIT, () => {
-        // When X button is clicked, Shopify exits fullscreen
-        // We need to navigate back to the list page
-        if (isInEditor) {
-          const queryString = getQueryString();
-          navigate('/announcement-bar' + queryString);
-        }
-      });
-      
-      isInEditor = true;
-      
-      return () => {
-        if (fullscreenUnsubscribe) {
-          fullscreenUnsubscribe();
-          fullscreenUnsubscribe = null;
-        }
-      };
-    } catch (error) {
-      console.error('Fullscreen subscription error:', error);
-    }
-  }, [location.pathname, getFullscreen, getQueryString, navigate]);
+    };
+
+    // Small delay to ensure App Bridge is ready
+    const timeoutId = setTimeout(setupSubscription, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [location.pathname, getFullscreen]);
 
   const openEditor = useCallback((barId = null) => {
     // Capture current host before navigation
@@ -112,7 +118,7 @@ export const useEditorNavigation = () => {
       ? `/announcement-bar/editor/${barId}`
       : '/announcement-bar/editor';
     
-    isInEditor = true;
+    intentionalExit = false;
     
     try {
       const fullscreen = getFullscreen();
@@ -125,10 +131,11 @@ export const useEditorNavigation = () => {
   }, [navigate, getFullscreen, getQueryString]);
 
   const closeEditor = useCallback(() => {
+    // Mark this as an intentional exit so subscription doesn't double-navigate
+    intentionalExit = true;
+    
     // Capture host before any navigation
     const queryString = getQueryString();
-    
-    isInEditor = false;
     
     // Exit fullscreen
     try {
