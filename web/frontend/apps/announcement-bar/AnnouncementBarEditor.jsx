@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useAppBridge } from '@shopify/app-bridge-react';
+import { Fullscreen } from '@shopify/app-bridge/actions';
 import {
   EditorLayout,
   EditorSidepane,
@@ -14,6 +17,7 @@ import {
   EditorHeader,
   EditorRightContent
 } from '../../components/Editor';
+import { useEditorNavigation } from '../../hooks';
 
 // Announcement Bar specific settings configuration
 // Settings configuration for AnnouncementBar editor - Animation removed
@@ -127,12 +131,20 @@ const THEME_OPTIONS = [
 /**
  * AnnouncementBarEditor - Editor for Announcement Bar app
  * Uses reusable Editor components with app-specific configuration
+ * 
+ * Rendered as a dedicated route with fullscreen mode.
+ * URL: /announcement-bar/editor/:id (edit) or /announcement-bar/editor (create)
  */
-export const AnnouncementBarEditor = ({ 
-  editingBar,
-  onSave,
-  onDiscard 
-}) => {
+export const AnnouncementBarEditor = () => {
+  // Get bar ID from URL params (if editing existing bar)
+  const { id } = useParams();
+  const { closeEditor } = useEditorNavigation();
+  const app = useAppBridge();
+  
+  // Loading state for fetching bar data
+  const [isLoading, setIsLoading] = useState(!!id);
+  const [editingBar, setEditingBar] = useState(null);
+
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
   const [activeSetting, setActiveSetting] = useState('message');
@@ -140,10 +152,10 @@ export const AnnouncementBarEditor = ({
   
   // === CONTENT SETTINGS ===
   // Bar Type
-  const [barEnabled, setBarEnabled] = useState(editingBar?.status === 'active' ?? true);
-  const [barType, setBarType] = useState(editingBar?.barType || 'text');
-  const [internalName, setInternalName] = useState(editingBar?.name || 'Summer Sale Banner');
-  const [title, setTitle] = useState(editingBar?.name || 'Summer Sale Banner');
+  const [barEnabled, setBarEnabled] = useState(true);
+  const [barType, setBarType] = useState('text');
+  const [internalName, setInternalName] = useState('Summer Sale Banner');
+  const [title, setTitle] = useState('Summer Sale Banner');
   
   // Message
   const [message, setMessage] = useState(editingBar?.message || '🔥 Summer Sale - Up to 50% OFF!');
@@ -201,6 +213,54 @@ export const AnnouncementBarEditor = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // Fetch bar data if editing (id from URL params)
+  useEffect(() => {
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchBar = async () => {
+      try {
+        const response = await fetch(`/api/announcement-bars/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch bar');
+        const data = await response.json();
+        const bar = data?.data;
+        
+        if (bar) {
+          setEditingBar(bar);
+          // Populate form state from fetched data
+          setBarEnabled(bar.status === 'active');
+          setBarType(bar.barType || 'text');
+          setInternalName(bar.name || 'Summer Sale Banner');
+          setTitle(bar.name || 'Summer Sale Banner');
+          setMessage(bar.message || '🔥 Summer Sale - Up to 50% OFF!');
+          setBackgroundColor(bar.backgroundColor || '#667eea');
+          setGradientEndColor(bar.gradientEndColor || '#764ba2');
+          setBackgroundType(bar.backgroundType || 'gradient');
+          setTextColor(bar.textColor || '#ffffff');
+          setFontSize(bar.fontSize || '16');
+          setFontFamily(bar.fontFamily || 'Inter');
+          setFontWeight(bar.fontWeight || '600');
+          setBarHeight(bar.barHeight || 50);
+          setBarPadding(bar.barPadding || 12);
+          setBarPosition(bar.barPosition || 'top');
+          setShowTimer(bar.showTimer || false);
+          setShowShopNowButton(bar.showShopNowButton || false);
+          setShopNowButtonText(bar.shopNowButtonText || 'Shop Now');
+          setShowSaveBox(bar.showSaveBox || false);
+          setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
+        }
+      } catch (err) {
+        console.error('Error fetching bar:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBar();
+  }, [id]);
+
   // Timer countdown effect
   useEffect(() => {
     if (!showTimer || !timerEndDate || !timerEndTime) return;
@@ -239,7 +299,7 @@ export const AnnouncementBarEditor = ({
   };
 
   // Handle save
-  const handleSave = () => {
+  const handleSave = async () => {
     const data = {
       name: internalName,
       status: barEnabled ? 'active' : 'inactive',
@@ -254,6 +314,7 @@ export const AnnouncementBarEditor = ({
       fontFamily,
       fontWeight,
       barHeight,
+      barPadding,
       barPosition,
       animateMessage,
       animationSpeed,
@@ -271,7 +332,29 @@ export const AnnouncementBarEditor = ({
       startDate,
       endDate,
     };
-    onSave?.(data);
+
+    try {
+      const url = id ? `/api/announcement-bars/${id}` : '/api/announcement-bars';
+      const method = id ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error('Save failed');
+      
+      // Close editor and return to list (exits fullscreen)
+      closeEditor();
+    } catch (err) {
+      console.error('Save error:', err);
+      alert('Failed to save announcement bar');
+    }
+  };
+
+  const handleDiscard = () => {
+    closeEditor();
   };
 
   // Get background style
@@ -844,6 +927,27 @@ export const AnnouncementBarEditor = ({
     );
   };
 
+  // Show loading state while fetching bar data
+  if (isLoading) {
+    return (
+      <EditorLayout>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          color: '#fff',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '16px' }}>Loading...</div>
+            <div style={{ color: '#888' }}>Fetching announcement bar data</div>
+          </div>
+        </div>
+      </EditorLayout>
+    );
+  }
+
   return (
     <EditorLayout>
       {/* Left Sidepane */}
@@ -868,7 +972,7 @@ export const AnnouncementBarEditor = ({
           enabled={barEnabled}
           onEnabledChange={setBarEnabled}
           onSave={handleSave}
-          onDiscard={onDiscard}
+          onDiscard={handleDiscard}
         />
         
         <EditorPreviewPanel

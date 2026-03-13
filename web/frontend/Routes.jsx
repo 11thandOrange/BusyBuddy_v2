@@ -1,4 +1,5 @@
 import { Routes as ReactRouterRoutes, Route } from "react-router-dom";
+import AnnouncementBarEditor from "./apps/announcement-bar/AnnouncementBarEditor";
 
 /**
  * File-based routing.
@@ -25,6 +26,9 @@ export default function Routes({ pages }) {
   return (
     <ReactRouterRoutes>
       {routeComponents}
+      {/* Announcement Bar Editor Routes (fullscreen) */}
+      <Route path="/announcement-bar/editor" element={<AnnouncementBarEditor />} />
+      <Route path="/announcement-bar/editor/:id" element={<AnnouncementBarEditor />} />
       <Route path="*" element={<NotFound />} />
     </ReactRouterRoutes>
   );
