@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
@@ -9,6 +9,7 @@ import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function InactiveTabMessageForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
@@ -27,7 +28,7 @@ export default function InactiveTabMessageForm() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/' + location.search);
   };
 
   return (

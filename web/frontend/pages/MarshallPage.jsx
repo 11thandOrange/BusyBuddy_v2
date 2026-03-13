@@ -9,7 +9,7 @@ import {
   ListGroup,
 } from "react-bootstrap";
 import { Play } from "react-bootstrap-icons";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import videoimg from "../assets/videoimg.png";
 import tshirtImg from "../assets/tshirt.png";
 
@@ -25,6 +25,7 @@ const initialCart = [
 
 const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [cartItems, setCartItems] = useState(initialCart);
 
   // Route mapping for each app
@@ -163,7 +164,8 @@ const MarshallPage = ({ activeTab, setActiveTab, onMakeBundleNowClick }) => {
   const handleMakeBundleNowClick = () => {
     const route = appRoutes[activeTab];
     if (route) {
-      navigate(route);
+      // Preserve query params (especially 'host' for App Bridge)
+      navigate(route + location.search);
     }
   };
   const getButtonLabel = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import Button from "../../components/Button";
@@ -9,6 +9,7 @@ import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function BundleForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
@@ -48,7 +49,7 @@ export default function BundleForm() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/' + location.search);
   };
 
   return (

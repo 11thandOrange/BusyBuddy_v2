@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
@@ -9,6 +9,7 @@ import { useEditorNavigation } from "../../hooks";
 
 export default function AnnouncementBarForm() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [refreshTrigger, setRefreshTrigger] = useState(1);
   const { openEditor } = useEditorNavigation();
 
@@ -21,7 +22,7 @@ export default function AnnouncementBarForm() {
   };
 
   const handleBack = () => {
-    navigate('/');
+    navigate('/' + location.search);
   };
 
   return (

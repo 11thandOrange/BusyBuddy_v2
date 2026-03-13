@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCallback } from 'react';
 import createApp from '@shopify/app-bridge';
 import { Fullscreen } from '@shopify/app-bridge/actions';
@@ -17,6 +17,7 @@ let fullscreenInstance = null;
  */
 export const useEditorNavigation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Get or create App Bridge app instance
   const getAppBridge = useCallback(() => {
@@ -28,7 +29,7 @@ export const useEditorNavigation = () => {
       appInstance = createApp(config);
     }
     return appInstance;
-  }, []);
+  }, [location.search]);
 
   // Get or create Fullscreen instance
   const getFullscreen = useCallback(() => {
@@ -51,8 +52,9 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen enter error:', error);
     }
     
-    navigate(path);
-  }, [navigate, getFullscreen]);
+    // Preserve query params (especially 'host' for App Bridge)
+    navigate(path + location.search);
+  }, [navigate, getFullscreen, location.search]);
 
   const closeEditor = useCallback(() => {
     // Exit fullscreen first
@@ -63,9 +65,9 @@ export const useEditorNavigation = () => {
       console.error('Fullscreen exit error:', error);
     }
     
-    // Navigate back to announcement bar list page
-    navigate('/announcement-bar');
-  }, [navigate, getFullscreen]);
+    // Navigate back to announcement bar list page, preserving query params
+    navigate('/announcement-bar' + location.search);
+  }, [navigate, getFullscreen, location.search]);
 
   return { openEditor, closeEditor };
 };
