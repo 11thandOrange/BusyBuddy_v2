@@ -136,7 +136,7 @@ const THEME_OPTIONS = [
 export const AnnouncementBarEditor = () => {
   // Get bar ID from URL params (if editing existing bar)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor, setEditorCallbacks } = useEditorNavigation();
   
   // Loading state for fetching bar data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -288,6 +288,10 @@ export const AnnouncementBarEditor = () => {
   // Get settings for current tab
   const currentSettings = ANNOUNCEMENT_BAR_SETTINGS[activeTab] || [];
 
+  // Reference for save handler (needed for TitleBar callback)
+  const handleSaveRef = React.useRef(null);
+  const handleDiscardRef = React.useRef(null);
+
   // Handle tab change - reset to first setting
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -353,6 +357,18 @@ export const AnnouncementBarEditor = () => {
   const handleDiscard = () => {
     closeEditor();
   };
+
+  // Update refs and register callbacks with TitleBar
+  handleSaveRef.current = handleSave;
+  handleDiscardRef.current = handleDiscard;
+
+  // Register save/discard callbacks with App Bridge TitleBar
+  useEffect(() => {
+    setEditorCallbacks(
+      () => handleSaveRef.current?.(),
+      () => handleDiscardRef.current?.()
+    );
+  }, [setEditorCallbacks]);
 
   // Get background style
   const getBackgroundStyle = () => {
