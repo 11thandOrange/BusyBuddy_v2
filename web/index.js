@@ -7,6 +7,7 @@ import shopify from "./shopify.js";
 import PrivacyWebhookHandlers from "./privacy.js";
 import morgan from "morgan";
 import router from "./backend/routes/index.js";
+import referralRoutes from "./backend/routes/referrals/index.js";
 import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
@@ -38,6 +39,14 @@ mongoose.connect(db).then(
   }
 );
 app.use(morgan("tiny"));
+
+// ============================================
+// PUBLIC ROUTES - No Shopify authentication required
+// These must be registered BEFORE the Shopify auth middleware
+// ============================================
+app.use(express.json());
+app.use("/api/referrals", referralRoutes);
+
 // Set up Shopify authentication and webhook handling
 app.get(shopify.config.auth.path, shopify.auth.begin());
 app.get(
@@ -55,6 +64,9 @@ app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
+// ============================================
+// AUTHENTICATED ROUTES - Require Shopify shop session
+// ============================================
 // app.use("/api/*", shopify.validateAuthenticatedSession());
 app.use(
   "/api/*",
@@ -87,7 +99,6 @@ app.use(
     shopify.validateAuthenticatedSession()
   )
 );
-app.use(express.json());
 
 // app.get("/api/products/count", async (_req, res) => {
 //   const client = new shopify.api.clients.Graphql({
