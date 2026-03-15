@@ -8,6 +8,10 @@
   body {
     font-family: 'Inter', sans-serif;
   }
+
+  #app {
+    padding: 25px;
+  }
   
   .layoutbox{
     display: flex;

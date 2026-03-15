@@ -23,6 +23,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [totalItems, setTotalItems] = useState(0);
+  const [isChecked, setIsChecked] = useState(false);
   
   const { openEditor } = useEditorNavigation();
 
@@ -208,6 +209,51 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
           </div>
         </div>
       </Row>
+
+      {/* Select All / Delete All Row */}
+      {selectedTab === "Announcement Bars" && (
+        <div className="d-flex justify-content-between my-2 px-2 py-1">
+          <Button
+            text={
+              <div className="slecetbox">
+                <Form.Check 
+                  type="checkbox" 
+                  checked={isChecked} 
+                  onChange={() => setIsChecked(!isChecked)}
+                  className="custom-checkbox me-2" 
+                />
+                <p className="selecttext">Select All</p>
+              </div>
+            }
+            onClick={() => setIsChecked(!isChecked)}
+            style={{
+              backgroundColor: "white",
+              color: "black",
+              border: "1px solid rgba(34, 34, 34, 0.1)",
+              display: "flex",
+              borderRadius: "8px",
+              padding: "7px 10px 7px 7px",
+            }}
+          />
+
+          <Button
+            text={
+              <>
+                <Trash style={{ marginRight: "6px" }} />
+                Delete All
+              </>
+            }
+            onClick={() => console.log("Delete all selected")}
+            style={{
+              backgroundColor: "rgba(196, 41, 14, 0.1)",
+              color: "#C4290E",
+              border: "1px solid #C4290E",
+              borderRadius: "8px",
+              padding: "7px 10px 7px 7px",
+            }}
+          />
+        </div>
+      )}
 
       {/* Overview Tab */}
       {selectedTab === "Overview" && (
