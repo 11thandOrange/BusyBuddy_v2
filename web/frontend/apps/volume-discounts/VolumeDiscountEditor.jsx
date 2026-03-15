@@ -972,24 +972,25 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
   // Get current settings
   const currentSettings = VOLUME_SETTINGS[activeTab] || [];
 
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const firstSetting = VOLUME_SETTINGS[tabId]?.[0]?.items?.[0];
+    if (firstSetting) setActiveSettingId(firstSetting.id);
+  };
+
   return (
     <EditorLayout>
-      <EditorSidepane>
+      <EditorSidepane
+        tabs={TABS}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      >
         <EditorSettingsPane
-          tabs={TABS}
-          activeTab={activeTab}
-          onTabChange={(tabId) => {
-            setActiveTab(tabId);
-            const firstSetting = VOLUME_SETTINGS[tabId]?.[0]?.items?.[0];
-            if (firstSetting) setActiveSettingId(firstSetting.id);
-          }}
-          settings={currentSettings}
-          activeSettingId={activeSettingId}
-          onSettingClick={setActiveSettingId}
+          groups={currentSettings}
+          activeSetting={activeSettingId}
+          onSettingChange={setActiveSettingId}
         />
-        <EditorConfigPanel title={currentSettings.flatMap(g => g.items).find(i => i.id === activeSettingId)?.label || 'Settings'}>
-          {renderConfigContent()}
-        </EditorConfigPanel>
+        {renderConfigContent()}
       </EditorSidepane>
 
       <EditorRightContent>
