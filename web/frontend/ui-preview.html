@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BusyBuddy - UI Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+    }
+
+    /* Navigation */
+    .preview-nav {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      position: sticky;
+      top: 0;
+      z-index: 1001;
+    }
+
+    .nav-btn {
+      padding: 12px 28px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    .nav-btn.active {
+      background: #0a84ff;
+      border-color: #0a84ff;
+    }
+
+    .preview-section {
+      display: none;
+      min-height: calc(100vh - 80px);
+    }
+
+    .preview-section.active {
+      display: block;
+    }
+
+    /* ========== ANNOUNCEMENT BAR LIST PAGE ========== */
+    .list-page {
+      background: #f8f9fa;
+      padding: 30px;
+    }
+
+    .list-header {
+      max-width: 1400px;
+      margin: 0 auto 30px;
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .list-header-content {
+      flex: 1;
+    }
+
+    .list-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .list-header p {
+      color: #616161;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-create {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 15px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-create:hover {
+      background: #333;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+      border-radius: 26px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #4CAF50;
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    /* List Container */
+    .list-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 15px;
+      padding: 20px;
+    }
+
+    /* Tabs */
+    .tabs-wrapper {
+      background: #f1f2f4;
+      border-radius: 15px;
+      padding: 8px;
+      margin-bottom: 20px;
+      display: inline-flex;
+      box-shadow: inset 1px 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .tab {
+      padding: 12px 40px;
+      border: none;
+      background: transparent;
+      color: #4a4a4a;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #000;
+      color: #fff;
+    }
+
+    /* Bar Items */
+    .bar-item {
+      background: #f1f2f4;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .bar-info h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #303030;
+      margin-bottom: 4px;
+    }
+
+    .bar-info p {
+      font-size: 13px;
+      color: #616161;
+    }
+
+    .bar-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .status-badge {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .status-badge.active { color: #4CAF50; }
+    .status-badge.inactive { color: #616161; }
+
+    .btn-edit {
+      background: rgba(81, 105, 221, 0.1);
+      color: #5169DD;
+      border: 1px solid #5169DD;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .btn-delete {
+      background: rgba(196, 41, 14, 0.1);
+      color: #C4290E;
+      border: 1px solid #C4290E;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* ========== EDITOR PAGE ========== */
+    .editor-wrapper {
+      position: relative;
+      width: 100%;
+      height: calc(100vh - 80px);
+      background: #1a1a1a;
+      overflow: hidden;
+    }
+
+    .editor-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Title Header */
+    .title-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #222;
+      border-bottom: 1px solid #333;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .editable-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .editable-title {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      width: 250px;
+    }
+
+    .editable-title:focus {
+      outline: none;
+      border-bottom: 1px solid #0a84ff;
+    }
+
+    .pencil-icon {
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .header-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-toggle input {
+      width: 40px;
+      height: 22px;
+      accent-color: #0a84ff;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-save {
+      padding: 10px 22px;
+      background: #0a84ff;
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-save:hover { background: #0070d4; }
+
+    /* Tab Bar */
+    .tab-bar {
+      background: #222;
+      padding: 0 24px;
+      border-bottom: 1px solid #333;
+    }
+
+    .main-tabs {
+      display: flex;
+    }
+
+    .main-tab {
+      padding: 14px 24px;
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .main-tab:hover { color: #ccc; }
+    .main-tab.active { color: #fff; }
+
+    .main-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #0a84ff;
+    }
+
+    /* Editor Content */
+    .editor-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidepane */
+    .sidepane {
+      width: 520px;
+      background: #1e1e1e;
+      display: flex;
+      border-right: 1px solid #333;
+    }
+
+    /* Settings Pane */
+    .settings-pane {
+      width: 200px;
+      border-right: 1px solid #333;
+      padding: 12px;
+    }
+
+    .settings-group-title {
+      color: #666;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px 12px 8px;
+    }
+
+    .settings-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #999;
+      font-size: 13px;
+      margin: 2px 0;
+    }
+
+    .settings-item:hover {
+      background: #2a2a2a;
+      color: #ccc;
+    }
+
+    .settings-item.active {
+      background: #333;
+      color: #fff;
+    }
+
+    .settings-item-icon {
+      width: 28px;
+      height: 28px;
+      background: #333;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .settings-item.active .settings-item-icon {
+      background: #0a84ff;
+    }
+
+    /* Config Panel */
+    .config-panel {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .config-header h2 {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .config-header p {
+      color: #666;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      color: #888;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      background: #2a2a2a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #0a84ff;
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Right Content */
+    .right-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .device-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .device-tab {
+      padding: 8px 20px;
+      background: #333;
+      border: none;
+      color: #888;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .device-tab.active {
+      background: #0a84ff;
+      color: #fff;
+    }
+
+    /* Store Preview */
+    .store-preview {
+      flex: 1;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    /* Announcement Bar Preview */
+    .announcement-bar-preview {
+      background: linear-gradient(90deg, #ff6b35, #f7c531);
+      padding: 12px 20px;
+      text-align: center;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .shop-now-btn {
+      background: #fff;
+      color: #ff6b35;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Store Header */
+    .store-header {
+      background: #1a1a1a;
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .store-logo {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .store-nav {
+      display: flex;
+      gap: 30px;
+    }
+
+    .store-nav a {
+      color: #ccc;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .store-icons {
+      display: flex;
+      gap: 15px;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    /* Hero Section */
+    .store-hero {
+      height: 300px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+    }
+
+    .store-hero h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .store-hero p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    /* New Tab Badge */
+    .new-tab-badge {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: rgba(10, 132, 255, 0.9);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .new-tab-badge::before {
+      content: "↗";
+      font-size: 14px;
+    }
+
+    /* Info Banner */
+    .info-banner {
+      background: linear-gradient(135deg, #00d4ff 0%, #7b2cbf 100%);
+      color: #fff;
+      padding: 15px 25px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="preview-nav">
+    <button class="nav-btn active" onclick="showSection('list')">📋 Announcement Bar List</button>
+    <button class="nav-btn" onclick="showSection('editor')">✏️ Editor (Opens in New Tab)</button>
+  </nav>
+
+  <div class="info-banner">
+    🚀 Editor now opens in a <strong>new browser tab</strong> instead of fullscreen mode — cleaner, more reliable!
+  </div>
+
+  <!-- List Page Section -->
+  <section id="list" class="preview-section active">
+    <div class="list-page">
+      <!-- Header -->
+      <div class="list-header">
+        <button class="back-btn">←</button>
+        <div class="list-header-content">
+          <h1>Announcement Bar</h1>
+          <p>Get Noticed! 🔔 Want to make sure your message doesn't get missed? Announcement Bar lets you display important alerts right at the top of your store. Whether it's a sale, promotion, or update, it's impossible to ignore!</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn-create" onclick="showSection('editor')">Create Announcement Bar</button>
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- List Container -->
+      <div class="list-container">
+        <!-- Tabs -->
+        <div class="tabs-wrapper">
+          <button class="tab">Overview</button>
+          <button class="tab active">Announcement Bars</button>
+          <button class="tab">Setting</button>
+          <button class="tab">Analytics</button>
+        </div>
+
+        <!-- Bar Items -->
+        <div class="bar-item">
+          <div class="bar-info">
+            <h3>Summer Sale Banner</h3>
+            <p>🔥 Summer Sale - Up to 50% OFF!</p>
+          </div>
+          <div class="bar-actions">
+            <label class="toggle-switch">
+              <input type="checkbox" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="status-badge active">Active</span>
+            <button class="btn-edit" onclick="showSection('editor')">Edit</button>
+            <button class="btn-delete">🗑️</button>
+          </div>
+        </div>
+
+        <div class="bar-item">
+          <div class="bar-info">
+            <h3>Free Shipping Promo</h3>
+            <p>🚚 Free shipping on orders over $50!</p>
+          </div>
+          <div class="bar-actions">
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="status-badge inactive">Inactive</span>
+            <button class="btn-edit" onclick="showSection('editor')">Edit</button>
+            <button class="btn-delete">🗑️</button>
+          </div>
+        </div>
+
+        <div class="bar-item">
+          <div class="bar-info">
+            <h3>Holiday Countdown</h3>
+            <p>🎄 Christmas Sale ends in 5 days!</p>
+          </div>
+          <div class="bar-actions">
+            <label class="toggle-switch">
+              <input type="checkbox">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="status-badge inactive">Inactive</span>
+            <button class="btn-edit" onclick="showSection('editor')">Edit</button>
+            <button class="btn-delete">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Editor Section -->
+  <section id="editor" class="preview-section">
+    <div class="editor-wrapper">
+      <span class="new-tab-badge">Opens in New Tab</span>
+      
+      <div class="editor-container">
+        <!-- Title Header -->
+        <div class="title-header">
+          <div class="title-left">
+            <div class="editable-title-wrapper">
+              <input type="text" class="editable-title" value="Summer Sale Banner">
+              <span class="pencil-icon">✏️</span>
+            </div>
+            <label class="header-toggle">
+              <input type="checkbox" checked>
+            </label>
+          </div>
+          <div class="header-right">
+            <button class="btn-save" onclick="handleSave()">Save</button>
+          </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+          <div class="main-tabs">
+            <button class="main-tab active">Content</button>
+            <button class="main-tab">Appearance</button>
+            <button class="main-tab">Behavior</button>
+            <button class="main-tab">Schedule</button>
+          </div>
+        </div>
+
+        <!-- Editor Content -->
+        <div class="editor-content">
+          <!-- Sidepane -->
+          <div class="sidepane">
+            <!-- Settings Pane -->
+            <div class="settings-pane">
+              <div class="settings-group">
+                <div class="settings-group-title">Message</div>
+                <div class="settings-item active">
+                  <div class="settings-item-icon">💬</div>
+                  <span>Message Text</span>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-item-icon">😀</div>
+                  <span>Emoji & Icons</span>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-group-title">Timer</div>
+                <div class="settings-item">
+                  <div class="settings-item-icon">⏱️</div>
+                  <span>Countdown Timer</span>
+                </div>
+              </div>
+              <div class="settings-group">
+                <div class="settings-group-title">Call to Action</div>
+                <div class="settings-item">
+                  <div class="settings-item-icon">🔘</div>
+                  <span>Shop Now Button</span>
+                </div>
+                <div class="settings-item">
+                  <div class="settings-item-icon">🏷️</div>
+                  <span>Save Badge</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Config Panel -->
+            <div class="config-panel">
+              <div class="config-header">
+                <h2>Message Text</h2>
+                <p>Customize your announcement message</p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea class="form-textarea">🔥 Summer Sale - Up to 50% OFF!</textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Font Size</label>
+                <input type="text" class="form-input" value="14px">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Text Alignment</label>
+                <select class="form-input">
+                  <option>Center</option>
+                  <option>Left</option>
+                  <option>Right</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Content -->
+          <div class="right-content">
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+              <div class="device-tabs">
+                <button class="device-tab active">🖥️ Desktop</button>
+                <button class="device-tab">📱 Mobile</button>
+              </div>
+
+              <!-- Store Preview -->
+              <div class="store-preview">
+                <!-- Announcement Bar -->
+                <div class="announcement-bar-preview">
+                  <span>🔥 Summer Sale - Up to 50% OFF!</span>
+                  <button class="shop-now-btn">Shop Now</button>
+                </div>
+
+                <!-- Store Header -->
+                <div class="store-header">
+                  <div class="store-logo">STORE</div>
+                  <div class="store-nav">
+                    <a href="#">Home</a>
+                    <a href="#">Shop</a>
+                    <a href="#">Collections</a>
+                    <a href="#">About</a>
+                  </div>
+                  <div class="store-icons">
+                    <span>🔍</span>
+                    <span>👤</span>
+                    <span>🛒</span>
+                  </div>
+                </div>
+
+                <!-- Hero -->
+                <div class="store-hero">
+                  <h1>Summer Collection</h1>
+                  <p>Discover our latest arrivals</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    function showSection(sectionId) {
+      // Hide all sections
+      document.querySelectorAll('.preview-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      // Remove active from all nav buttons
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected section
+      document.getElementById(sectionId).classList.add('active');
+      
+      // Highlight correct nav button
+      const navBtns = document.querySelectorAll('.nav-btn');
+      if (sectionId === 'list') {
+        navBtns[0].classList.add('active');
+      } else {
+        navBtns[1].classList.add('active');
+      }
+    }
+
+    // Track unsaved changes
+    let hasUnsavedChanges = false;
+
+    // Mark as changed when any input is modified
+    document.querySelectorAll('#editor input, #editor textarea, #editor select').forEach(input => {
+      input.addEventListener('change', () => {
+        hasUnsavedChanges = true;
+      });
+      input.addEventListener('input', () => {
+        hasUnsavedChanges = true;
+      });
+    });
+
+    // Warn before closing tab/window with unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    });
+
+    // Handle Save button
+    function handleSave() {
+      hasUnsavedChanges = false;
+      alert('Changes saved successfully!');
+      showSection('list');
+    }
+
+    // Make settings items clickable
+    document.querySelectorAll('.settings-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.settings-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Make tabs clickable
+    document.querySelectorAll('.main-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    // Make device tabs clickable
+    document.querySelectorAll('.device-tab').forEach(tab => {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.device-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

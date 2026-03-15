@@ -1,0 +1,99 @@
+pane /* Liquid Glass Panel Styles - iOS Liquid Glass Effect */
+
+/* Base Panel Styles */
+.liquid-glass-panel {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+/* Thick Variant - For primary containers (header, config panel) */
+.liquid-glass-thick {
+  background: rgba(20, 20, 25, 0.55);
+}
+
+/* Regular Variant - For secondary containers (preview panel) */
+.liquid-glass-regular {
+  background: rgba(25, 25, 30, 0.50);
+}
+
+/* Thin Variant - For overlays (tab bar, settings pane) */
+.liquid-glass-thin {
+  background: rgba(30, 30, 35, 0.45);
+}
+
+/* Gradient Background for Liquid Glass Effect */
+.liquid-glass-container {
+  position: relative;
+  background: 
+    radial-gradient(ellipse at 5% 90%, rgba(139, 92, 246, 0.7) 0%, transparent 35%),
+    radial-gradient(ellipse at 95% 10%, rgba(236, 72, 153, 0.6) 0%, transparent 35%),
+    radial-gradient(ellipse at 30% 30%, rgba(59, 130, 246, 0.5) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 70%, rgba(16, 185, 129, 0.55) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, rgba(251, 146, 60, 0.3) 0%, transparent 50%),
+    #0a0a0a;
+}
+
+/* Editor Layout with Liquid Glass */
+.editor-container-glass {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Header with Liquid Glass */
+.editor-header-glass {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+/* Tab Bar with Liquid Glass */
+.tab-bar-glass {
+  display: flex;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* Settings Pane with Liquid Glass */
+.settings-pane-glass {
+  width: 220px;
+  min-width: 200px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Config Panel with Liquid Glass */
+.config-panel-glass {
+  width: 300px;
+  min-width: 260px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* Preview Panel with Liquid Glass */
+.preview-panel-glass {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Hover Effects */
+.liquid-glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Active/Selected State */
+.liquid-glass-panel.active {
+  border-color: rgba(48, 209, 88, 0.4);
+  box-shadow: 0 0 20px rgba(48, 209, 88, 0.1);
+}

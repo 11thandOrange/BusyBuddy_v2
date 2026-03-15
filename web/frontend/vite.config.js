@@ -51,12 +51,19 @@ export default defineConfig({
     preserveSymlinks: true,
   },
   server: {
-    host: "localhost",
+    host: process.env.SERVER_IP_ADDRESS || "localhost",
     port: process.env.FRONTEND_PORT,
     hmr: hmrConfig,
     proxy: {
       "^/(\\?.*)?$": proxyOptions,
       "^/api(/|(\\?.*)?$)": proxyOptions,
     },
+    allowedHosts: [
+      "work-1-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",
+      "work-2-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",
+      "work-1-tffcimxoacmeuudg.prod-runtime.all-hands.dev",
+      "work-2-tffcimxoacmeuudg.prod-runtime.all-hands.dev",
+      ".all-hands.dev",
+    ],
   },
 });

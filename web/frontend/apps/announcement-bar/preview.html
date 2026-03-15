@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnnouncementBarEditor Preview</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="../../components/Editor/EditorLayout.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+        input[type="color"] { width: 100%; height: 40px; border: none; border-radius: 8px; cursor: pointer; }
+        @keyframes scrollText {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .scrolling-text-container { overflow: hidden; width: 100%; flex: 1; }
+        .scrolling-text { display: inline-block; white-space: nowrap; animation: scrollText var(--scroll-duration, 20s) linear infinite; }
+        .scrolling-text span { display: inline-block; padding-right: 80px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const SETTINGS = {
+            content: [
+                { title: 'Message', items: [
+                    { id: 'message', icon: '💬', label: 'Message Text', iconClass: 'icon-message' },
+                    { id: 'emoji', icon: '😀', label: 'Emoji & Icons', iconClass: 'icon-emoji' }
+                ]},
+                { title: 'Timer', items: [{ id: 'timer', icon: '⏱️', label: 'Countdown Timer', iconClass: 'icon-timer' }] },
+                { title: 'Call to Action', items: [
+                    { id: 'button', icon: '🔘', label: 'Shop Now Button', iconClass: 'icon-button' },
+                    { id: 'savebox', icon: '🏷️', label: 'Save Badge', iconClass: 'icon-badge' }
+                ]}
+            ],
+            appearance: [
+                { title: 'Colors', items: [
+                    { id: 'background', icon: '🎨', label: 'Background', iconClass: 'icon-type' },
+                    { id: 'text-color', icon: '✏️', label: 'Text Color', iconClass: 'icon-message' }
+                ]},
+                { title: 'Typography', items: [{ id: 'font', icon: '🔤', label: 'Font Settings', iconClass: 'icon-emoji' }] },
+                { title: 'Dimensions', items: [{ id: 'dimensions', icon: '📐', label: 'Bar Size', iconClass: 'icon-timer' }] }
+            ],
+            behavior: [
+                { title: 'Display', items: [
+                    { id: 'position', icon: '📍', label: 'Position', iconClass: 'icon-type' }
+                ]}
+            ],
+            schedule: [
+                { title: 'Timing', items: [
+                    { id: 'start-date', icon: '📅', label: 'Start Date', iconClass: 'icon-timer' },
+                    { id: 'end-date', icon: '🏁', label: 'End Date', iconClass: 'icon-badge' }
+                ]}
+            ]
+        };
+
+        const TABS = [
+            { id: 'content', label: 'Content' },
+            { id: 'appearance', label: 'Appearance' },
+            { id: 'behavior', label: 'Behavior' },
+            { id: 'schedule', label: 'Schedule' }
+        ];
+
+        const AnnouncementBarEditor = () => {
+            // Navigation
+            const [activeTab, setActiveTab] = useState('content');
+            const [activeSetting, setActiveSetting] = useState('message');
+            const [device, setDevice] = useState('desktop');
+            const [isEditingTitle, setIsEditingTitle] = useState(false);
+            
+            // Content Settings
+            const [barEnabled, setBarEnabled] = useState(true);
+            const [title, setTitle] = useState('Summer Sale Banner');
+            const [message, setMessage] = useState('🔥 Summer Sale - Up to 50% OFF!');
+            const [showMessage, setShowMessage] = useState(true);
+            
+            // Schedule
+            const [startDate, setStartDate] = useState('');
+            const [endDate, setEndDate] = useState('');
+            
+            // Timer
+            const [showTimer, setShowTimer] = useState(false);
+            const [timerEndDate, setTimerEndDate] = useState('');
+            const [timerEndTime, setTimerEndTime] = useState('');
+            const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+            
+            // Button & Badge
+            const [showShopNowButton, setShowShopNowButton] = useState(false);
+            const [shopNowButtonText, setShopNowButtonText] = useState('Shop Now');
+            const [shopNowButtonColor, setShopNowButtonColor] = useState('#ffffff');
+            const [shopNowButtonBgColor, setShopNowButtonBgColor] = useState('#000000');
+            const [showSaveBox, setShowSaveBox] = useState(false);
+            const [saveBoxText, setSaveBoxText] = useState('SAVE 30%');
+            const [saveBoxBgColor, setSaveBoxBgColor] = useState('#ff4444');
+            const [saveBoxTextColor, setSaveBoxTextColor] = useState('#ffffff');
+            
+            // Appearance
+            const [backgroundType, setBackgroundType] = useState('gradient');
+            const [backgroundColor, setBackgroundColor] = useState('#667eea');
+            const [gradientEndColor, setGradientEndColor] = useState('#764ba2');
+            const [textColor, setTextColor] = useState('#ffffff');
+            const [fontSize, setFontSize] = useState('16');
+            const [fontFamily, setFontFamily] = useState('Inter');
+            const [fontWeight, setFontWeight] = useState('600');
+            const [barHeight, setBarHeight] = useState(50);
+            
+            // Behavior
+            const [barPosition, setBarPosition] = useState('top');
+            const [animateMessage, setAnimateMessage] = useState(false);
+            const [animationSpeed, setAnimationSpeed] = useState(20);
+
+            // Timer effect
+            useEffect(() => {
+                if (!showTimer || !timerEndDate || !timerEndTime) return;
+                const targetDate = new Date(`${timerEndDate}T${timerEndTime}`);
+                const interval = setInterval(() => {
+                    const now = new Date();
+                    const diff = targetDate - now;
+                    if (diff <= 0) {
+                        setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+                        clearInterval(interval);
+                        return;
+                    }
+                    setCountdown({
+                        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+                        minutes: Math.floor((diff / (1000 * 60)) % 60),
+                        seconds: Math.floor((diff / 1000) % 60),
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            }, [showTimer, timerEndDate, timerEndTime]);
+
+            const currentSettings = SETTINGS[activeTab] || [];
+            
+            const handleTabChange = (tabId) => {
+                setActiveTab(tabId);
+                const firstSetting = SETTINGS[tabId]?.[0]?.items?.[0]?.id;
+                if (firstSetting) setActiveSetting(firstSetting);
+            };
+
+            const getBackgroundStyle = () => {
+                if (backgroundType === 'gradient') return `linear-gradient(135deg, ${backgroundColor}, ${gradientEndColor})`;
+                return backgroundColor;
+            };
+
+            const renderConfigContent = () => {
+                switch (activeSetting) {
+                    case 'message':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Message Text</h2><p>Configure your announcement message</p></div>
+                                <div className="config-content">
+                                    <div className="toggle-row" style={{borderTop:'none',paddingTop:0}}>
+                                        <span className="toggle-label">Show Message</span>
+                                        <label className="toggle-switch"><input type="checkbox" checked={showMessage} onChange={(e) => setShowMessage(e.target.checked)} /><span className="toggle-slider" /></label>
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Message</label>
+                                        <textarea className="form-textarea" value={message} onChange={(e) => setMessage(e.target.value)} rows={3} />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 'emoji':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Emoji & Icons</h2><p>Add emojis to your announcement</p></div>
+                                <div className="config-content">
+                                    <div className="form-group">
+                                        <label className="form-label">Quick Emojis</label>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                            {['🔥', '⭐', '🎉', '💥', '🚀', '💰', '🎁', '⚡', '❤️', '✨'].map((emoji) => (
+                                                <button key={emoji} onClick={() => setMessage(prev => prev + emoji)} style={{ padding: '8px 12px', fontSize: '20px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', cursor: 'pointer' }}>{emoji}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 'timer':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Countdown Timer</h2><p>Add urgency with a countdown timer</p></div>
+                                <div className="config-content">
+                                    <div className="toggle-row" style={{borderTop:'none',paddingTop:0}}>
+                                        <span className="toggle-label">Show Timer</span>
+                                        <label className="toggle-switch"><input type="checkbox" checked={showTimer} onChange={(e) => setShowTimer(e.target.checked)} /><span className="toggle-slider" /></label>
+                                    </div>
+                                    {showTimer && (
+                                        <>
+                                            <div className="form-group"><label className="form-label">End Date</label><input type="date" className="form-input" value={timerEndDate} onChange={(e) => setTimerEndDate(e.target.value)} /></div>
+                                            <div className="form-group"><label className="form-label">End Time</label><input type="time" className="form-input" value={timerEndTime} onChange={(e) => setTimerEndTime(e.target.value)} /></div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    case 'button':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Shop Now Button</h2><p>Add a call-to-action button</p></div>
+                                <div className="config-content">
+                                    <div className="toggle-row" style={{borderTop:'none',paddingTop:0}}>
+                                        <span className="toggle-label">Show Button</span>
+                                        <label className="toggle-switch"><input type="checkbox" checked={showShopNowButton} onChange={(e) => setShowShopNowButton(e.target.checked)} /><span className="toggle-slider" /></label>
+                                    </div>
+                                    {showShopNowButton && (
+                                        <>
+                                            <div className="form-group"><label className="form-label">Button Text</label><input type="text" className="form-input" value={shopNowButtonText} onChange={(e) => setShopNowButtonText(e.target.value)} /></div>
+                                            <div className="form-group"><label className="form-label">Text Color</label><input type="color" value={shopNowButtonColor} onChange={(e) => setShopNowButtonColor(e.target.value)} /></div>
+                                            <div className="form-group"><label className="form-label">Background Color</label><input type="color" value={shopNowButtonBgColor} onChange={(e) => setShopNowButtonBgColor(e.target.value)} /></div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    case 'savebox':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Save Badge</h2><p>Highlight your discount with a badge</p></div>
+                                <div className="config-content">
+                                    <div className="toggle-row" style={{borderTop:'none',paddingTop:0}}>
+                                        <span className="toggle-label">Show Save Badge</span>
+                                        <label className="toggle-switch"><input type="checkbox" checked={showSaveBox} onChange={(e) => setShowSaveBox(e.target.checked)} /><span className="toggle-slider" /></label>
+                                    </div>
+                                    {showSaveBox && (
+                                        <>
+                                            <div className="form-group"><label className="form-label">Badge Text</label><input type="text" className="form-input" value={saveBoxText} onChange={(e) => setSaveBoxText(e.target.value)} /></div>
+                                            <div className="form-group"><label className="form-label">Badge Color</label><input type="color" value={saveBoxBgColor} onChange={(e) => setSaveBoxBgColor(e.target.value)} /></div>
+                                            <div className="form-group"><label className="form-label">Text Color</label><input type="color" value={saveBoxTextColor} onChange={(e) => setSaveBoxTextColor(e.target.value)} /></div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    case 'background':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Background</h2><p>Customize the bar background</p></div>
+                                <div className="config-content">
+                                    <div className="form-group">
+                                        <label className="form-label">Background Type</label>
+                                        <select className="form-select" value={backgroundType} onChange={(e) => setBackgroundType(e.target.value)}>
+                                            <option value="solid">Solid Color</option>
+                                            <option value="gradient">Gradient</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group"><label className="form-label">Primary Color</label><input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} /></div>
+                                    {backgroundType === 'gradient' && (
+                                        <div className="form-group"><label className="form-label">Gradient End Color</label><input type="color" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} /></div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    case 'text-color':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Text Color</h2><p>Customize the text color</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Message Text Color</label><input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} /></div>
+                                </div>
+                            </div>
+                        );
+                    case 'font':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Font Settings</h2><p>Customize typography</p></div>
+                                <div className="config-content">
+                                    <div className="form-group">
+                                        <label className="form-label">Font Family</label>
+                                        <select className="form-select" value={fontFamily} onChange={(e) => setFontFamily(e.target.value)}>
+                                            <option value="Inter">Inter</option>
+                                            <option value="Arial">Arial</option>
+                                            <option value="Helvetica">Helvetica</option>
+                                            <option value="Georgia">Georgia</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group"><label className="form-label">Font Size (px)</label><input type="number" className="form-input" value={fontSize} onChange={(e) => setFontSize(e.target.value)} min="10" max="32" /></div>
+                                    <div className="form-group">
+                                        <label className="form-label">Font Weight</label>
+                                        <select className="form-select" value={fontWeight} onChange={(e) => setFontWeight(e.target.value)}>
+                                            <option value="400">Normal</option>
+                                            <option value="500">Medium</option>
+                                            <option value="600">Semi Bold</option>
+                                            <option value="700">Bold</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 'dimensions':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Bar Size</h2><p>Adjust bar dimensions</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Bar Height (px)</label><input type="number" className="form-input" value={barHeight} onChange={(e) => setBarHeight(Number(e.target.value))} min="30" max="200" /></div>
+                                </div>
+                            </div>
+                        );
+                    case 'position':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Position</h2><p>Where should the bar appear?</p></div>
+                                <div className="config-content">
+                                    <div className="form-group">
+                                        <label className="form-label">Bar Position</label>
+                                        <select className="form-select" value={barPosition} onChange={(e) => setBarPosition(e.target.value)}>
+                                            <option value="top">Top</option>
+                                            <option value="top-fixed">Top (Fixed)</option>
+                                            <option value="bottom">Bottom</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 'start-date':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>Start Date</h2><p>When should the bar start showing?</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={startDate.split('T')[0] || ''} onChange={(e) => { const time = startDate.split('T')[1] || '00:00'; setStartDate(e.target.value ? `${e.target.value}T${time}` : ''); }} /></div>
+                                    <div className="form-group"><label className="form-label">Time</label><input type="time" className="form-input" value={startDate.split('T')[1] || ''} onChange={(e) => { const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0]; setStartDate(`${date}T${e.target.value}`); }} /></div>
+                                    {startDate && <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>📅 Starts: {new Date(startDate).toLocaleString()}</div>}
+                                </div>
+                            </div>
+                        );
+                    case 'end-date':
+                        return (
+                            <div>
+                                <div className="config-header"><h2>End Date</h2><p>When should the bar stop showing?</p></div>
+                                <div className="config-content">
+                                    <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-input" value={endDate.split('T')[0] || ''} onChange={(e) => { const time = endDate.split('T')[1] || '23:59'; setEndDate(e.target.value ? `${e.target.value}T${time}` : ''); }} /></div>
+                                    <div className="form-group"><label className="form-label">Time</label><input type="time" className="form-input" value={endDate.split('T')[1] || ''} onChange={(e) => { const date = endDate.split('T')[0] || new Date().toISOString().split('T')[0]; setEndDate(`${date}T${e.target.value}`); }} /></div>
+                                    {endDate && <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(255, 59, 48, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>🏁 Ends: {new Date(endDate).toLocaleString()}</div>}
+                                </div>
+                            </div>
+                        );
+                    default:
+                        return <div className="config-content"><p style={{color:'rgba(255,255,255,0.5)'}}>Select a setting</p></div>;
+                }
+            };
+
+            const renderTimer = () => {
+                if (!showTimer) return null;
+                return (
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: '12px' }}>
+                        {[{ value: countdown.days, label: 'D' }, { value: countdown.hours, label: 'H' }, { value: countdown.minutes, label: 'M' }, { value: countdown.seconds, label: 'S' }].map((item, idx) => (
+                            <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '4px', textAlign: 'center', minWidth: '36px' }}>
+                                <div style={{ fontSize: '14px', fontWeight: '700', color: textColor }}>{String(item.value).padStart(2, '0')}</div>
+                                <div style={{ fontSize: '9px', color: textColor, opacity: 0.8 }}>{item.label}</div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            const renderAnnouncementBar = () => {
+                if (!barEnabled) return null;
+                return (
+                    <div className="announcement-bar-preview" style={{ background: getBackgroundStyle(), height: `${barHeight}px`, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', position: barPosition === 'bottom' ? 'absolute' : 'relative', bottom: barPosition === 'bottom' ? 0 : 'auto', width: '100%', overflow: 'hidden' }}>
+                        {showSaveBox && <div style={{ background: saveBoxBgColor, color: saveBoxTextColor, padding: '4px 10px', borderRadius: '4px', fontSize: '12px', fontWeight: '700', whiteSpace: 'nowrap', flexShrink: 0 }}>{saveBoxText}</div>}
+                        {showMessage && (
+                            animateMessage ? (
+                                <div className="scrolling-text-container">
+                                    <div className="scrolling-text" style={{ color: textColor, fontSize: `${fontSize}px`, fontFamily: fontFamily, fontWeight: fontWeight, '--scroll-duration': `${animationSpeed}s` }}>
+                                        <span>{message}</span>
+                                        <span>{message}</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <span style={{ color: textColor, fontSize: `${fontSize}px`, fontFamily: fontFamily, fontWeight: fontWeight }}>{message}</span>
+                            )
+                        )}
+                        {renderTimer()}
+                        {showShopNowButton && <button style={{ background: shopNowButtonBgColor, color: shopNowButtonColor, border: 'none', padding: '6px 14px', borderRadius: '4px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>{shopNowButtonText}</button>}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="editor-wrapper">
+                    <div className="gradient-bg" />
+                    <div className="editor-container">
+                        <div className="editor-content">
+                            <div className="sidepane-container">
+                                <div className="category-tab-header">
+                                    <div className="category-tabs">
+                                        {TABS.map((tab) => (
+                                            <button key={tab.id} className={`category-tab ${activeTab === tab.id ? 'active' : ''}`} onClick={() => handleTabChange(tab.id)}>{tab.label}</button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="panels-row">
+                                    <div className="settings-pane">
+                                        <div className="settings-list">
+                                            {currentSettings.map((group) => (
+                                                <div key={group.title} className="settings-group">
+                                                    <div className="settings-group-title">{group.title}</div>
+                                                    {group.items.map((item) => (
+                                                        <div key={item.id} className={`settings-item ${activeSetting === item.id ? 'active' : ''}`} onClick={() => setActiveSetting(item.id)}>
+                                                            <div className={`settings-item-icon ${item.iconClass}`}>{item.icon}</div>
+                                                            <span>{item.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="config-panel">{renderConfigContent()}</div>
+                                </div>
+                            </div>
+                            <div className="right-content">
+                                <div className="title-header">
+                                    <div className="title-left">
+                                        <div className="editable-title-wrapper">
+                                            <input type="text" className="editable-title" value={title} onChange={(e) => setTitle(e.target.value)} onFocus={() => setIsEditingTitle(true)} onBlur={() => setIsEditingTitle(false)} />
+                                            {!isEditingTitle && <span className="pencil-icon">✏️</span>}
+                                        </div>
+                                        <label className="header-toggle" title="Enable Bar"><input type="checkbox" checked={barEnabled} onChange={(e) => setBarEnabled(e.target.checked)} /><span className="toggle-slider" /></label>
+                                    </div>
+                                    <div className="header-right">
+                                        <button className="btn-save">Save</button>
+                                    </div>
+                                </div>
+                                <div className="preview-panel">
+                                    <div className="preview-content">
+                                        <div className={`device-frame ${device}`}>
+                                            {renderAnnouncementBar()}
+                                            <div className="store-preview">
+                                                <div className="store-header">
+                                                    <div className="store-logo">STORE</div>
+                                                    <div className="store-nav"><a href="#">Home</a><a href="#">Shop</a><a href="#">About</a><a href="#">Contact</a></div>
+                                                </div>
+                                                <div className="product-grid">
+                                                    {['Classic T-Shirt', 'Denim Jacket', 'Sneakers'].map((name, i) => (
+                                                        <div key={i} className="product-card">
+                                                            <div className="product-image" />
+                                                            <div className="product-info">
+                                                                <div className="product-name">{name}</div>
+                                                                <div className="product-price">${[29.99, 89.99, 119.99][i]}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="preview-footer">
+                                        <div className="device-toggle">
+                                            <button className={`device-btn ${device === 'desktop' ? 'active' : ''}`} onClick={() => setDevice('desktop')}><span className="device-icon">🖥</span> Desktop</button>
+                                            <button className={`device-btn ${device === 'mobile' ? 'active' : ''}`} onClick={() => setDevice('mobile')}><span className="device-icon">📱</span> Mobile</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<AnnouncementBarEditor />);
+    </script>
+</body>
+</html>

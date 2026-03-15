@@ -1,24 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
-// import DiscountModal from "../../pages/DiscountModal";
-// import DiscountList from "./DiscountList";
+import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
 import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
-export default function BuyonegetoneForm({ goBack, setActiveAction }) {
+
+export default function BuyonegetoneForm() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Add refresh trigger state
-  const [autoTriggerActions, setAutoTriggerActions] = useState(true); // Add this state
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [autoTriggerActions, setAutoTriggerActions] = useState(true);
   const discountActionsRef = useRef();
+
   useEffect(() => {
     if (autoTriggerActions) {
-      // Automatically set fromDiscountPage to true and trigger the flow
       setFromDiscountPage(true);
-      setAutoTriggerActions(false); // Prevent infinite loop
+      setAutoTriggerActions(false);
     }
   }, [autoTriggerActions]);
   const handleOpenDiscountModal = () => {
@@ -42,6 +44,11 @@ export default function BuyonegetoneForm({ goBack, setActiveAction }) {
       discountActionsRef.current.handleSaveChanges();
     }
   };
+
+  const handleBack = () => {
+    navigate('/' + location.search);
+  };
+
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
@@ -57,10 +64,7 @@ export default function BuyonegetoneForm({ goBack, setActiveAction }) {
                   border: "none",
                   cursor: "pointer",
                 }}
-                onClick={() => {
-                  goBack(true);
-                  setActiveAction(null);
-                }}
+                onClick={handleBack}
               >
                 <ArrowLeft size={24} />
               </div>
@@ -146,7 +150,7 @@ export default function BuyonegetoneForm({ goBack, setActiveAction }) {
           )}
         </Row>
 
-        <DiscountModal show={showDiscountModal} onHide={handleCloseDiscountModal} setActiveAction={setActiveAction} />
+        <DiscountModal show={showDiscountModal} onHide={handleCloseDiscountModal}  />
       </Container>
       <DiscountList
         key={resetDiscountList ? "reset" : "normal"}

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Announcement Bar Actions - Visual Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+    }
+
+    /* Flow Preview Container */
+    .flow-preview {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+      padding: 40px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .flow-title {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .flow-subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 40px;
+    }
+
+    .flow-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 30px;
+    }
+
+    .step-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+      color: #fff;
+    }
+
+    .step-line {
+      width: 2px;
+      height: 100%;
+      min-height: 200px;
+      background: linear-gradient(to bottom, #6366f1, transparent);
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #8b5cf6;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .step-description {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    /* Screen Mockup */
+    .screen-mockup {
+      background: #1a1a1a;
+      border-radius: 16px;
+      border: 1px solid #2a2a2a;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #141414;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .screen-title {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .screen-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: #2a2a2a;
+      color: #e5e5e5;
+    }
+
+    /* List View Screen */
+    .list-view {
+      padding: 24px;
+    }
+
+    .tabs-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #888;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .empty-description {
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    /* List Items */
+    .list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: #222;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+    }
+
+    .item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .item-message {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .item-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .status-inactive {
+      background: rgba(156, 163, 175, 0.15);
+      color: #9ca3af;
+    }
+
+    .toggle-switch {
+      width: 44px;
+      height: 24px;
+      background: #2a2a2a;
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .toggle-switch.active {
+      background: #6366f1;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+
+    .toggle-switch.active::after {
+      transform: translateX(20px);
+    }
+
+    /* Editor Screen */
+    .editor-layout {
+      display: flex;
+      height: 600px;
+    }
+
+    .editor-sidebar {
+      width: 80px;
+      background: #0f0f0f;
+      border-right: 1px solid #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 0;
+    }
+
+    .sidebar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 8px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+    }
+
+    .sidebar-item.active {
+      color: #fff;
+      background: #1a1a1a;
+    }
+
+    .sidebar-item .icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-item .label {
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .editor-settings {
+      width: 280px;
+      background: #141414;
+      border-right: 1px solid #2a2a2a;
+      overflow-y: auto;
+    }
+
+    .settings-header {
+      padding: 20px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .settings-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .settings-description {
+      font-size: 12px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .settings-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .setting-item:hover {
+      background: #1a1a1a;
+    }
+
+    .setting-item.active {
+      background: #6366f1;
+    }
+
+    .setting-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .setting-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .setting-item.active .setting-icon {
+      background: rgba(255,255,255,0.2);
+    }
+
+    .setting-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Config Panel */
+    .config-panel {
+      width: 320px;
+      background: #1a1a1a;
+      border-right: 1px solid #2a2a2a;
+      padding: 20px;
+    }
+
+    .config-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .config-description {
+      font-size: 12px;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .form-textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 12px;
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+    }
+
+    .toggle-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      flex: 1;
+      background: #0f0f0f;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+
+    .preview-device-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: #888;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .preview-device-btn.active {
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    .preview-content {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .store-preview {
+      width: 100%;
+      max-width: 800px;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    /* Announcement Bar Preview */
+    .announcement-bar-preview {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .store-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .store-logo {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .store-menu {
+      display: flex;
+      gap: 24px;
+    }
+
+    .store-menu a {
+      color: #4b5563;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .store-body {
+      padding: 32px 24px;
+      background: #fff;
+      min-height: 300px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .product-card {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+    }
+
+    .product-image {
+      height: 120px;
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    }
+
+    .product-info {
+      padding: 12px;
+    }
+
+    .product-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .product-price {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    /* Arrow indicator */
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .arrow-icon {
+      font-size: 32px;
+      color: #6366f1;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(8px); }
+    }
+
+    /* Highlight animation */
+    .highlight-pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="flow-preview">
+    <h1 class="flow-title">🎨 Announcement Bar Actions Flow</h1>
+    <p class="flow-subtitle">Visual preview of clicking "Create announcement bar" → viewing AnnouncementBarEditor</p>
+
+    <!-- Step 1: List View -->
+    <div class="flow-step">
+      <div class="step-indicator">
+        <div class="step-number">1</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <div class="step-label">Starting Point</div>
+        <div class="step-description">Announcement Bars List View</div>
+        
+        <div class="screen-mockup">
+          <div class="screen-header">
+            <span class="screen-title">Announcement Bars</span>
+            <div class="screen-actions">
+              <button class="btn btn-primary highlight-pulse">+ Create announcement bar</button>
+            </div>
+          </div>
+          
+          <div class="list-view">
+            <div class="tabs-row">
+              <div class="tab">Overview</div>
+              <div class="tab active">Announcement Bars</div>
+              <div class="tab">Settings</div>
+              <div class="tab">Analytics</div>
+            </div>
+            
+            <div class="list-items">
+              <div class="list-item">
+                <div class="item-info">
+                  <span class="item-name">Summer Sale Banner</span>
+                  <span class="item-message">🔥 Summer Sale - Up to 50% OFF!</span>
+                </div>
+                <div class="item-actions">
+                  <div class="toggle-switch active"></div>
+                  <span class="status-badge status-active">Active</span>
+                  <button class="btn btn-secondary">Edit</button>
+                </div>
+              </div>
+              
+              <div class="list-item">
+                <div class="item-info">
+                  <span class="item-name">Free Shipping Notice</span>
+                  <span class="item-message">🚚 Free shipping on orders over $50</span>
+                </div>
+                <div class="item-actions">
+                  <div class="toggle-switch"></div>
+                  <span class="status-badge status-inactive">Inactive</span>
+                  <button class="btn btn-secondary">Edit</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="flow-arrow">
+      <span class="arrow-icon">⬇️</span>
+    </div>
+
+    <!-- Step 2: Editor View -->
+    <div class="flow-step">
+      <div class="step-indicator">
+        <div class="step-number">2</div>
+      </div>
+      <div class="step-content">
+        <div class="step-label">Editor Screen</div>
+        <div class="step-description">AnnouncementBarEditor Component</div>
+        
+        <div class="screen-mockup">
+          <div class="screen-header">
+            <span class="screen-title">Summer Sale Banner</span>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="toggle-switch active"></div>
+              <div class="screen-actions">
+                <button class="btn btn-secondary">Discard</button>
+                <button class="btn btn-primary">Save</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="editor-layout">
+            <!-- Tabs Sidebar -->
+            <div class="editor-sidebar">
+              <div class="sidebar-item active">
+                <span class="icon">📝</span>
+                <span class="label">Content</span>
+              </div>
+              <div class="sidebar-item">
+                <span class="icon">🎨</span>
+                <span class="label">Appearance</span>
+              </div>
+              <div class="sidebar-item">
+                <span class="icon">⚙️</span>
+                <span class="label">Behavior</span>
+              </div>
+              <div class="sidebar-item">
+                <span class="icon">📅</span>
+                <span class="label">Schedule</span>
+              </div>
+            </div>
+            
+            <!-- Settings Sidebar -->
+            <div class="editor-settings">
+              <div class="settings-section">
+                <div class="section-title">Message</div>
+                <div class="setting-item active">
+                  <div class="setting-label">
+                    <div class="setting-icon">💬</div>
+                    <span class="setting-text">Message Text</span>
+                  </div>
+                </div>
+                <div class="setting-item">
+                  <div class="setting-label">
+                    <div class="setting-icon">😀</div>
+                    <span class="setting-text">Emoji & Icons</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="settings-section">
+                <div class="section-title">Timer</div>
+                <div class="setting-item">
+                  <div class="setting-label">
+                    <div class="setting-icon">⏱️</div>
+                    <span class="setting-text">Countdown Timer</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="settings-section">
+                <div class="section-title">Call to Action</div>
+                <div class="setting-item">
+                  <div class="setting-label">
+                    <div class="setting-icon">🔘</div>
+                    <span class="setting-text">Shop Now Button</span>
+                  </div>
+                </div>
+                <div class="setting-item">
+                  <div class="setting-label">
+                    <div class="setting-icon">🏷️</div>
+                    <span class="setting-text">Save Badge</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Config Panel -->
+            <div class="config-panel">
+              <div class="config-title">Message Text</div>
+              <div class="config-description">Configure your announcement message</div>
+              
+              <div class="toggle-row">
+                <span class="toggle-label">Show Message</span>
+                <div class="toggle-switch active"></div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">MESSAGE</label>
+                <textarea class="form-textarea">🔥 Summer Sale - Up to 50% OFF!</textarea>
+              </div>
+            </div>
+            
+            <!-- Preview Panel -->
+            <div class="preview-panel">
+              <div class="preview-header">
+                <button class="preview-device-btn active">🖥️ Desktop</button>
+                <button class="preview-device-btn">📱 Mobile</button>
+              </div>
+              
+              <div class="preview-content">
+                <div class="store-preview">
+                  <div class="announcement-bar-preview">
+                    🔥 Summer Sale - Up to 50% OFF!
+                  </div>
+                  
+                  <div class="store-nav">
+                    <span class="store-logo">STORE</span>
+                    <div class="store-menu">
+                      <a href="#">Home</a>
+                      <a href="#">Shop</a>
+                      <a href="#">About</a>
+                      <a href="#">Contact</a>
+                    </div>
+                  </div>
+                  
+                  <div class="store-body">
+                    <div class="product-grid">
+                      <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-info">
+                          <div class="product-name">Classic T-Shirt</div>
+                          <div class="product-price">$29.99</div>
+                        </div>
+                      </div>
+                      <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-info">
+                          <div class="product-name">Denim Jacket</div>
+                          <div class="product-price">$89.99</div>
+                        </div>
+                      </div>
+                      <div class="product-card">
+                        <div class="product-image"></div>
+                        <div class="product-info">
+                          <div class="product-name">Sneakers</div>
+                          <div class="product-price">$119.99</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
