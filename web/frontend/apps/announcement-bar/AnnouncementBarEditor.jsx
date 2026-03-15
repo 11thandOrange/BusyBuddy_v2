@@ -212,6 +212,7 @@ export const AnnouncementBarEditor = () => {
   const [saveBoxTextColor, setSaveBoxTextColor] = useState('#ffffff');
 
   // Email Subscription Settings
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const [emailSettings, setEmailSettings] = useState({
     placeholderText: 'Enter your email',
     buttonText: 'Subscribe',
@@ -304,7 +305,8 @@ export const AnnouncementBarEditor = () => {
           setShowSaveBox(bar.showSaveBox || false);
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
           
-          // Load email settings if present
+          // Load email form settings
+          setShowEmailForm(bar.showEmailForm || false);
           if (bar.emailSettings) {
             setEmailSettings({
               ...emailSettings,
@@ -399,7 +401,8 @@ export const AnnouncementBarEditor = () => {
       startDate,
       endDate,
       type: barType === 'Email' ? 'Email' : barType,
-      emailSettings: barType === 'Email' ? emailSettings : undefined,
+      showEmailForm,
+      emailSettings: showEmailForm ? emailSettings : undefined,
     };
 
     try {
@@ -641,106 +644,116 @@ export const AnnouncementBarEditor = () => {
       case 'email-settings':
         return (
           <EditorConfigPanel
-            title="Email Form Settings"
-            description="Configure your email subscription form"
+            title="Email Form"
+            description="Add an email subscription form"
           >
-            <ConfigFormGroup label="Input Placeholder">
-              <ConfigInput
-                value={emailSettings.placeholderText}
-                onChange={(e) => setEmailSettings({ ...emailSettings, placeholderText: e.target.value })}
-                placeholder="Enter your email"
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Button Text">
-              <ConfigInput
-                value={emailSettings.buttonText}
-                onChange={(e) => setEmailSettings({ ...emailSettings, buttonText: e.target.value })}
-                placeholder="Subscribe"
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Success Message">
-              <ConfigInput
-                value={emailSettings.successMessage}
-                onChange={(e) => setEmailSettings({ ...emailSettings, successMessage: e.target.value })}
-                placeholder="Thank you for subscribing!"
-              />
-            </ConfigFormGroup>
+            <ConfigToggleRow
+              label="Show Email Form"
+              checked={showEmailForm}
+              onChange={setShowEmailForm}
+            />
 
-            <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Input Styling
-            </div>
-            
-            <ConfigFormGroup label="Input Background">
-              <ConfigInput
-                type="color"
-                value={emailSettings.inputStyles.backgroundColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Input Border Color">
-              <ConfigInput
-                type="color"
-                value={emailSettings.inputStyles.borderColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Input Text Color">
-              <ConfigInput
-                type="color"
-                value={emailSettings.inputStyles.fontColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
+            {showEmailForm && (
+              <>
+                <ConfigFormGroup label="Input Placeholder">
+                  <ConfigInput
+                    value={emailSettings.placeholderText}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, placeholderText: e.target.value })}
+                    placeholder="Enter your email"
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Button Text">
+                  <ConfigInput
+                    value={emailSettings.buttonText}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, buttonText: e.target.value })}
+                    placeholder="Subscribe"
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Success Message">
+                  <ConfigInput
+                    value={emailSettings.successMessage}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, successMessage: e.target.value })}
+                    placeholder="Thank you for subscribing!"
+                  />
+                </ConfigFormGroup>
 
-            <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Button Styling
-            </div>
-            
-            <ConfigFormGroup label="Button Background">
-              <ConfigInput
-                type="color"
-                value={emailSettings.buttonStyles.backgroundColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Button Text Color">
-              <ConfigInput
-                type="color"
-                value={emailSettings.buttonStyles.fontColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Button Hover Color">
-              <ConfigInput
-                type="color"
-                value={emailSettings.buttonStyles.hoverBackgroundColor}
-                onChange={(e) => setEmailSettings({ 
-                  ...emailSettings, 
-                  buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
-                })}
-              />
-            </ConfigFormGroup>
+                <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Input Styling
+                </div>
+                
+                <ConfigFormGroup label="Input Background">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.inputStyles.backgroundColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Input Border Color">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.inputStyles.borderColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Input Text Color">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.inputStyles.fontColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+
+                <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Button Styling
+                </div>
+                
+                <ConfigFormGroup label="Button Background">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.buttonStyles.backgroundColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Button Text Color">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.buttonStyles.fontColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+                
+                <ConfigFormGroup label="Button Hover Color">
+                  <ConfigInput
+                    type="color"
+                    value={emailSettings.buttonStyles.hoverBackgroundColor}
+                    onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
+                    })}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
           </EditorConfigPanel>
         );
 
