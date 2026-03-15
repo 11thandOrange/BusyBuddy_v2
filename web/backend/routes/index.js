@@ -10,6 +10,8 @@ import analyticsRoutes from './analytics/index.js';
 import emailProviderRoutes from './emailProvider/index.js';
 import googleAnalyticsRoutes from './googleAnalytics/index.js';
 // Note: webhookRoutes are mounted separately in web/index.js to bypass session auth
+// Note: referralRoutes are registered in web/index.js BEFORE Shopify auth middleware
+// to allow public access without shop authentication
 
 router.use('/products', productRoutes);
 router.use('/bundles', bundleRoutes);
