@@ -12,6 +12,7 @@ import dropdown from "../../assets/Vector.png";
 import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
 import { useEditorNavigation } from "../../hooks";
+import EmailIntegration from "./components/EmailIntegration";
 
 export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
   const tabs = ["Overview", "Announcement Bars", "Setting", "Analytics"];
@@ -309,50 +310,64 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
         </div>
       )}
 
+
       {/* Setting Tab */}
       {selectedTab === "Setting" && (
-        <div className="d-flex flex-column gap-3">
-          <Row className="g-0 linrrow">
-            <Card className="border-0 w-full" style={{ background: "rgb(241, 242, 244)" }}>
-              <Card.Body className="d-flex align-items-center justify-content-between">
-                <div className="d-flex flex-column gap-[10px]">
-                  <Form.Group>
-                    <Form.Check
-                      type="checkbox"
-                      className="custom-checkbox"
-                      checked={showCountdown}
-                      onChange={() => setShowCountdown(!showCountdown)}
-                      label={
-                        <span style={{ marginLeft: "6px", marginTop: "5px" }}>Enable close button</span>
-                      }
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "bold",
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        color: "#303030",
-                        whiteSpace: "nowrap",
-                      }}
-                    />
-                    <p
-                      style={{
-                        fontFamily: "Inter",
-                        fontStyle: "normal",
-                        fontWeight: "500",
-                        fontSize: "13px",
-                        lineHeight: "100%",
-                        color: "#616161",
-                      }}
-                      className="mt-2"
-                    >
-                      Enable this setting if you want to allow your customers to be able to close the bar
-                      while navigating the store.
-                    </p>
-                  </Form.Group>
-                </div>
-              </Card.Body>
-            </Card>
-          </Row>
+        <div className="d-flex flex-column gap-4">
+          {/* General Settings Card */}
+          <Card className="border-0" style={{ background: "rgb(241, 242, 244)", borderRadius: "15px" }}>
+            <Card.Body style={{ padding: "20px" }}>
+              <h6
+                style={{
+                  fontFamily: "Inter",
+                  fontWeight: 600,
+                  fontSize: "16px",
+                  color: "#303030",
+                  marginBottom: "15px",
+                }}
+              >
+                ⚙️ General Settings
+              </h6>
+              <div className="d-flex flex-column gap-[10px]">
+                <Form.Group>
+                  <Form.Check
+                    type="checkbox"
+                    className="custom-checkbox"
+                    checked={showCountdown}
+                    onChange={() => setShowCountdown(!showCountdown)}
+                    label={
+                      <span style={{ marginLeft: "6px", marginTop: "5px" }}>Enable close button</span>
+                    }
+                    style={{
+                      fontFamily: "Inter",
+                      fontStyle: "bold",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      color: "#303030",
+                      whiteSpace: "nowrap",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: "Inter",
+                      fontStyle: "normal",
+                      fontWeight: "500",
+                      fontSize: "13px",
+                      lineHeight: "100%",
+                      color: "#616161",
+                    }}
+                    className="mt-2"
+                  >
+                    Enable this setting if you want to allow your customers to be able to close the bar
+                    while navigating the store.
+                  </p>
+                </Form.Group>
+              </div>
+            </Card.Body>
+          </Card>
+          
+          {/* Email Integration Card */}
+          <EmailIntegration />
         </div>
       )}
 

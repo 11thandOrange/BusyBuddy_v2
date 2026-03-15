@@ -683,8 +683,175 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     
+    // Email Subscription Form (for Email type announcement bars)
+    if (data.type === "Email" && data.emailSettings) {
+      const emailFormContainer = document.createElement("div");
+      emailFormContainer.className = "email-form-container";
+      emailFormContainer.style.display = "flex";
+      emailFormContainer.style.alignItems = "center";
+      emailFormContainer.style.gap = "10px";
+      emailFormContainer.style.flexWrap = "wrap";
+      emailFormContainer.style.justifyContent = "center";
+
+      // Email input
+      const emailInput = document.createElement("input");
+      emailInput.type = "email";
+      emailInput.placeholder = data.emailSettings.placeholderText || "Enter your email";
+      emailInput.className = "email-input";
+      emailInput.style.padding = data.emailSettings.inputStyles?.padding || "10px 15px";
+      emailInput.style.borderRadius = data.emailSettings.inputStyles?.borderRadius || "4px";
+      emailInput.style.border = `1px solid ${data.emailSettings.inputStyles?.borderColor || "#cccccc"}`;
+      emailInput.style.backgroundColor = data.emailSettings.inputStyles?.backgroundColor || "#ffffff";
+      emailInput.style.color = data.emailSettings.inputStyles?.fontColor || "#000000";
+      emailInput.style.fontSize = data.emailSettings.inputStyles?.fontSize || "14px";
+      emailInput.style.minWidth = "200px";
+      emailInput.style.outline = "none";
+
+      // Submit button
+      const submitButton = document.createElement("button");
+      submitButton.innerText = data.emailSettings.buttonText || "Subscribe";
+      submitButton.className = "email-submit-button";
+      submitButton.style.padding = data.emailSettings.buttonStyles?.padding || "10px 20px";
+      submitButton.style.borderRadius = data.emailSettings.buttonStyles?.borderRadius || "4px";
+      submitButton.style.backgroundColor = data.emailSettings.buttonStyles?.backgroundColor || "#000000";
+      submitButton.style.color = data.emailSettings.buttonStyles?.fontColor || "#ffffff";
+      submitButton.style.fontSize = data.emailSettings.buttonStyles?.fontSize || "14px";
+      submitButton.style.border = "none";
+      submitButton.style.cursor = "pointer";
+      submitButton.style.transition = "background-color 0.2s";
+
+      // Hover effect for button
+      submitButton.addEventListener("mouseenter", () => {
+        submitButton.style.backgroundColor = 
+          data.emailSettings.buttonStyles?.hoverBackgroundColor || "#333333";
+      });
+      submitButton.addEventListener("mouseleave", () => {
+        submitButton.style.backgroundColor = 
+          data.emailSettings.buttonStyles?.backgroundColor || "#000000";
+      });
+
+      // Success message element (hidden initially)
+      const successMessage = document.createElement("div");
+      successMessage.className = "email-success-message";
+      successMessage.style.display = "none";
+      successMessage.style.color = data.generalColorSettings["Message Font Color"] || "#ffffff";
+      successMessage.style.fontSize = "16px";
+      successMessage.style.fontWeight = "600";
+      successMessage.style.textAlign = "center";
+
+      // Loading indicator
+      const loadingSpinner = document.createElement("span");
+      loadingSpinner.className = "email-loading";
+      loadingSpinner.style.display = "none";
+      loadingSpinner.innerHTML = "⏳";
+      loadingSpinner.style.marginLeft = "5px";
+
+      // Error message element
+      const errorMessage = document.createElement("div");
+      errorMessage.className = "email-error-message";
+      errorMessage.style.display = "none";
+      errorMessage.style.color = "#ff4444";
+      errorMessage.style.fontSize = "13px";
+      errorMessage.style.marginTop = "5px";
+      errorMessage.style.textAlign = "center";
+
+      // Form submit handler
+      const handleSubmit = async () => {
+        const email = emailInput.value.trim();
+        
+        // Basic validation
+        if (!email || !email.includes("@")) {
+          errorMessage.textContent = "Please enter a valid email address";
+          errorMessage.style.display = "block";
+          return;
+        }
+
+        errorMessage.style.display = "none";
+        submitButton.disabled = true;
+        loadingSpinner.style.display = "inline";
+
+        try {
+          const response = await fetch(
+            `/apps/bogo-app/api/frontStore/subscribe`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                email,
+                announcementBarId,
+                listId: data.emailSettings.listId,
+              }),
+            }
+          );
+
+          const result = await response.json();
+
+          if (result.success) {
+            // Track conversion
+            if (announcementBarId) {
+              trackAnnouncementBarAnalytics("click", announcementBarId);
+            }
+
+            // Show success message
+            emailFormContainer.style.display = "none";
+            successMessage.textContent = 
+              result.message || data.emailSettings.emailSuccessMessage || "Thank you for subscribing!";
+            successMessage.style.display = "block";
+
+            // Close the bar after 3 seconds
+            setTimeout(() => {
+              bar.style.transition = "opacity 0.5s, transform 0.5s";
+              bar.style.opacity = "0";
+              bar.style.transform = "translateY(-100%)";
+              setTimeout(() => {
+                container.style.display = "none";
+              }, 500);
+            }, 3000);
+          } else {
+            errorMessage.textContent = result.message || "Subscription failed. Please try again.";
+            errorMessage.style.display = "block";
+            submitButton.disabled = false;
+          }
+        } catch (error) {
+          console.error("Email subscription error:", error);
+          errorMessage.textContent = "An error occurred. Please try again.";
+          errorMessage.style.display = "block";
+          submitButton.disabled = false;
+        } finally {
+          loadingSpinner.style.display = "none";
+        }
+      };
+
+      // Click handler
+      submitButton.addEventListener("click", handleSubmit);
+
+      // Enter key handler
+      emailInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleSubmit();
+        }
+      });
+
+      submitButton.appendChild(loadingSpinner);
+      emailFormContainer.appendChild(emailInput);
+      emailFormContainer.appendChild(submitButton);
+      
+      const formWrapper = document.createElement("div");
+      formWrapper.style.display = "flex";
+      formWrapper.style.flexDirection = "column";
+      formWrapper.style.alignItems = "center";
+      formWrapper.appendChild(emailFormContainer);
+      formWrapper.appendChild(errorMessage);
+      formWrapper.appendChild(successMessage);
+      
+      flexContainer.appendChild(formWrapper);
+    }
+
     // Shop Now Button with click tracking
-    if (data.showShopNowButton) {
+    if (data.showShopNowButton && data.type !== "Email") {
       const button = document.createElement("button");
       button.innerText = data.shopNowButtonText || "Shop Now";
       button.style.backgroundColor = data.shopNowButtonSettings.backgroundColor;
