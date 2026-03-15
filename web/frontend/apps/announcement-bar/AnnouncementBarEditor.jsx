@@ -41,6 +41,12 @@ const ANNOUNCEMENT_BAR_SETTINGS = {
         { id: 'savebox', icon: '🏷️', label: 'Save Badge', iconClass: 'icon-badge' },
       ],
     },
+    {
+      title: 'Email Subscription',
+      items: [
+        { id: 'email-settings', icon: '📧', label: 'Email Form', iconClass: 'icon-email' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -94,6 +100,7 @@ const BAR_TYPE_OPTIONS = [
   { value: 'countdown', label: 'Countdown Timer' },
   { value: 'freeshipping', label: 'Free Shipping Progress' },
   { value: 'orders', label: 'Orders Counter' },
+  { value: 'Email', label: 'Email Subscription' },
 ];
 
 const POSITION_OPTIONS = [
@@ -204,6 +211,31 @@ export const AnnouncementBarEditor = () => {
   const [saveBoxBgColor, setSaveBoxBgColor] = useState('#ff4444');
   const [saveBoxTextColor, setSaveBoxTextColor] = useState('#ffffff');
 
+  // Email Subscription Settings
+  const [emailSettings, setEmailSettings] = useState({
+    placeholderText: 'Enter your email',
+    buttonText: 'Subscribe',
+    successMessage: 'Thank you for subscribing!',
+    listId: '',
+    templateId: '',
+    inputStyles: {
+      backgroundColor: '#ffffff',
+      borderColor: '#cccccc',
+      borderRadius: '4px',
+      fontColor: '#000000',
+      fontSize: '14px',
+      padding: '10px 15px',
+    },
+    buttonStyles: {
+      backgroundColor: '#000000',
+      fontColor: '#ffffff',
+      borderRadius: '4px',
+      fontSize: '14px',
+      padding: '10px 20px',
+      hoverBackgroundColor: '#333333',
+    },
+  });
+
   // === APPEARANCE SETTINGS ===
   // Background
   const [backgroundType, setBackgroundType] = useState('gradient');
@@ -271,6 +303,20 @@ export const AnnouncementBarEditor = () => {
           setShopNowButtonText(bar.shopNowButtonText || 'Shop Now');
           setShowSaveBox(bar.showSaveBox || false);
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
+          
+          // Load email settings if present
+          if (bar.emailSettings) {
+            setEmailSettings({
+              ...emailSettings,
+              ...bar.emailSettings,
+              inputStyles: { ...emailSettings.inputStyles, ...(bar.emailSettings.inputStyles || {}) },
+              buttonStyles: { ...emailSettings.buttonStyles, ...(bar.emailSettings.buttonStyles || {}) },
+            });
+          }
+          // Set bar type to Email if type is Email
+          if (bar.type === 'Email') {
+            setBarType('Email');
+          }
         }
       } catch (err) {
         console.error('Error fetching bar:', err);
@@ -352,6 +398,8 @@ export const AnnouncementBarEditor = () => {
       saveBoxTextColor,
       startDate,
       endDate,
+      type: barType === 'Email' ? 'Email' : barType,
+      emailSettings: barType === 'Email' ? emailSettings : undefined,
     };
 
     try {
@@ -587,6 +635,112 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'email-settings':
+        return (
+          <EditorConfigPanel
+            title="Email Form Settings"
+            description="Configure your email subscription form"
+          >
+            <ConfigFormGroup label="Input Placeholder">
+              <ConfigInput
+                value={emailSettings.placeholderText}
+                onChange={(e) => setEmailSettings({ ...emailSettings, placeholderText: e.target.value })}
+                placeholder="Enter your email"
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Button Text">
+              <ConfigInput
+                value={emailSettings.buttonText}
+                onChange={(e) => setEmailSettings({ ...emailSettings, buttonText: e.target.value })}
+                placeholder="Subscribe"
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Success Message">
+              <ConfigInput
+                value={emailSettings.successMessage}
+                onChange={(e) => setEmailSettings({ ...emailSettings, successMessage: e.target.value })}
+                placeholder="Thank you for subscribing!"
+              />
+            </ConfigFormGroup>
+
+            <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Input Styling
+            </div>
+            
+            <ConfigFormGroup label="Input Background">
+              <ConfigInput
+                type="color"
+                value={emailSettings.inputStyles.backgroundColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Input Border Color">
+              <ConfigInput
+                type="color"
+                value={emailSettings.inputStyles.borderColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Input Text Color">
+              <ConfigInput
+                type="color"
+                value={emailSettings.inputStyles.fontColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
+
+            <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Button Styling
+            </div>
+            
+            <ConfigFormGroup label="Button Background">
+              <ConfigInput
+                type="color"
+                value={emailSettings.buttonStyles.backgroundColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Button Text Color">
+              <ConfigInput
+                type="color"
+                value={emailSettings.buttonStyles.fontColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
+            
+            <ConfigFormGroup label="Button Hover Color">
+              <ConfigInput
+                type="color"
+                value={emailSettings.buttonStyles.hoverBackgroundColor}
+                onChange={(e) => setEmailSettings({ 
+                  ...emailSettings, 
+                  buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
+                })}
+              />
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
