@@ -3,6 +3,7 @@ import shopify from "../../../shopify.js";
 import { billingConfig, cancelSubscriptionPlan, getAppSubscription } from "../../../billing.js";
 import { subscriptionUpdate } from "../../services/subscription.js";
 import { subscriptionConfig, appMapping } from "../../configs/subscriptionConfig.js";
+import { merchantEventService } from "../../services/merchantEventService.js";
 async function getUsersubscription(_req, res) {
   try {
     const session = res.locals.shopify.session;
@@ -124,6 +125,14 @@ async function subscribeToPlan(_req, res) {
         { upsert: true, new: true }
       );
 
+      // Trigger downgrade event webhook
+      merchantEventService.handleSubscriptionDowngrade({
+        shopId: session.id,
+        shopDomain: session.shop,
+        previousPlan: currentPlan,
+        newPlan: "Free",
+      }).catch((err) => console.error("Error triggering downgrade event:", err));
+
       return res.json({
         status: "SUCCESS",
         data: {
@@ -187,6 +196,14 @@ async function subscribeToPlan(_req, res) {
           },
           { upsert: true, new: true }
         );
+
+        // Trigger upgrade event webhook
+        merchantEventService.handleSubscriptionUpgrade({
+          shopId: session.id,
+          shopDomain: session.shop,
+          previousPlan: currentPlan,
+          newPlan: planName,
+        }).catch((err) => console.error("Error triggering upgrade event:", err));
 
         return res.json({
           status: "SUCCESS",

@@ -7,11 +7,13 @@ import shopify from "./shopify.js";
 import PrivacyWebhookHandlers from "./privacy.js";
 import morgan from "morgan";
 import router from "./backend/routes/index.js";
+import webhookRoutes from "./backend/routes/webhooks/index.js";
 import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
 import { verifySHA256 } from "./middleware/verify-signature.js";
+import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
 dotenv.config();
@@ -51,6 +53,20 @@ app.get(
   shopify.redirectToShopifyOrAppRoot()
 );
 app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
+
+// Webhook routes - mounted BEFORE authenticated routes
+// These endpoints receive events from Shopify and internal services without session auth
+app.use(
+  "/api/webhooks",
+  express.json({
+    verify: (req, _res, buf) => {
+      // Store raw body for HMAC verification
+      req.rawBody = buf.toString();
+    },
+  }),
+  verifyShopifyWebhook,
+  webhookRoutes
+);
 
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
