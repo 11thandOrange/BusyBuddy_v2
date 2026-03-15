@@ -352,15 +352,36 @@ class BOGOBundle {
             // Extract product ID from GID format (gid://shopify/Product/ID)
             const productIdFromGid = product.productId.split('/').pop();
             
-            // Get product handle from URL or API if needed
+            // Use handle from API response (populated by backend fix)
+            // Fallback to creating handle from title if not available
             const productHandle = product.handle || 
-                                product.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                                product.title?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') ||
+                                productIdFromGid;
             
-            const productResponse = await fetch(`/products/${productIdFromGid}.js`);
+            console.log(`Fetching product with handle: ${productHandle}`);
+            
+            // Try fetching by handle first (preferred method)
+            let productResponse = await fetch(`/products/${productHandle}.js`);
+            
+            // If handle-based fetch fails, try with numeric ID as handle (some themes support this)
+            if (!productResponse.ok && productHandle !== productIdFromGid) {
+              console.warn(`Trying fallback fetch with ID: ${productIdFromGid}`);
+              productResponse = await fetch(`/products/${productIdFromGid}.js`);
+            }
             
             if (!productResponse.ok) {
-              console.warn(`Failed to fetch product ${productHandle}`);
-              return null;
+              console.warn(`Failed to fetch product ${productHandle} (ID: ${productIdFromGid})`);
+              // Return product data from API response if Shopify Ajax call fails
+              return {
+                id: productIdFromGid,
+                title: product.title || "Product",
+                price: product.price || 0,
+                compare_at_price: product.compare_at_price,
+                image: product.image || product.media || "",
+                variant_id: null,
+                available: true,
+                options: product.optionSelections || []
+              };
             }
 
             const productData = await productResponse.json();
@@ -370,14 +391,25 @@ class BOGOBundle {
               title: productData.title,
               price: productData.variants[0]?.price || 0,
               compare_at_price: productData.variants[0]?.compare_at_price,
-              image: product.media || productData.images[0] || "",
+              // Use image from API response (media) or fallback to product images
+              image: product.image || product.media || productData.images?.[0] || "",
               variant_id: productData.variants[0]?.id,
-              available: productData.variants[0]?.available || false,
-              options: product.optionSelections || [] // Include product options from bundle
+              available: productData.variants[0]?.available ?? true,
+              options: product.optionSelections || productData.options || []
             };
           } catch (error) {
             console.error(`Error fetching product details for ${product.productId}:`, error);
-            return null;
+            // Return basic product data from API if fetch fails
+            return {
+              id: product.productId?.split('/').pop() || null,
+              title: product.title || "Product",
+              price: product.price || 0,
+              compare_at_price: product.compare_at_price,
+              image: product.image || product.media || "",
+              variant_id: null,
+              available: true,
+              options: product.optionSelections || []
+            };
           }
         })
       );

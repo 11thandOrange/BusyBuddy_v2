@@ -18,7 +18,6 @@ class BOGOBundle {
     this.selectedYProducts = new Map();
     this.init();
   }
-  ou;
 
   async init() {
     this.container = document.querySelector(".bogo-bundle-container");
@@ -363,8 +362,11 @@ class BOGOBundle {
       const quantity = bundleProductItem.quantity || 1;
 
       let productData;
-      // Get the handle first
-      const productHandle = await this.resolveProductHandle(shopifyProductId);
+      // Use handle from API if available, otherwise try to resolve it
+      let productHandle = bundleProductItem.handle;
+      if (!productHandle) {
+        productHandle = await this.resolveProductHandle(shopifyProductId);
+      }
       if (!productHandle) {
         console.warn(
           `Could not resolve handle for product ID ${shopifyProductId}. Skipping this bundle product.`
@@ -530,8 +532,11 @@ class BOGOBundle {
         const quantity = bundleProductItem.quantity || 1;
 
         let productData;
-        // Get the handle first using the new resolveProductHandle method
-        const productHandle = await this.resolveProductHandle(shopifyProductId);
+        // Use handle from API if available, otherwise try to resolve it
+        let productHandle = bundleProductItem.handle;
+        if (!productHandle) {
+          productHandle = await this.resolveProductHandle(shopifyProductId);
+        }
         if (!productHandle) {
           console.warn(
             `  Could not resolve handle for product ID ${shopifyProductId}. Skipping this bundle product.`
@@ -736,9 +741,11 @@ class BOGOBundle {
         };
 
         // Still need to fetch variants for proper functionality
-        let productHandle;
+        let productHandle = bundleProductItem.handle;
         try {
-          productHandle = await this.resolveProductHandle(shopifyProductId);
+          if (!productHandle) {
+            productHandle = await this.resolveProductHandle(shopifyProductId);
+          }
           if (productHandle) {
             const productResponse = await fetch(
               `/products/${productHandle}.js`
@@ -870,8 +877,11 @@ class BOGOBundle {
       );
 
       let productData;
-      // Get the handle first
-      const productHandle = await this.resolveProductHandle(shopifyProductId);
+      // Use handle from API if available, otherwise try to resolve it
+      let productHandle = bundleProductItem.handle;
+      if (!productHandle) {
+        productHandle = await this.resolveProductHandle(shopifyProductId);
+      }
       if (!productHandle) {
         console.warn(
           `Could not resolve handle for ${groupType} product ID ${shopifyProductId}. Skipping.`
