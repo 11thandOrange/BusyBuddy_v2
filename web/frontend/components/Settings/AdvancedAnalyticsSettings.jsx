@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Container,
   Row,
@@ -18,8 +18,23 @@ import {
   BoxArrowUpRight,
   PersonCircle,
 } from "react-bootstrap-icons";
+import { useAppBridge } from "@shopify/app-bridge-react";
+import { getSessionToken } from "@shopify/app-bridge/utilities";
 
 export default function AdvancedAnalyticsSettings() {
+  const app = useAppBridge();
+  
+  // Create authenticated fetch function
+  const authenticatedFetch = useCallback(async (url, options = {}) => {
+    const token = await getSessionToken(app);
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }, [app]);
   const [googleAccount, setGoogleAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -29,12 +44,12 @@ export default function AdvancedAnalyticsSettings() {
 
   useEffect(() => {
     fetchGoogleAccountStatus();
-  }, []);
+  }, [fetchGoogleAccountStatus]);
 
-  const fetchGoogleAccountStatus = async () => {
+  const fetchGoogleAccountStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/analytics/google/status", {
+      const response = await authenticatedFetch("/api/analytics/google/status", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -57,14 +72,14 @@ export default function AdvancedAnalyticsSettings() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authenticatedFetch]);
 
   const handleConnectGoogle = async () => {
     try {
       setConnecting(true);
       setError("");
       
-      const response = await fetch("/api/analytics/google/connect", {
+      const response = await authenticatedFetch("/api/analytics/google/connect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -93,7 +108,7 @@ export default function AdvancedAnalyticsSettings() {
   const pollConnectionStatus = () => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch("/api/analytics/google/status");
+        const response = await authenticatedFetch("/api/analytics/google/status");
         const result = await response.json();
         if (result.success && result.data?.connected) {
           setGoogleAccount(result.data);
@@ -113,7 +128,7 @@ export default function AdvancedAnalyticsSettings() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("/api/analytics/google/disconnect", {
+      const response = await authenticatedFetch("/api/analytics/google/disconnect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
