@@ -1108,6 +1108,47 @@ export const AnnouncementBarEditor = () => {
             {shopNowButtonText}
           </button>
         )}
+
+        {/* Email Form */}
+        {showEmailForm && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flexShrink: 0,
+          }}>
+            <input
+              type="email"
+              placeholder={emailSettings.placeholderText}
+              style={{
+                backgroundColor: emailSettings.inputStyles.backgroundColor,
+                border: `1px solid ${emailSettings.inputStyles.borderColor}`,
+                borderRadius: emailSettings.inputStyles.borderRadius,
+                color: emailSettings.inputStyles.fontColor,
+                fontSize: emailSettings.inputStyles.fontSize,
+                padding: emailSettings.inputStyles.padding,
+                outline: 'none',
+                minWidth: '180px',
+              }}
+              readOnly
+            />
+            <button
+              style={{
+                backgroundColor: emailSettings.buttonStyles.backgroundColor,
+                color: emailSettings.buttonStyles.fontColor,
+                border: 'none',
+                borderRadius: emailSettings.buttonStyles.borderRadius,
+                fontSize: emailSettings.buttonStyles.fontSize,
+                padding: emailSettings.buttonStyles.padding,
+                cursor: 'pointer',
+                fontWeight: '600',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {emailSettings.buttonText}
+            </button>
+          </div>
+        )}
       </div>
     );
   };
