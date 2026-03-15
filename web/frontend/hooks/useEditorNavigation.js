@@ -4,8 +4,10 @@ import { useCallback } from 'react';
 /**
  * Hook for navigating to/from the editor.
  * Opens the editor in a new browser tab for a clean, standalone experience.
+ * 
+ * @param {string} appType - The app type: 'announcement-bar', 'bundle-discount', 'buy-one-get-one', 'volume-discounts', 'mix-and-match'
  */
-export const useEditorNavigation = () => {
+export const useEditorNavigation = (appType = 'announcement-bar') => {
   const location = useLocation();
 
   // Build the base URL for the editor
@@ -20,16 +22,16 @@ export const useEditorNavigation = () => {
     return host ? `?host=${encodeURIComponent(host)}` : '';
   }, [location.search]);
 
-  const openEditor = useCallback((barId = null) => {
+  const openEditor = useCallback((id = null) => {
     const baseUrl = getEditorBaseUrl();
     const queryString = getQueryString();
-    const path = barId
-      ? `/announcement-bar/editor/${barId}`
-      : '/announcement-bar/editor';
+    const path = id
+      ? `/${appType}/editor/${id}`
+      : `/${appType}/editor`;
 
     // Open editor in a new browser tab
     window.open(baseUrl + path + queryString, '_blank');
-  }, [getEditorBaseUrl, getQueryString]);
+  }, [appType, getEditorBaseUrl, getQueryString]);
 
   const closeEditor = useCallback(() => {
     // Close the current tab/window
@@ -38,8 +40,8 @@ export const useEditorNavigation = () => {
     // Fallback: if window.close() is blocked (not opened via JS),
     // redirect to the list page
     const queryString = getQueryString();
-    window.location.href = '/announcement-bar' + queryString;
-  }, [getQueryString]);
+    window.location.href = `/${appType}` + queryString;
+  }, [appType, getQueryString]);
 
   return { openEditor, closeEditor };
 };

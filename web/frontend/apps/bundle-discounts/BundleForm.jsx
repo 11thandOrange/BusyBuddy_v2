@@ -1,51 +1,24 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
-import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import { useEditorNavigation } from "../../hooks";
 
 export default function BundleForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
-  const [fromDiscountPage, setFromDiscountPage] = useState(false);
-  const [resetDiscountList, setResetDiscountList] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [autoTriggerActions, setAutoTriggerActions] = useState(true);
-  const discountActionsRef = useRef();
+  const { openEditor } = useEditorNavigation('bundle-discount');
 
-  useEffect(() => {
-    if (autoTriggerActions) {
-      setFromDiscountPage(true);
-      setAutoTriggerActions(false);
-    }
-  }, [autoTriggerActions]);
-
-  const handleOpenDiscountModal = () => {
-    setShowDiscountModal(true);
+  const handleCreateNew = () => {
+    openEditor(); // Opens editor in new tab
   };
 
-  const handleCloseDiscountModal = () => {
-    setShowDiscountModal(false);
-  };
-
-  const handleDiscard = () => {
-    setFromDiscountPage(false);
-    setResetDiscountList((prev) => !prev);
-  };
-
-  const handleBundleCreated = () => {
-    setFromDiscountPage(false);
+  const handleRefreshList = () => {
     setRefreshTrigger((prev) => prev + 1);
-  };
-
-  const handleSaveChanges = () => {
-    if (discountActionsRef.current) {
-      discountActionsRef.current.handleSaveChanges();
-    }
   };
 
   const handleBack = () => {
@@ -57,21 +30,17 @@ export default function BundleForm() {
       <Container fluid style={{ margin: "0 auto" }}>
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
-            {fromDiscountPage ? (
-              <></>
-            ) : (
-              <div
-                className="text-dark p-0"
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                onClick={handleBack}
-              >
-                <ArrowLeft size={24} />
-              </div>
-            )}
+            <div
+              className="text-dark p-0"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+              onClick={handleBack}
+            >
+              <ArrowLeft size={24} />
+            </div>
           </Col>
           <Col>
             <h5
@@ -93,85 +62,35 @@ export default function BundleForm() {
                 color: "#616161",
               }}
             >
-              Get Noticed! Want to make sure your message doesn't get missed? Announcement Bar lets you
-              display important alerts right at the top of your store. Whether it's a sale, promotion, or
-              update, it's impossible to ignore!
+              Create bundle discounts to encourage customers to buy more products together.
+              Offer special pricing when customers purchase specific product combinations.
             </p>
           </Col>
 
-          {fromDiscountPage ? (
-            <Col xs="auto" className="d-flex align-items-center" style={{ maxWidth: "300px", width: "100%" }}>
-              <Button
-                text="Discard"
-                onClick={handleDiscard}
-                style={{
-                  background: "white",
-                  border: "1px solid #dee2e6",
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  maxWidth: "95px",
-                  borderRadius: "8px",
-                  marginRight: "10px",
-                  padding: "10px 20px",
-                }}
-              />
-              <Button
-                text="Save Changes"
-                onClick={handleSaveChanges}
-                style={{
-                  height: "45px",
-                  fontWeight: 500,
-                  fontSize: "15px",
-                  borderRadius: "8px",
-                  backgroundColor: "#000",
-                  color: "#fff",
-                  padding: "10px 20px",
-                }}
-              />
-            </Col>
-          ) : (
-            <Col xs="auto" className="d-flex align-items-center gap-2">
-              <Button
-                text="Create Another Discount"
-                onClick={handleOpenDiscountModal}
-                style={{
-                  borderRadius: "15px",
-
-                  backgroundColor: "#000",
-                  color: "#FFFFFF",
-                  padding: "15px 25px",
-                  fontFamily: "Inter",
-                  fontStyle: "normal",
-                  fontWeight: "500",
-                  fontSize: "15px",
-                  lineHeight: "100%",
-                }}
-              />
-              <ToggleSwitch appId="bundle_discount" />
-            </Col>
-          )}
+          <Col xs="auto" className="d-flex align-items-center gap-2">
+            <Button
+              text="Create Bundle Discount"
+              onClick={handleCreateNew}
+              style={{
+                borderRadius: "15px",
+                backgroundColor: "#000",
+                color: "#FFFFFF",
+                padding: "15px 25px",
+                fontFamily: "Inter",
+                fontStyle: "normal",
+                fontWeight: "500",
+                fontSize: "15px",
+                lineHeight: "100%",
+              }}
+            />
+            <ToggleSwitch appId="bundle_discount" />
+          </Col>
         </Row>
-
-        <DiscountModal show={showDiscountModal} onHide={handleCloseDiscountModal} />
       </Container>
-      {/* <DiscountList
-        key={resetDiscountList ? "reset" : "normal"}
-        onMakeBundleClick={() => setFromDiscountPage(true)}
-        discountType="Bundle Discount"
-        onBundleCreated={() => {
-          setFromDiscountPage(false);
-          setResetDiscountList((prev) => !prev); // Refresh the list
-        }}
-      /> */}
       <DiscountList
-        key={resetDiscountList ? "reset" : "normal"}
-        onMakeBundleClick={() => setFromDiscountPage(true)}
         discountType="Bundle Discount"
         refreshTrigger={refreshTrigger}
-        onBundleCreated={handleBundleCreated}
-        discountActionsRef={discountActionsRef}
-        autoTriggerActions={fromDiscountPage}
+        onBundleCreated={handleRefreshList}
       />
     </div>
   );

@@ -1,5 +1,9 @@
 import { Routes as ReactRouterRoutes, Route } from "react-router-dom";
 import AnnouncementBarEditor from "./apps/announcement-bar/AnnouncementBarEditor";
+import StandardBundleEditor from "./apps/bundle-discounts/StandardBundleEditor";
+import BuyXGetYEditor from "./apps/buy-one-get-one/BuyXGetYEditor";
+import VolumeDiscountEditor from "./apps/volume-discounts/VolumeDiscountEditor";
+import MixAndMatchEditor from "./apps/mix-and-match-discounts/MixAndMatchEditor";
 
 /**
  * File-based routing.
@@ -26,9 +30,19 @@ export default function Routes({ pages }) {
   return (
     <ReactRouterRoutes>
       {routeComponents}
-      {/* Announcement Bar Editor Routes (fullscreen) */}
+      
+      {/* Editor Routes (open in new tab) */}
       <Route path="/announcement-bar/editor" element={<AnnouncementBarEditor />} />
       <Route path="/announcement-bar/editor/:id" element={<AnnouncementBarEditor />} />
+      <Route path="/bundle-discount/editor" element={<StandardBundleEditor />} />
+      <Route path="/bundle-discount/editor/:id" element={<StandardBundleEditor />} />
+      <Route path="/buy-one-get-one/editor" element={<BuyXGetYEditor />} />
+      <Route path="/buy-one-get-one/editor/:id" element={<BuyXGetYEditor />} />
+      <Route path="/volume-discounts/editor" element={<VolumeDiscountEditor />} />
+      <Route path="/volume-discounts/editor/:id" element={<VolumeDiscountEditor />} />
+      <Route path="/mix-and-match/editor" element={<MixAndMatchEditor />} />
+      <Route path="/mix-and-match/editor/:id" element={<MixAndMatchEditor />} />
+      
       <Route path="*" element={<NotFound />} />
     </ReactRouterRoutes>
   );
