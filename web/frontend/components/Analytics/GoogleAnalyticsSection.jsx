@@ -24,8 +24,6 @@ import {
   Clock,
   GraphUp,
 } from "react-bootstrap-icons";
-import { useAppBridge } from "@shopify/app-bridge-react";
-import { getSessionToken } from "@shopify/app-bridge/utilities";
 
 // Color palette for charts
 const CHART_COLORS = {
@@ -89,31 +87,18 @@ function EmptyState({ onConnectClick }) {
 }
 
 export default function GoogleAnalyticsSection({ onNavigateToSettings }) {
-  const app = useAppBridge();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [timeRange, setTimeRange] = useState("30d");
 
-  // Create authenticated fetch function
-  const authenticatedFetch = useCallback(async (url, options = {}) => {
-    const token = await getSessionToken(app);
-    return fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  }, [app]);
-
   const checkConnectionAndFetchData = useCallback(async () => {
     try {
       setLoading(true);
       
       // First check if Google Analytics is connected
-      const statusResponse = await authenticatedFetch("/api/analytics/google/status");
+      const statusResponse = await fetch("/api/analytics/google/status");
       const statusResult = await statusResponse.json();
       
       if (!statusResult.success || !statusResult.data?.connected) {
@@ -125,7 +110,7 @@ export default function GoogleAnalyticsSection({ onNavigateToSettings }) {
       setIsConnected(true);
       
       // Fetch Google Analytics data
-      const response = await authenticatedFetch(`/api/analytics/google/data?range=${timeRange}`, {
+      const response = await fetch(`/api/analytics/google/data?range=${timeRange}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
