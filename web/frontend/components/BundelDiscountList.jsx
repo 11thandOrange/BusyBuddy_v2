@@ -1,87 +1,59 @@
-import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, ButtonGroup, ToggleButton, Alert, Spinner, Form } from "react-bootstrap";
-import { Play, ArrowRight, Trash, Pencil } from "react-bootstrap-icons";
+import React, { useEffect, useState, useCallback } from "react";
+import { Container, Row, Col, Card, ButtonGroup, ToggleButton, Spinner, Form } from "react-bootstrap";
+import { useLocation } from "react-router-dom";
+import { Trash, Pencil } from "react-bootstrap-icons";
 import Button from "./Button";
 import view from "../assets/view.png";
 import videoimg from "../assets/videoimg.png";
-import BundleDiscountActions from "../apps/bundle-discounts/bundleDiscountActions";
-import VolumeDiscountActions from "../apps/volume-discounts/volumeDiscountActions";
-import MixAndMatchActions from "../apps/mix-and-match-discounts/mixMatchActions";
-import BuyoneGetoneActionsActions from "../apps/buy-one-get-one/buyoneGetoneActions";
 import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
 import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
 
+// Map discount types to editor routes
+const EDITOR_ROUTES = {
+  "Bundle Discount": "bundle-discount",
+  "Buy One Get One": "buy-one-get-one",
+  "Volume Discount": "volume-discounts",
+  "Mix and Match": "mix-and-match",
+};
+
 export default function DiscountList({
-  onMakeBundleClick,
   discountType,
   refreshTrigger,
   onBundleCreated,
-  discountActionsRef,
-  autoTriggerActions,
 }) {
+  const location = useLocation();
   const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[1]);
-  const [showAction, setShowAction] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [discounts, setDiscounts] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
-  const [status, setStatus] = useState(false);
-  const [mainLoading, setMainLoading] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState(null); // Track which discount is being edited
+
+  // Get query string for preserving host param
+  const getQueryString = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    const host = params.get('host');
+    return host ? `?host=${encodeURIComponent(host)}` : '';
+  }, [location.search]);
+
+  // Open editor in new tab
+  const openEditor = useCallback((id = null) => {
+    const appType = EDITOR_ROUTES[discountType];
+    if (!appType) return;
+    
+    const baseUrl = window.location.origin;
+    const queryString = getQueryString();
+    const path = id ? `/${appType}/editor/${id}` : `/${appType}/editor`;
+    window.open(baseUrl + path + queryString, '_blank');
+  }, [discountType, getQueryString]);
 
   useEffect(() => {
-    if (autoTriggerActions) {
-      const timer = setTimeout(() => {
-        setShowAction(true);
-        if (onMakeBundleClick) {
-          onMakeBundleClick();
-        }
-        setMainLoading(false);
-      }, 10);
-
-      return () => clearTimeout(timer);
-    } else {
-      setMainLoading(false);
+    if (selectedTab === "Discounts") {
+      fetchDiscounts();
     }
-  }, [autoTriggerActions, onMakeBundleClick]);
-  // useEffect(() => {
-  //   if (selectedTab === "Discounts") {
-  //     fetchDiscounts();
-  //   }
-  // }, [selectedTab, discountType, refreshTrigger]);
-  useEffect(() => {
-    if (!autoTriggerActions) {
-      // Only fetch if not auto-triggering
-      if (selectedTab === "Discounts") {
-        fetchDiscounts();
-      }
-    }
-  }, [refreshTrigger, autoTriggerActions]);
-
-  if (mainLoading) {
-    return (
-      <Container
-        fluid
-        className="bg-white d-flex justify-content-center align-items-center"
-        style={{
-          maxWidth: "1500px",
-          margin: "50px auto",
-          borderRadius: "15px",
-          height: "300px",
-        }}
-      >
-        <div className="text-center">
-          <Spinner animation="border" role="status" variant="dark" />
-          <p className="mt-3" style={{ color: "#616161" }}>
-            Loading...
-          </p>
-        </div>
-      </Container>
-    );
-  }
+  }, [refreshTrigger, selectedTab]);
 
   const fetchDiscounts = async () => {
     setIsLoading(true);
@@ -172,10 +144,9 @@ export default function DiscountList({
     }
   };
 
-  // New function to handle edit
+  // Handle edit - opens editor in new tab with discount ID
   const handleEditClick = (discount) => {
-    setEditingDiscount(discount);
-    setShowAction(true);
+    openEditor(discount._id);
   };
 
   const formatDate = (dateString) => {
@@ -190,52 +161,6 @@ export default function DiscountList({
 
     return `${month} ${day} at ${formattedHour}:${formattedMinute}${ampm}`;
   };
-
-  const handleActionSuccess = () => {
-    setShowAction(false);
-    setEditingDiscount(null); // Reset editing state
-    if (onBundleCreated) {
-      onBundleCreated();
-    }
-    // Refresh the discounts list
-    fetchDiscounts();
-  };
-
-  if (showAction) {
-    if (discountType === "Volume Discount") {
-      return (
-        <VolumeDiscountActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
-        />
-      );
-    } else if (discountType === "Buy One Get One") {
-      return (
-        <BuyoneGetoneActionsActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
-        />
-      );
-    } else if (discountType === "Bundle Discount") {
-      return (
-        <BundleDiscountActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
-        />
-      );
-    } else if (discountType === "Mix and Match") {
-      return (
-        <MixAndMatchActions 
-          ref={discountActionsRef} 
-          onSuccess={handleActionSuccess} 
-          editData={editingDiscount} 
-        />
-      );
-    }
-  }
 
   const handlePreviewClick = (discount) => {
     setSelectedDiscount(discount);
@@ -319,11 +244,7 @@ export default function DiscountList({
           {selectedTab === "Discounts" && (
             <Button
               text="Create Discount"
-              onClick={() => {
-                setEditingDiscount(null); // Ensure we're creating new, not editing
-                setShowAction(true);
-                onMakeBundleClick();
-              }}
+              onClick={() => openEditor()}
               style={{
                 background: "black",
                 borderRadius: "12px",
