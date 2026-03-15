@@ -523,7 +523,7 @@ export default function DiscountList({
                                 <div className="d-flex flex-wrap gap-2 small text-truncate">
                                   {discount.products.map((product, idx) => (
                                     <span
-                                      key={product.productId}
+                                      key={`${discount._id}-product-${product.productId || idx}`}
                                       className="badge bg-light text-dark text-truncate"
                                       style={{ maxWidth: "120px" }}
                                     >
