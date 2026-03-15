@@ -990,7 +990,9 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
           activeSetting={activeSettingId}
           onSettingChange={setActiveSettingId}
         />
-        {renderConfigContent()}
+        <EditorConfigPanel>
+          {renderConfigContent()}
+        </EditorConfigPanel>
       </EditorSidepane>
 
       <EditorRightContent>

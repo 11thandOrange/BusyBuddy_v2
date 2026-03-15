@@ -1262,7 +1262,9 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
           activeSetting={activeSettingId} 
           onSettingChange={handleSettingClick} 
         />
-        {renderConfigContent()}
+        <EditorConfigPanel>
+          {renderConfigContent()}
+        </EditorConfigPanel>
       </EditorSidepane>
 
       <EditorRightContent>

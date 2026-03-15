@@ -1066,7 +1066,9 @@ export default function MixAndMatchEditor({ editingBundle, onSave }) {
           activeSetting={activeSettingId}
           onSettingChange={handleSettingClick}
         />
-        {renderConfigContent()}
+        <EditorConfigPanel>
+          {renderConfigContent()}
+        </EditorConfigPanel>
       </EditorSidepane>
 
       <EditorRightContent>
