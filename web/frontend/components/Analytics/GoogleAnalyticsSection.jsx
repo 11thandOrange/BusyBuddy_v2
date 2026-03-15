@@ -149,6 +149,10 @@ export default function GoogleAnalyticsSection({ onNavigateToSettings }) {
     }
   }, [authenticatedFetch, timeRange]);
 
+  useEffect(() => {
+    checkConnectionAndFetchData();
+  }, [checkConnectionAndFetchData]);
+
   // Helper function to format date for display
   const formatDate = (dateString) => {
     const date = new Date(dateString);

@@ -42,10 +42,6 @@ export default function AdvancedAnalyticsSettings() {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
 
-  useEffect(() => {
-    fetchGoogleAccountStatus();
-  }, [fetchGoogleAccountStatus]);
-
   const fetchGoogleAccountStatus = useCallback(async () => {
     try {
       setLoading(true);
@@ -73,6 +69,10 @@ export default function AdvancedAnalyticsSettings() {
       setLoading(false);
     }
   }, [authenticatedFetch]);
+
+  useEffect(() => {
+    fetchGoogleAccountStatus();
+  }, [fetchGoogleAccountStatus]);
 
   const handleConnectGoogle = async () => {
     try {
