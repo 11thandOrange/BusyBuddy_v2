@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 import {
   EditorLayout,
@@ -10,9 +11,11 @@ import {
   ConfigSelect,
   ConfigToggleRow,
   EditorPreviewPanel,
+  ProductPagePreview,
   EditorHeader,
   EditorRightContent
 } from '../../components/Editor';
+import { useEditorNavigation } from '../../hooks';
 import tshirt from "./tshirt.png";
 
 // Volume Discount settings configuration
@@ -99,8 +102,22 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Fixed Amount', label: 'Fixed Amount' },
 ];
 
-export default function VolumeDiscountEditor({ editingBundle, onSave }) {
-  
+/**
+ * VolumeDiscountEditor - Editor for Volume Discount app
+ * Uses reusable Editor components with app-specific configuration
+ * 
+ * Opens in a new browser tab for a clean, standalone experience.
+ * URL: /volume-discount/editor/:id (edit) or /volume-discount/editor (create)
+ */
+export const VolumeDiscountEditor = () => {
+  // Get bundle ID from URL params (if editing existing bundle)
+  const { id } = useParams();
+  const { closeEditor } = useEditorNavigation();
+
+  // Loading state for fetching bundle data
+  const [isLoading, setIsLoading] = useState(!!id);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingBundle, setEditingBundle] = useState(null);
 
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
@@ -179,65 +196,84 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
   // Timer display
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
 
-  // Load editing bundle data
+  // Fetch bundle data if editing (id from URL params)
   useEffect(() => {
-    if (editingBundle) {
-      setBundleTitle(editingBundle.title || 'Buy More & Save More! 🔥');
-      setBundleInternalName(editingBundle.internalName || '');
-      setSecondaryMessage(editingBundle.secondaryMessage || '');
-      setBundleEnabled(editingBundle.status ?? true);
-      setBundlePriority(editingBundle.bundlePriority || 0);
-      setSelectedProducts(editingBundle.products || []);
-      setDiscountType(editingBundle.discountType || 'Percentage');
-      setDiscountValue(editingBundle.discountValue?.toString() || '10');
-      
-      // Load quantity breaks
-      if (editingBundle.quantityBreaks && editingBundle.quantityBreaks.length > 0) {
-        setQuantityBreaks(editingBundle.quantityBreaks);
-      }
-
-      // Widget appearance
-      if (editingBundle.widgetAppearance) {
-        setColorSettings({
-          primaryTextColor: editingBundle.widgetAppearance.primaryTextColor || '#303030',
-          secondaryTextColor: editingBundle.widgetAppearance.secondaryTextColor || '#000000',
-          primaryBackgroundColor: editingBundle.widgetAppearance.PrimaryBackgroundColor || '#FFFFFF',
-          secondaryBackgroundColor: editingBundle.widgetAppearance.secondaryBackgroundColor || '#f1f2f4',
-          borderColor: editingBundle.widgetAppearance.borderColor || '#FFFFFF',
-          buttonColor: editingBundle.widgetAppearance.buttonColor || '#000000',
-          countdownBgColor: editingBundle.widgetAppearance.offerTagBackgroundColor || '#C4290E',
-          countdownTextColor: editingBundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
-        });
-        setShowCountdown(editingBundle.widgetAppearance.isShowCountDownTimer || false);
-        setShowEmoji(editingBundle.widgetAppearance.addEmoji ?? true);
-        setMargins({
-          top: editingBundle.widgetAppearance.topMargin || 20,
-          bottom: editingBundle.widgetAppearance.bottomMargin || 20,
-        });
-        setCornerRadius(editingBundle.widgetAppearance.cardCornerRadius || 20);
-
-        // Button settings
-        setAddToCartText(editingBundle.widgetAppearance.addToCartText || 'Add to Cart');
-        setAddToCartBgColor(editingBundle.widgetAppearance.addToCartBgColor || '#000000');
-        setAddToCartTextColor(editingBundle.widgetAppearance.addToCartTextColor || '#FFFFFF');
-        setShowSkipButton(editingBundle.widgetAppearance.showSkipButton ?? true);
-        setSkipButtonText(editingBundle.widgetAppearance.skipButtonText || 'Skip Offer');
-        setSkipButtonBgColor(editingBundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
-        setSkipButtonTextColor(editingBundle.widgetAppearance.skipButtonTextColor || '#666666');
-      }
-
-      // Schedule
-      if (editingBundle.startDate) setStartDate(new Date(editingBundle.startDate).toISOString().slice(0, 16));
-      if (editingBundle.endDate) setEndDate(new Date(editingBundle.endDate).toISOString().slice(0, 16));
+    if (!id) {
+      setIsLoading(false);
+      return;
     }
-  }, [editingBundle]);
+
+    const fetchBundle = async () => {
+      try {
+        const response = await fetch(`/api/bundles/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch bundle');
+        const data = await response.json();
+        const bundle = data?.data || data;
+
+        if (bundle) {
+          setEditingBundle(bundle);
+          // Populate form state from fetched data
+          setBundleTitle(bundle.title || 'Buy More & Save More! 🔥');
+          setBundleInternalName(bundle.internalName || '');
+          setSecondaryMessage(bundle.secondaryMessage || '');
+          setBundleEnabled(bundle.status ?? true);
+          setBundlePriority(bundle.bundlePriority || 0);
+          setSelectedProducts(bundle.products || []);
+          setDiscountType(bundle.discountType || 'Percentage');
+          setDiscountValue(bundle.discountValue?.toString() || '10');
+          
+          // Load quantity breaks
+          if (bundle.quantityBreaks && bundle.quantityBreaks.length > 0) {
+            setQuantityBreaks(bundle.quantityBreaks);
+          }
+
+          // Widget appearance
+          if (bundle.widgetAppearance) {
+            setColorSettings({
+              primaryTextColor: bundle.widgetAppearance.primaryTextColor || '#303030',
+              secondaryTextColor: bundle.widgetAppearance.secondaryTextColor || '#000000',
+              primaryBackgroundColor: bundle.widgetAppearance.PrimaryBackgroundColor || '#FFFFFF',
+              secondaryBackgroundColor: bundle.widgetAppearance.secondaryBackgroundColor || '#f1f2f4',
+              borderColor: bundle.widgetAppearance.borderColor || '#FFFFFF',
+              buttonColor: bundle.widgetAppearance.buttonColor || '#000000',
+              countdownBgColor: bundle.widgetAppearance.offerTagBackgroundColor || '#C4290E',
+              countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
+            });
+            setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setMargins({
+              top: bundle.widgetAppearance.topMargin || 20,
+              bottom: bundle.widgetAppearance.bottomMargin || 20,
+            });
+            setCornerRadius(bundle.widgetAppearance.cardCornerRadius || 20);
+
+            // Button settings
+            setAddToCartText(bundle.widgetAppearance.addToCartText || 'Add to Cart');
+            setAddToCartBgColor(bundle.widgetAppearance.addToCartBgColor || '#000000');
+            setAddToCartTextColor(bundle.widgetAppearance.addToCartTextColor || '#FFFFFF');
+            setShowSkipButton(bundle.widgetAppearance.showSkipButton ?? true);
+            setSkipButtonText(bundle.widgetAppearance.skipButtonText || 'Skip Offer');
+            setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
+            setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
+          }
+
+          // Schedule
+          if (bundle.startDate) setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
+          if (bundle.endDate) setEndDate(new Date(bundle.endDate).toISOString().slice(0, 16));
+        }
+      } catch (err) {
+        console.error('Error fetching bundle:', err);
+        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBundle();
+  }, [id]);
 
   // Fetch store products
   useEffect(() => {
@@ -430,8 +466,8 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
     setIsSaving(true);
 
     try {
-      const isEditing = !!editingBundle?._id;
-      const url = isEditing ? `/api/bundles/${editingBundle._id}` : "/api/bundles";
+      const isEditing = !!id;
+      const url = isEditing ? `/api/bundles/${id}` : "/api/bundles";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -444,7 +480,9 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
         shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        onSave?.(bundleData);
+        // Clear unsaved changes flag and close editor
+        setHasUnsavedChanges(false);
+        closeEditor();
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
@@ -1005,18 +1043,14 @@ export default function VolumeDiscountEditor({ editingBundle, onSave }) {
           isLoading={isSaving}
         />
 
-        <EditorPreviewPanel
-          productTitle="Premium Wireless Headphones Pro"
-          productRating={4.8}
-          productReviews={2847}
-          productPrice="$1,299.00"
-          productComparePrice="$1,599.00"
-          productDescription="Experience premium sound quality with active noise cancellation, 40-hour battery life, comfortable over-ear design."
-          productFeatures={['Battery: 40 hours', 'Bluetooth: 5.2', 'Weight: 250g', 'Driver: 40mm']}
-        >
-          {renderVolumePreview()}
+        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
+          <ProductPagePreview widgetLabel="Volume Discount">
+            {renderVolumePreview()}
+          </ProductPagePreview>
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>
   );
-}
+};
+
+export default VolumeDiscountEditor;

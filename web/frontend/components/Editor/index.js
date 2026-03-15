@@ -16,6 +16,7 @@ export {
   EditorPreviewPanel, 
   StorePreview 
 } from './EditorPreviewPanel';
+export { ProductPagePreview } from './ProductPagePreview';
 export { 
   EditorHeader, 
   EditorRightContent 

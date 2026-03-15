@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 import {
   EditorLayout,
@@ -11,10 +12,11 @@ import {
   ConfigTextarea,
   ConfigToggleRow,
   EditorPreviewPanel,
-  StorePreview,
+  ProductPagePreview,
   EditorHeader,
   EditorRightContent
 } from '../../components/Editor';
+import { useEditorNavigation } from '../../hooks';
 import tshirt from "./tshirt.png";
 
 // Buy X Get Y specific settings configuration
@@ -103,9 +105,23 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Free Gift', label: 'Free Gift (100% Off)' },
 ];
 
-export default function BuyXGetYEditor({ editingBundle, onSave }) {
-  
-  
+/**
+ * BuyXGetYEditor - Editor for Buy X Get Y app
+ * Uses reusable Editor components with app-specific configuration
+ * 
+ * Opens in a new browser tab for a clean, standalone experience.
+ * URL: /bogo-discount/editor/:id (edit) or /bogo-discount/editor (create)
+ */
+export const BuyXGetYEditor = () => {
+  // Get bundle ID from URL params (if editing existing bundle)
+  const { id } = useParams();
+  const { closeEditor } = useEditorNavigation();
+
+  // Loading state for fetching bundle data
+  const [isLoading, setIsLoading] = useState(!!id);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingBundle, setEditingBundle] = useState(null);
+
   // Active states
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('customer-buys');
@@ -185,73 +201,92 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
   const [showXProductPicker, setShowXProductPicker] = useState(false);
   const [showYProductPicker, setShowYProductPicker] = useState(false);
   
-  // Loading states
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
 
-  // Initialize form with edit data
+  // Fetch bundle data if editing (id from URL params)
   useEffect(() => {
-    if (editingBundle) {
-      setBundleTitle(editingBundle.title || 'Buy X Get Y - Save More! 🎁');
-      setBundleInternalName(editingBundle.internalName || '');
-      setSecondaryMessage(editingBundle.secondaryMessage || 'Get this bundle and save on your purchase');
-      setBundleEnabled(editingBundle.status ?? true);
-      setBundlePriority(editingBundle.bundlePriority || editingBundle.priority || 0);
-      setDiscountType(editingBundle.discountType || '');
-      setDiscountValue(editingBundle.discountValue?.toString() || '');
-      
-      // Set X and Y products
-      if (editingBundle.productsX) {
-        setSelectedXProducts(editingBundle.productsX);
-      }
-      if (editingBundle.productsY) {
-        setSelectedYProducts(editingBundle.productsY);
-      }
-      
-      // Set widget appearance
-      if (editingBundle.widgetAppearance) {
-        setColorSettings({
-          primaryTextColor: editingBundle.widgetAppearance.primaryTextColor || '#303030',
-          secondaryTextColor: editingBundle.widgetAppearance.secondaryTextColor || '#000000',
-          primaryBackgroundColor: editingBundle.widgetAppearance.PrimaryBackgroundColor || '#FFFFFF',
-          secondaryBackgroundColor: editingBundle.widgetAppearance.secondaryBackgroundColor || '#f1f2f4',
-          borderColor: editingBundle.widgetAppearance.borderColor || '#FFFFFF',
-          buttonColor: editingBundle.widgetAppearance.buttonColor || '#000000',
-          countdownBgColor: editingBundle.widgetAppearance.offerTagBackgroundColor || '#C4290E',
-          countdownTextColor: editingBundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
-          getYBannerColor: editingBundle.widgetAppearance.getYBannerColor || '#5169DD',
-          getYBannerTextColor: editingBundle.widgetAppearance.getYBannerTextColor || '#FFFFFF',
-        });
-        setShowCountdown(editingBundle.widgetAppearance.isShowCountDownTimer || false);
-        setShowEmoji(editingBundle.widgetAppearance.addEmoji ?? true);
-        setMargins({
-          top: editingBundle.widgetAppearance.topMargin || 20,
-          bottom: editingBundle.widgetAppearance.bottomMargin || 20,
-        });
-        setCornerRadius(editingBundle.widgetAppearance.cardCornerRadius || 20);
-        
-        // Button settings
-        setAddToCartText(editingBundle.widgetAppearance.addToCartText || 'Add Bundle to Cart');
-        setAddToCartBgColor(editingBundle.widgetAppearance.addToCartBgColor || '#000000');
-        setAddToCartTextColor(editingBundle.widgetAppearance.addToCartTextColor || '#FFFFFF');
-        setShowSkipButton(editingBundle.widgetAppearance.showSkipButton ?? true);
-        setSkipButtonText(editingBundle.widgetAppearance.skipButtonText || 'Skip Offer');
-        setSkipButtonBgColor(editingBundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
-        setSkipButtonTextColor(editingBundle.widgetAppearance.skipButtonTextColor || '#666666');
-      }
-      
-      // Set dates
-      if (editingBundle.startDate) {
-        setStartDate(new Date(editingBundle.startDate).toISOString().split('T')[0]);
-      }
-      if (editingBundle.endDate) {
-        setEndDate(new Date(editingBundle.endDate).toISOString().split('T')[0]);
-      }
+    if (!id) {
+      setIsLoading(false);
+      return;
     }
-  }, [editingBundle]);
+
+    const fetchBundle = async () => {
+      try {
+        const response = await fetch(`/api/bundles/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch bundle');
+        const data = await response.json();
+        const bundle = data?.data || data;
+
+        if (bundle) {
+          setEditingBundle(bundle);
+          // Populate form state from fetched data
+          setBundleTitle(bundle.title || 'Buy X Get Y - Save More! 🎁');
+          setBundleInternalName(bundle.internalName || '');
+          setSecondaryMessage(bundle.secondaryMessage || 'Get this bundle and save on your purchase');
+          setBundleEnabled(bundle.status ?? true);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
+          setDiscountType(bundle.discountType || '');
+          setDiscountValue(bundle.discountValue?.toString() || '');
+          
+          // Set X and Y products
+          if (bundle.productsX) {
+            setSelectedXProducts(bundle.productsX);
+          }
+          if (bundle.productsY) {
+            setSelectedYProducts(bundle.productsY);
+          }
+          
+          // Set widget appearance
+          if (bundle.widgetAppearance) {
+            setColorSettings({
+              primaryTextColor: bundle.widgetAppearance.primaryTextColor || '#303030',
+              secondaryTextColor: bundle.widgetAppearance.secondaryTextColor || '#000000',
+              primaryBackgroundColor: bundle.widgetAppearance.PrimaryBackgroundColor || '#FFFFFF',
+              secondaryBackgroundColor: bundle.widgetAppearance.secondaryBackgroundColor || '#f1f2f4',
+              borderColor: bundle.widgetAppearance.borderColor || '#FFFFFF',
+              buttonColor: bundle.widgetAppearance.buttonColor || '#000000',
+              countdownBgColor: bundle.widgetAppearance.offerTagBackgroundColor || '#C4290E',
+              countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
+              getYBannerColor: bundle.widgetAppearance.getYBannerColor || '#5169DD',
+              getYBannerTextColor: bundle.widgetAppearance.getYBannerTextColor || '#FFFFFF',
+            });
+            setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setMargins({
+              top: bundle.widgetAppearance.topMargin || 20,
+              bottom: bundle.widgetAppearance.bottomMargin || 20,
+            });
+            setCornerRadius(bundle.widgetAppearance.cardCornerRadius || 20);
+            
+            // Button settings
+            setAddToCartText(bundle.widgetAppearance.addToCartText || 'Add Bundle to Cart');
+            setAddToCartBgColor(bundle.widgetAppearance.addToCartBgColor || '#000000');
+            setAddToCartTextColor(bundle.widgetAppearance.addToCartTextColor || '#FFFFFF');
+            setShowSkipButton(bundle.widgetAppearance.showSkipButton ?? true);
+            setSkipButtonText(bundle.widgetAppearance.skipButtonText || 'Skip Offer');
+            setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
+            setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
+          }
+          
+          // Set dates
+          if (bundle.startDate) {
+            setStartDate(new Date(bundle.startDate).toISOString().split('T')[0]);
+          }
+          if (bundle.endDate) {
+            setEndDate(new Date(bundle.endDate).toISOString().split('T')[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching bundle:', err);
+        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBundle();
+  }, [id]);
 
   // Fetch products from store inventory
   useEffect(() => {
@@ -466,8 +501,8 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
     setIsSaving(true);
 
     try {
-      const isEditing = !!editingBundle?._id;
-      const url = isEditing ? `/api/bundles/${editingBundle._id}` : "/api/bundles";
+      const isEditing = !!id;
+      const url = isEditing ? `/api/bundles/${id}` : "/api/bundles";
       const method = isEditing ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -480,7 +515,9 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
         shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        onSave?.(bundleData);
+        // Clear unsaved changes flag and close editor
+        setHasUnsavedChanges(false);
+        closeEditor();
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
@@ -1182,75 +1219,6 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
   };
 
   // Render product page preview (same two-column layout as StandardBundleEditor)
-  const renderProductPagePreview = () => (
-    <div className="product-page-preview" style={{ padding: '24px', background: '#fff', minHeight: '100%' }}>
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-        {/* Left Column - Product Image */}
-        <div style={{ flex: '0 0 45%', maxWidth: '45%' }}>
-          <div style={{
-            width: '100%', aspectRatio: '1', background: '#f8f8f8', borderRadius: '12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px',
-            border: '1px solid #eee'
-          }}>
-            <span style={{ fontSize: '64px', opacity: 0.4 }}>📦</span>
-          </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} style={{
-                width: '50px', height: '50px', background: '#f8f8f8', borderRadius: '8px',
-                border: i === 1 ? '2px solid #1a1a1a' : '1px solid #eee',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-              }}>
-                <span style={{ fontSize: '16px', opacity: 0.3 }}>📦</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Right Column - Product Info + Bundle Widget */}
-        <div style={{ flex: '1', minWidth: 0 }}>
-          <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px', lineHeight: '1.3' }}>
-            Premium Wireless Headphones Pro
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-            <span style={{ color: '#f5a623', fontSize: '12px' }}>★★★★★</span>
-            <span style={{ fontSize: '11px', color: '#666' }}>4.8 (2,847 reviews)</span>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>$1,299.00</span>
-            <span style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>$1,599.00</span>
-          </div>
-          <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
-            Experience premium sound quality with active noise cancellation. 40-hour battery life, comfortable over-ear design.
-          </p>
-          <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>Specifications</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px', color: '#666' }}>
-              <div>• Battery: 40 hours</div>
-              <div>• Bluetooth: 5.2</div>
-              <div>• Weight: 250g</div>
-              <div>• Driver: 40mm</div>
-            </div>
-          </div>
-          <button style={{
-            width: '100%', padding: '12px', background: '#1a1a1a', color: 'white', border: 'none',
-            borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', marginBottom: '16px'
-          }}>Add to Cart</button>
-          <div style={{ borderTop: '1px dashed #ddd', paddingTop: '12px', position: 'relative' }}>
-            <div style={{
-              position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)',
-              background: '#fff', padding: '0 8px', fontSize: '9px', color: '#999',
-              textTransform: 'uppercase', letterSpacing: '0.5px'
-            }}>
-              Bundle Offer
-            </div>
-            {renderBXGYPreview()}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   // Get current settings based on active tab
   const currentSettings = BXGY_SETTINGS[activeTab] || [];
 
@@ -1277,9 +1245,13 @@ export default function BuyXGetYEditor({ editingBundle, onSave }) {
           isLoading={isSaving}
         />
         <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
-          {renderProductPagePreview()}
+          <ProductPagePreview widgetLabel="BOGO Deal">
+            {renderBXGYPreview()}
+          </ProductPagePreview>
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>
   );
-}
+};
+
+export default BuyXGetYEditor;
