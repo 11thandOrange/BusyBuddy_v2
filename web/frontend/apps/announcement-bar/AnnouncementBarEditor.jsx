@@ -130,7 +130,7 @@ const THEME_OPTIONS = [
  * AnnouncementBarEditor - Editor for Announcement Bar app
  * Uses reusable Editor components with app-specific configuration
  * 
- * Rendered as a dedicated route with fullscreen mode.
+ * Opens in a new browser tab for a clean, standalone experience.
  * URL: /announcement-bar/editor/:id (edit) or /announcement-bar/editor (create)
  */
 export const AnnouncementBarEditor = () => {
@@ -141,42 +141,6 @@ export const AnnouncementBarEditor = () => {
   // Loading state for fetching bar data
   const [isLoading, setIsLoading] = useState(!!id);
   const [editingBar, setEditingBar] = useState(null);
-
-  // Hide Shopify's fullscreen header/title bar
-  useEffect(() => {
-    // Save original title
-    const originalTitle = document.title;
-    
-    // Set empty title to hide title bar
-    document.title = '';
-    
-    // Inject CSS to hide the Shopify fullscreen header
-    const style = document.createElement('style');
-    style.id = 'hide-shopify-fullscreen-header';
-    style.textContent = `
-      /* Hide Shopify App Bridge fullscreen header */
-      [class*="Polaris-FullscreenBar"],
-      [data-polaris-layer="true"] > div:first-child,
-      .Polaris-Frame__TopBar,
-      .Polaris-FullscreenBar {
-        display: none !important;
-      }
-      /* Adjust content to fill the space */
-      .Polaris-Frame__Content {
-        top: 0 !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // Cleanup on unmount
-    return () => {
-      document.title = originalTitle;
-      const styleEl = document.getElementById('hide-shopify-fullscreen-header');
-      if (styleEl) {
-        styleEl.remove();
-      }
-    };
-  }, []);
 
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
