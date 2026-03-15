@@ -68,6 +68,14 @@ app.use(
   webhookRoutes
 );
 
+// Google OAuth callback - must be BEFORE Shopify auth middleware
+// since Google redirects directly to this URL without Shopify credentials
+// Using dynamic import to avoid loading googleapis at startup
+app.get("/api/analytics/google/callback", async (req, res) => {
+  const { handleGoogleCallback } = await import("./backend/controller/googleAnalytics/index.js");
+  return handleGoogleCallback(req, res);
+});
+
 // If you are adding routes outside of the /api path, remember to
 // also add a proxy rule for them in web/frontend/vite.config.js
 
