@@ -2,7 +2,7 @@ import { merchantEventService } from "../../services/merchantEventService.js";
 import MerchantEventModel from "../../models/merchantEvent.model.js";
 import EmailLogModel from "../../models/emailLog.model.js";
 import MerchantReviewModel from "../../models/merchantReview.model.js";
-import { emailService } from "../../services/emailService.js";
+import { emailService } from "../../services/merchantEmailService.js";
 
 // Handler for app install webhook
 async function handleAppInstall(req, res) {
