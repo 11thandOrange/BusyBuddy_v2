@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppBridge } from "@shopify/app-bridge-react";
+
 import {
   EditorLayout,
   EditorSidepane,
@@ -108,7 +108,7 @@ const TIER_OPTIONS = [
 ];
 
 export default function MixAndMatchEditor({ editingBundle, onSave }) {
-  const shopify = useAppBridge();
+  
 
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');

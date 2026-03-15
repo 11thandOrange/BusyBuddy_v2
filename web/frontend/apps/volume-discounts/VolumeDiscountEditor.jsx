@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppBridge } from "@shopify/app-bridge-react";
+
 import {
   EditorLayout,
   EditorSidepane,
@@ -100,7 +100,7 @@ const DISCOUNT_TYPE_OPTIONS = [
 ];
 
 export default function VolumeDiscountEditor({ editingBundle, onSave }) {
-  const shopify = useAppBridge();
+  
 
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');

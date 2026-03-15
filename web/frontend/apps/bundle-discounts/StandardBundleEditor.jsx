@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppBridge } from "@shopify/app-bridge-react";
+
 import {
   EditorLayout,
   EditorSidepane,
@@ -119,7 +119,7 @@ export const StandardBundleEditor = ({
   onAddProducts,
   onSuccess
 }) => {
-  const shopify = useAppBridge();
+  
   
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('bundle');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppBridge } from "@shopify/app-bridge-react";
+
 import {
   EditorLayout,
   EditorSidepane,
@@ -104,7 +104,7 @@ const DISCOUNT_TYPE_OPTIONS = [
 ];
 
 export default function BuyXGetYEditor({ editingBundle, onSave }) {
-  const shopify = useAppBridge();
+  
   
   // Active states
   const [activeTab, setActiveTab] = useState('bundle');
