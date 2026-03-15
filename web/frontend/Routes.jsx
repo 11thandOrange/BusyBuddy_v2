@@ -2,9 +2,9 @@ import { Routes as ReactRouterRoutes, Route, useParams, useNavigate, useLocation
 import { useState, useEffect, useCallback } from "react";
 import AnnouncementBarEditor from "./apps/announcement-bar/AnnouncementBarEditor";
 import { StandardBundleEditor } from "./apps/bundle-discounts/StandardBundleEditor";
-import { BuyXGetYEditor } from "./apps/buy-one-get-one/BuyXGetYEditor";
-import { VolumeDiscountEditor } from "./apps/volume-discounts/VolumeDiscountEditor";
-import { MixAndMatchEditor } from "./apps/mix-and-match-discounts/MixAndMatchEditor";
+import BuyXGetYEditor from "./apps/buy-one-get-one/BuyXGetYEditor";
+import VolumeDiscountEditor from "./apps/volume-discounts/VolumeDiscountEditor";
+import MixAndMatchEditor from "./apps/mix-and-match-discounts/MixAndMatchEditor";
 
 // Wrapper component for Bundle Discount Editor
 const BundleEditorWrapper = () => {
