@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Container, Row, Col, Card, ButtonGroup, ToggleButton, Spinner, Form } from "react-bootstrap";
 import { useLocation } from "react-router-dom";
-import { Trash, Pencil } from "react-bootstrap-icons";
+import { Trash, Pencil, Play } from "react-bootstrap-icons";
 import Button from "./Button";
 import view from "../assets/view.png";
 import videoimg from "../assets/videoimg.png";
