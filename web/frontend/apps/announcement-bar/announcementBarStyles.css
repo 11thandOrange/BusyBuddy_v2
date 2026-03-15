@@ -9,7 +9,7 @@
 
 .linrrow {
   border-bottom: none !important;
-  padding-bottom: 20px;
+  padding-bottom: 0 !important;
 }
 
 .linrrowleft {
