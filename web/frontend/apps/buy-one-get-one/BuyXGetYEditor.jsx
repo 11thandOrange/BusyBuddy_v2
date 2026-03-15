@@ -103,12 +103,31 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Free Gift', label: 'Free Gift (100% Off)' },
 ];
 
-export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
+export default function BuyXGetYEditor({ editingBundle, onSave }) {
   const shopify = useAppBridge();
   
   // Active states
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('customer-buys');
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const markAsChanged = () => {
+    if (!hasUnsavedChanges) setHasUnsavedChanges(true);
+  };
   
   // Bundle data states
   const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More! 🎁');
@@ -1249,12 +1268,11 @@ export default function BuyXGetYEditor({ editingBundle, onSave, onCancel }) {
       <EditorRightContent>
         <EditorHeader
           title={bundleInternalName || 'New BXGY Bundle'}
-          onTitleChange={setBundleInternalName}
+          onTitleChange={(value) => { setBundleInternalName(value); markAsChanged(); }}
           enabled={bundleEnabled}
-          onEnabledChange={setBundleEnabled}
+          onEnabledChange={(value) => { setBundleEnabled(value); markAsChanged(); }}
           onSave={handleSave}
-          onDiscard={onCancel}
-          isSaving={isSaving}
+          isLoading={isSaving}
         />
         <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
           {renderProductPagePreview()}

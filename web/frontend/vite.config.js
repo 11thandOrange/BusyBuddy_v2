@@ -61,6 +61,8 @@ export default defineConfig({
     allowedHosts: [
       "work-1-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",
       "work-2-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",
+      "work-1-tffcimxoacmeuudg.prod-runtime.all-hands.dev",
+      "work-2-tffcimxoacmeuudg.prod-runtime.all-hands.dev",
       ".all-hands.dev",
     ],
   },

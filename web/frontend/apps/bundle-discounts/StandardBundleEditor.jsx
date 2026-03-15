@@ -116,7 +116,6 @@ const TIMEZONE_OPTIONS = [
 export const StandardBundleEditor = ({ 
   editingBundle,
   onSave,
-  onDiscard,
   onAddProducts,
   onSuccess
 }) => {
@@ -127,6 +126,27 @@ export const StandardBundleEditor = ({
   const [activeSetting, setActiveSetting] = useState('select-products');
   const [device, setDevice] = useState('desktop');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Warn user before closing tab with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const markAsChanged = () => {
+    if (!hasUnsavedChanges) setHasUnsavedChanges(true);
+  };
   
   // === STORE PRODUCTS (from inventory) ===
   const [storeProducts, setStoreProducts] = useState([]);
@@ -1315,11 +1335,10 @@ export const StandardBundleEditor = ({
       <EditorRightContent>
         <EditorHeader
           title={bundleTitle}
-          onTitleChange={setBundleTitle}
+          onTitleChange={(value) => { setBundleTitle(value); markAsChanged(); }}
           enabled={bundleEnabled}
-          onEnabledChange={setBundleEnabled}
+          onEnabledChange={(value) => { setBundleEnabled(value); markAsChanged(); }}
           onSave={handleSave}
-          onDiscard={onDiscard}
           isLoading={isLoading}
         />
         

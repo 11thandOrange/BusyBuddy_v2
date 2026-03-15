@@ -141,6 +141,30 @@ export const AnnouncementBarEditor = () => {
   // Loading state for fetching bar data
   const [isLoading, setIsLoading] = useState(!!id);
   const [editingBar, setEditingBar] = useState(null);
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Warn user before closing tab with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  // Mark as having unsaved changes when any field is modified
+  const markAsChanged = () => {
+    if (!hasUnsavedChanges) {
+      setHasUnsavedChanges(true);
+    }
+  };
 
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
@@ -342,16 +366,13 @@ export const AnnouncementBarEditor = () => {
 
       if (!response.ok) throw new Error('Save failed');
       
-      // Close editor and return to list (exits fullscreen)
+      // Clear unsaved changes flag and close editor
+      setHasUnsavedChanges(false);
       closeEditor();
     } catch (err) {
       console.error('Save error:', err);
       alert('Failed to save announcement bar');
     }
-  };
-
-  const handleDiscard = () => {
-    closeEditor();
   };
 
   // Get background style
@@ -414,7 +435,7 @@ export const AnnouncementBarEditor = () => {
             <ConfigFormGroup label="Message">
               <ConfigTextarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => { setMessage(e.target.value); markAsChanged(); }}
                 placeholder="Enter your announcement message..."
                 rows={3}
               />
@@ -433,7 +454,7 @@ export const AnnouncementBarEditor = () => {
                 {['🔥', '⭐', '🎉', '💥', '🚀', '💰', '🎁', '⚡', '❤️', '✨'].map((emoji) => (
                   <button
                     key={emoji}
-                    onClick={() => setMessage(prev => prev + emoji)}
+                    onClick={() => { setMessage(prev => prev + emoji); markAsChanged(); }}
                     style={{
                       padding: '8px 12px',
                       fontSize: '20px',
@@ -965,11 +986,10 @@ export const AnnouncementBarEditor = () => {
       <EditorRightContent>
         <EditorHeader
           title={title}
-          onTitleChange={setTitle}
+          onTitleChange={(value) => { setTitle(value); markAsChanged(); }}
           enabled={barEnabled}
-          onEnabledChange={setBarEnabled}
+          onEnabledChange={(value) => { setBarEnabled(value); markAsChanged(); }}
           onSave={handleSave}
-          onDiscard={handleDiscard}
         />
         
         <EditorPreviewPanel

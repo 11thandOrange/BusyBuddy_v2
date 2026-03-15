@@ -1,17 +1,15 @@
 import React, { useState, useRef } from 'react';
 
 /**
- * EditorHeader - Header with title, enable toggle, and action buttons
+ * EditorHeader - Header with title, enable toggle, and save button
  * 
  * @param {string} title - Editable title
  * @param {function} onTitleChange - Callback when title changes
  * @param {boolean} enabled - Whether the feature is enabled
  * @param {function} onEnabledChange - Callback when enabled state changes
  * @param {function} onSave - Save button callback
- * @param {function} onDiscard - Discard button callback
  * @param {boolean} isLoading - Show loading state on save button
  * @param {string} saveText - Custom save button text (default: 'Save')
- * @param {string} discardText - Custom discard button text (default: 'Discard')
  */
 export const EditorHeader = ({ 
   title,
@@ -19,10 +17,8 @@ export const EditorHeader = ({
   enabled = true,
   onEnabledChange,
   onSave,
-  onDiscard,
   isLoading = false,
-  saveText = 'Save',
-  discardText = 'Discard'
+  saveText = 'Save'
 }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const titleInputRef = useRef(null);
@@ -64,15 +60,6 @@ export const EditorHeader = ({
       </div>
       
       <div className="header-right">
-        {onDiscard && (
-          <button 
-            className="btn-discard" 
-            onClick={onDiscard}
-            disabled={isLoading}
-          >
-            {discardText}
-          </button>
-        )}
         {onSave && (
           <button 
             className="btn-save" 

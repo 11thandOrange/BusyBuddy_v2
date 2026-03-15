@@ -99,12 +99,31 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Fixed Amount', label: 'Fixed Amount' },
 ];
 
-export default function VolumeDiscountEditor({ editingBundle, onSave, onCancel }) {
+export default function VolumeDiscountEditor({ editingBundle, onSave }) {
   const shopify = useAppBridge();
 
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const markAsChanged = () => {
+    if (!hasUnsavedChanges) setHasUnsavedChanges(true);
+  };
 
   // Bundle data states
   const [bundleTitle, setBundleTitle] = useState('Buy More & Save More! 🔥');
@@ -975,13 +994,12 @@ export default function VolumeDiscountEditor({ editingBundle, onSave, onCancel }
 
       <EditorRightContent>
         <EditorHeader
-          bundleName={bundleInternalName}
-          onBundleNameChange={setBundleInternalName}
-          isEnabled={bundleEnabled}
-          onToggleEnabled={setBundleEnabled}
-          onDiscard={onCancel}
+          title={bundleInternalName || 'New Volume Discount'}
+          onTitleChange={(value) => { setBundleInternalName(value); markAsChanged(); }}
+          enabled={bundleEnabled}
+          onEnabledChange={(value) => { setBundleEnabled(value); markAsChanged(); }}
           onSave={handleSave}
-          isSaving={isSaving}
+          isLoading={isSaving}
         />
 
         <EditorPreviewPanel

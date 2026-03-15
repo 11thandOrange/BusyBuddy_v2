@@ -107,12 +107,31 @@ const TIER_OPTIONS = [
   { value: 5, label: 'Buy 5' },
 ];
 
-export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
+export default function MixAndMatchEditor({ editingBundle, onSave }) {
   const shopify = useAppBridge();
 
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
+  
+  // Track unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
+  const markAsChanged = () => {
+    if (!hasUnsavedChanges) setHasUnsavedChanges(true);
+  };
 
   // Bundle data states
   const [bundleTitle, setBundleTitle] = useState('Mix & Match - Save More! 🔥');
@@ -1053,12 +1072,11 @@ export default function MixAndMatchEditor({ editingBundle, onSave, onCancel }) {
       <EditorRightContent>
         <EditorHeader
           title={bundleInternalName || 'New Mix & Match Bundle'}
-          onTitleChange={setBundleInternalName}
+          onTitleChange={(value) => { setBundleInternalName(value); markAsChanged(); }}
           enabled={bundleEnabled}
-          onEnabledChange={setBundleEnabled}
+          onEnabledChange={(value) => { setBundleEnabled(value); markAsChanged(); }}
           onSave={handleSave}
-          onDiscard={onCancel}
-          isSaving={isSaving}
+          isLoading={isSaving}
         />
         <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
           {renderProductPagePreview()}
