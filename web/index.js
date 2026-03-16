@@ -177,13 +177,17 @@ app.use("/*", async (_req, res, _next) => {
   const isEditorRoute = _req.path.includes('/editor');
   const shop = _req.query.shop;
   
+  console.log("EDITOR DEBUG:", { path: _req.path, isEditorRoute, shop });
+  
   if (isEditorRoute && shop) {
     try {
       // Use sessionModel directly (same approach as API validation)
       const session = await sessionModel.findOne({ shop: shop });
+      console.log("EDITOR SESSION:", session ? { shop: session.shop, hasToken: !!session.accessToken } : "NOT FOUND");
       
       if (session && session.accessToken) {
         // Valid session exists - serve the frontend directly
+        console.log("EDITOR: Serving frontend directly");
         return serveFrontendHtml(_req, res);
       }
     } catch (error) {
