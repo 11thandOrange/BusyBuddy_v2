@@ -159,7 +159,7 @@ app.use("/", async (_req, res, _next) => {
   _next();
 });
 
-// Helper function to serve the frontend HTML
+// Helper function to serve the main frontend HTML (with App Bridge)
 const serveFrontendHtml = (_req, res) => {
   return res
     .status(200)
@@ -169,6 +169,14 @@ const serveFrontendHtml = (_req, res) => {
         .toString()
         .replace("%VITE_SHOPIFY_API_KEY%", process.env.SHOPIFY_API_KEY || "")
     );
+};
+
+// Helper function to serve the editor HTML (without App Bridge)
+const serveEditorHtml = (_req, res) => {
+  return res
+    .status(200)
+    .set("Content-Type", "text/html")
+    .send(readFileSync(join(STATIC_PATH, "editor.html")).toString());
 };
 
 // Editor routes opened in new tab - validate shop session from DB
@@ -184,8 +192,8 @@ app.use("/*", async (_req, res, _next) => {
       const session = await sessionModel.findOne({ shop: shop });
       
       if (session && session.accessToken) {
-        // Valid session exists - serve the frontend directly
-        return serveFrontendHtml(_req, res);
+        // Valid session exists - serve the editor HTML (no App Bridge)
+        return serveEditorHtml(_req, res);
       }
     } catch (error) {
       console.log("Editor session error:", error.message);

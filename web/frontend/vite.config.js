@@ -1,7 +1,9 @@
 import { defineConfig } from "vite";
-import { dirname } from "path";
+import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import react from "@vitejs/plugin-react";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 if (
   process.env.npm_lifecycle_event === "build" &&
@@ -49,6 +51,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     preserveSymlinks: true,
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+        editor: resolve(__dirname, 'editor.html'),
+      },
+    },
   },
   server: {
     host: process.env.SERVER_IP_ADDRESS || "localhost",
