@@ -18,7 +18,14 @@
     </script>
 
     <meta name="shopify-api-key" content="%VITE_SHOPIFY_API_KEY%" />
-    <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script>
+      // Only load App Bridge if NOT on an editor route (editor opens in standalone tab)
+      if (!window.location.pathname.includes('/editor')) {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.shopify.com/shopifycloud/app-bridge.js';
+        document.head.appendChild(script);
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   </head>
