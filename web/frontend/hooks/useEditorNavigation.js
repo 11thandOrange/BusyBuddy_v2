@@ -15,11 +15,15 @@ export const useEditorNavigation = (appType = 'announcement-bar') => {
     return window.location.origin;
   }, []);
 
-  // Build query string preserving host param
+  // Build query string preserving host and shop params
   const getQueryString = useCallback(() => {
     const params = new URLSearchParams(location.search);
     const host = params.get('host');
-    return host ? `?host=${encodeURIComponent(host)}` : '';
+    const shop = params.get('shop');
+    const queryParams = new URLSearchParams();
+    if (host) queryParams.set('host', host);
+    if (shop) queryParams.set('shop', shop);
+    return queryParams.toString() ? `?${queryParams.toString()}` : '';
   }, [location.search]);
 
   const openEditor = useCallback((id = null) => {

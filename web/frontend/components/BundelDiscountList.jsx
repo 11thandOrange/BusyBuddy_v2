@@ -31,11 +31,15 @@ export default function DiscountList({
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
 
-  // Get query string for preserving host param
+  // Get query string for preserving host and shop params
   const getQueryString = useCallback(() => {
     const params = new URLSearchParams(location.search);
     const host = params.get('host');
-    return host ? `?host=${encodeURIComponent(host)}` : '';
+    const shop = params.get('shop');
+    const queryParams = new URLSearchParams();
+    if (host) queryParams.set('host', host);
+    if (shop) queryParams.set('shop', shop);
+    return queryParams.toString() ? `?${queryParams.toString()}` : '';
   }, [location.search]);
 
   // Open editor in new tab
