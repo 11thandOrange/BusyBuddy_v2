@@ -158,7 +158,9 @@ app.use("/", async (_req, res, _next) => {
   }
   _next();
 });
-app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
+
+// Helper function to serve the frontend HTML
+const serveFrontendHtml = (_req, res) => {
   return res
     .status(200)
     .set("Content-Type", "text/html")
@@ -167,6 +169,34 @@ app.use("/*", shopify.ensureInstalledOnShop(), async (_req, res, _next) => {
         .toString()
         .replace("%VITE_SHOPIFY_API_KEY%", process.env.SHOPIFY_API_KEY || "")
     );
+};
+
+// Editor routes opened in new tab - validate shop session from DB
+// This allows editor to work in standalone tab without Shopify embedded context
+app.use("/*", async (_req, res, _next) => {
+  // Check if this is an editor route with shop param (opened in new tab)
+  const isEditorRoute = _req.path.includes('/editor');
+  const shop = _req.query.shop;
+  
+  if (isEditorRoute && shop) {
+    try {
+      // Verify the shop has a valid offline session in our database
+      const sessionId = await shopify.api.session.getOfflineId(shop);
+      const session = await shopify.config.sessionStorage.loadSession(sessionId);
+      
+      if (session && session.accessToken) {
+        // Valid session exists - serve the frontend directly
+        return serveFrontendHtml(_req, res);
+      }
+    } catch (error) {
+      console.log("Editor session validation error:", error.message);
+    }
+  }
+  
+  // Fall through to ensureInstalledOnShop for all other cases
+  _next();
 });
+
+app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);
 
 app.listen(PORT);

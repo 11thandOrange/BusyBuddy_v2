@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 /**
  * Hook for navigating to/from the editor.
  * Opens the editor in a new browser tab for a clean, standalone experience.
- * 
+ *
  * @param {string} appType - The app type: 'announcement-bar', 'bundle-discount', 'buy-one-get-one', 'volume-discounts', 'mix-and-match'
  */
 export const useEditorNavigation = (appType = 'announcement-bar') => {
