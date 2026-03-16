@@ -174,10 +174,11 @@ const serveFrontendHtml = (_req, res) => {
 // Editor routes opened in new tab - validate shop session from DB
 // This allows editor to work in standalone tab without Shopify embedded context
 app.use("/*", async (_req, res, _next) => {
-  const isEditorRoute = _req.path.includes('/editor');
+  const fullPath = _req.originalUrl || _req.url;
+  const isEditorRoute = fullPath.includes('/editor');
   const shop = _req.query.shop;
   
-  console.log("EDITOR DEBUG:", { path: _req.path, isEditorRoute, shop });
+  console.log("EDITOR DEBUG:", { fullPath, isEditorRoute, shop });
   
   if (isEditorRoute && shop) {
     try {
