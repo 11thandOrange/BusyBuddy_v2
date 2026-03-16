@@ -174,26 +174,23 @@ const serveFrontendHtml = (_req, res) => {
 // Editor routes opened in new tab - validate shop session from DB
 // This allows editor to work in standalone tab without Shopify embedded context
 app.use("/*", async (_req, res, _next) => {
-  // Check if this is an editor route with shop param (opened in new tab)
   const isEditorRoute = _req.path.includes('/editor');
   const shop = _req.query.shop;
   
   if (isEditorRoute && shop) {
     try {
-      // Verify the shop has a valid offline session in our database
-      const sessionId = await shopify.api.session.getOfflineId(shop);
-      const session = await shopify.config.sessionStorage.loadSession(sessionId);
+      // Use sessionModel directly (same approach as API validation)
+      const session = await sessionModel.findOne({ shop: shop });
       
       if (session && session.accessToken) {
         // Valid session exists - serve the frontend directly
         return serveFrontendHtml(_req, res);
       }
     } catch (error) {
-      console.log("Editor session validation error:", error.message);
+      console.log("Editor session error:", error.message);
     }
   }
   
-  // Fall through to ensureInstalledOnShop for all other cases
   _next();
 });
 
