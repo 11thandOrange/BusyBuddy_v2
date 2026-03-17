@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusyBuddy Dashboard</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
+            padding: 24px;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            height: calc(100vh - 48px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 72px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .nav-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .nav-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #999;
+        }
+
+        .nav-icon:hover { background: rgba(0,0,0,0.05); color: #333; }
+        .nav-icon.active { background: #333; color: #fff; }
+
+        .nav-divider {
+            width: 24px;
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 8px 0;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: auto;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            grid-template-rows: 1fr auto;
+            gap: 20px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 28px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+            overflow: hidden;
+        }
+
+        /* Widgets Card (Top Left - Large) */
+        .widgets-card {
+            grid-row: 1;
+            grid-column: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 12px;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .status-item i { width: 14px; height: 14px; }
+
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .widget-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .widget-item {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 10px 10px 0 0;
+            padding: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.9);
+            border-bottom: none;
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .widget-wrapper:hover .widget-item {
+            background: rgba(255,255,255,0.95);
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .widget-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .widget-icon.orange { background: linear-gradient(135deg, #FF9500, #FF6B00); }
+        .widget-icon.blue { background: linear-gradient(135deg, #007AFF, #5AC8FA); }
+        .widget-icon.green { background: linear-gradient(135deg, #34C759, #30D158); }
+        .widget-icon.pink { background: linear-gradient(135deg, #FF2D55, #FF6482); }
+        .widget-icon.purple { background: linear-gradient(135deg, #AF52DE, #5856D6); }
+        .widget-icon.indigo { background: linear-gradient(135deg, #5856D6, #007AFF); }
+
+        .widget-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .widget-desc {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.4;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .widget-stats {
+            display: flex;
+            gap: 14px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+
+        .widget-stat {
+            text-align: left;
+        }
+
+        .widget-stat .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .widget-stat .label {
+            font-size: 8px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .widget-status {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 8px;
+            font-weight: 600;
+        }
+
+        .widget-status.active {
+            background: rgba(52,199,89,0.15);
+            color: #34C759;
+        }
+
+        .widget-status.inactive {
+            background: rgba(142,142,147,0.15);
+            color: #8e8e93;
+        }
+
+        .widget-actions {
+            display: flex;
+            gap: 0;
+            flex-shrink: 0;
+        }
+
+        .widget-btn {
+            flex: 1;
+            padding: 7px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .widget-btn.create {
+            background: #333;
+            color: #fff;
+            border-radius: 0 0 0 10px;
+        }
+
+        .widget-btn.create:hover {
+            background: #000;
+        }
+
+        .widget-btn.manage {
+            background: rgba(0,0,0,0.08);
+            color: #333;
+            border-radius: 0 0 10px 0;
+        }
+
+        .widget-btn.manage:hover {
+            background: rgba(0,0,0,0.15);
+        }
+
+        .widget-btn i {
+            width: 10px;
+            height: 10px;
+        }
+
+        /* Branding Card (Top Right) */
+        .branding-card {
+            grid-row: 1;
+            grid-column: 2;
+            padding: 20px;
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+        }
+
+        .brand-top {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bee-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 8px 24px rgba(0,0,0,0.3));
+        }
+
+        .tagline {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+            margin-bottom: 12px;
+        }
+
+        .tagline .highlight {
+            color: #FFD700;
+            font-weight: 800;
+        }
+
+        .brand-description {
+            font-size: 13px;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.6;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+            max-width: 260px;
+        }
+
+        /* Bottom Cards */
+        .bottom-cards {
+            grid-row: 2;
+            grid-column: 1 / 3;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            height: 220px;
+        }
+
+        .stat-card {
+            padding: 20px;
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .trend-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: rgba(52,199,89,0.15);
+            color: #34C759;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Revenue Chart Card */
+        .chart-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-height: 120px;
+        }
+
+        /* History Card with Fade */
+        .history-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .history-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .history-icon.sale { background: rgba(52,199,89,0.15); color: #34C759; }
+        .history-icon.view { background: rgba(255,149,0,0.15); color: #FF9500; }
+        .history-icon.promo { background: rgba(0,122,255,0.15); color: #007AFF; }
+        .history-icon.mix { background: rgba(175,82,222,0.15); color: #AF52DE; }
+
+        .history-text {
+            flex: 1;
+        }
+
+        .history-text p {
+            font-size: 12px;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .history-text span {
+            font-size: 10px;
+            color: #999;
+        }
+
+        .history-amount {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .history-fade {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.95) 100%);
+            pointer-events: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 12px;
+        }
+
+        .scroll-hint {
+            font-size: 11px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i data-lucide="zap" style="width: 28px; height: 28px;"></i>
+            </div>
+            <div class="nav-icons">
+                <div class="nav-icon active">
+                    <i data-lucide="layout-grid" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="nav-icon">
+                    <i data-lucide="bar-chart-3" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="nav-icon">
+                    <i data-lucide="tag" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="nav-divider"></div>
+                <div class="nav-icon">
+                    <i data-lucide="bell" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div class="nav-icon">
+                    <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+                </div>
+            </div>
+            <div class="user-avatar">JD</div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Widgets Card (Top Left - Large) -->
+            <div class="card widgets-card">
+                <div class="card-header">
+                    <div class="card-title">Your Widgets</div>
+                    <div class="status-bar">
+                        <div class="status-item">
+                            <i data-lucide="circle-check"></i>
+                            <span>6 Active</span>
+                        </div>
+                        <div class="status-item">
+                            <i data-lucide="dollar-sign"></i>
+                            <span>$27.5K</span>
+                        </div>
+                        <div class="status-item">
+                            <i data-lucide="eye"></i>
+                            <span>125K</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="widgets-grid">
+                    <!-- Announcement Bar -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon orange">
+                                    <i data-lucide="megaphone" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Announcement Bar</div>
+                            </div>
+                            <div class="widget-desc">Display alerts and promotions at the top of your store.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">12</div>
+                                    <div class="label">Active</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">45.2K</div>
+                                    <div class="label">Views</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bundle Discounts -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon blue">
+                                    <i data-lucide="package" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Bundle Discounts</div>
+                            </div>
+                            <div class="widget-desc">Create product bundles with automatic discounts.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">8</div>
+                                    <div class="label">Bundles</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">$12.4K</div>
+                                    <div class="label">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Buy One Get One -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon green">
+                                    <i data-lucide="gift" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Buy One Get One</div>
+                            </div>
+                            <div class="widget-desc">Set up BOGO deals to boost sales fast.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">5</div>
+                                    <div class="label">Offers</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">$8.2K</div>
+                                    <div class="label">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Volume Discounts -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon pink">
+                                    <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Volume Discounts</div>
+                            </div>
+                            <div class="widget-desc">Tiered pricing to reward bulk buyers.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">3</div>
+                                    <div class="label">Tiers</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">$4.1K</div>
+                                    <div class="label">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mix & Match -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon purple">
+                                    <i data-lucide="shuffle" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Mix & Match</div>
+                            </div>
+                            <div class="widget-desc">Let customers build custom bundles.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">4</div>
+                                    <div class="label">Groups</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">$2.8K</div>
+                                    <div class="label">Revenue</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Inactive Tab Message -->
+                    <div class="widget-wrapper">
+                        <div class="widget-item">
+                            <span class="widget-status active">Active</span>
+                            <div class="widget-header">
+                                <div class="widget-icon indigo">
+                                    <i data-lucide="message-circle" style="width: 14px; height: 14px;"></i>
+                                </div>
+                                <div class="widget-title">Inactive Tab</div>
+                            </div>
+                            <div class="widget-desc">Win back visitors with tab messages.</div>
+                            <div class="widget-stats">
+                                <div class="widget-stat">
+                                    <div class="value">12.3K</div>
+                                    <div class="label">Triggers</div>
+                                </div>
+                                <div class="widget-stat">
+                                    <div class="value">15%</div>
+                                    <div class="label">Return</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-actions">
+                            <button class="widget-btn create">
+                                <i data-lucide="plus"></i> Create
+                            </button>
+                            <button class="widget-btn manage">
+                                <i data-lucide="settings"></i> Manage
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding Card (Top Right) -->
+            <div class="branding-card">
+                <div class="brand-top">
+                    <!-- Bee SVG Logo -->
+                    <svg class="bee-logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Wings -->
+                        <ellipse cx="30" cy="40" rx="18" ry="12" fill="rgba(255,255,255,0.8)" stroke="#fff" stroke-width="1.5"/>
+                        <ellipse cx="70" cy="40" rx="18" ry="12" fill="rgba(255,255,255,0.8)" stroke="#fff" stroke-width="1.5"/>
+                        <!-- Body -->
+                        <ellipse cx="50" cy="55" rx="22" ry="28" fill="#FFD700"/>
+                        <!-- Stripes -->
+                        <ellipse cx="50" cy="42" rx="18" ry="6" fill="#333"/>
+                        <ellipse cx="50" cy="55" rx="20" ry="6" fill="#333"/>
+                        <ellipse cx="50" cy="68" rx="18" ry="6" fill="#333"/>
+                        <!-- Head -->
+                        <circle cx="50" cy="22" r="14" fill="#333"/>
+                        <!-- Eyes -->
+                        <circle cx="44" cy="20" r="4" fill="#fff"/>
+                        <circle cx="56" cy="20" r="4" fill="#fff"/>
+                        <circle cx="44" cy="20" r="2" fill="#333"/>
+                        <circle cx="56" cy="20" r="2" fill="#333"/>
+                        <!-- Antennae -->
+                        <path d="M42 10 Q38 2, 32 4" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <path d="M58 10 Q62 2, 68 4" stroke="#333" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <circle cx="32" cy="4" r="3" fill="#FFD700"/>
+                        <circle cx="68" cy="4" r="3" fill="#FFD700"/>
+                        <!-- Smile -->
+                        <path d="M44 26 Q50 32, 56 26" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        <!-- Stinger -->
+                        <path d="M50 83 L50 92" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                    <div class="tagline">
+                        Every <span class="highlight">Busy Body</span><br>
+                        Needs BusyBuddy
+                    </div>
+                    <div class="brand-description">
+                        Your all-in-one Shopify toolkit for boosting sales with bundles, discounts, announcements, and more.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Cards -->
+            <div class="bottom-cards">
+                <!-- Revenue Growth Chart Card -->
+                <div class="card stat-card chart-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">Revenue by Widget</div>
+                        <div class="trend-badge">
+                            <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                            +18.3%
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #007AFF;"></div>
+                            <span>Bundle</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #34C759;"></div>
+                            <span>BOGO</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #FF2D55;"></div>
+                            <span>Volume</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot" style="background: #AF52DE;"></div>
+                            <span>Mix & Match</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent History Card with Fade -->
+                <div class="card stat-card history-card">
+                    <div class="stat-card-header">
+                        <div class="stat-card-title">Recent History</div>
+                    </div>
+                    <div class="history-list">
+                        <div class="history-item">
+                            <div class="history-icon sale">
+                                <i data-lucide="shopping-cart" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="history-text">
+                                <p>Bundle Discount purchased</p>
+                                <span>2 minutes ago</span>
+                            </div>
+                            <div class="history-amount">+$89.99</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-icon view">
+                                <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="history-text">
+                                <p>Announcement viewed 1,234 times</p>
+                                <span>15 minutes ago</span>
+                            </div>
+                            <div class="history-amount"></div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-icon promo">
+                                <i data-lucide="gift" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="history-text">
+                                <p>BOGO offer redeemed</p>
+                                <span>1 hour ago</span>
+                            </div>
+                            <div class="history-amount">+$45.00</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-icon mix">
+                                <i data-lucide="shuffle" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="history-text">
+                                <p>Mix & Match bundle sold</p>
+                                <span>2 hours ago</span>
+                            </div>
+                            <div class="history-amount">+$67.50</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-icon sale">
+                                <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
+                            </div>
+                            <div class="history-text">
+                                <p>Volume discount applied</p>
+                                <span>3 hours ago</span>
+                            </div>
+                            <div class="history-amount">+$124.00</div>
+                        </div>
+                    </div>
+                    <div class="history-fade">
+                        <div class="scroll-hint">
+                            <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
+                            Scroll for more
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Revenue Growth Chart by Widget
+        const ctx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [
+                    {
+                        label: 'Bundle',
+                        data: [1800, 2100, 1950, 2400, 2200, 2800, 3100],
+                        borderColor: '#007AFF',
+                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'BOGO',
+                        data: [1200, 1400, 1350, 1600, 1500, 1900, 2100],
+                        borderColor: '#34C759',
+                        backgroundColor: 'rgba(52, 199, 89, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Volume',
+                        data: [600, 700, 650, 850, 780, 950, 1050],
+                        borderColor: '#FF2D55',
+                        backgroundColor: 'rgba(255, 45, 85, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Mix & Match',
+                        data: [400, 480, 420, 550, 500, 620, 700],
+                        borderColor: '#AF52DE',
+                        backgroundColor: 'rgba(175, 82, 222, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
+                plugins: { 
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { 
+                        display: true, 
+                        grid: { display: false },
+                        ticks: { font: { size: 10 }, color: '#999' }
+                    },
+                    y: { 
+                        display: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { 
+                            font: { size: 10 }, 
+                            color: '#999',
+                            callback: function(value) {
+                                return '$' + (value / 1000).toFixed(1) + 'K';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
