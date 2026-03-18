@@ -1,13 +1,13 @@
 /* Dashboard Home Styles */
 .dashboard-home {
   min-height: 100vh;
-  background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
-  padding: 24px;
+  background: #F1F2F4;
 }
 
 .dashboard-container {
   max-width: 1400px;
   margin: 0 auto;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -29,7 +29,7 @@
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #333;
   margin: 0;
 }
 
@@ -37,7 +37,7 @@
   display: flex;
   gap: 4px;
   padding: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
   border-radius: 50px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
@@ -79,7 +79,7 @@
 
 /* Widget Card Outer */
 .widget-card-outer {
-  background: rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
   border-radius: 24px;
   padding: 15px;
   display: flex;
@@ -300,12 +300,12 @@
 
 /* Card Base */
 .card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 28px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
   padding: 20px;
 }
