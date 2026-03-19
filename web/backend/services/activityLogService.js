@@ -1,5 +1,5 @@
 import ActivityLog from "../models/activityLog.model.js";
-import Bundle from "../models/bundles.model.js";
+import Bundle from "../models/bundle.model.js";
 import AnnouncementBar from "../models/announcementBar.model.js";
 
 /**
