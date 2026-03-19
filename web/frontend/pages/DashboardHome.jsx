@@ -9,8 +9,9 @@ import {
   TrendingUp,
   Plus,
   Settings,
-  ShoppingCart,
+  DollarSign,
   Eye,
+  MousePointer,
 } from "lucide-react";
 import "./DashboardHome.css";
 
@@ -91,16 +92,14 @@ const planFeatures = {
   ],
 };
 
-// Icon mapping for activity types
+// Icon mapping for metric types
 const iconMap = {
   bundle: Package,
-  bogo: Gift,
-  volume: Layers,
-  "mix-match": Shuffle,
   announcement: Megaphone,
-  upsell: TrendingUp,
-  "inactive-tab": Eye,
-  default: ShoppingCart,
+  revenue: DollarSign,
+  views: Eye,
+  clicks: MousePointer,
+  default: Package,
 };
 
 export default function DashboardHome() {
@@ -109,12 +108,12 @@ export default function DashboardHome() {
   const [currentPlan, setCurrentPlan] = useState("Free");
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
-  const [stats, setStats] = useState({ activeOffers: 0, usesToday: 0 });
+  const [stats, setStats] = useState({ activeOffers: 0, totalViews: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     fetchUserSubscription();
-    fetchActivityData();
+    fetchAnalyticsData();
   }, []);
 
   const fetchUserSubscription = async () => {
@@ -133,18 +132,18 @@ export default function DashboardHome() {
     }
   };
 
-  const fetchActivityData = async () => {
+  const fetchAnalyticsData = async () => {
     try {
       const response = await fetch("/api/activity/recent");
       if (response.ok) {
         const data = await response.json();
         if (data.status === "SUCCESS") {
           setActivities(data.data.activities || []);
-          setStats(data.data.stats || { activeOffers: 0, usesToday: 0 });
+          setStats(data.data.stats || { activeOffers: 0, totalViews: 0 });
         }
       }
     } catch (err) {
-      console.error("Error fetching activity:", err);
+      console.error("Error fetching analytics:", err);
     } finally {
       setActivityLoading(false);
     }
@@ -219,11 +218,11 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Right Column - History */}
+        {/* Right Column - Analytics */}
         <div className="history-column">
           <div className="history-container">
             <div className="history-header">
-              <h2 className="history-title">Recent Activity</h2>
+              <h2 className="history-title">Performance</h2>
             </div>
 
             {/* Quick Stats */}
@@ -233,21 +232,21 @@ export default function DashboardHome() {
                 <div className="label">Active Offers</div>
               </div>
               <div className="quick-stat">
-                <div className="value">{stats.usesToday.toLocaleString()}</div>
-                <div className="label">Uses Today</div>
+                <div className="value">{formatStatNumber(stats.totalViews)}</div>
+                <div className="label">Total Views</div>
               </div>
             </div>
 
-            {/* History List */}
+            {/* Analytics List */}
             <div className="history-list-wrapper">
               <div className="history-list">
                 {activityLoading ? (
-                  <div className="history-loading">Loading activity...</div>
+                  <div className="history-loading">Loading analytics...</div>
                 ) : activities.length === 0 ? (
-                  <div className="history-empty">No recent activity</div>
+                  <div className="history-empty">No analytics data yet</div>
                 ) : (
                   activities.map((item) => {
-                    const IconComponent = iconMap[item.widget] || iconMap.default;
+                    const IconComponent = iconMap[item.iconClass] || iconMap[item.widget] || iconMap.default;
                     return (
                       <div key={item.id} className="history-item">
                         <div className={`history-icon ${item.iconClass}`}>
@@ -272,4 +271,11 @@ export default function DashboardHome() {
       </div>
     </div>
   );
+}
+
+// Format large numbers for display
+function formatStatNumber(num) {
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+  return num?.toLocaleString() || "0";
 }

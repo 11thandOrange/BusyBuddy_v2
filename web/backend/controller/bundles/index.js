@@ -785,6 +785,16 @@ mutation setPriceForMixAndMatchProduct {
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
     });
 
+    // Log activity for Mix and Match bundle creation
+    await activityLogService.logActivity({
+      shopId: session.shop,
+      type: "created",
+      widget: "mix-match",
+      title: "New Mix & Match bundle created",
+      meta: title || internalName,
+      offerId: CreateBundle._id,
+    });
+
     return res.status(201).json({
       status: true,
       message: "Mix and Match Bundle created successfully.",
