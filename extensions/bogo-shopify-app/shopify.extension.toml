@@ -1,6 +1,7 @@
-api_version = "2025-04"
+api_version = "2024-10"
 
+[[extensions]]
 name = "bogo-shopify-app"
+handle = "bogo-shopify-app"
 uid = "1215d1ee-6212-98c0-60cf-cd45e72c78dc8cb741e9"
 type = "theme"
-
