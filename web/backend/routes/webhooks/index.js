@@ -10,6 +10,7 @@ import {
   retryFailedEmail,
   getMerchantsAnalytics,
   getMerchantReviews,
+  handleOrderPaid,
 } from "../../controller/webhooks/index.js";
 
 const router = express.Router();
@@ -17,6 +18,7 @@ const router = express.Router();
 // Webhook endpoints for Shopify events
 router.post("/app-installed", handleAppInstall);
 router.post("/app-uninstalled", handleAppUninstall);
+router.post("/orders-paid", handleOrderPaid);
 
 // Internal webhook endpoints for subscription changes
 router.post("/subscription-upgraded", handleSubscriptionUpgrade);

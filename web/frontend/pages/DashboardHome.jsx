@@ -91,81 +91,30 @@ const planFeatures = {
   ],
 };
 
-// Mock history data
-const historyData = [
-  {
-    id: 1,
-    icon: ShoppingCart,
-    iconClass: "sale",
-    title: "Bundle Discount purchased",
-    meta: "Summer Bundle Pack",
-    amount: "+$89.99",
-    time: "2m ago",
-  },
-  {
-    id: 2,
-    icon: Eye,
-    iconClass: "view",
-    title: "Announcement viewed 1,234 times",
-    meta: "Flash Sale Banner",
-    amount: null,
-    time: "15m ago",
-  },
-  {
-    id: 3,
-    icon: Gift,
-    iconClass: "promo",
-    title: "BOGO offer redeemed",
-    meta: "Buy 2 Get 1 Free",
-    amount: "+$45.00",
-    time: "1h ago",
-  },
-  {
-    id: 4,
-    icon: Shuffle,
-    iconClass: "mix",
-    title: "Mix & Match bundle sold",
-    meta: "Custom Bundle #142",
-    amount: "+$67.50",
-    time: "2h ago",
-  },
-  {
-    id: 5,
-    icon: Layers,
-    iconClass: "sale",
-    title: "Volume discount applied",
-    meta: "10+ Items Discount",
-    amount: "+$124.00",
-    time: "3h ago",
-  },
-  {
-    id: 6,
-    icon: Package,
-    iconClass: "promo",
-    title: "New bundle created",
-    meta: "Winter Essentials Pack",
-    amount: null,
-    time: "5h ago",
-  },
-  {
-    id: 7,
-    icon: Megaphone,
-    iconClass: "view",
-    title: "Announcement bar updated",
-    meta: "Holiday Sale Promo",
-    amount: null,
-    time: "Yesterday",
-  },
-];
+// Icon mapping for activity types
+const iconMap = {
+  bundle: Package,
+  bogo: Gift,
+  volume: Layers,
+  "mix-match": Shuffle,
+  announcement: Megaphone,
+  upsell: TrendingUp,
+  "inactive-tab": Eye,
+  default: ShoppingCart,
+};
 
 export default function DashboardHome() {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentPlan, setCurrentPlan] = useState("Free");
   const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState([]);
+  const [stats, setStats] = useState({ activeOffers: 0, usesToday: 0 });
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     fetchUserSubscription();
+    fetchActivityData();
   }, []);
 
   const fetchUserSubscription = async () => {
@@ -181,6 +130,23 @@ export default function DashboardHome() {
       console.error("Error fetching subscription:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchActivityData = async () => {
+    try {
+      const response = await fetch("/api/activity/recent");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "SUCCESS") {
+          setActivities(data.data.activities || []);
+          setStats(data.data.stats || { activeOffers: 0, usesToday: 0 });
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching activity:", err);
+    } finally {
+      setActivityLoading(false);
     }
   };
 
@@ -263,11 +229,11 @@ export default function DashboardHome() {
             {/* Quick Stats */}
             <div className="quick-stats">
               <div className="quick-stat">
-                <div className="value">32</div>
+                <div className="value">{stats.activeOffers}</div>
                 <div className="label">Active Offers</div>
               </div>
               <div className="quick-stat">
-                <div className="value">1,247</div>
+                <div className="value">{stats.usesToday.toLocaleString()}</div>
                 <div className="label">Uses Today</div>
               </div>
             </div>
@@ -275,24 +241,30 @@ export default function DashboardHome() {
             {/* History List */}
             <div className="history-list-wrapper">
               <div className="history-list">
-                {historyData.map((item) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <div key={item.id} className="history-item">
-                      <div className={`history-icon ${item.iconClass}`}>
-                        <IconComponent size={18} />
+                {activityLoading ? (
+                  <div className="history-loading">Loading activity...</div>
+                ) : activities.length === 0 ? (
+                  <div className="history-empty">No recent activity</div>
+                ) : (
+                  activities.map((item) => {
+                    const IconComponent = iconMap[item.widget] || iconMap.default;
+                    return (
+                      <div key={item.id} className="history-item">
+                        <div className={`history-icon ${item.iconClass}`}>
+                          <IconComponent size={18} />
+                        </div>
+                        <div className="history-content">
+                          <div className="history-text">{item.title}</div>
+                          <div className="history-meta">{item.meta}</div>
+                        </div>
+                        {item.amount && (
+                          <div className="history-amount">{item.amount}</div>
+                        )}
+                        <div className="history-time">{item.time}</div>
                       </div>
-                      <div className="history-content">
-                        <div className="history-text">{item.title}</div>
-                        <div className="history-meta">{item.meta}</div>
-                      </div>
-                      {item.amount && (
-                        <div className="history-amount">{item.amount}</div>
-                      )}
-                      <div className="history-time">{item.time}</div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

@@ -353,3 +353,14 @@
   color: #34c759;
   flex-shrink: 0;
 }
+
+/* Loading and Empty States */
+.history-loading,
+.history-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  color: #8e8e93;
+  font-size: 14px;
+}
