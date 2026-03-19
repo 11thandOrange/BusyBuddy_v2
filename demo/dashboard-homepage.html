@@ -5,24 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BusyBuddy Dashboard</title>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
-            --glass-blur: 20px;
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-            
-            /* Tone-on-tone theme colors */
-            --tone-primary: rgba(255, 255, 255, 0.12);
-            --tone-primary-hover: rgba(255, 255, 255, 0.18);
-            --tone-border: rgba(255, 255, 255, 0.15);
-            --tone-text: rgba(255, 255, 255, 0.9);
-            --tone-text-muted: rgba(255, 255, 255, 0.6);
-            --tone-text-subtle: rgba(255, 255, 255, 0.45);
-            --tone-accent: rgba(255, 255, 255, 0.2);
-            --tone-success: rgba(255, 255, 255, 0.15);
-            --tone-success-text: rgba(200, 255, 220, 0.9);
+            --ios-grey: #8e8e93;
+            --ios-grey-light: #aeaeb2;
+            --ios-grey-dark: #636366;
+            --ios-bg: #f2f2f7;
+            --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
         * {
@@ -35,849 +24,669 @@
 
         body {
             min-height: 100vh;
-            background: #F1F2F4;
-            padding: 24px;
+            background: var(--ios-bg);
         }
 
-        .dashboard {
+        /* Header */
+        .header {
+            background: var(--ios-grey);
+            padding: 20px 32px;
             display: flex;
-            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--ios-grey);
+            flex-shrink: 0;
+        }
+
+        .header-text h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .header-text p {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 2px;
+        }
+
+        /* Dashboard Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
             max-width: 1400px;
             margin: 0 auto;
-            height: calc(100vh - 48px);
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-template-rows: 1fr auto;
-            gap: 20px;
-        }
-
-        .card {
-            background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
-            backdrop-filter: blur(var(--glass-blur));
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            border-radius: 28px;
-            box-shadow: var(--glass-shadow), inset 0 1px 1px rgba(255, 255, 255, 0.1), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 24px 32px;
+            height: calc(100vh - 88px);
             overflow: hidden;
-            padding: 20px;
         }
 
-        .card-inner {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 16px;
-            height: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Widgets Card (Top Left - Large) */
-        .widgets-card {
-            grid-row: 1;
-            grid-column: 1;
-            padding: 16px;
+        /* Left Column - Apps Grid */
+        .apps-column {
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: transparent;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            box-shadow: none;
-            border: none;
         }
 
-        .card-header {
+        .apps-container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--card-shadow);
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1c1c1e;
+        }
+
+        /* iOS-style App Grid */
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .app-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px 16px;
+            border-radius: 16px;
+            border: 3px solid #f2f2f7;
+            background: #fff;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .app-tile:hover {
+            border-color: #e5e5ea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-indicator.active {
+            background: rgba(52, 199, 89, 0.15);
+            color: #2d8a4e;
+        }
+
+        .status-indicator.inactive {
+            background: rgba(142, 142, 147, 0.15);
+            color: #636366;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .status-indicator.active .status-dot {
+            background: #34c759;
+        }
+
+        .status-indicator.inactive .status-dot {
+            background: #8e8e93;
+        }
+
+        /* Large App Icon - Tone on Tone */
+        .app-icon-large {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .app-icon-large.orange { background: rgba(255, 149, 0, 0.15); color: #e67e00; }
+        .app-icon-large.blue { background: rgba(0, 122, 255, 0.15); color: #007aff; }
+        .app-icon-large.green { background: rgba(52, 199, 89, 0.15); color: #34c759; }
+        .app-icon-large.pink { background: rgba(255, 45, 85, 0.15); color: #ff2d55; }
+        .app-icon-large.purple { background: rgba(175, 82, 222, 0.15); color: #af52de; }
+        .app-icon-large.indigo { background: rgba(88, 86, 214, 0.15); color: #5856d6; }
+
+        /* App Name */
+        .app-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        /* App Description */
+        .app-desc {
+            font-size: 11px;
+            color: #8e8e93;
+            line-height: 1.4;
+            margin-bottom: 14px;
+            max-width: 160px;
+        }
+
+        /* App Action Buttons */
+        .app-buttons {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .app-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .app-btn.create {
+            background: #1c1c1e;
+            color: #fff;
+        }
+
+        .app-btn.create:hover {
+            background: #333;
+        }
+
+        .app-btn.manage {
+            background: #f2f2f7;
+            color: #1c1c1e;
+        }
+
+        .app-btn.manage:hover {
+            background: #e5e5ea;
+        }
+
+        /* Link button styling */
+        a.app-btn {
+            text-decoration: none;
+        }
+
+        /* Right Column - History */
+        .history-column {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .history-container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .history-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .status-bar {
-            display: flex;
-            gap: 4px;
-            padding: 6px;
-            background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            padding: 6px 12px;
-            background: whitesmoke;
-            border-radius: 50px;
-            color: #555;
-        }
-
-        .status-item i { width: 14px; height: 14px; color: #666; }
-
-        .widgets-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
-            flex: 1;
-        }
-
-        .widget-card-outer {
-            background: linear-gradient(135deg, #8B9DC3 0%, #9BA4B5 25%, #9CA3AF 50%, #6B7280 75%, #4B5563 100%);
-            border-radius: 24px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        .widget-wrapper {
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            flex: 1;
-        }
-
-        .widget-item {
-            background: whitesmoke;
-            border-radius: 16px 16px 0 0;
-            padding: 10px;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            display: flex;
-            flex-direction: column;
-            border: 1px solid rgba(0, 0, 0, 0.06);
-            border-bottom: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-            position: relative;
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-
-        .widget-card-outer:hover .widget-item {
-            background: #fff;
-        }
-
-        .widget-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
-        }
-
-        .widget-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-shrink: 0;
         }
 
-        .widget-icon.orange {
-            background: rgba(255, 149, 0, 0.15);
-            color: #e67e00;
-            border: 1px solid rgba(255, 149, 0, 0.25);
-        }
-
-        .widget-icon.blue {
-            background: rgba(0, 122, 255, 0.15);
-            color: #0066cc;
-            border: 1px solid rgba(0, 122, 255, 0.25);
-        }
-
-        .widget-icon.green {
-            background: rgba(52, 199, 89, 0.15);
-            color: #2d8a4e;
-            border: 1px solid rgba(52, 199, 89, 0.25);
-        }
-
-        .widget-icon.pink {
-            background: rgba(255, 45, 85, 0.15);
-            color: #d91a47;
-            border: 1px solid rgba(255, 45, 85, 0.25);
-        }
-
-        .widget-icon.purple {
-            background: rgba(175, 82, 222, 0.15);
-            color: #8e44ad;
-            border: 1px solid rgba(175, 82, 222, 0.25);
-        }
-
-        .widget-icon.indigo {
-            background: rgba(88, 86, 214, 0.15);
-            color: #4a48b5;
-            border: 1px solid rgba(88, 86, 214, 0.25);
-        }
-
-        .widget-title {
-            font-size: 12px;
+        .history-title {
+            font-size: 17px;
             font-weight: 600;
-            color: #333;
+            color: #1c1c1e;
         }
 
-        .widget-desc {
-            font-size: 10px;
-            color: #666;
-            line-height: 1.4;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .widget-stats {
-            display: flex;
-            gap: 14px;
-            padding-top: 8px;
-            border-top: 1px solid rgba(0, 0, 0, 0.08);
-            margin-top: auto;
-            flex-shrink: 0;
-        }
-
-        .widget-stat {
-            text-align: left;
-        }
-
-        .widget-stat .value {
-            font-size: 14px;
-            font-weight: 700;
-            color: #333;
-        }
-
-        .widget-stat .label {
-            font-size: 8px;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        .widget-status {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 8px;
-            font-weight: 600;
-        }
-
-        .widget-status.active {
-            background: rgba(52, 199, 89, 0.15);
-            color: #2d8a4e;
-            border: 1px solid rgba(52, 199, 89, 0.25);
-        }
-
-        .widget-status.inactive {
-            background: rgba(0, 0, 0, 0.06);
-            color: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-        }
-
-        .widget-actions {
-            display: flex;
-            gap: 0;
-            flex-shrink: 0;
-        }
-
-        .widget-btn {
-            flex: 1;
-            padding: 7px 10px;
-            font-size: 10px;
-            font-weight: 600;
+        .view-all {
+            font-size: 13px;
+            color: #007aff;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
+            text-decoration: none;
         }
 
-        .widget-btn.create {
-            background: rgba(0, 122, 255, 0.12);
-            color: #0066cc;
-            border-radius: 0 0 0 16px;
-            border: 1px solid rgba(0, 122, 255, 0.2);
-            border-right: none;
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        .view-all:hover {
+            text-decoration: underline;
         }
 
-        .widget-btn.create:hover {
-            background: rgba(0, 122, 255, 0.2);
-            color: #0055aa;
-        }
-
-        .widget-btn.manage {
-            background: rgba(0, 0, 0, 0.05);
-            color: rgba(0, 0, 0, 0.5);
-            border-radius: 0 0 12px 0;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            border-left: none;
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
-        }
-
-        .widget-btn.manage:hover {
-            background: rgba(0, 0, 0, 0.08);
-            color: rgba(0, 0, 0, 0.65);
-        }
-
-        .widget-btn i {
-            width: 10px;
-            height: 10px;
-        }
-
-        /* Bottom Cards */
-        .bottom-cards {
-            grid-row: 2;
-            grid-column: 1;
+        /* Quick Stats */
+        .quick-stats {
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 20px;
-            height: 220px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f2f2f7;
+            flex-shrink: 0;
         }
 
-        .stat-card {
-            padding: 0;
+        .quick-stat {
+            background: #f2f2f7;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
         }
 
-        .stat-card .card-inner {
-            display: flex;
-            flex-direction: column;
+        .quick-stat .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1c1e;
         }
 
-        .stat-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .stat-card-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .trend-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 10px;
-            background: rgba(52, 199, 89, 0.15);
-            color: #2d8a4e;
-            border-radius: 20px;
+        .quick-stat .label {
             font-size: 11px;
-            font-weight: 600;
-            border: 1px solid rgba(52, 199, 89, 0.25);
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
-        /* Revenue Chart Card */
-        .chart-card {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .chart-card .card-inner {
-            display: flex;
-            flex-direction: column;
+        /* History List with Fade */
+        .history-list-wrapper {
             flex: 1;
-        }
-
-        .chart-legend {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            color: #555;
-        }
-
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .legend-dot.blue {
-            background: rgba(0, 122, 255, 0.8);
-            border: 1px solid rgba(0, 122, 255, 0.3);
-        }
-
-        .legend-dot.green {
-            background: rgba(52, 199, 89, 0.8);
-            border: 1px solid rgba(52, 199, 89, 0.3);
-        }
-
-        .legend-dot.pink {
-            background: rgba(255, 45, 85, 0.8);
-            border: 1px solid rgba(255, 45, 85, 0.3);
-        }
-
-        .legend-dot.purple {
-            background: rgba(175, 82, 222, 0.8);
-            border: 1px solid rgba(175, 82, 222, 0.3);
-        }
-
-        .chart-container {
-            flex: 1;
-            min-height: 120px;
-        }
-
-        /* History Card with Fade */
-        .history-card {
             position: relative;
-            display: flex;
-            flex-direction: column;
             overflow: hidden;
-        }
-
-        .history-card .card-inner {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            overflow: hidden;
+            min-height: 0;
         }
 
         .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            flex: 1;
-            overflow: hidden;
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 40px;
         }
 
-        .history-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--tone-border);
-        }
-
-        .history-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .history-icon.sale { 
-            background: rgba(0, 122, 255, 0.15);
-            color: #0066cc;
-            border: 1px solid rgba(0, 122, 255, 0.25);
-        }
-
-        .history-icon.view { 
-            background: rgba(255, 149, 0, 0.15);
-            color: #e67e00;
-            border: 1px solid rgba(255, 149, 0, 0.25);
-        }
-
-        .history-icon.promo { 
-            background: rgba(52, 199, 89, 0.15);
-            color: #2d8a4e;
-            border: 1px solid rgba(52, 199, 89, 0.25);
-        }
-
-        .history-icon.mix { 
-            background: rgba(175, 82, 222, 0.15);
-            color: #8e44ad;
-            border: 1px solid rgba(175, 82, 222, 0.25);
-        }
-
-        .history-text {
-            flex: 1;
-        }
-
-        .history-text p {
-            font-size: 12px;
-            color: #333;
-            margin-bottom: 2px;
-        }
-
-        .history-text span {
-            font-size: 10px;
-            color: #888;
-        }
-
-        .history-amount {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2d8a4e;
-        }
-
-        .history-fade {
+        .history-list-wrapper::after {
+            content: '';
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 50px;
-            background: linear-gradient(to bottom, transparent 0%, whitesmoke 100%);
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%);
             pointer-events: none;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            padding-bottom: 8px;
         }
 
-        .scroll-hint {
-            font-size: 11px;
-            color: #888;
+        .history-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #f2f2f7;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .history-icon.sale { background: rgba(0, 122, 255, 0.15); color: #007aff; }
+        .history-icon.view { background: rgba(142, 142, 147, 0.15); color: #8e8e93; }
+        .history-icon.promo { background: rgba(52, 199, 89, 0.15); color: #34c759; }
+        .history-icon.mix { background: rgba(175, 82, 222, 0.15); color: #af52de; }
+
+        .history-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1c1c1e;
+            margin-bottom: 2px;
+        }
+
+        .history-meta {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+
+        .history-time {
+            font-size: 12px;
+            color: #c7c7cc;
+            flex-shrink: 0;
+        }
+
+        .history-amount {
+            font-size: 14px;
+            font-weight: 600;
+            color: #34c759;
+            flex-shrink: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .apps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .apps-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .apps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">BB</div>
+            <div class="header-text">
+                <h1>BusyBuddy</h1>
+                <p>every busy body needs busybuddy</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard -->
     <div class="dashboard">
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Widgets Card (Top Left - Large) -->
-            <div class="card widgets-card">
-                <div class="card-header">
-                    <div class="card-title">Your Widgets</div>
-                    <div class="status-bar">
-                        <div class="status-item">
-                            <i data-lucide="circle-check"></i>
-                            <span>6 Active</span>
-                        </div>
-                        <div class="status-item">
-                            <i data-lucide="dollar-sign"></i>
-                            <span>$27.5K</span>
-                        </div>
-                        <div class="status-item">
-                            <i data-lucide="eye"></i>
-                            <span>125K</span>
-                        </div>
-                    </div>
+        <!-- Left Column - Apps Grid -->
+        <div class="apps-column">
+            <div class="apps-container">
+                <div class="section-header">
+                    <div class="section-title">Your Widgets</div>
                 </div>
-                <div class="widgets-grid">
+                <div class="apps-grid">
                     <!-- Announcement Bar -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon orange">
-                                        <i data-lucide="megaphone" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Announcement Bar</div>
-                                </div>
-                                <div class="widget-desc">Display alerts and promotions at the top of your store.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">12</div>
-                                        <div class="label">Active</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">45.2K</div>
-                                        <div class="label">Views</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <div class="app-tile">
+                        <div class="status-indicator active">
+                            <span class="status-dot"></span>
+                            Active
+                        </div>
+                        <div class="app-icon-large orange">
+                            <i data-lucide="megaphone" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Announcement Bar</div>
+                        <div class="app-desc">Display alerts and promotions at the top of your store</div>
+                        <div class="app-buttons">
+                            <a href="/announcement-bar/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/announcement-bar" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
 
                     <!-- Bundle Discounts -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon blue">
-                                        <i data-lucide="package" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Bundle Discounts</div>
-                                </div>
-                                <div class="widget-desc">Create product bundles with automatic discounts.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">8</div>
-                                        <div class="label">Bundles</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">$12.4K</div>
-                                        <div class="label">Revenue</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <div class="app-tile">
+                        <div class="status-indicator active">
+                            <span class="status-dot"></span>
+                            Active
+                        </div>
+                        <div class="app-icon-large blue">
+                            <i data-lucide="package" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Bundle Discounts</div>
+                        <div class="app-desc">Create product bundles with automatic discounts</div>
+                        <div class="app-buttons">
+                            <a href="/bundle-discount/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/bundle-discount" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
 
                     <!-- Buy One Get One -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon green">
-                                        <i data-lucide="gift" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Buy One Get One</div>
-                                </div>
-                                <div class="widget-desc">Set up BOGO deals to boost sales fast.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">5</div>
-                                        <div class="label">Offers</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">$8.2K</div>
-                                        <div class="label">Revenue</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <div class="app-tile">
+                        <div class="status-indicator active">
+                            <span class="status-dot"></span>
+                            Active
+                        </div>
+                        <div class="app-icon-large green">
+                            <i data-lucide="gift" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Buy One Get One</div>
+                        <div class="app-desc">BOGO deals, free gifts, and special offers</div>
+                        <div class="app-buttons">
+                            <a href="/buy-one-get-one/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/buy-one-get-one" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
 
                     <!-- Volume Discounts -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon pink">
-                                        <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Volume Discounts</div>
-                                </div>
-                                <div class="widget-desc">Tiered pricing to reward bulk buyers.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">3</div>
-                                        <div class="label">Tiers</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">$4.1K</div>
-                                        <div class="label">Revenue</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <div class="app-tile">
+                        <div class="status-indicator inactive">
+                            <span class="status-dot"></span>
+                            Inactive
+                        </div>
+                        <div class="app-icon-large pink">
+                            <i data-lucide="layers" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Volume Discounts</div>
+                        <div class="app-desc">Quantity-based pricing tiers and bulk savings</div>
+                        <div class="app-buttons">
+                            <a href="/volume-discounts/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/volume-discounts" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
 
                     <!-- Mix & Match -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon purple">
-                                        <i data-lucide="shuffle" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Mix & Match</div>
-                                </div>
-                                <div class="widget-desc">Let customers build custom bundles.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">4</div>
-                                        <div class="label">Groups</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">$2.8K</div>
-                                        <div class="label">Revenue</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <div class="app-tile">
+                        <div class="status-indicator active">
+                            <span class="status-dot"></span>
+                            Active
+                        </div>
+                        <div class="app-icon-large purple">
+                            <i data-lucide="shuffle" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Mix & Match</div>
+                        <div class="app-desc">Let customers build their own custom bundles</div>
+                        <div class="app-buttons">
+                            <a href="/mix-and-match/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/mix-and-match" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
 
-                    <!-- Inactive Tab Message -->
-                    <div class="widget-card-outer">
-                        <div class="widget-wrapper">
-                            <div class="widget-item">
-                                <span class="widget-status active">Active</span>
-                                <div class="widget-header">
-                                    <div class="widget-icon indigo">
-                                        <i data-lucide="message-circle" style="width: 14px; height: 14px;"></i>
-                                    </div>
-                                    <div class="widget-title">Inactive Tab</div>
-                                </div>
-                                <div class="widget-desc">Win back visitors with tab messages.</div>
-                                <div class="widget-stats">
-                                    <div class="widget-stat">
-                                        <div class="value">12.3K</div>
-                                        <div class="label">Triggers</div>
-                                    </div>
-                                    <div class="widget-stat">
-                                        <div class="value">15%</div>
-                                        <div class="label">Return</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="widget-actions">
-                                <button class="widget-btn create">
-                                    <i data-lucide="plus"></i> Create
-                                </button>
-                                <button class="widget-btn manage">
-                                    <i data-lucide="settings"></i> Manage
-                                </button>
-                            </div>
+                    <!-- Upsell & Cross-sell -->
+                    <div class="app-tile">
+                        <div class="status-indicator inactive">
+                            <span class="status-dot"></span>
+                            Inactive
+                        </div>
+                        <div class="app-icon-large indigo">
+                            <i data-lucide="trending-up" style="width: 32px; height: 32px;"></i>
+                        </div>
+                        <div class="app-name">Upsell & Cross-sell</div>
+                        <div class="app-desc">Boost AOV with smart product recommendations</div>
+                        <div class="app-buttons">
+                            <a href="/upsell-cross-sell/editor" target="_blank" class="app-btn create">
+                                <i data-lucide="plus" style="width: 12px; height: 12px;"></i> Create
+                            </a>
+                            <a href="/upsell-cross-sell" class="app-btn manage">
+                                <i data-lucide="settings" style="width: 12px; height: 12px;"></i> Manage
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Bottom Cards -->
-            <div class="bottom-cards">
-                <!-- Revenue Growth Chart Card -->
-                <div class="card stat-card chart-card">
-                    <div class="card-inner">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Revenue by Widget</div>
-                            <div class="trend-badge">
-                                <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
-                                +18.3%
-                            </div>
-                        </div>
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-dot blue"></div>
-                                <span>Bundle</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-dot green"></div>
-                                <span>BOGO</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-dot pink"></div>
-                                <span>Volume</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-dot purple"></div>
-                                <span>Mix & Match</span>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
+        <!-- Right Column - History -->
+        <div class="history-column">
+            <div class="history-container">
+                <div class="history-header">
+                    <div class="history-title">Recent Activity</div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <div class="value">32</div>
+                        <div class="label">Active Offers</div>
+                    </div>
+                    <div class="quick-stat">
+                        <div class="value">1,247</div>
+                        <div class="label">Uses Today</div>
                     </div>
                 </div>
 
-                <!-- Recent History Card with Fade -->
-                <div class="card stat-card history-card">
-                    <div class="card-inner">
-                        <div class="stat-card-header">
-                            <div class="stat-card-title">Recent History</div>
+                <!-- History List with Fade Wrapper -->
+                <div class="history-list-wrapper">
+                    <div class="history-list">
+                        <div class="history-item">
+                            <div class="history-icon sale">
+                                <i data-lucide="shopping-cart" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-text">Bundle Discount purchased</div>
+                                <div class="history-meta">Summer Bundle Pack</div>
+                            </div>
+                            <div class="history-amount">+$89.99</div>
+                            <div class="history-time">2m ago</div>
                         </div>
-                        <div class="history-list">
-                            <div class="history-item">
-                                <div class="history-icon sale">
-                                    <i data-lucide="shopping-cart" style="width: 16px; height: 16px;"></i>
-                                </div>
-                                <div class="history-text">
-                                    <p>Bundle Discount purchased</p>
-                                    <span>2 minutes ago</span>
-                                </div>
-                                <div class="history-amount">+$89.99</div>
+
+                        <div class="history-item">
+                            <div class="history-icon view">
+                                <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
                             </div>
-                            <div class="history-item">
-                                <div class="history-icon view">
-                                    <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
-                                </div>
-                                <div class="history-text">
-                                    <p>Announcement viewed 1,234 times</p>
-                                    <span>15 minutes ago</span>
-                                </div>
-                                <div class="history-amount"></div>
+                            <div class="history-content">
+                                <div class="history-text">Announcement viewed 1,234 times</div>
+                                <div class="history-meta">Flash Sale Banner</div>
                             </div>
-                            <div class="history-item">
-                                <div class="history-icon promo">
-                                    <i data-lucide="gift" style="width: 16px; height: 16px;"></i>
-                                </div>
-                                <div class="history-text">
-                                    <p>BOGO offer redeemed</p>
-                                    <span>1 hour ago</span>
-                                </div>
-                                <div class="history-amount">+$45.00</div>
-                            </div>
-                            <div class="history-item">
-                                <div class="history-icon mix">
-                                    <i data-lucide="shuffle" style="width: 16px; height: 16px;"></i>
-                                </div>
-                                <div class="history-text">
-                                    <p>Mix & Match bundle sold</p>
-                                    <span>2 hours ago</span>
-                                </div>
-                                <div class="history-amount">+$67.50</div>
-                            </div>
-                            <div class="history-item">
-                                <div class="history-icon sale">
-                                    <i data-lucide="layers" style="width: 16px; height: 16px;"></i>
-                                </div>
-                                <div class="history-text">
-                                    <p>Volume discount applied</p>
-                                    <span>3 hours ago</span>
-                                </div>
-                                <div class="history-amount">+$124.00</div>
-                            </div>
+                            <div class="history-time">15m ago</div>
                         </div>
-                        <div class="history-fade">
-                            <div class="scroll-hint">
-                                <i data-lucide="chevron-down" style="width: 14px; height: 14px;"></i>
-                                Scroll for more
+
+                        <div class="history-item">
+                            <div class="history-icon promo">
+                                <i data-lucide="gift" style="width: 18px; height: 18px;"></i>
                             </div>
+                            <div class="history-content">
+                                <div class="history-text">BOGO offer redeemed</div>
+                                <div class="history-meta">Buy 2 Get 1 Free</div>
+                            </div>
+                            <div class="history-amount">+$45.00</div>
+                            <div class="history-time">1h ago</div>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-icon mix">
+                                <i data-lucide="shuffle" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-text">Mix & Match bundle sold</div>
+                                <div class="history-meta">Custom Bundle #142</div>
+                            </div>
+                            <div class="history-amount">+$67.50</div>
+                            <div class="history-time">2h ago</div>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-icon sale">
+                                <i data-lucide="layers" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-text">Volume discount applied</div>
+                                <div class="history-meta">10+ Items Discount</div>
+                            </div>
+                            <div class="history-amount">+$124.00</div>
+                            <div class="history-time">3h ago</div>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-icon promo">
+                                <i data-lucide="package" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-text">New bundle created</div>
+                                <div class="history-meta">Winter Essentials Pack</div>
+                            </div>
+                            <div class="history-time">5h ago</div>
+                        </div>
+
+                        <div class="history-item">
+                            <div class="history-icon view">
+                                <i data-lucide="megaphone" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div class="history-content">
+                                <div class="history-text">Announcement bar updated</div>
+                                <div class="history-meta">Holiday Sale Promo</div>
+                            </div>
+                            <div class="history-time">Yesterday</div>
                         </div>
                     </div>
                 </div>
@@ -887,86 +696,6 @@
 
     <script>
         lucide.createIcons();
-
-        // Revenue Growth Chart by Widget
-        const ctx = document.getElementById('revenueChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [
-                    {
-                        label: 'Bundle',
-                        data: [1800, 2100, 1950, 2400, 2200, 2800, 3100],
-                        borderColor: '#007AFF',
-                        backgroundColor: 'rgba(0, 122, 255, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'BOGO',
-                        data: [1200, 1400, 1350, 1600, 1500, 1900, 2100],
-                        borderColor: '#34C759',
-                        backgroundColor: 'rgba(52, 199, 89, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Volume',
-                        data: [600, 700, 650, 850, 780, 950, 1050],
-                        borderColor: '#FF2D55',
-                        backgroundColor: 'rgba(255, 45, 85, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Mix & Match',
-                        data: [400, 480, 420, 550, 500, 620, 700],
-                        borderColor: '#AF52DE',
-                        backgroundColor: 'rgba(175, 82, 222, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2,
-                        pointRadius: 0
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    intersect: false,
-                    mode: 'index'
-                },
-                plugins: { 
-                    legend: { display: false }
-                },
-                scales: {
-                    x: { 
-                        display: true, 
-                        grid: { display: false },
-                        ticks: { font: { size: 10 }, color: '#555' }
-                    },
-                    y: { 
-                        display: true,
-                        grid: { color: 'rgba(0,0,0,0.08)' },
-                        ticks: { 
-                            font: { size: 10 }, 
-                            color: '#555',
-                            callback: function(value) {
-                                return '$' + (value / 1000).toFixed(1) + 'K';
-                            }
-                        }
-                    }
-                }
-            }
-        });
     </script>
 </body>
 </html>
