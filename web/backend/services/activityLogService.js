@@ -44,14 +44,18 @@ const activityLogService = {
   },
 
   /**
-   * Get recent activities for a shop
+   * Get recent customer activities for a shop (storefront events only)
    * @param {string} shopId - Shop identifier
    * @param {number} [limit=20] - Maximum number of activities to return
    * @returns {Promise<Array>} Array of activity documents
    */
   async getRecentActivities(shopId, limit = 20) {
     try {
-      return await ActivityLog.find({ shopId })
+      // Only return end-user/customer events, not merchant admin events
+      return await ActivityLog.find({
+        shopId,
+        type: { $in: ["view", "click", "purchase"] },
+      })
         .sort({ createdAt: -1 })
         .limit(limit)
         .lean();
@@ -62,7 +66,7 @@ const activityLogService = {
   },
 
   /**
-   * Get quick stats for a shop (uses today, active offers)
+   * Get quick stats for a shop (customer events today, active offers)
    * @param {string} shopId - Shop identifier
    * @returns {Promise<Object>} Stats object with activeOffers and usesToday
    */
@@ -71,19 +75,19 @@ const activityLogService = {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
 
-      // Get today's usage stats
+      // Get today's customer event stats (views, clicks, purchases)
       const [usageStats] = await ActivityLog.aggregate([
         {
           $match: {
             shopId,
             createdAt: { $gte: startOfDay },
-            type: { $in: ["purchase", "redemption"] },
+            type: { $in: ["view", "click", "purchase"] },
           },
         },
         {
           $group: {
             _id: null,
-            usesToday: { $sum: 1 },
+            eventsToday: { $sum: 1 },
             revenueToday: { $sum: { $ifNull: ["$amount", 0] } },
           },
         },
@@ -94,7 +98,7 @@ const activityLogService = {
 
       return {
         activeOffers,
-        usesToday: usageStats?.usesToday || 0,
+        usesToday: usageStats?.eventsToday || 0,
         revenueToday: usageStats?.revenueToday || 0,
       };
     } catch (error) {
