@@ -1,5 +1,5 @@
 import ActivityLog from "../models/activityLog.model.js";
-import Bundle from "../models/bundle.model.js";
+import Bundle from "../models/bundles.model.js";
 import AnnouncementBar from "../models/announcementBar.model.js";
 
 /**
@@ -173,16 +173,17 @@ const activityLogService = {
    */
   getIconClass(type) {
     const classes = {
-      purchase: "sale",
-      redemption: "promo",
-      view: "view",
-      created: "promo",
-      updated: "view",
-      deleted: "view",
-      activated: "promo",
-      deactivated: "view",
+      purchase: "revenue",
+      redemption: "revenue",
+      view: "views",
+      click: "clicks",
+      created: "created",
+      updated: "updated",
+      deleted: "deleted",
+      activated: "activated",
+      deactivated: "deactivated",
     };
-    return classes[type] || "view";
+    return classes[type] || "default";
   },
 };
 

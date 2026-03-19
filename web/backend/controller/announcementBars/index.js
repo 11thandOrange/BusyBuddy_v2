@@ -560,6 +560,18 @@ async function trackAnnouncementBarAnalytics(req, res) {
       });
     }
 
+    // Log individual event to activity log for real-time feed
+    if (action === "view" || action === "click") {
+      await activityLogService.logActivity({
+        shopId: shop,
+        type: action,
+        widget: "announcement",
+        title: announcementBar.title || "Announcement Bar",
+        meta: action === "view" ? "viewed" : "clicked",
+        offerId: announcementBar._id,
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Analytics tracked successfully",

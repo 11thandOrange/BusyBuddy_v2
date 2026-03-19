@@ -12,7 +12,7 @@ const activityLogSchema = new mongoose.Schema(
     // Event type
     type: {
       type: String,
-      enum: ["purchase", "view", "redemption", "created", "updated", "deleted", "activated", "deactivated"],
+      enum: ["purchase", "view", "click", "redemption", "created", "updated", "deleted", "activated", "deactivated"],
       required: true,
     },
 

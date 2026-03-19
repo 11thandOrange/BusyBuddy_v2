@@ -108,12 +108,12 @@ export default function DashboardHome() {
   const [currentPlan, setCurrentPlan] = useState("Free");
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
-  const [stats, setStats] = useState({ activeOffers: 0, totalViews: 0 });
+  const [stats, setStats] = useState({ activeOffers: 0, eventsToday: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
     fetchUserSubscription();
-    fetchAnalyticsData();
+    fetchActivityData();
   }, []);
 
   const fetchUserSubscription = async () => {
@@ -132,18 +132,18 @@ export default function DashboardHome() {
     }
   };
 
-  const fetchAnalyticsData = async () => {
+  const fetchActivityData = async () => {
     try {
       const response = await fetch("/api/activity/recent");
       if (response.ok) {
         const data = await response.json();
         if (data.status === "SUCCESS") {
           setActivities(data.data.activities || []);
-          setStats(data.data.stats || { activeOffers: 0, totalViews: 0 });
+          setStats(data.data.stats || { activeOffers: 0, eventsToday: 0 });
         }
       }
     } catch (err) {
-      console.error("Error fetching analytics:", err);
+      console.error("Error fetching activity:", err);
     } finally {
       setActivityLoading(false);
     }
@@ -218,11 +218,11 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Right Column - Analytics */}
+        {/* Right Column - Recent Activity */}
         <div className="history-column">
           <div className="history-container">
             <div className="history-header">
-              <h2 className="history-title">Performance</h2>
+              <h2 className="history-title">Recent Activity</h2>
             </div>
 
             {/* Quick Stats */}
@@ -232,18 +232,18 @@ export default function DashboardHome() {
                 <div className="label">Active Offers</div>
               </div>
               <div className="quick-stat">
-                <div className="value">{formatStatNumber(stats.totalViews)}</div>
-                <div className="label">Total Views</div>
+                <div className="value">{stats.eventsToday}</div>
+                <div className="label">Events Today</div>
               </div>
             </div>
 
-            {/* Analytics List */}
+            {/* Activity List */}
             <div className="history-list-wrapper">
               <div className="history-list">
                 {activityLoading ? (
-                  <div className="history-loading">Loading analytics...</div>
+                  <div className="history-loading">Loading activity...</div>
                 ) : activities.length === 0 ? (
-                  <div className="history-empty">No analytics data yet</div>
+                  <div className="history-empty">No activity yet</div>
                 ) : (
                   activities.map((item) => {
                     const IconComponent = iconMap[item.iconClass] || iconMap[item.widget] || iconMap.default;
@@ -271,11 +271,4 @@ export default function DashboardHome() {
       </div>
     </div>
   );
-}
-
-// Format large numbers for display
-function formatStatNumber(num) {
-  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-  return num?.toLocaleString() || "0";
 }
