@@ -108,7 +108,7 @@ export default function DashboardHome() {
   const [currentPlan, setCurrentPlan] = useState("Free");
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
-  const [stats, setStats] = useState({ activeOffers: 0, eventsToday: 0 });
+  const [stats, setStats] = useState({ activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function DashboardHome() {
         const data = await response.json();
         if (data.status === "SUCCESS") {
           setActivities(data.data.activities || []);
-          setStats(data.data.stats || { activeOffers: 0, eventsToday: 0 });
+          setStats(data.data.stats || { activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
         }
       }
     } catch (err) {
@@ -228,12 +228,12 @@ export default function DashboardHome() {
             {/* Quick Stats */}
             <div className="quick-stats">
               <div className="quick-stat">
-                <div className="value">{stats.activeOffers}</div>
-                <div className="label">Active Offers</div>
+                <div className="value">{stats.activeBundles}</div>
+                <div className="label">Active Bundles</div>
               </div>
               <div className="quick-stat">
-                <div className="value">{stats.eventsToday}</div>
-                <div className="label">Events Today</div>
+                <div className="value">{stats.activeAnnouncements}</div>
+                <div className="label">Active Bars</div>
               </div>
             </div>
 

@@ -40,8 +40,9 @@ async function getRecentActivity(req, res) {
       data: {
         activities: formattedActivities,
         stats: {
-          activeOffers: stats.activeOffers,
-          eventsToday: stats.usesToday,
+          activeBundles: stats.activeBundles,
+          activeAnnouncements: stats.activeAnnouncements,
+          eventsToday: stats.eventsToday,
         },
       },
     });
@@ -74,8 +75,9 @@ async function getActivityStats(req, res) {
     res.json({
       status: "SUCCESS",
       data: {
-        activeOffers: stats.activeOffers,
-        eventsToday: stats.usesToday,
+        activeBundles: stats.activeBundles,
+        activeAnnouncements: stats.activeAnnouncements,
+        eventsToday: stats.eventsToday,
       },
     });
   } catch (error) {

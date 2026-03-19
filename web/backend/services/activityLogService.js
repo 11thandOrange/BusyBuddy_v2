@@ -93,47 +93,49 @@ const activityLogService = {
         },
       ]);
 
-      // Get count of active offers
-      const activeOffers = await this.countActiveOffers(shopId);
+      // Get counts of active offers by type
+      const { bundles, announcements } = await this.countActiveOffers(shopId);
 
       return {
-        activeOffers,
-        usesToday: usageStats?.eventsToday || 0,
+        activeBundles: bundles,
+        activeAnnouncements: announcements,
+        eventsToday: usageStats?.eventsToday || 0,
         revenueToday: usageStats?.revenueToday || 0,
       };
     } catch (error) {
       console.error("Failed to get quick stats:", error);
       return {
-        activeOffers: 0,
-        usesToday: 0,
+        activeBundles: 0,
+        activeAnnouncements: 0,
+        eventsToday: 0,
         revenueToday: 0,
       };
     }
   },
 
   /**
-   * Count active offers across all widget types for a shop
+   * Count active offers by type for a shop
    * @param {string} shopId - Shop identifier
-   * @returns {Promise<number>} Total count of active offers
+   * @returns {Promise<Object>} Counts of active bundles and announcements
    */
   async countActiveOffers(shopId) {
     try {
       // Count active bundles (includes bundle, bogo, volume, mix-match)
-      const bundleCount = await Bundle.countDocuments({
+      const bundles = await Bundle.countDocuments({
         shopId,
         status: true,
       });
 
       // Count active announcement bars
-      const announcementCount = await AnnouncementBar.countDocuments({
+      const announcements = await AnnouncementBar.countDocuments({
         shopId,
         status: "active",
       });
 
-      return bundleCount + announcementCount;
+      return { bundles, announcements };
     } catch (error) {
       console.error("Failed to count active offers:", error);
-      return 0;
+      return { bundles: 0, announcements: 0 };
     }
   },
 
