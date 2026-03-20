@@ -155,7 +155,9 @@ export default function DashboardHome() {
   };
 
   const handleCreate = (widget) => {
-    if (!isWidgetAccessible(widget.id)) {
+    // Don't check plan access if subscription is still loading
+    // This prevents redirecting to /plan due to default "Free" state
+    if (!loading && !isWidgetAccessible(widget.id)) {
       navigate("/plan" + location.search);
       return;
     }
@@ -174,7 +176,9 @@ export default function DashboardHome() {
   };
 
   const handleManage = (widget) => {
-    if (!isWidgetAccessible(widget.id)) {
+    // Don't check plan access if subscription is still loading
+    // This prevents redirecting to /plan due to default "Free" state
+    if (!loading && !isWidgetAccessible(widget.id)) {
       navigate("/plan" + location.search);
       return;
     }
