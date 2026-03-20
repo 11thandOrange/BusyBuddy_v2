@@ -1,5 +1,6 @@
 import AnnouncementBar from "../../models/announcementBar.model.js";
 import Shop from "../../models/shop.model.js";
+import activityLogService from "../../services/activityLogService.js";
 
 function validateAnnouncementBarData(data) {
   const errors = [];
@@ -113,6 +114,16 @@ async function createAnnouncementBar(req, res) {
 
     const announcementBar = new AnnouncementBar(announcementBarData);
     await announcementBar.save();
+
+    // Log activity for announcement bar creation
+    await activityLogService.logActivity({
+      shopId: shop,
+      type: "created",
+      widget: "announcement",
+      title: "New announcement bar created",
+      meta: announcementBar.name || announcementBar.internalName,
+      offerId: announcementBar._id,
+    });
 
     res.status(201).json({
       success: true,
@@ -266,6 +277,16 @@ async function updateAnnouncementBar(req, res) {
       });
     }
 
+    // Log activity for announcement bar update
+    await activityLogService.logActivity({
+      shopId: shop,
+      type: "updated",
+      widget: "announcement",
+      title: "Announcement bar updated",
+      meta: announcementBar.name || announcementBar.internalName,
+      offerId: announcementBar._id,
+    });
+
     res.status(200).json({
       success: true,
       message: "Announcement bar updated successfully",
@@ -305,6 +326,16 @@ async function deleteAnnouncementBar(req, res) {
         message: "Announcement bar not found",
       });
     }
+
+    // Log activity for announcement bar deletion
+    await activityLogService.logActivity({
+      shopId: shop,
+      type: "deleted",
+      widget: "announcement",
+      title: "Announcement bar deleted",
+      meta: announcementBar.name || announcementBar.internalName,
+      offerId: announcementBar._id,
+    });
 
     res.status(200).json({
       success: true,
@@ -368,6 +399,17 @@ async function toggleAnnouncementBarStatus(req, res) {
         message: "Announcement bar not found",
       });
     }
+
+    // Log activity for status toggle
+    const activityType = status === "active" ? "activated" : "deactivated";
+    await activityLogService.logActivity({
+      shopId: shop,
+      type: activityType,
+      widget: "announcement",
+      title: `Announcement bar ${activityType}`,
+      meta: announcementBar.name || announcementBar.internalName,
+      offerId: announcementBar._id,
+    });
 
     res.status(200).json({
       success: true,
@@ -515,6 +557,18 @@ async function trackAnnouncementBarAnalytics(req, res) {
       return res.status(404).json({
         success: false,
         message: "Announcement bar not found",
+      });
+    }
+
+    // Log individual event to activity log for real-time feed
+    if (action === "view" || action === "click") {
+      await activityLogService.logActivity({
+        shopId: shop,
+        type: action,
+        widget: "announcement",
+        title: announcementBar.title || "Announcement Bar",
+        meta: action === "view" ? "viewed" : "clicked",
+        offerId: announcementBar._id,
       });
     }
 

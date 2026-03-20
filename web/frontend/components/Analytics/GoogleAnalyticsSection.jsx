@@ -132,7 +132,7 @@ export default function GoogleAnalyticsSection({ onNavigateToSettings }) {
     } finally {
       setLoading(false);
     }
-  }, [authenticatedFetch, timeRange]);
+  }, [timeRange]);
 
   useEffect(() => {
     checkConnectionAndFetchData();

@@ -1,35 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
-import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function VolumeForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [autoTriggerActions, setAutoTriggerActions] = useState(true);
   const discountActionsRef = useRef();
 
-  useEffect(() => {
-    if (autoTriggerActions) {
-      setFromDiscountPage(true);
-      setAutoTriggerActions(false);
-    }
-  }, [autoTriggerActions]);
-
-  const handleOpenDiscountModal = () => {
-    setShowDiscountModal(true);
-  };
-
-  const handleCloseDiscountModal = () => {
-    setShowDiscountModal(false);
+  const handleCreateNew = () => {
+    // Open editor in new fullscreen tab without App Bridge
+    const params = new URLSearchParams(location.search);
+    const shop = params.get("shop");
+    const queryString = shop ? `?shop=${shop}` : "";
+    window.open(`/editor.html${queryString}#/volume-discounts/editor`, "_blank");
   };
 
   const handleDiscard = () => {
@@ -133,11 +123,10 @@ export default function VolumeForm() {
           ) : (
             <Col xs="auto" className="d-flex align-items-center gap-2">
               <Button
-                text="Create Another Discount"
-                onClick={handleOpenDiscountModal}
+                text="Create New Volume Discount"
+                onClick={handleCreateNew}
                 style={{
                   borderRadius: "15px",
-
                   backgroundColor: "#000",
                   color: "#FFFFFF",
                   padding: "15px 25px",
@@ -152,8 +141,6 @@ export default function VolumeForm() {
             </Col>
           )}
         </Row>
-
-        <DiscountModal show={showDiscountModal} onHide={handleCloseDiscountModal}  />
       </Container>
       {/* <DiscountList 
         key={resetDiscountList ? 'reset' : 'normal'} 
@@ -166,7 +153,6 @@ export default function VolumeForm() {
         refreshTrigger={refreshTrigger}
         onBundleCreated={handleBundleCreated}
         discountActionsRef={discountActionsRef}
-        autoTriggerActions={fromDiscountPage}
       />
     </div>
   );

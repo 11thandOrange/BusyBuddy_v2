@@ -3,6 +3,8 @@ import MerchantEventModel from "../../models/merchantEvent.model.js";
 import EmailLogModel from "../../models/emailLog.model.js";
 import MerchantReviewModel from "../../models/merchantReview.model.js";
 import { emailService } from "../../services/merchantEmailService.js";
+import activityLogService from "../../services/activityLogService.js";
+import Bundle from "../../models/bundle.model.js";
 
 // Handler for app install webhook
 async function handleAppInstall(req, res) {
@@ -322,6 +324,181 @@ async function getMerchantReviews(req, res) {
   }
 }
 
+/**
+ * Handle orders/paid webhook from Shopify
+ * Logs purchase events when orders use app discount codes
+ */
+async function handleOrderPaid(req, res) {
+  try {
+    const order = req.body;
+    const shopDomain = req.headers["x-shopify-shop-domain"];
+
+    if (!shopDomain) {
+      return res.status(400).json({
+        status: "ERROR",
+        message: "Missing shop domain header",
+      });
+    }
+
+    console.log(`Processing orders/paid webhook for ${shopDomain}, Order ID: ${order.id}`);
+
+    // Check if order used any discount codes
+    const discountCodes = order.discount_codes || [];
+    const discountApplications = order.discount_applications || [];
+
+    for (const discount of discountCodes) {
+      const discountCode = discount.code;
+      
+      // Try to identify if this is one of our app's discounts
+      const discountInfo = await identifyAppDiscount(discountCode, shopDomain);
+
+      if (discountInfo) {
+        await activityLogService.logActivity({
+          shopId: shopDomain,
+          type: "purchase",
+          widget: discountInfo.widget,
+          title: `${discountInfo.widgetName} purchased`,
+          meta: discountInfo.offerName,
+          amount: parseFloat(order.total_price) || 0,
+          offerId: discountInfo.offerId,
+          orderId: order.id?.toString(),
+          discountCode: discountCode,
+        });
+
+        console.log(`Logged purchase activity for ${discountInfo.widgetName}: ${discountInfo.offerName}`);
+      }
+    }
+
+    // Also check for automatic discounts (no code) from our bundles
+    for (const application of discountApplications) {
+      if (application.type === "automatic" || application.type === "script") {
+        // Check if this matches any of our bundle products
+        const bundleInfo = await identifyBundleFromOrder(order, shopDomain);
+        if (bundleInfo) {
+          await activityLogService.logActivity({
+            shopId: shopDomain,
+            type: "purchase",
+            widget: bundleInfo.widget,
+            title: `${bundleInfo.widgetName} purchased`,
+            meta: bundleInfo.offerName,
+            amount: parseFloat(order.total_price) || 0,
+            offerId: bundleInfo.offerId,
+            orderId: order.id?.toString(),
+          });
+        }
+      }
+    }
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("handleOrderPaid error:", error);
+    // Return 200 to acknowledge receipt even on error (prevent Shopify retries for bad data)
+    res.status(200).json({
+      status: "ERROR",
+      message: error.message,
+    });
+  }
+}
+
+/**
+ * Identify if a discount code belongs to our app
+ * @param {string} code - Discount code
+ * @param {string} shopDomain - Shop domain
+ * @returns {Object|null} Discount info or null
+ */
+async function identifyAppDiscount(code, shopDomain) {
+  try {
+    // Check bundles - they may have associated discount codes
+    // BusyBuddy uses Shopify's native bundle product, so we check by tags
+    const bundle = await Bundle.findOne({
+      shopId: shopDomain,
+      status: true,
+    }).lean();
+
+    if (bundle) {
+      // Map bundle type to widget
+      let widget = "bundle";
+      let widgetName = "Bundle Discount";
+
+      if (bundle.type === "Buy One Get One") {
+        widget = "bogo";
+        widgetName = "BOGO offer";
+      } else if (bundle.type === "Volume Discount") {
+        widget = "volume";
+        widgetName = "Volume discount";
+      } else if (bundle.type === "Mix and Match") {
+        widget = "mix-match";
+        widgetName = "Mix & Match bundle";
+      }
+
+      return {
+        widget,
+        widgetName,
+        offerName: bundle.title || bundle.internalName,
+        offerId: bundle._id,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error("identifyAppDiscount error:", error);
+    return null;
+  }
+}
+
+/**
+ * Identify bundle from order line items
+ * @param {Object} order - Shopify order object
+ * @param {string} shopDomain - Shop domain
+ * @returns {Object|null} Bundle info or null
+ */
+async function identifyBundleFromOrder(order, shopDomain) {
+  try {
+    const lineItems = order.line_items || [];
+    
+    for (const item of lineItems) {
+      // Check if product has busybuddy bundle tag
+      const tags = item.properties?.find(p => p.name === "_tags")?.value || "";
+      
+      if (tags.includes("busybuddybundles")) {
+        // Find the bundle by Shopify product ID
+        const bundle = await Bundle.findOne({
+          shopId: shopDomain,
+          shopifyBundleId: { $regex: item.product_id?.toString() },
+        }).lean();
+
+        if (bundle) {
+          let widget = "bundle";
+          let widgetName = "Bundle Discount";
+
+          if (bundle.type === "Buy One Get One") {
+            widget = "bogo";
+            widgetName = "BOGO offer";
+          } else if (bundle.type === "Volume Discount") {
+            widget = "volume";
+            widgetName = "Volume discount";
+          } else if (bundle.type === "Mix and Match") {
+            widget = "mix-match";
+            widgetName = "Mix & Match bundle";
+          }
+
+          return {
+            widget,
+            widgetName,
+            offerName: bundle.title || bundle.internalName,
+            offerId: bundle._id,
+          };
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("identifyBundleFromOrder error:", error);
+    return null;
+  }
+}
+
 export {
   handleAppInstall,
   handleAppUninstall,
@@ -333,4 +510,5 @@ export {
   retryFailedEmail,
   getMerchantsAnalytics,
   getMerchantReviews,
+  handleOrderPaid,
 };

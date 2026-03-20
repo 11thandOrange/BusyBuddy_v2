@@ -12,6 +12,7 @@ import {
 import shopify from "../../../shopify.js";
 import Shop from "../../models/shop.model.js";
 import Bundle from "../../models/bundle.model.js";
+import activityLogService from "../../services/activityLogService.js";
 
 /**
  * Fetches detailed information for a list of product IDs from Shopify.
@@ -496,6 +497,27 @@ async function createProductBundleV2(req, res) {
         }
       }
     }
+
+    // Log activity for bundle creation
+    let widgetType = "bundle";
+    let widgetName = "Bundle Discount";
+    if (type === "Buy One Get One") {
+      widgetType = "bogo";
+      widgetName = "BOGO offer";
+    } else if (type === "Volume Discount") {
+      widgetType = "volume";
+      widgetName = "Volume discount";
+    }
+
+    await activityLogService.logActivity({
+      shopId: session.shop,
+      type: "created",
+      widget: widgetType,
+      title: `New ${widgetName.toLowerCase()} created`,
+      meta: title || internalName,
+      offerId: CreateBundle._id,
+    });
+
     return res.status(201).json({
       status: true,
       message: "Bundle created successfully.",
@@ -761,6 +783,16 @@ mutation setPriceForMixAndMatchProduct {
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+    });
+
+    // Log activity for Mix and Match bundle creation
+    await activityLogService.logActivity({
+      shopId: session.shop,
+      type: "created",
+      widget: "mix-match",
+      title: "New Mix & Match bundle created",
+      meta: title || internalName,
+      offerId: CreateBundle._id,
     });
 
     return res.status(201).json({
@@ -1496,6 +1528,29 @@ async function deleteBundle(req, res) {
       return res.status(404).json({ status: false, error: "Bundle not found" });
     }
 
+    // Log activity for bundle deletion
+    let widgetType = "bundle";
+    let widgetName = "Bundle";
+    if (deletedBundle.type === "Buy One Get One") {
+      widgetType = "bogo";
+      widgetName = "BOGO offer";
+    } else if (deletedBundle.type === "Volume Discount") {
+      widgetType = "volume";
+      widgetName = "Volume discount";
+    } else if (deletedBundle.type === "Mix and Match") {
+      widgetType = "mix-match";
+      widgetName = "Mix & Match";
+    }
+
+    await activityLogService.logActivity({
+      shopId: session.shop,
+      type: "deleted",
+      widget: widgetType,
+      title: `${widgetName} deleted`,
+      meta: deletedBundle.title || deletedBundle.internalName,
+      offerId: deletedBundle._id,
+    });
+
     return res.json({ status: true, message: "Bundle deleted successfully" });
   } catch (error) {
     console.error("Error deleting bundle:", error);
@@ -1646,6 +1701,35 @@ async function updateBundle(req, res) {
 
     // 6. Get updated product data for response
     const updatedProductData = await getUpdatedProductData(client, session, existingBundle.shopifyBundleId);
+
+    // Log activity for bundle update
+    let widgetType = "bundle";
+    let widgetName = "Bundle";
+    const bundleType = type || existingBundle.type;
+    if (bundleType === "Buy One Get One") {
+      widgetType = "bogo";
+      widgetName = "BOGO offer";
+    } else if (bundleType === "Volume Discount") {
+      widgetType = "volume";
+      widgetName = "Volume discount";
+    } else if (bundleType === "Mix and Match") {
+      widgetType = "mix-match";
+      widgetName = "Mix & Match";
+    }
+
+    // Determine if it was a status change
+    const activityType = status !== undefined && status !== existingBundle.status
+      ? (status ? "activated" : "deactivated")
+      : "updated";
+
+    await activityLogService.logActivity({
+      shopId: session.shop,
+      type: activityType,
+      widget: widgetType,
+      title: `${widgetName} ${activityType}`,
+      meta: updatedBundle.title || updatedBundle.internalName,
+      offerId: updatedBundle._id,
+    });
 
     return res.status(200).json({
       status: true,

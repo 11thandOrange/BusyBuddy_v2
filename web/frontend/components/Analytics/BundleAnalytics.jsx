@@ -156,6 +156,28 @@ export default function Analytics() {
         </Alert>
       )}
 
+      {!loading && !analytics && !error && (
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Body className="text-center py-5">
+            <div
+              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
+              style={{
+                width: "80px",
+                height: "80px",
+                backgroundColor: "#f8f9fa",
+              }}
+            >
+              <i className="bi bi-box-seam text-muted" style={{ fontSize: "40px" }}></i>
+            </div>
+            <h5 className="text-muted mb-3">No Bundle Analytics Data</h5>
+            <p className="text-muted mb-0" style={{ maxWidth: "400px", margin: "0 auto" }}>
+              Create bundles and make sales to see your analytics data here.
+              Once customers start purchasing your bundles, performance metrics will appear.
+            </p>
+          </Card.Body>
+        </Card>
+      )}
+
       {!loading && analytics && (
         <>
           {/* Summary Cards */}
@@ -229,24 +251,32 @@ export default function Analytics() {
                     <span className="badge bg-light text-dark">Last 7 Days</span>
                   </div>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={getRevenueTrendData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip content={<CustomTooltip currency={analytics.currency || "USD"} />} />
-                        <Line
-                          type="monotone"
-                          dataKey="revenue"
-                          stroke={CHART_COLORS.revenue}
-                          strokeWidth={2}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {getRevenueTrendData().length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={getRevenueTrendData()}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip content={<CustomTooltip currency={analytics.currency || "USD"} />} />
+                          <Line
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke={CHART_COLORS.revenue}
+                            strokeWidth={2}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i className="bi bi-graph-up" style={{ fontSize: "48px" }}></i>
+                        <p className="mt-3 mb-0">No revenue trend data available</p>
+                        <small>Data will appear once bundle sales are recorded</small>
+                      </div>
+                    )}
                   </div>
                 </Card.Body>
               </Card>
@@ -258,33 +288,41 @@ export default function Analytics() {
                 <Card.Body>
                   <h5 className="card-title mb-3">Bundle Distribution</h5>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={getChartData()}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="revenue"
-                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                          labelLine={false}
-                        >
-                          {getChartData().map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={CHART_COLORS.pie[index % CHART_COLORS.pie.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value) => [
-                            formatCurrency(value, analytics.currency || "USD"),
-                            "Revenue",
-                          ]}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    {getChartData().length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={getChartData()}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="revenue"
+                            label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                            labelLine={false}
+                          >
+                            {getChartData().map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={CHART_COLORS.pie[index % CHART_COLORS.pie.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value) => [
+                              formatCurrency(value, analytics.currency || "USD"),
+                              "Revenue",
+                            ]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i className="bi bi-pie-chart" style={{ fontSize: "48px" }}></i>
+                        <p className="mt-3 mb-0">No bundle data available</p>
+                        <small>Create bundles to see distribution</small>
+                      </div>
+                    )}
                   </div>
                 </Card.Body>
               </Card>
@@ -298,30 +336,38 @@ export default function Analytics() {
                 <Card.Body>
                   <h5 className="card-title mb-3">Bundle Performance</h5>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={getChartData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" />
-                        <YAxis yAxisId="left" />
-                        <YAxis yAxisId="right" orientation="right" />
-                        <Tooltip content={<CustomTooltip currency={analytics.currency || "USD"} />} />
-                        <Legend />
-                        <Bar
-                          yAxisId="left"
-                          dataKey="revenue"
-                          name="Revenue"
-                          fill={CHART_COLORS.revenue}
-                          radius={[4, 4, 0, 0]}
-                        />
-                        <Bar
-                          yAxisId="right"
-                          dataKey="quantity"
-                          name="Quantity Sold"
-                          fill={CHART_COLORS.quantity}
-                          radius={[4, 4, 0, 0]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    {getChartData().length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={getChartData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" />
+                          <YAxis yAxisId="left" />
+                          <YAxis yAxisId="right" orientation="right" />
+                          <Tooltip content={<CustomTooltip currency={analytics.currency || "USD"} />} />
+                          <Legend />
+                          <Bar
+                            yAxisId="left"
+                            dataKey="revenue"
+                            name="Revenue"
+                            fill={CHART_COLORS.revenue}
+                            radius={[4, 4, 0, 0]}
+                          />
+                          <Bar
+                            yAxisId="right"
+                            dataKey="quantity"
+                            name="Quantity Sold"
+                            fill={CHART_COLORS.quantity}
+                            radius={[4, 4, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i className="bi bi-bar-chart" style={{ fontSize: "48px" }}></i>
+                        <p className="mt-3 mb-0">No performance data available</p>
+                        <small>Bundle sales will appear here</small>
+                      </div>
+                    )}
                   </div>
                 </Card.Body>
               </Card>
