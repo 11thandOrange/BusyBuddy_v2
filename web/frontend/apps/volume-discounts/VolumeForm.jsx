@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -14,15 +14,7 @@ export default function VolumeForm() {
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [autoTriggerActions, setAutoTriggerActions] = useState(true);
   const discountActionsRef = useRef();
-
-  useEffect(() => {
-    if (autoTriggerActions) {
-      setFromDiscountPage(true);
-      setAutoTriggerActions(false);
-    }
-  }, [autoTriggerActions]);
 
   const handleOpenDiscountModal = () => {
     setShowDiscountModal(true);
@@ -166,7 +158,6 @@ export default function VolumeForm() {
         refreshTrigger={refreshTrigger}
         onBundleCreated={handleBundleCreated}
         discountActionsRef={discountActionsRef}
-        autoTriggerActions={fromDiscountPage}
       />
     </div>
   );
