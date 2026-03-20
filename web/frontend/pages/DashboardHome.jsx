@@ -27,6 +27,15 @@ const widgetConfig = [
     manageRoute: "/announcement-bar",
   },
   {
+    id: "inactive-tab-message",
+    title: "Inactive Tab Message",
+    description: "Re-engage visitors when they switch browser tabs",
+    icon: Eye,
+    color: "indigo",
+    settingsRoute: "/inactive-tab-message?tab=settings",
+    manageRoute: "/inactive-tab-message",
+  },
+  {
     id: "bundle-discount",
     title: "Bundle Discounts",
     description: "Create product bundles with automatic discounts",
@@ -62,33 +71,25 @@ const widgetConfig = [
     editorRoute: "/mix-and-match/editor",
     manageRoute: "/mix-and-match",
   },
-  {
-    id: "upsell-cross-sell",
-    title: "Upsell & Cross-sell",
-    description: "Boost AOV with smart product recommendations",
-    icon: TrendingUp,
-    color: "indigo",
-    editorRoute: "/upsell-cross-sell/editor",
-    manageRoute: "/upsell-cross-sell",
-  },
 ];
 
 // Plan features mapping
 const planFeatures = {
-  Free: ["announcement-bar"],
+  Free: ["announcement-bar", "inactive-tab-message"],
   Starter: [
     "announcement-bar",
+    "inactive-tab-message",
     "bundle-discount",
     "buy-one-get-one",
     "volume-discounts",
   ],
   Advanced: [
     "announcement-bar",
+    "inactive-tab-message",
     "bundle-discount",
     "buy-one-get-one",
     "volume-discounts",
     "mix-and-match",
-    "upsell-cross-sell",
   ],
 };
 
@@ -158,9 +159,17 @@ export default function DashboardHome() {
       navigate("/plan" + location.search);
       return;
     }
-    // Open editor in new tab
-    const editorUrl = widget.editorRoute + location.search;
-    window.open(editorUrl, "_blank");
+    
+    if (widget.settingsRoute) {
+      // Inactive Tab Message: Navigate to settings tab (same window)
+      navigate(widget.settingsRoute + (location.search ? "&" + location.search.slice(1) : ""));
+    } else {
+      // All other apps: Open editor in new tab (fullscreen, no App Bridge)
+      const params = new URLSearchParams(location.search);
+      const shop = params.get("shop");
+      const queryString = shop ? `?shop=${shop}` : "";
+      window.open(widget.editorRoute + queryString, "_blank");
+    }
   };
 
   const handleManage = (widget) => {

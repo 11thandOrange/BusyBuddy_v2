@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BusyBuddy Dashboard Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #f2f2f7;
+        }
+        .dashboard-home {
+            height: 100vh;
+            overflow: hidden;
+        }
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        .widgets-column {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .widgets-container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            flex: 1;
+            overflow-y: auto;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1c1c1e;
+        }
+        .widgets-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .widget-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px 16px;
+            border-radius: 16px;
+            border: 3px solid #f2f2f7;
+            background: #fff;
+            position: relative;
+        }
+        .status-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(52, 199, 89, 0.15);
+            color: #2d8a4e;
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #34c759;
+        }
+        .widget-icon-large {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 32px;
+        }
+        .widget-icon-large.orange { background: rgba(255, 149, 0, 0.15); }
+        .widget-icon-large.indigo { background: rgba(88, 86, 214, 0.15); }
+        .widget-icon-large.blue { background: rgba(0, 122, 255, 0.15); }
+        .widget-icon-large.green { background: rgba(52, 199, 89, 0.15); }
+        .widget-icon-large.pink { background: rgba(255, 45, 85, 0.15); }
+        .widget-icon-large.purple { background: rgba(175, 82, 222, 0.15); }
+        .widget-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1c1c1e;
+            margin-bottom: 4px;
+        }
+        .widget-desc {
+            font-size: 11px;
+            color: #8e8e93;
+            line-height: 1.4;
+            margin-bottom: 14px;
+            max-width: 160px;
+        }
+        .widget-buttons {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+        .widget-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .widget-btn.create {
+            background: #1c1c1e;
+            color: #fff;
+        }
+        .widget-btn.manage {
+            background: #f2f2f7;
+            color: #1c1c1e;
+        }
+        /* Right Column */
+        .history-column {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .history-container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .history-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1c1c1e;
+        }
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f2f2f7;
+        }
+        .quick-stat {
+            background: #f2f2f7;
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .quick-stat .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1c1e;
+        }
+        .quick-stat .label {
+            font-size: 11px;
+            color: #8e8e93;
+            text-transform: uppercase;
+        }
+        /* History List with Fade */
+        .history-list-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+        .history-list {
+            height: 100%;
+            overflow-y: auto;
+            padding-bottom: 40px;
+        }
+        .history-list-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 100%);
+            pointer-events: none;
+        }
+        .history-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 0;
+            border-bottom: 1px solid #f2f2f7;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .history-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+        /* Metric type icon colors */
+        .history-icon.revenue { background: rgba(52, 199, 89, 0.15); color: #34c759; }
+        .history-icon.views { background: rgba(0, 122, 255, 0.15); color: #007aff; }
+        .history-icon.clicks { background: rgba(255, 149, 0, 0.15); color: #ff9500; }
+        .history-icon.conversions { background: rgba(175, 82, 222, 0.15); color: #af52de; }
+        .history-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .history-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1c1c1e;
+            margin-bottom: 2px;
+        }
+        .history-meta {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+        .history-time {
+            font-size: 12px;
+            color: #c7c7cc;
+            flex-shrink: 0;
+        }
+        .history-amount {
+            font-size: 14px;
+            font-weight: 600;
+            color: #34c759;
+            flex-shrink: 0;
+        }
+        .demo-note {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: #333;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-home">
+        <div class="dashboard-layout">
+            <!-- Left Column - Widgets -->
+            <div class="widgets-column">
+                <div class="widgets-container">
+                    <div class="section-header">
+                        <h2 class="section-title">Your Widgets</h2>
+                    </div>
+                    <div class="widgets-grid">
+                        <!-- Announcement Bar -->
+                        <div class="widget-tile" onclick="handleWidget('announcement-bar')">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large orange">📢</div>
+                            <div class="widget-name">Announcement Bar</div>
+                            <div class="widget-desc">Display alerts and promotions at the top of your store</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="event.stopPropagation(); handleCreate('announcement-bar')">+ Create</button>
+                                <button class="widget-btn manage" onclick="event.stopPropagation(); handleManage('announcement-bar')">⚙ Manage</button>
+                            </div>
+                        </div>
+                        <!-- Inactive Tab Message -->
+                        <div class="widget-tile" onclick="handleWidget('inactive-tab-message')">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large indigo">👁</div>
+                            <div class="widget-name">Inactive Tab Message</div>
+                            <div class="widget-desc">Re-engage visitors when they switch browser tabs</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="event.stopPropagation(); handleCreate('inactive-tab-message')">+ Create</button>
+                                <button class="widget-btn manage" onclick="event.stopPropagation(); handleManage('inactive-tab-message')">⚙ Manage</button>
+                            </div>
+                        </div>
+                        <!-- Bundle Discounts -->
+                        <div class="widget-tile">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large blue">📦</div>
+                            <div class="widget-name">Bundle Discounts</div>
+                            <div class="widget-desc">Create product bundles with automatic discounts</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="handleCreate('bundle-discount')">+ Create</button>
+                                <button class="widget-btn manage" onclick="handleManage('bundle-discount')">⚙ Manage</button>
+                            </div>
+                        </div>
+                        <!-- Buy One Get One -->
+                        <div class="widget-tile">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large green">🎁</div>
+                            <div class="widget-name">Buy One Get One</div>
+                            <div class="widget-desc">BOGO deals, free gifts, and special offers</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="handleCreate('buy-one-get-one')">+ Create</button>
+                                <button class="widget-btn manage" onclick="handleManage('buy-one-get-one')">⚙ Manage</button>
+                            </div>
+                        </div>
+                        <!-- Volume Discounts -->
+                        <div class="widget-tile">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large pink">📊</div>
+                            <div class="widget-name">Volume Discounts</div>
+                            <div class="widget-desc">Quantity-based pricing tiers and bulk savings</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="handleCreate('volume-discounts')">+ Create</button>
+                                <button class="widget-btn manage" onclick="handleManage('volume-discounts')">⚙ Manage</button>
+                            </div>
+                        </div>
+                        <!-- Mix & Match -->
+                        <div class="widget-tile">
+                            <div class="status-indicator"><span class="status-dot"></span>Active</div>
+                            <div class="widget-icon-large purple">🔀</div>
+                            <div class="widget-name">Mix & Match</div>
+                            <div class="widget-desc">Let customers build their own custom bundles</div>
+                            <div class="widget-buttons">
+                                <button class="widget-btn create" onclick="handleCreate('mix-and-match')">+ Create</button>
+                                <button class="widget-btn manage" onclick="handleManage('mix-and-match')">⚙ Manage</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Recent Activity -->
+            <div class="history-column">
+                <div class="history-container">
+                    <div class="history-header">
+                        <h2 class="history-title">Recent Activity</h2>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="quick-stats">
+                        <div class="quick-stat">
+                            <div class="value">3</div>
+                            <div class="label">Active Bundles</div>
+                        </div>
+                        <div class="quick-stat">
+                            <div class="value">2</div>
+                            <div class="label">Active Bars</div>
+                        </div>
+                    </div>
+
+                    <!-- Activity List with Fade -->
+                    <div class="history-list-wrapper">
+                        <div class="history-list">
+                            <div class="history-item">
+                                <div class="history-icon revenue">💰</div>
+                                <div class="history-content">
+                                    <div class="history-text">Summer Bundle purchased</div>
+                                    <div class="history-meta">Bundle Discounts</div>
+                                </div>
+                                <div class="history-amount">$49.99</div>
+                                <div class="history-time">2h ago</div>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-icon views">👁</div>
+                                <div class="history-content">
+                                    <div class="history-text">Flash Sale bar viewed</div>
+                                    <div class="history-meta">Announcement Bar</div>
+                                </div>
+                                <div class="history-time">3h ago</div>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-icon clicks">👆</div>
+                                <div class="history-content">
+                                    <div class="history-text">BOGO offer clicked</div>
+                                    <div class="history-meta">Buy One Get One</div>
+                                </div>
+                                <div class="history-time">5h ago</div>
+                            </div>
+                            <div class="history-item">
+                                <div class="history-icon conversions">🎯</div>
+                                <div class="history-content">
+                                    <div class="history-text">Volume discount converted</div>
+                                    <div class="history-meta">Volume Discounts</div>
+                                </div>
+                                <div class="history-amount">$124.50</div>
+                                <div class="history-time">1d ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="demo-note">
+        Inactive Tab: Create→Settings | Other Apps: Create→Editor (new tab) | Manage→Overview
+    </div>
+
+    <script>
+        const widgetRoutes = {
+            'announcement-bar': { editor: '/announcement-bar/editor', manage: '/announcement-bar' },
+            'inactive-tab-message': { settings: '/inactive-tab-message?tab=settings', manage: '/inactive-tab-message' },
+            'bundle-discount': { editor: '/bundle-discount/editor', manage: '/bundle-discount' },
+            'buy-one-get-one': { editor: '/buy-one-get-one/editor', manage: '/buy-one-get-one' },
+            'volume-discounts': { editor: '/volume-discounts/editor', manage: '/volume-discounts' },
+            'mix-and-match': { editor: '/mix-and-match/editor', manage: '/mix-and-match' }
+        };
+
+        function handleCreate(widgetId) {
+            const routes = widgetRoutes[widgetId];
+            if (routes.settings) {
+                alert(`Navigating to: ${routes.settings}\n\n→ Inactive Tab Message SETTINGS tab\n→ Same window`);
+            } else {
+                alert(`Opening: ${routes.editor} (NEW TAB)\n\n→ Opens EDITOR\n→ Fullscreen, no App Bridge`);
+            }
+        }
+
+        function handleManage(widgetId) {
+            const routes = widgetRoutes[widgetId];
+            alert(`Navigating to: ${routes.manage}\n\n→ Opens app OVERVIEW/Homepage\n→ Same window`);
+        }
+    </script>
+</body>
+</html>
