@@ -440,7 +440,8 @@
             if (routes.settings) {
                 alert(`Navigating to: ${routes.settings}\n\n→ Inactive Tab Message SETTINGS tab\n→ Same window`);
             } else {
-                alert(`Opening: ${routes.editor} (NEW TAB)\n\n→ Opens EDITOR\n→ Fullscreen, no App Bridge`);
+                // Opens /editor.html?shop=xxx#/route - standalone fullscreen editor
+                alert(`Opening: /editor.html#${routes.editor} (NEW TAB)\n\n→ Fullscreen EDITOR\n→ No Shopify Admin shell\n→ No App Bridge`);
             }
         }
 

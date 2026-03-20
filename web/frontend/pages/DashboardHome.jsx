@@ -165,10 +165,11 @@ export default function DashboardHome() {
       navigate(widget.settingsRoute + (location.search ? "&" + location.search.slice(1) : ""));
     } else {
       // All other apps: Open editor in new tab (fullscreen, no App Bridge)
+      // Use /editor.html to load standalone editor without Shopify admin shell
       const params = new URLSearchParams(location.search);
       const shop = params.get("shop");
       const queryString = shop ? `?shop=${shop}` : "";
-      window.open(widget.editorRoute + queryString, "_blank");
+      window.open(`/editor.html${queryString}#${widget.editorRoute}`, "_blank");
     }
   };
 

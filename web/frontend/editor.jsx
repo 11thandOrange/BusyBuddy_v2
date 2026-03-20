@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { Provider } from "react-redux";
 import { AppProvider } from "@shopify/polaris";
 import "@shopify/polaris/build/esm/styles.css";
@@ -18,12 +18,14 @@ import { VolumeDiscountEditor } from "./apps/volume-discounts/VolumeDiscountEdit
 import { MixAndMatchEditor } from "./apps/mix-and-match-discounts/MixAndMatchEditor";
 import AnnouncementBarEditor from "./apps/announcement-bar/AnnouncementBarEditor";
 
+// Standalone editor app - uses HashRouter for clean URLs without App Bridge
+// URL format: /editor.html?shop=xxx#/announcement-bar/editor
 function EditorApp() {
   const translations = getPolarisTranslations();
   
   return (
     <AppProvider i18n={translations}>
-      <BrowserRouter>
+      <HashRouter>
         <QueryProvider>
           <Routes>
             <Route path="/announcement-bar/editor" element={<AnnouncementBarEditor />} />
@@ -38,7 +40,7 @@ function EditorApp() {
             <Route path="/mix-and-match/editor/:id" element={<MixAndMatchEditor />} />
           </Routes>
         </QueryProvider>
-      </BrowserRouter>
+      </HashRouter>
     </AppProvider>
   );
 }
