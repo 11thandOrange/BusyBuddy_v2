@@ -242,6 +242,28 @@ export default function AnnouncementBarAnalytics() {
         </Alert>
       )}
 
+      {!loading && !analytics && !error && (
+        <Card className="shadow-sm border-0 mb-4">
+          <Card.Body className="text-center py-5">
+            <div
+              className="d-inline-flex align-items-center justify-content-center rounded-circle mb-4"
+              style={{
+                width: "80px",
+                height: "80px",
+                backgroundColor: "#f8f9fa",
+              }}
+            >
+              <i className="bi bi-megaphone text-muted" style={{ fontSize: "40px" }}></i>
+            </div>
+            <h5 className="text-muted mb-3">No Announcement Bar Analytics Data</h5>
+            <p className="text-muted mb-0" style={{ maxWidth: "400px", margin: "0 auto" }}>
+              Create announcement bars to see your analytics data here.
+              Once visitors start viewing your announcement bars, performance metrics will appear.
+            </p>
+          </Card.Body>
+        </Card>
+      )}
+
       {!loading && analytics && (
         <>
           {/* Summary Cards */}
@@ -311,31 +333,39 @@ export default function AnnouncementBarAnalytics() {
                     <span className="badge bg-light text-dark">{getTimeRangeLabel()}</span>
                   </div>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={getTrendData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                        <YAxis />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="views"
-                          stroke={CHART_COLORS.views}
-                          strokeWidth={2}
-                          name="Views"
-                          activeDot={{ r: 6 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="clicks"
-                          stroke={CHART_COLORS.clicks}
-                          strokeWidth={2}
-                          name="Clicks"
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {getTrendData().length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={getTrendData()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                          <YAxis />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="views"
+                            stroke={CHART_COLORS.views}
+                            strokeWidth={2}
+                            name="Views"
+                            activeDot={{ r: 6 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="clicks"
+                            stroke={CHART_COLORS.clicks}
+                            strokeWidth={2}
+                            name="Clicks"
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i className="bi bi-graph-up" style={{ fontSize: "48px" }}></i>
+                        <p className="mt-3 mb-0">No trend data available</p>
+                        <small>Data will appear once visitors view your announcement bars</small>
+                      </div>
+                    )}
                   </div>
                 </Card.Body>
               </Card>
@@ -347,22 +377,30 @@ export default function AnnouncementBarAnalytics() {
                 <Card.Body>
                   <h5 className="card-title mb-3">Views vs Clicks</h5>
                   <div style={{ height: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={getPerformanceData()}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
-                          {getPerformanceData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+                    {getPerformanceData().some(d => d.value > 0) ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={getPerformanceData()}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
+                            {getPerformanceData().map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i className="bi bi-bar-chart" style={{ fontSize: "48px" }}></i>
+                        <p className="mt-3 mb-0">No performance data available</p>
+                        <small>Metrics will appear here</small>
+                      </div>
+                    )}
                   </div>
                 </Card.Body>
               </Card>
