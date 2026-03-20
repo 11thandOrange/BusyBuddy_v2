@@ -1,4 +1,5 @@
 import activityLogService from "../../services/activityLogService.js";
+import Shop from "../../models/shop.model.js";
 
 /**
  * Get real-time activity feed for the dashboard history card
@@ -16,7 +17,24 @@ async function getRecentActivity(req, res) {
       });
     }
 
-    const shopId = session.shop;
+    // Look up the Shop to get the MongoDB ObjectId
+    const shopData = await Shop.findOne({ shopDomain: session.shop });
+    if (!shopData) {
+      // Return empty data if shop not found (new install)
+      return res.json({
+        status: "SUCCESS",
+        data: {
+          activities: [],
+          stats: {
+            activeBundles: 0,
+            activeAnnouncements: 0,
+            eventsToday: 0,
+          },
+        },
+      });
+    }
+
+    const shopId = shopData._id;
 
     // Fetch real-time activities and stats in parallel
     const [activities, stats] = await Promise.all([
@@ -70,7 +88,21 @@ async function getActivityStats(req, res) {
       });
     }
 
-    const stats = await activityLogService.getQuickStats(session.shop);
+    // Look up the Shop to get the MongoDB ObjectId
+    const shopData = await Shop.findOne({ shopDomain: session.shop });
+    if (!shopData) {
+      // Return empty stats if shop not found
+      return res.json({
+        status: "SUCCESS",
+        data: {
+          activeBundles: 0,
+          activeAnnouncements: 0,
+          eventsToday: 0,
+        },
+      });
+    }
+
+    const stats = await activityLogService.getQuickStats(shopData._id);
 
     res.json({
       status: "SUCCESS",
