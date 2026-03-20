@@ -106,7 +106,7 @@ const iconMap = {
 export default function DashboardHome() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentPlan, setCurrentPlan] = useState(null); // null = not loaded yet
+  const [currentPlan, setCurrentPlan] = useState("Free");
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState({ activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
@@ -124,18 +124,10 @@ export default function DashboardHome() {
         const data = await response.json();
         if (data.status === "SUCCESS") {
           setCurrentPlan(data.data.planName);
-        } else {
-          // API returned error, default to allowing access
-          setCurrentPlan("Advanced");
         }
-      } else {
-        // HTTP error, default to allowing access
-        setCurrentPlan("Advanced");
       }
     } catch (err) {
       console.error("Error fetching subscription:", err);
-      // Network error, default to allowing access
-      setCurrentPlan("Advanced");
     } finally {
       setLoading(false);
     }
@@ -159,8 +151,6 @@ export default function DashboardHome() {
   };
 
   const isWidgetAccessible = (widgetId) => {
-    // If plan not loaded yet, allow access (don't block)
-    if (!currentPlan) return true;
     return planFeatures[currentPlan]?.includes(widgetId) || false;
   };
 
