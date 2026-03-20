@@ -176,13 +176,16 @@ export default function DashboardHome() {
   };
 
   const handleManage = (widget) => {
+    console.log("[handleManage] widget:", widget.id, "loading:", loading, "currentPlan:", currentPlan, "accessible:", isWidgetAccessible(widget.id));
     // Don't check plan access if subscription is still loading
     // This prevents redirecting to /plan due to default "Free" state
     if (!loading && !isWidgetAccessible(widget.id)) {
+      console.log("[handleManage] Redirecting to /plan");
       navigate("/plan" + location.search);
       return;
     }
     // Navigate to app homepage
+    console.log("[handleManage] Navigating to:", widget.manageRoute + location.search);
     navigate(widget.manageRoute + location.search);
   };
 
