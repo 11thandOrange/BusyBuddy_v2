@@ -181,6 +181,17 @@ export default function DashboardHome() {
   const fetchUserSubscription = async () => {
     console.log("[DEBUG fetchUserSubscription] Starting...");
     
+    // First, test if ANY API call works with a simple ping
+    console.log("[DEBUG] Testing /api/ping...");
+    try {
+      const pingXhr = new XMLHttpRequest();
+      pingXhr.open("GET", "/api/ping", false); // synchronous for testing
+      pingXhr.send();
+      console.log("[DEBUG] Ping response:", pingXhr.status, pingXhr.responseText);
+    } catch (pingErr) {
+      console.error("[DEBUG] Ping failed:", pingErr);
+    }
+    
     try {
       // Use XMLHttpRequest to bypass App Bridge fetch interception
       const apiUrl = `/api/subscription/getUserSubscription`;

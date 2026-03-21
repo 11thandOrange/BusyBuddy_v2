@@ -24,9 +24,16 @@ const STATIC_PATH =
   process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
 
 const app = express();
-// a route to test the server
+// a route to test the server (no auth required)
 app.get("/api/test", (req, res) => {
-  res.status(200).send("Hello world");
+  console.log("[API TEST] Test endpoint hit!");
+  res.status(200).json({ success: true, message: "API is working!" });
+});
+
+// Simple ping endpoint for debugging
+app.get("/api/ping", (req, res) => {
+  console.log("[API PING] Ping endpoint hit!");
+  res.status(200).json({ pong: true, timestamp: Date.now() });
 });
 
 let db = process.env.DB_CONNECTION || "";
@@ -153,6 +160,13 @@ app.use(
 // });
 
 app.use(shopify.cspHeaders());
+
+// Debug: Log ALL /api requests before they hit the router
+app.use("/api", (req, res, next) => {
+  console.log(`[API REQUEST] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 app.use("/api", router);
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
