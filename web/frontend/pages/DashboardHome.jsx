@@ -11,6 +11,8 @@ import {
   DollarSign,
   Eye,
   MousePointer,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
 import "./DashboardHome.css";
 
@@ -110,11 +112,52 @@ export default function DashboardHome() {
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState({ activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
+  const [extensionEnabled, setExtensionEnabled] = useState(null); // null = loading
+  const [showExtensionBanner, setShowExtensionBanner] = useState(false);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const [extensionBannerFlashing, setExtensionBannerFlashing] = useState(false);
+  const [upgradeBannerFlashing, setUpgradeBannerFlashing] = useState(false);
 
   useEffect(() => {
     fetchUserSubscription();
     fetchActivityData();
+    checkExtensionStatus();
   }, []);
+
+  // Handle extension banner visibility with flash animation
+  useEffect(() => {
+    if (extensionEnabled === null) return; // Still loading
+    
+    if (extensionEnabled === false) {
+      setShowExtensionBanner(true);
+    } else if (showExtensionBanner) {
+      // Flash before hiding
+      setExtensionBannerFlashing(true);
+      const timer = setTimeout(() => {
+        setShowExtensionBanner(false);
+        setExtensionBannerFlashing(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [extensionEnabled]);
+
+  // Handle upgrade banner visibility with flash animation
+  useEffect(() => {
+    if (loading) return; // Still loading
+    
+    const isHighestPlan = currentPlan === "Advanced";
+    if (!isHighestPlan) {
+      setShowUpgradeBanner(true);
+    } else if (showUpgradeBanner) {
+      // Flash before hiding
+      setUpgradeBannerFlashing(true);
+      const timer = setTimeout(() => {
+        setShowUpgradeBanner(false);
+        setUpgradeBannerFlashing(false);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlan, loading]);
 
   const fetchUserSubscription = async () => {
     try {
@@ -147,6 +190,33 @@ export default function DashboardHome() {
     } finally {
       setActivityLoading(false);
     }
+  };
+
+  const checkExtensionStatus = async () => {
+    try {
+      const response = await fetch("/api/subscription/extension-status");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "SUCCESS") {
+          setExtensionEnabled(data.data.enabled !== false);
+        } else {
+          setExtensionEnabled(true); // Default to enabled if check fails
+        }
+      } else {
+        setExtensionEnabled(true);
+      }
+    } catch (err) {
+      setExtensionEnabled(true); // Default to enabled if check fails
+    }
+  };
+
+  const getThemeExtensionUrl = () => {
+    const params = new URLSearchParams(location.search);
+    const shop = params.get("shop");
+    if (shop) {
+      return `https://${shop}/admin/themes/current/editor?context=apps`;
+    }
+    return "#";
   };
 
   const isWidgetAccessible = (widgetId) => {
@@ -279,9 +349,33 @@ export default function DashboardHome() {
                 )}
               </div>
             </div>
-
-
           </div>
+
+          {/* Notification Banners Card */}
+          {(showExtensionBanner || showUpgradeBanner) && (
+            <div className="notification-card">
+              {showExtensionBanner && (
+                <a
+                  href={getThemeExtensionUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
+                >
+                  <ExternalLink size={16} className="notification-icon" />
+                  <span>Enable BusyBuddy In Shopify Theme Extensions <strong>Here</strong></span>
+                </a>
+              )}
+              {showUpgradeBanner && (
+                <div
+                  className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
+                  onClick={() => navigate("/plan" + location.search)}
+                >
+                  <Zap size={16} className="notification-icon" />
+                  <span>Upgrade your plan for more features!</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
