@@ -108,7 +108,13 @@ export default function DiscountList({
     }, 10000);
     
     try {
-      const response = await fetch("/api/bundles", {
+      // Include shop param for proper session authentication
+      const params = new URLSearchParams(location.search);
+      const shop = params.get("shop");
+      const apiUrl = shop ? `/api/bundles?shop=${shop}` : "/api/bundles";
+      console.log("[DEBUG fetchDiscounts] URL:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
