@@ -189,7 +189,15 @@ export default function DashboardHome() {
     }, 5000);
     
     try {
-      const response = await fetch("/api/subscription/getUserSubscription", {
+      // Include shop param for proper session authentication
+      const params = new URLSearchParams(location.search);
+      const shop = params.get("shop");
+      const apiUrl = shop 
+        ? `/api/subscription/getUserSubscription?shop=${shop}`
+        : "/api/subscription/getUserSubscription";
+      console.log("[DEBUG fetchUserSubscription] URL:", apiUrl);
+      
+      const response = await fetch(apiUrl, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
