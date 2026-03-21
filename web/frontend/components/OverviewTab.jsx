@@ -64,26 +64,30 @@ export default function OverviewTab({ items = [] }) {
       {/* Right Column - Simple List (3 rows, no container/header/background) */}
       <Col lg={5} md={12}>
         <div className="d-flex flex-column gap-3">
-          {displayItems.map((item, index) => (
+          {displayItems.map((item, index) => {
+            const isSelected = selectedItem?.id === item.id;
+            return (
             <div
               key={item.id || index}
               onClick={() => setSelectedItem(item)}
               className="d-flex align-items-center justify-content-between p-3"
               style={{
-                backgroundColor: selectedItem?.id === item.id ? "rgba(81, 105, 221, 0.08)" : "transparent",
+                backgroundColor: isSelected ? "rgba(81, 105, 221, 0.08)" : "rgba(0,0,0,0.02)",
                 borderRadius: "12px",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
-                border: selectedItem?.id === item.id ? "2px solid #5169DD" : "2px solid #f2f2f7",
+                border: isSelected ? "2px solid #5169DD" : "2px solid transparent",
               }}
               onMouseEnter={(e) => {
-                if (selectedItem?.id !== item.id) {
-                  e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.02)";
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = "rgba(81, 105, 221, 0.08)";
+                  e.currentTarget.style.border = "2px solid #5169DD";
                 }
               }}
               onMouseLeave={(e) => {
-                if (selectedItem?.id !== item.id) {
-                  e.currentTarget.style.backgroundColor = "transparent";
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = "rgba(0,0,0,0.02)";
+                  e.currentTarget.style.border = "2px solid transparent";
                 }
               }}
             >
@@ -94,8 +98,8 @@ export default function OverviewTab({ items = [] }) {
                     width: "40px",
                     height: "40px",
                     borderRadius: "10px",
-                    backgroundColor: selectedItem?.id === item.id ? "#5169DD" : "#e5e5ea",
-                    color: selectedItem?.id === item.id ? "#fff" : "#8e8e93",
+                    backgroundColor: isSelected ? "#5169DD" : "#e5e5ea",
+                    color: isSelected ? "#fff" : "#8e8e93",
                     fontWeight: 600,
                     fontSize: "14px",
                   }}
@@ -107,7 +111,7 @@ export default function OverviewTab({ items = [] }) {
                     style={{ 
                       fontWeight: 600, 
                       fontSize: "14px", 
-                      color: selectedItem?.id === item.id ? "#5169DD" : "#1c1c1e",
+                      color: isSelected ? "#5169DD" : "#1c1c1e",
                       marginBottom: "2px"
                     }}
                   >
@@ -126,11 +130,12 @@ export default function OverviewTab({ items = [] }) {
               <ChevronRight 
                 size={16} 
                 style={{ 
-                  color: selectedItem?.id === item.id ? "#5169DD" : "#c7c7cc" 
+                  color: isSelected ? "#5169DD" : "#c7c7cc" 
                 }} 
               />
             </div>
-          ))}
+          );
+          })}
         </div>
       </Col>
     </Row>
