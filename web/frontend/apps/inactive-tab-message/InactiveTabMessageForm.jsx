@@ -4,23 +4,13 @@ import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
-import DiscountModal from "../../components/Modals/GlobalDisountModal";
 import ToggleSwitch from "../../components/ToggelSwitch";
 
 export default function InactiveTabMessageForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
-  
-  const handleOpenDiscountModal = () => {
-    setShowDiscountModal(true);
-  };
-
-  const handleCloseDiscountModal = () => {
-    setShowDiscountModal(false);
-  };
   
   const handleDiscard = () => {
     setFromDiscountPage(false);
@@ -116,31 +106,10 @@ export default function InactiveTabMessageForm() {
             </Col>
           ) : (
             <Col xs="auto" className="d-flex align-items-center gap-2">
-              <Button
-                text="Create Another Discount"
-                onClick={handleOpenDiscountModal}
-                style={{
-                  borderRadius: "15px",
-
-                  backgroundColor: "#000",
-                  color: "#FFFFFF",
-                  padding: "15px 25px",
-                  fontFamily: "Inter",
-                  fontStyle: "normal",
-                  fontWeight: "500",
-                  fontSize: "15px",
-                  lineHeight: "100%",
-                }}
-              />
               <ToggleSwitch appId="inactive_tab" />
             </Col>
           )}
         </Row>
-
-        <DiscountModal
-          show={showDiscountModal}
-          onHide={handleCloseDiscountModal}
-        />
       </Container>
       <DiscountList
         key={resetDiscountList ? "reset" : "normal"}

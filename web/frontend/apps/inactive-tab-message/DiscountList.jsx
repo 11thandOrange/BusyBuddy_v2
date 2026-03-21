@@ -21,7 +21,7 @@ import videoimg from "../../assets/videoimg.png";
 import EmojiPicker from "emoji-picker-react";
 
 export default function DiscountList({ onMakeBundleClick }) {
-  const tabs = ["Overview", "Setting"];
+  const tabs = ["Overview", "Settings"];
   const [selectedTab, setSelectedTab] = useState(tabs[1]);
   const [bundles, setBundles] = useState({ bundle1: false, bundle2: false });
   const [showBundleAction, setShowBundleAction] = useState(false);
@@ -545,7 +545,7 @@ export default function DiscountList({ onMakeBundleClick }) {
           </>
         )}
 
-        {selectedTab === "Setting" && (
+        {selectedTab === "Settings" && (
           <div className="d-flex flex-column gap-3 p-4">
             {loading && (
               <div className="text-center">
