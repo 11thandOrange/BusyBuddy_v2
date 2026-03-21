@@ -189,12 +189,8 @@ export default function DashboardHome() {
     }, 5000);
     
     try {
-      // Include shop param for proper session authentication
-      const params = new URLSearchParams(location.search);
-      const shop = params.get("shop");
-      const apiUrl = shop 
-        ? `/api/subscription/getUserSubscription?shop=${shop}`
-        : "/api/subscription/getUserSubscription";
+      // Pass full query string for signature verification
+      const apiUrl = `/api/subscription/getUserSubscription${location.search}`;
       console.log("[DEBUG fetchUserSubscription] URL:", apiUrl);
       
       const response = await fetch(apiUrl, {
@@ -209,6 +205,8 @@ export default function DashboardHome() {
           setCurrentPlan(data.data.planName);
           console.log("[DEBUG fetchUserSubscription] Set plan to:", data.data.planName);
         }
+      } else {
+        console.error("[DEBUG fetchUserSubscription] HTTP Error:", response.status, await response.text());
       }
     } catch (err) {
       clearTimeout(timeoutId);
