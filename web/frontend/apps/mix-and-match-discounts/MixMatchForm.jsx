@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Container, Row, Col } from "react-bootstrap";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -13,6 +13,11 @@ export default function MixMatchForm() {
   const [resetDiscountList, setResetDiscountList] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const discountActionsRef = useRef();
+
+  useEffect(() => {
+    console.log("[DEBUG MixMatchForm] Component mounted");
+    return () => console.log("[DEBUG MixMatchForm] Component unmounted");
+  }, []);
 
   const handleCreateNew = () => {
     // Open editor in new fullscreen tab without App Bridge
