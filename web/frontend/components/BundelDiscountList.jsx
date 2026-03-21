@@ -108,8 +108,8 @@ export default function DiscountList({
     }, 10000);
     
     try {
-      // Pass full query string for signature verification
-      const apiUrl = `/api/bundles${location.search}`;
+      // Use simple URL - let Shopify session middleware handle auth
+      const apiUrl = `/api/bundles`;
       console.log("[DEBUG fetchDiscounts] URL:", apiUrl);
       
       const response = await fetch(apiUrl, {
@@ -117,7 +117,8 @@ export default function DiscountList({
         headers: {
           "Content-Type": "application/json",
         },
-        signal: controller.signal
+        signal: controller.signal,
+        credentials: 'include'  // Include cookies for session
       });
       clearTimeout(timeoutId);
       console.log("[DEBUG fetchDiscounts] Response status:", response.status);
