@@ -119,10 +119,29 @@ export default function DashboardHome() {
   const [upgradeBannerFlashing, setUpgradeBannerFlashing] = useState(false);
 
   useEffect(() => {
+    console.log("[DEBUG useEffect] Component mounted, fetching data...");
     fetchUserSubscription();
     fetchActivityData();
     checkExtensionStatus();
+    
+    // Fallback: Force loading to false after 8 seconds if still loading
+    const fallbackTimeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          console.log("[DEBUG] Fallback timeout - forcing loading to false");
+          return false;
+        }
+        return prev;
+      });
+    }, 8000);
+    
+    return () => clearTimeout(fallbackTimeout);
   }, []);
+
+  // Debug: Log state changes
+  useEffect(() => {
+    console.log("[DEBUG State] loading:", loading, "currentPlan:", currentPlan);
+  }, [loading, currentPlan]);
 
   // Handle extension banner visibility with flash animation
   useEffect(() => {
@@ -160,17 +179,38 @@ export default function DashboardHome() {
   }, [currentPlan, loading]);
 
   const fetchUserSubscription = async () => {
+    console.log("[DEBUG fetchUserSubscription] Starting...");
+    
+    // Create abort controller with 5 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log("[DEBUG fetchUserSubscription] Timeout - aborting fetch");
+      controller.abort();
+    }, 5000);
+    
     try {
-      const response = await fetch("/api/subscription/getUserSubscription");
+      const response = await fetch("/api/subscription/getUserSubscription", {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      console.log("[DEBUG fetchUserSubscription] Response status:", response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log("[DEBUG fetchUserSubscription] Data:", data);
         if (data.status === "SUCCESS") {
           setCurrentPlan(data.data.planName);
+          console.log("[DEBUG fetchUserSubscription] Set plan to:", data.data.planName);
         }
       }
     } catch (err) {
-      console.error("Error fetching subscription:", err);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error("[DEBUG fetchUserSubscription] Request timed out");
+      } else {
+        console.error("[DEBUG fetchUserSubscription] Error:", err);
+      }
     } finally {
+      console.log("[DEBUG fetchUserSubscription] Setting loading to false");
       setLoading(false);
     }
   };
@@ -245,14 +285,24 @@ export default function DashboardHome() {
   };
 
   const handleManage = (widget) => {
+    console.log("[DEBUG handleManage] Called with widget:", widget.id);
+    console.log("[DEBUG handleManage] loading:", loading);
+    console.log("[DEBUG handleManage] currentPlan:", currentPlan);
+    console.log("[DEBUG handleManage] isWidgetAccessible:", isWidgetAccessible(widget.id));
+    console.log("[DEBUG handleManage] location.search:", location.search);
+    console.log("[DEBUG handleManage] Full route:", widget.manageRoute + location.search);
+    
     // Don't check plan access if subscription is still loading
     // This prevents redirecting to /plan due to default "Free" state
     if (!loading && !isWidgetAccessible(widget.id)) {
+      console.log("[DEBUG handleManage] Redirecting to /plan");
       navigate("/plan" + location.search);
       return;
     }
     // Navigate to app homepage
+    console.log("[DEBUG handleManage] Navigating to:", widget.manageRoute + location.search);
     navigate(widget.manageRoute + location.search);
+    console.log("[DEBUG handleManage] navigate() called");
   };
 
   return (
