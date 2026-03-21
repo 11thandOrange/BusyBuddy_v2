@@ -181,41 +181,38 @@ export default function DashboardHome() {
   const fetchUserSubscription = async () => {
     console.log("[DEBUG fetchUserSubscription] Starting...");
     
-    // Create abort controller with 5 second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log("[DEBUG fetchUserSubscription] Timeout - aborting fetch");
-      controller.abort();
-    }, 5000);
-    
     try {
-      // Use simple URL - let Shopify session middleware handle auth
+      // Use XMLHttpRequest to bypass App Bridge fetch interception
       const apiUrl = `/api/subscription/getUserSubscription`;
       console.log("[DEBUG fetchUserSubscription] URL:", apiUrl);
       
-      const response = await fetch(apiUrl, {
-        signal: controller.signal,
-        credentials: 'include'  // Include cookies for session
+      const response = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", apiUrl, true);
+        xhr.withCredentials = true;
+        xhr.timeout = 5000;
+        
+        xhr.onload = () => {
+          console.log("[DEBUG fetchUserSubscription] XHR status:", xhr.status);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error(`HTTP ${xhr.status}: ${xhr.responseText}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        
+        xhr.send();
       });
-      clearTimeout(timeoutId);
-      console.log("[DEBUG fetchUserSubscription] Response status:", response.status);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("[DEBUG fetchUserSubscription] Data:", data);
-        if (data.status === "SUCCESS") {
-          setCurrentPlan(data.data.planName);
-          console.log("[DEBUG fetchUserSubscription] Set plan to:", data.data.planName);
-        }
-      } else {
-        console.error("[DEBUG fetchUserSubscription] HTTP Error:", response.status, await response.text());
+      
+      console.log("[DEBUG fetchUserSubscription] Data:", response);
+      if (response.status === "SUCCESS") {
+        setCurrentPlan(response.data.planName);
+        console.log("[DEBUG fetchUserSubscription] Set plan to:", response.data.planName);
       }
     } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        console.error("[DEBUG fetchUserSubscription] Request timed out");
-      } else {
-        console.error("[DEBUG fetchUserSubscription] Error:", err);
-      }
+      console.error("[DEBUG fetchUserSubscription] Error:", err.message);
     } finally {
       console.log("[DEBUG fetchUserSubscription] Setting loading to false");
       setLoading(false);

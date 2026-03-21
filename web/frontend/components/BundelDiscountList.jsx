@@ -100,50 +100,48 @@ export default function DiscountList({
     setIsLoading(true);
     setError(null);
     
-    // Add timeout to prevent hanging
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      console.log("[DEBUG fetchDiscounts] Timeout - aborting");
-      controller.abort();
-    }, 10000);
-    
     try {
-      // Use simple URL - let Shopify session middleware handle auth
+      // Use XMLHttpRequest to bypass App Bridge fetch interception
       const apiUrl = `/api/bundles`;
       console.log("[DEBUG fetchDiscounts] URL:", apiUrl);
       
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-        credentials: 'include'  // Include cookies for session
+      const data = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", apiUrl, true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.timeout = 10000;
+        
+        xhr.onload = () => {
+          console.log("[DEBUG fetchDiscounts] XHR status:", xhr.status);
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            reject(new Error(`Failed to fetch discounts: ${xhr.responseText}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        
+        xhr.send();
       });
-      clearTimeout(timeoutId);
-      console.log("[DEBUG fetchDiscounts] Response status:", response.status);
+      
+      console.log("[DEBUG fetchDiscounts] Response data:", data);
 
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(`Failed to fetch discounts: ${errorMessage}`);
+      if (!data) {
+        throw new Error(`Failed to fetch discounts: empty response`);
       }
 
-      const { data } = await response.json();
-      console.log("[DEBUG fetchDiscounts] Got data, count:", data?.length);
-      const filteredDiscounts = data
+      const discountData = data.data || data;
+      console.log("[DEBUG fetchDiscounts] Got data, count:", discountData?.length);
+      const filteredDiscounts = discountData
         .filter(({ type }) => type === discountType)
         .map((item) => ({ ...item, selected: false }));
 
       setDiscounts(filteredDiscounts);
     } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') {
-        setError("Request timed out");
-        console.error("[DEBUG fetchDiscounts] Request timed out");
-      } else {
-        setError(err.message || "Failed to fetch discounts");
-        console.error("[DEBUG fetchDiscounts] Error:", err);
-      }
+      setError(err.message || "Failed to fetch discounts");
+      console.error("[DEBUG fetchDiscounts] Error:", err);
     } finally {
       setIsLoading(false);
       console.log("[DEBUG fetchDiscounts] Done");
