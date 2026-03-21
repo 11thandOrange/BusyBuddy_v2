@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Row, Col, Card } from "react-bootstrap";
-import { Play, ChevronRight } from "react-bootstrap-icons";
+import { Play } from "react-bootstrap-icons";
 
 /**
  * Reusable Overview Tab component with two-column layout
@@ -127,12 +127,6 @@ export default function OverviewTab({ items = [] }) {
                   </div>
                 </div>
               </div>
-              <ChevronRight 
-                size={16} 
-                style={{ 
-                  color: isSelected ? "#5169DD" : "#c7c7cc" 
-                }} 
-              />
             </div>
           );
           })}
