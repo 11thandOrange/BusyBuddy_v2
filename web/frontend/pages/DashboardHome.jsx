@@ -123,6 +123,19 @@ export default function DashboardHome() {
     fetchUserSubscription();
     fetchActivityData();
     checkExtensionStatus();
+    
+    // Fallback: Force loading to false after 8 seconds if still loading
+    const fallbackTimeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          console.log("[DEBUG] Fallback timeout - forcing loading to false");
+          return false;
+        }
+        return prev;
+      });
+    }, 8000);
+    
+    return () => clearTimeout(fallbackTimeout);
   }, []);
 
   // Debug: Log state changes
@@ -167,8 +180,19 @@ export default function DashboardHome() {
 
   const fetchUserSubscription = async () => {
     console.log("[DEBUG fetchUserSubscription] Starting...");
+    
+    // Create abort controller with 5 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log("[DEBUG fetchUserSubscription] Timeout - aborting fetch");
+      controller.abort();
+    }, 5000);
+    
     try {
-      const response = await fetch("/api/subscription/getUserSubscription");
+      const response = await fetch("/api/subscription/getUserSubscription", {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       console.log("[DEBUG fetchUserSubscription] Response status:", response.status);
       if (response.ok) {
         const data = await response.json();
@@ -179,7 +203,12 @@ export default function DashboardHome() {
         }
       }
     } catch (err) {
-      console.error("[DEBUG fetchUserSubscription] Error:", err);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        console.error("[DEBUG fetchUserSubscription] Request timed out");
+      } else {
+        console.error("[DEBUG fetchUserSubscription] Error:", err);
+      }
     } finally {
       console.log("[DEBUG fetchUserSubscription] Setting loading to false");
       setLoading(false);
