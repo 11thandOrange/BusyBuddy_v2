@@ -85,21 +85,38 @@ export default function DiscountList({
   }, [discountType, location.search]);
 
   useEffect(() => {
+    console.log("[DEBUG BundelDiscountList] Component mounted, discountType:", discountType);
+    return () => console.log("[DEBUG BundelDiscountList] Component unmounted");
+  }, []);
+
+  useEffect(() => {
     if (selectedTab === "Discounts") {
       fetchDiscounts();
     }
   }, [refreshTrigger, selectedTab]);
 
   const fetchDiscounts = async () => {
+    console.log("[DEBUG fetchDiscounts] Starting fetch...");
     setIsLoading(true);
     setError(null);
+    
+    // Add timeout to prevent hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log("[DEBUG fetchDiscounts] Timeout - aborting");
+      controller.abort();
+    }, 10000);
+    
     try {
       const response = await fetch("/api/bundles", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
+      console.log("[DEBUG fetchDiscounts] Response status:", response.status);
 
       if (!response.ok) {
         const errorMessage = await response.text();
@@ -107,16 +124,24 @@ export default function DiscountList({
       }
 
       const { data } = await response.json();
+      console.log("[DEBUG fetchDiscounts] Got data, count:", data?.length);
       const filteredDiscounts = data
         .filter(({ type }) => type === discountType)
         .map((item) => ({ ...item, selected: false }));
 
       setDiscounts(filteredDiscounts);
     } catch (err) {
-      setError(err.message || "Failed to fetch discounts");
-      console.error("Error fetching discounts:", err);
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        setError("Request timed out");
+        console.error("[DEBUG fetchDiscounts] Request timed out");
+      } else {
+        setError(err.message || "Failed to fetch discounts");
+        console.error("[DEBUG fetchDiscounts] Error:", err);
+      }
     } finally {
       setIsLoading(false);
+      console.log("[DEBUG fetchDiscounts] Done");
     }
   };
 
