@@ -96,6 +96,7 @@ app.use(
   "/api/*",
   conditional(
     (_req, res, next) => {
+      console.log("[AUTH DEBUG] Checking shop param:", _req.query.shop ? "present" : "absent");
       if (_req.query.shop) {
         return true;
       } else {
@@ -103,14 +104,21 @@ app.use(
       }
     },
     async (_req, res, next) => {
+      console.log("[AUTH DEBUG] Using offline session path for shop:", _req.query.shop);
       // @ts-ignore
       var shop = _req.query.shop.toString();
       const isValid = verifySHA256(_req);
-      if (!isValid) return res.status(401).send("Unauthorized");
+      console.log("[AUTH DEBUG] SHA256 verification:", isValid ? "valid" : "invalid");
+      if (!isValid) {
+        console.log("[AUTH DEBUG] Returning 401 - invalid signature");
+        return res.status(401).send("Unauthorized");
+      }
       const sessionId = await shopify.api.session.getOfflineId(shop);
+      console.log("[AUTH DEBUG] Session ID:", sessionId);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
-      console.log("index session", session);
+      console.log("[AUTH DEBUG] Session loaded:", session ? "yes" : "no");
       if (!session) {
+        console.log("[AUTH DEBUG] Returning 401 - no session");
         return res.status(401).send("Unauthorized");
       }
       res.locals.shopify = {
@@ -118,9 +126,13 @@ app.use(
         shopOrigin: shop,
         accessToken: session.accessToken,
       };
+      console.log("[AUTH DEBUG] Session attached, proceeding to route");
       return next();
     },
-    shopify.validateAuthenticatedSession()
+    (...args) => {
+      console.log("[AUTH DEBUG] Using validateAuthenticatedSession middleware");
+      return shopify.validateAuthenticatedSession()(...args);
+    }
   )
 );
 

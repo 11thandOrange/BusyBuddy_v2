@@ -189,12 +189,13 @@ export default function DashboardHome() {
     }, 5000);
     
     try {
-      // Pass full query string for signature verification
-      const apiUrl = `/api/subscription/getUserSubscription${location.search}`;
+      // Use simple URL - let Shopify session middleware handle auth
+      const apiUrl = `/api/subscription/getUserSubscription`;
       console.log("[DEBUG fetchUserSubscription] URL:", apiUrl);
       
       const response = await fetch(apiUrl, {
-        signal: controller.signal
+        signal: controller.signal,
+        credentials: 'include'  // Include cookies for session
       });
       clearTimeout(timeoutId);
       console.log("[DEBUG fetchUserSubscription] Response status:", response.status);
