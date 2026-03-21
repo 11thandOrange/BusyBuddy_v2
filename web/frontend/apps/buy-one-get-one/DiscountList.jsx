@@ -18,7 +18,7 @@ import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 
 export default function DiscountList({ onMakeBundleClick }) {
-  const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
+  const tabs = ["Overview", "Discounts", "Settings", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
   const [bundles, setBundles] = useState({ bundle1: false, bundle2: false });
   const [showBundleAction, setShowBundleAction] = useState(false);

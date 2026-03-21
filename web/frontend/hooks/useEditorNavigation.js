@@ -3,39 +3,30 @@ import { useCallback } from 'react';
 
 /**
  * Hook for navigating to/from the editor.
- * Opens the editor in a new browser tab for a clean, standalone experience.
+ * Opens the editor in a new browser tab as a standalone page (outside App Bridge shell).
  *
  * @param {string} appType - The app type: 'announcement-bar', 'bundle-discount', 'buy-one-get-one', 'volume-discounts', 'mix-and-match'
  */
 export const useEditorNavigation = (appType = 'announcement-bar') => {
   const location = useLocation();
 
-  // Build the base URL for the editor
-  const getEditorBaseUrl = useCallback(() => {
-    return window.location.origin;
-  }, []);
-
-  // Build query string preserving host and shop params
+  // Build query string preserving shop param only (no host - we want standalone)
   const getQueryString = useCallback(() => {
     const params = new URLSearchParams(location.search);
-    const host = params.get('host');
     const shop = params.get('shop');
-    const queryParams = new URLSearchParams();
-    if (host) queryParams.set('host', host);
-    if (shop) queryParams.set('shop', shop);
-    return queryParams.toString() ? `?${queryParams.toString()}` : '';
+    return shop ? `?shop=${shop}` : '';
   }, [location.search]);
 
   const openEditor = useCallback((id = null) => {
-    const baseUrl = getEditorBaseUrl();
     const queryString = getQueryString();
     const path = id
       ? `/${appType}/editor/${id}`
       : `/${appType}/editor`;
 
-    // Open editor in a new browser tab
-    window.open(baseUrl + path + queryString, '_blank');
-  }, [appType, getEditorBaseUrl, getQueryString]);
+    // Open editor in a new browser tab as standalone page (using editor.html with hash routing)
+    // This loads the editor outside of Shopify App Bridge shell
+    window.open(`/editor.html${queryString}#${path}`, '_blank');
+  }, [appType, getQueryString]);
 
   const closeEditor = useCallback(() => {
     // Close the current tab/window

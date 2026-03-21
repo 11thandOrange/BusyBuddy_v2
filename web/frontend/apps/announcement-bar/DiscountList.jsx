@@ -13,9 +13,49 @@ import { Spinner } from "@shopify/polaris";
 import Analytics from "../../components/Analytics/AnnouncementAnalytics";
 import { useEditorNavigation } from "../../hooks";
 import EmailIntegration from "./components/EmailIntegration";
+import OverviewTab from "../../components/OverviewTab";
+
+// Overview tab video items for Announcement Bar
+const announcementBarOverviewItems = [
+  {
+    id: "intro",
+    title: "Introduction to Announcement Bars",
+    description: "Learn the basics of announcement bars",
+    videoSrc: "/assets/announcement_bar.mp4",
+    posterSrc: null,
+  },
+  {
+    id: "create",
+    title: "Creating Your First Bar",
+    description: "Step-by-step guide to create a bar",
+    videoSrc: "/assets/announcement_bar.mp4",
+    posterSrc: null,
+  },
+  {
+    id: "customize",
+    title: "Customization Options",
+    description: "Colors, fonts, and animations",
+    videoSrc: "/assets/announcement_bar.mp4",
+    posterSrc: null,
+  },
+  {
+    id: "schedule",
+    title: "Scheduling & Targeting",
+    description: "Show bars at the right time",
+    videoSrc: "/assets/announcement_bar.mp4",
+    posterSrc: null,
+  },
+  {
+    id: "analytics",
+    title: "Tracking Performance",
+    description: "Measure engagement and clicks",
+    videoSrc: "/assets/announcement_bar.mp4",
+    posterSrc: null,
+  },
+];
 
 export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
-  const tabs = ["Overview", "Announcement Bars", "Setting", "Analytics"];
+  const tabs = ["Overview", "Announcement Bars", "Settings", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[1]);
   const [showCountdown, setShowCountdown] = useState(false);
   const [announcementBars, setAnnouncementBars] = useState([]);
@@ -147,7 +187,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-between align-items-center"
+            className="d-flex justify-content-center align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -160,7 +200,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}
@@ -212,68 +252,10 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
 
       {/* Overview Tab */}
       {selectedTab === "Overview" && (
-        <>
-          <Col lg={6} md={12}>
-            <Card className="border-0" style={{ backgroundColor: "transparent" }}>
-              <Card.Body className="p-0">
-                <div className="video-container position-relative">
-                  <video
-                    controls
-                    poster={videoimg}
-                    style={{
-                      width: "100%",
-                      height: "auto",
-                      borderRadius: "15px",
-                      padding: "4px",
-                    }}
-                  >
-                    <source src="/videos/marshall-promo.mp4" type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
-                  <div className="position-absolute top-50 start-50 translate-middle">
-                    <button className="btn btn-light rounded-circle p-3">
-                      <Play size={24} />
-                    </button>
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col lg={6} md={12}>
-            <div
-              className="p-4 d-flex flex-column justify-content-between h-100"
-              style={{ minHeight: "300px" }}
-            >
-              <div>
-                <h5 style={{ fontWeight: 600, fontSize: "20px", lineHeight: "1" }}>
-                  Get started with Announcement Bar
-                </h5>
-                <p
-                  className="mt-3"
-                  style={{ fontWeight: 500, fontSize: "14px", lineHeight: "1.3", color: "#616161" }}
-                >
-                  Display important updates, promotions, or messages across your store to capture
-                  visitors' attention instantly.
-                </p>
-              </div>
-              <div className="mt-4">
-                <a
-                  href="#"
-                  className="text-primary"
-                  style={{
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    letterSpacing: "0",
-                    textAlign: "center",
-                    color: "#5169DD",
-                  }}
-                >
-                  How to create bundle?
-                </a>
-              </div>
-            </div>
-          </Col>
-        </>
+        <OverviewTab 
+          items={announcementBarOverviewItems} 
+          defaultTitle="Get Started with Announcement Bar"
+        />
       )}
 
       {/* Announcement Bars Tab */}
@@ -312,7 +294,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
 
 
       {/* Setting Tab */}
-      {selectedTab === "Setting" && (
+      {selectedTab === "Settings" && (
         <div className="d-flex flex-column gap-4">
           {/* General Settings Card */}
           <Card className="border-0" style={{ background: "rgb(241, 242, 244)", borderRadius: "15px" }}>

@@ -8,6 +8,7 @@ import videoimg from "../assets/videoimg.png";
 import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
 import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
+import OverviewTab from "./OverviewTab";
 
 // Map discount types to editor routes
 const EDITOR_ROUTES = {
@@ -17,13 +18,41 @@ const EDITOR_ROUTES = {
   "Mix and Match": "mix-and-match",
 };
 
+// Overview items per discount type
+const OVERVIEW_ITEMS = {
+  "Bundle Discount": [
+    { id: "intro", title: "Introduction to Bundles", description: "Learn bundle basics", videoSrc: "/assets/bundle_discount.mp4" },
+    { id: "create", title: "Creating a Bundle", description: "Step-by-step guide", videoSrc: "/assets/bundle_discount.mp4" },
+    { id: "pricing", title: "Bundle Pricing", description: "Set up discounts", videoSrc: "/assets/bundle_discount.mp4" },
+    { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/bundle_discount.mp4" },
+  ],
+  "Buy One Get One": [
+    { id: "intro", title: "Introduction to BOGO", description: "Learn BOGO basics", videoSrc: "/assets/bogo.mp4" },
+    { id: "create", title: "Creating BOGO Offers", description: "Step-by-step guide", videoSrc: "/assets/bogo.mp4" },
+    { id: "rules", title: "BOGO Rules", description: "Configure conditions", videoSrc: "/assets/bogo.mp4" },
+    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/bogo.mp4" },
+  ],
+  "Volume Discount": [
+    { id: "intro", title: "Introduction to Volume Discounts", description: "Learn the basics", videoSrc: "/assets/volume_discount.mp4" },
+    { id: "tiers", title: "Setting Up Tiers", description: "Create quantity tiers", videoSrc: "/assets/volume_discount.mp4" },
+    { id: "pricing", title: "Tier Pricing", description: "Configure discounts", videoSrc: "/assets/volume_discount.mp4" },
+    { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/volume_discount.mp4" },
+  ],
+  "Mix and Match": [
+    { id: "intro", title: "Introduction to Mix & Match", description: "Learn the basics", videoSrc: "/assets/mix_match.mp4" },
+    { id: "create", title: "Creating Mix & Match", description: "Step-by-step guide", videoSrc: "/assets/mix_match.mp4" },
+    { id: "products", title: "Adding Products", description: "Select eligible items", videoSrc: "/assets/mix_match.mp4" },
+    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/mix_match.mp4" },
+  ],
+};
+
 export default function DiscountList({
   discountType,
   refreshTrigger,
   onBundleCreated,
 }) {
   const location = useLocation();
-  const tabs = ["Overview", "Discounts", "Setting", "Analytics"];
+  const tabs = ["Overview", "Discounts", "Settings", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[1]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -42,16 +71,18 @@ export default function DiscountList({
     return queryParams.toString() ? `?${queryParams.toString()}` : '';
   }, [location.search]);
 
-  // Open editor in new tab
+  // Open editor in new tab as standalone page (outside App Bridge shell)
   const openEditor = useCallback((id = null) => {
     const appType = EDITOR_ROUTES[discountType];
     if (!appType) return;
     
-    const baseUrl = window.location.origin;
-    const queryString = getQueryString();
+    const params = new URLSearchParams(location.search);
+    const shop = params.get('shop');
+    const queryString = shop ? `?shop=${shop}` : '';
     const path = id ? `/${appType}/editor/${id}` : `/${appType}/editor`;
-    window.open(baseUrl + path + queryString, '_blank');
-  }, [discountType, getQueryString]);
+    // Use editor.html with hash routing to open as standalone page
+    window.open(`/editor.html${queryString}#${path}`, '_blank');
+  }, [discountType, location.search]);
 
   useEffect(() => {
     if (selectedTab === "Discounts") {
@@ -185,7 +216,7 @@ export default function DiscountList({
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-between align-items-center"
+            className="d-flex justify-content-center align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -198,7 +229,7 @@ export default function DiscountList({
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}
@@ -245,7 +276,8 @@ export default function DiscountList({
               ))}
             </ButtonGroup>
           </div>
-          {selectedTab === "Discounts" && (
+          {/* Removed custom-button create discount button from tab bar */}
+          {false && selectedTab === "Discounts" && (
             <Button
               text="Create Discount"
               onClick={() => openEditor()}
@@ -279,183 +311,10 @@ export default function DiscountList({
         }}
       >
         {selectedTab === "Overview" && (
-          <>
-            <Col lg={6} md={12} style={{ padding: "50px" }}>
-              <Card className="border-0 h-100" style={{ background: "transparent !important" }}>
-                <Card.Body className="p-0" style={{ background: "transparent !important" }}>
-                  <div className="position-relative h-100">
-                    <video
-                      controls
-                      poster={videoimg}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: "15px",
-                        padding: "4px",
-                      }}
-                    >
-                      <source src="/videos/marshall-promo.mp4" type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                      <Button
-                        text={<Play size={24} />}
-                        onClick={() => console.log("Discard")}
-                        variant="light"
-                        className="rounded-circle p-3 opacity-75"
-                      />
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col lg={6} md={12} style={{ padding: "50px 0" }}>
-              <div
-                className="d-flex justify-content-between flex-column linrrowleft"
-                style={{ height: "100%" }}
-              >
-                <div>
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path>
-                        <polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="mb-1" style={{ fontWeight: 600, fontSize: "16px", letterSpacing: "0" }}>
-                        Customizable
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{ fontWeight: 500, fontSize: "14px", letterSpacing: "0", color: "#616161" }}
-                      >
-                        Discount, Display style & Priority.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="mb-1" style={{ fontWeight: 600, fontSize: "16px", letterSpacing: "0" }}>
-                        Responsive
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{ fontWeight: 500, fontSize: "14px", letterSpacing: "0", color: "#616161" }}
-                      >
-                        Looks great on any device.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-5 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                        <path d="M13 2v7h7"></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5 className="mb-1" style={{ fontWeight: 600, fontSize: "16px", letterSpacing: "0" }}>
-                        Attention grabbing
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{ fontWeight: 500, fontSize: "14px", letterSpacing: "0", color: "#616161" }}
-                      >
-                        Keep your customers informed without disrupting their shopping.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex align-items-start flex-column">
-                  <Button
-                    variant="dark"
-                    className="mb-3 d-flex align-items-center justify-content-center"
-                    text={`Make your ${discountType === "Volume Discount" ? "Volume" : "Bundle"} Now!`}
-                    style={{
-                      maxWidth: "220px",
-                      borderRadius: "40px",
-                      height: "45px",
-                      fontWeight: 500,
-                      fontSize: "15px",
-                      letterSpacing: "0",
-                      backgroundColor: "black",
-                      borderColor: "black",
-                      color: "white",
-                      padding: "15px 25px",
-                    }}
-                    onClick={() => {
-                      setEditingDiscount(null);
-                      setShowAction(true);
-                      onMakeBundleClick();
-                    }}
-                  />
-
-                  <div>
-                    <span
-                      className="text-secondary"
-                      style={{ fontWeight: 600, fontSize: "14px", letterSpacing: "0", textAlign: "center" }}
-                    >
-                      Learn More about{" "}
-                    </span>
-                    <a
-                      href="#"
-                      className="text-primary"
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        letterSpacing: "0",
-                        textAlign: "center",
-                        color: "#5169DD",
-                      }}
-                    >
-                      How to create {discountType === "Volume Discount" ? "volume discount" : "bundle"}?
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </Col>
-          </>
+          <OverviewTab 
+            items={OVERVIEW_ITEMS[discountType] || OVERVIEW_ITEMS["Bundle Discount"]} 
+            defaultTitle={`Get Started with ${discountType}`}
+          />
         )}
 
         {selectedTab === "Discounts" && (
@@ -615,7 +474,7 @@ export default function DiscountList({
             )}
           </>
         )}
-        {selectedTab === "Setting" && (
+        {selectedTab === "Settings" && (
           <Col lg={12} className="p-4">
             <Settings />
           </Col>

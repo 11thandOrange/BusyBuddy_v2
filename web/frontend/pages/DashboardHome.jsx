@@ -12,6 +12,8 @@ import {
   DollarSign,
   Eye,
   MousePointer,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
 import "./DashboardHome.css";
 
@@ -111,10 +113,12 @@ export default function DashboardHome() {
   const [activities, setActivities] = useState([]);
   const [stats, setStats] = useState({ activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
+  const [extensionEnabled, setExtensionEnabled] = useState(true);
 
   useEffect(() => {
     fetchUserSubscription();
     fetchActivityData();
+    checkExtensionStatus();
   }, []);
 
   const fetchUserSubscription = async () => {
@@ -150,8 +154,34 @@ export default function DashboardHome() {
     }
   };
 
+  const checkExtensionStatus = async () => {
+    try {
+      const response = await fetch("/api/subscription/extension-status");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === "SUCCESS") {
+          setExtensionEnabled(data.data.enabled !== false);
+        }
+      }
+    } catch (err) {
+      // Default to true if check fails (assume enabled)
+      setExtensionEnabled(true);
+    }
+  };
+
   const isWidgetAccessible = (widgetId) => {
     return planFeatures[currentPlan]?.includes(widgetId) || false;
+  };
+
+  const isHighestPlan = currentPlan === "Advanced";
+
+  const getThemeExtensionUrl = () => {
+    const params = new URLSearchParams(location.search);
+    const shop = params.get("shop");
+    if (shop) {
+      return `https://${shop}/admin/themes/current/editor?context=apps`;
+    }
+    return "#";
   };
 
   const handleCreate = (widget) => {
@@ -176,16 +206,13 @@ export default function DashboardHome() {
   };
 
   const handleManage = (widget) => {
-    console.log("[handleManage] widget:", widget.id, "loading:", loading, "currentPlan:", currentPlan, "accessible:", isWidgetAccessible(widget.id));
     // Don't check plan access if subscription is still loading
     // This prevents redirecting to /plan due to default "Free" state
     if (!loading && !isWidgetAccessible(widget.id)) {
-      console.log("[handleManage] Redirecting to /plan");
       navigate("/plan" + location.search);
       return;
     }
     // Navigate to app homepage
-    console.log("[handleManage] Navigating to:", widget.manageRoute + location.search);
     navigate(widget.manageRoute + location.search);
   };
 
@@ -283,6 +310,33 @@ export default function DashboardHome() {
                 )}
               </div>
             </div>
+
+            {/* Notification Section */}
+            {(!extensionEnabled || !isHighestPlan) && (
+              <div className="notification-section">
+                {!extensionEnabled && (
+                  <div className="notification-banner enable-extension">
+                    <ExternalLink size={16} className="notification-icon" />
+                    <span>
+                      Enable BusyBuddy in Shopify Theme Extensions{" "}
+                      <a href={getThemeExtensionUrl()} target="_blank" rel="noopener noreferrer">
+                        Here
+                      </a>
+                    </span>
+                  </div>
+                )}
+                {!isHighestPlan && (
+                  <div 
+                    className="notification-banner upgrade-plan"
+                    onClick={() => navigate("/plan" + location.search)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <Zap size={16} className="notification-icon" />
+                    <span>Upgrade your plan for more features!</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
