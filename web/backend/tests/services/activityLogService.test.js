@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ActivityLog uses new Model({}).save() — mock as a constructor
-const mockSave = vi.fn().mockResolvedValue({ _id: '123' });
-const MockActivityLog = vi.fn().mockImplementation((data) => ({ ...data, save: mockSave }));
-MockActivityLog.find = vi.fn().mockReturnThis();
-MockActivityLog.sort = vi.fn().mockReturnThis();
-MockActivityLog.limit = vi.fn().mockReturnThis();
-MockActivityLog.lean = vi.fn().mockResolvedValue([]);
-MockActivityLog.aggregate = vi.fn().mockResolvedValue([]);
+// vi.hoisted ensures these are available when vi.mock factories run (which are hoisted to top)
+const { mockSave, MockActivityLog } = vi.hoisted(() => {
+  const mockSave = vi.fn().mockResolvedValue({ _id: '123' });
+  const MockActivityLog = vi.fn().mockImplementation((data) => ({ ...data, save: mockSave }));
+  MockActivityLog.find = vi.fn().mockReturnThis();
+  MockActivityLog.sort = vi.fn().mockReturnThis();
+  MockActivityLog.limit = vi.fn().mockReturnThis();
+  MockActivityLog.lean = vi.fn().mockResolvedValue([]);
+  MockActivityLog.aggregate = vi.fn().mockResolvedValue([]);
+  return { mockSave, MockActivityLog };
+});
 
 vi.mock('../../models/activityLog.model.js', () => ({ default: MockActivityLog }));
 
