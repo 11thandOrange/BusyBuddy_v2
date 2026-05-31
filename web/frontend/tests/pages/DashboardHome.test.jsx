@@ -92,38 +92,59 @@ describe('DashboardHome', () => {
 
   describe('Create Button Behavior', () => {
     it('should open editor in new tab for Announcement Bar', async () => {
-      // global.open is stubbed in setup.js via vi.stubGlobal
-      const mockOpen = global.open;
-      
+      const mockOpen = vi.fn();
+      Object.defineProperty(window, 'open', { value: mockOpen, writable: true, configurable: true });
+
       renderWithRouter(<DashboardHome />);
-      
+
       await waitFor(() => {
         const createButtons = screen.getAllByText(/Create/i);
         expect(createButtons.length).toBeGreaterThan(0);
       });
-      
+
       const announcementCard = screen.getByText('Announcement Bar').closest('.widget-tile');
-      const createButton = announcementCard?.querySelector('button');
-      
+      const createButton = announcementCard?.querySelector('.widget-btn.create');
+
+      expect(createButton).toBeTruthy();
       if (createButton) {
         fireEvent.click(createButton);
-        expect(mockOpen).toHaveBeenCalledWith(
-          expect.stringContaining('/editor.html'),
-          '_blank'
-        );
+        await waitFor(() => {
+          expect(mockOpen).toHaveBeenCalledWith(
+            expect.stringContaining('/editor.html'),
+            '_blank'
+          );
+        });
       }
     });
 
+
     it('should include shop parameter in editor URL', async () => {
-      // global.open is stubbed in setup.js via vi.stubGlobal
-      const mockOpen = global.open;
-      
+      const mockOpen = vi.fn();
+      Object.defineProperty(window, 'open', { value: mockOpen, writable: true, configurable: true });
+
       renderWithRouter(<DashboardHome />);
-      
+
       await waitFor(() => {
         const createButtons = screen.getAllByText(/Create/i);
         expect(createButtons.length).toBeGreaterThan(0);
       });
+
+      // useLocation is mocked in setup.js to return '?shop=test-shop.myshopify.com'
+      const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-tile');
+      const createButton = bundleCard?.querySelector('.widget-btn.create');
+
+      expect(createButton).toBeTruthy();
+      if (createButton) {
+        fireEvent.click(createButton);
+        await waitFor(() => {
+          expect(mockOpen).toHaveBeenCalledWith(
+            expect.stringContaining('shop='),
+            '_blank'
+          );
+        });
+      }
+    });
+
       
       // Click on Bundle Discounts Create button
       const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-tile');
