@@ -176,7 +176,7 @@ describe('BundleAnalytics', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Total Revenue')).toBeInTheDocument();
-        expect(screen.getByText('Total Orders')).toBeInTheDocument();
+        expect(screen.getByText('Total Orders Analyzed')).toBeInTheDocument();
       });
     });
 

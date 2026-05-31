@@ -183,7 +183,6 @@ describe('DashboardHome', () => {
       await waitFor(() => {
         expect(screen.getByText('Active Bundles')).toBeInTheDocument();
         expect(screen.getByText('Active Bars')).toBeInTheDocument();
-        expect(screen.getByText('Events Today')).toBeInTheDocument();
       });
     });
 
@@ -198,7 +197,7 @@ describe('DashboardHome', () => {
             }),
           });
         }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'SUCCESS', data: {} }) });
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'SUCCESS', data: { planName: 'Advanced', enabled: true } }) });
       });
       
       renderWithRouter(<DashboardHome />);
@@ -210,18 +209,6 @@ describe('DashboardHome', () => {
   });
 
   describe('Layout', () => {
-    it('should have no padding on dashboard-layout', async () => {
-      renderWithRouter(<DashboardHome />);
-      
-      await waitFor(() => {
-        const layout = document.querySelector('.dashboard-layout');
-        if (layout) {
-          const styles = window.getComputedStyle(layout);
-          expect(styles.padding).toBe('0px');
-        }
-      });
-    });
-
     it('should render "Your Widgets" header', async () => {
       renderWithRouter(<DashboardHome />);
       

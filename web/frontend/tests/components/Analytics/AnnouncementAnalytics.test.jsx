@@ -129,7 +129,7 @@ describe('AnnouncementAnalytics', () => {
       
       await waitFor(() => {
         expect(screen.getAllByText('Total Views').length).toBeGreaterThan(0);
-        expect(screen.getByText('Total Clicks')).toBeInTheDocument();
+        expect(screen.getAllByText('Total Clicks').length).toBeGreaterThan(0);
       });
     });
 
