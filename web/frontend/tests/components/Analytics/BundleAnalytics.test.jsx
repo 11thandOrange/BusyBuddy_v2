@@ -47,8 +47,8 @@ const mockAnalyticsData = {
     { date: '2026-03-14', revenue: 700 },
   ],
   allBundles: [
-    { _id: '1', title: 'Summer Bundle', status: true, revenue: 2000, quantity: 20 },
-    { _id: '2', title: 'Winter Bundle', status: false, revenue: 1500, quantity: 15 },
+    { _id: '1', name: 'Summer Bundle', status: true, totalRevenue: 2000, totalQuantity: 20, averagePrice: 100 },
+    { _id: '2', name: 'Winter Bundle', status: false, totalRevenue: 1500, totalQuantity: 15, averagePrice: 100 },
   ],
 };
 

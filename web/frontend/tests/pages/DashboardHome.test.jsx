@@ -39,15 +39,22 @@ const mockStats = {
 describe('DashboardHome', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn(() =>
-      Promise.resolve({
+    global.fetch = vi.fn((url) => {
+      if (url && url.includes('/api/activity/recent')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            status: 'SUCCESS',
+            data: { activities: mockActivities, stats: mockStats },
+          }),
+        });
+      }
+      // Subscription and other calls — return safe defaults
+      return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({
-          status: 'SUCCESS',
-          data: { activities: mockActivities, stats: mockStats },
-        }),
-      })
-    );
+        json: () => Promise.resolve({ status: 'SUCCESS', data: {} }),
+      });
+    });
   });
 
   describe('Widget Cards', () => {
@@ -85,8 +92,7 @@ describe('DashboardHome', () => {
 
   describe('Create Button Behavior', () => {
     it('should open editor in new tab for Announcement Bar', async () => {
-      const mockOpen = vi.fn();
-      global.open = mockOpen;
+      const mockOpen = vi.spyOn(window, 'open').mockImplementation(() => {});
       
       renderWithRouter(<DashboardHome />);
       
@@ -108,8 +114,7 @@ describe('DashboardHome', () => {
     });
 
     it('should include shop parameter in editor URL', async () => {
-      const mockOpen = vi.fn();
-      global.open = mockOpen;
+      const mockOpen = vi.spyOn(window, 'open').mockImplementation(() => {});
       
       renderWithRouter(<DashboardHome />);
       
@@ -183,20 +188,23 @@ describe('DashboardHome', () => {
     });
 
     it('should show empty state when no activities', async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            status: 'SUCCESS',
-            data: { activities: [], stats: { activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 } },
-          }),
-        })
-      );
+      global.fetch = vi.fn((url) => {
+        if (url && url.includes('/api/activity/recent')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              status: 'SUCCESS',
+              data: { activities: [], stats: { activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 } },
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'SUCCESS', data: {} }) });
+      });
       
       renderWithRouter(<DashboardHome />);
       
       await waitFor(() => {
-        expect(screen.getByText(/No recent activity/i)).toBeInTheDocument();
+        expect(screen.getByText(/No activity yet/i)).toBeInTheDocument();
       });
     });
   });
