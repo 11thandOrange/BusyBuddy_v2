@@ -13,6 +13,9 @@ vi.mock('recharts', () => ({
   CartesianGrid: () => null,
   Tooltip: () => null,
   Legend: () => null,
+  PieChart: ({ children }) => <div data-testid='pie-chart'>{children}</div>,
+  Pie: () => null,
+  Cell: () => null,
 }));
 
 const renderWithRouter = (component) => {
@@ -63,7 +66,7 @@ describe('GoogleAnalyticsSection', () => {
           ok: true,
           json: () => Promise.resolve({
             success: true,
-            data: { isConnected: false },
+            data: { connected: false },
           }),
         })
       );
@@ -81,12 +84,12 @@ describe('GoogleAnalyticsSection', () => {
           ok: true,
           json: () => Promise.resolve({
             success: true,
-            data: { isConnected: false },
+            data: { connected: false },
           }),
         })
       );
       
-      renderWithRouter(<GoogleAnalyticsSection />);
+      renderWithRouter(<GoogleAnalyticsSection onNavigateToSettings={() => {}} />);
       
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Connect/i })).toBeInTheDocument();
@@ -182,7 +185,7 @@ describe('GoogleAnalyticsSection', () => {
           ok: true,
           json: () => Promise.resolve({
             success: true,
-            data: { isConnected: true, data: {} },
+            data: { connected: false },
           }),
         })
       );

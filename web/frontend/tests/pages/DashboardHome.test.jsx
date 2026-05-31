@@ -92,7 +92,8 @@ describe('DashboardHome', () => {
 
   describe('Create Button Behavior', () => {
     it('should open editor in new tab for Announcement Bar', async () => {
-      const mockOpen = vi.spyOn(window, 'open').mockImplementation(() => {});
+      // global.open is stubbed in setup.js via vi.stubGlobal
+      const mockOpen = global.open;
       
       renderWithRouter(<DashboardHome />);
       
@@ -114,7 +115,8 @@ describe('DashboardHome', () => {
     });
 
     it('should include shop parameter in editor URL', async () => {
-      const mockOpen = vi.spyOn(window, 'open').mockImplementation(() => {});
+      // global.open is stubbed in setup.js via vi.stubGlobal
+      const mockOpen = global.open;
       
       renderWithRouter(<DashboardHome />);
       
