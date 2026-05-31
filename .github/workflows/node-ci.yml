@@ -35,8 +35,8 @@ jobs:
         working-directory: extensions/cart-transformer
 
       - name: Run backend tests
-        run: npm test
-        working-directory: web
+        run: npx vitest run
+        working-directory: web/backend
 
       - name: Run frontend tests
         run: npm test
