@@ -17,14 +17,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
-            web/package-lock.json
             extensions/cart-transformer/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
 
       - name: Install web dependencies
-        run: npm ci
+        run: npm install
         working-directory: web
 
       - name: Install frontend dependencies
