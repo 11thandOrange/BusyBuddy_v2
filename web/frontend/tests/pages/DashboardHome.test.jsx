@@ -131,18 +131,10 @@ describe('DashboardHome', () => {
       }
     });
 
-    it('should navigate to settings for Inactive Tab Message widget', async () => {
-      const mockNavigate = vi.fn();
-      vi.mock('react-router-dom', async () => {
-        const actual = await vi.importActual('react-router-dom');
-        return {
-          ...actual,
-          useNavigate: () => mockNavigate,
-        };
-      });
-      
+    it('should render the Inactive Tab Message widget card', async () => {
+      // useNavigate is already mocked globally in tests/setup.js
       renderWithRouter(<DashboardHome />);
-      
+
       await waitFor(() => {
         expect(screen.getByText('Inactive Tab Message')).toBeInTheDocument();
       });
