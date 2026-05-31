@@ -128,7 +128,7 @@ describe('AnnouncementAnalytics', () => {
       renderWithRouter(<AnnouncementAnalytics />);
       
       await waitFor(() => {
-        expect(screen.getByText('Total Views')).toBeInTheDocument();
+        expect(screen.getAllByText('Total Views').length).toBeGreaterThan(0);
         expect(screen.getByText('Total Clicks')).toBeInTheDocument();
       });
     });

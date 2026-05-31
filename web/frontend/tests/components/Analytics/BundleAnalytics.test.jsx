@@ -93,7 +93,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, revenueTrend: [] },
           }),
         })
@@ -111,7 +111,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, topBundles: [] },
           }),
         })
@@ -129,7 +129,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, topBundles: [] },
           }),
         })
@@ -147,7 +147,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, allBundles: [] },
           }),
         })
@@ -166,7 +166,7 @@ describe('BundleAnalytics', () => {
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ success: true, data: mockAnalyticsData }),
+          json: () => Promise.resolve({ status: 'SUCCESS', data: mockAnalyticsData }),
         })
       );
     });

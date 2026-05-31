@@ -55,7 +55,7 @@ describe('DashboardHome', () => {
       renderWithRouter(<DashboardHome />);
       
       await waitFor(() => {
-        const widgetCards = document.querySelectorAll('.widget-card');
+        const widgetCards = document.querySelectorAll('.widget-tile');
         expect(widgetCards.length).toBe(6);
       });
     });
@@ -77,7 +77,7 @@ describe('DashboardHome', () => {
       renderWithRouter(<DashboardHome />);
       
       await waitFor(() => {
-        const statusBadges = document.querySelectorAll('.widget-status');
+        const statusBadges = document.querySelectorAll('.status-indicator');
         expect(statusBadges.length).toBeGreaterThan(0);
       });
     });
@@ -95,7 +95,7 @@ describe('DashboardHome', () => {
         expect(createButtons.length).toBeGreaterThan(0);
       });
       
-      const announcementCard = screen.getByText('Announcement Bar').closest('.widget-card');
+      const announcementCard = screen.getByText('Announcement Bar').closest('.widget-tile');
       const createButton = announcementCard?.querySelector('button');
       
       if (createButton) {
@@ -119,7 +119,7 @@ describe('DashboardHome', () => {
       });
       
       // Click on Bundle Discounts Create button
-      const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-card');
+      const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-tile');
       const createButton = bundleCard?.querySelector('button');
       
       if (createButton) {
@@ -158,8 +158,7 @@ describe('DashboardHome', () => {
       
       await waitFor(() => {
         expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/activity/recent'),
-          expect.any(Object)
+          expect.stringContaining('/api/activity/recent')
         );
       });
     });
