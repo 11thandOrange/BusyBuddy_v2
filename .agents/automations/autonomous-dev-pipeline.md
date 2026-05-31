@@ -1,0 +1,121 @@
+# Autonomous Dev Pipeline — BusyBuddy_v2
+
+End-to-end automation: GitHub Issue labelled `ready-to-implement` →
+implemented → PR → reviewed → CI green → WhatsApp review request.
+
+## Pipeline
+
+```
+Issue labelled "ready-to-implement"
+        ↓
+  ticket-planner              reads issue, maps to codebase, writes plan
+        ↓
+ busybuddy-implementer        creates branch, writes JS/React/Node code
+        ↓
+shopify-extension-implementer if extensions/ changes needed (plan determines this)
+        ↓
+       tester                 fills missing tests across all 3 suites
+        ↓
+   build-check                npm install + CI=true npm run build
+        ↓
+   ticket-manager             gh pr create linking to the issue
+        ↓
+   pr-reviewer                self-review, inline comments, iterate (max 2)
+        ↓
+   ci-monitor                 waits for GitHub Actions to green (max 3 retries)
+        ↓
+ whatsapp-notifier            sends review request to your phone
+```
+
+## Live Automation
+
+| Field | Value |
+|-------|-------|
+| **Automation ID** | *(set after registration — see Setup below)* |
+| **Status** | Pending registration |
+| **Trigger** | `issues.labeled` → `ready-to-implement` on `11thandOrange/BusyBuddy_v2` |
+
+## Required Secrets
+
+| Secret | Used by |
+|--------|---------|
+| `GITHUB_TOKEN` | All GitHub operations |
+| `DB_CONNECTION` | env-setup → dev-server |
+| `SHOPIFY_API_KEY` | build-check, dev-server |
+| `SHOPIFY_API_SECRET` | dev-server |
+| `SHOPIFY_CLI_PARTNERS_TOKEN` | dev-server |
+| `WHATSAPP_PHONE` | whatsapp-notifier |
+| `WHATSAPP_API_KEY` | whatsapp-notifier |
+
+## Setup: Register the Automation
+
+```bash
+curl -X POST "https://app.all-hands.dev/api/automation/v1/preset/prompt" \
+  -H "Authorization: Bearer ${OPENHANDS_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "BusyBuddy_v2 — Autonomous Dev Pipeline",
+    "prompt": "You are the autonomous development pipeline for the BusyBuddy_v2 Shopify app (https://github.com/11thandOrange/BusyBuddy_v2).\n\nA GitHub Issue has been labelled ready-to-implement. Find it: gh issue list --repo 11thandOrange/BusyBuddy_v2 --label ready-to-implement --state open --json number,title,body,labels --limit 1\n\nExecute each step. On unrecoverable failure go to Step 8 with failure message.\n\nSTEP 1 - ticket-planner: Follow .agents/agents/ticket-planner.md. Fetch issue, explore codebase, produce plan, save to /tmp/plan-NUMBER.md.\n\nSTEP 2 - busybuddy-implementer: Follow .agents/agents/busybuddy-implementer.md. Create branch, install deps (npm install in root, web/, web/frontend/), implement web/ changes, run cd web && npm test and cd web/frontend && npm test, fix failures, commit.\n\nSTEP 3 - shopify-extension-implementer: Follow .agents/agents/shopify-extension-implementer.md ONLY IF the plan flags extensions/ changes. Run cd extensions/cart-transformer && npm test. Skip otherwise.\n\nSTEP 4 - tester: Follow .agents/agents/tester.md. Write missing tests for new code. Run all three test suites. Commit new test files.\n\nSTEP 5 - build-check: Follow .agents/agents/build-check.md. Run cd web/frontend && CI=true npm run build. Fix any errors.\n\nSTEP 6 - ticket-manager: Push branch (git push -u origin BRANCH), create PR: gh pr create --repo 11thandOrange/BusyBuddy_v2 --title ISSUE_TITLE --body Closes #NUMBER. DESCRIPTION --base main. Record PR number and URL.\n\nSTEP 7 - pr-reviewer: Follow .agents/agents/pr-reviewer.md. Review diff, post inline comments, iterate on critical issues (max 2 iterations). Do NOT merge.\n\nSTEP 8 - ci-monitor: Follow .agents/skills/ci-monitor.md. Poll gh pr checks PR_NUMBER. On failure fetch logs, fix, push, re-poll (max 3 retries).\n\nSTEP 9 - whatsapp-notifier: Follow .agents/skills/whatsapp-notifier.md using WHATSAPP_PHONE and WHATSAPP_API_KEY secrets. CI passed: BusyBuddy PR #NUMBER ready for review. All checks passed. Link: PR_URL. CI failed: BusyBuddy PR #NUMBER needs attention. CI fix exhausted. Link: PR_URL. Earlier failure: BusyBuddy pipeline failed at step N for issue #NUMBER. Manual action required.",
+    "trigger": {
+      "type": "event",
+      "source": "github",
+      "on": "issues.labeled",
+      "filter": "event.label.name == '\''ready-to-implement'\'' && glob(repository.full_name, '\''11thandOrange/BusyBuddy_v2'\'')"
+    },
+    "timeout": 3600,
+    "repos": [
+      {"url": "https://github.com/11thandOrange/BusyBuddy_v2", "ref": "main"}
+    ]
+  }'
+```
+
+## Verify
+
+```bash
+curl -s "https://app.all-hands.dev/api/automation/v1" \
+  -H "Authorization: Bearer ${OPENHANDS_API_KEY}" \
+  | python3 -c "import json,sys; [print(a['id'], a['name'], a['enabled']) for a in json.load(sys.stdin)['automations']]"
+```
+
+## Trigger the Pipeline
+
+```bash
+# Create the label if it doesn't exist
+gh label create "ready-to-implement" \
+  --repo 11thandOrange/BusyBuddy_v2 \
+  --color "0075ca" \
+  --description "Queued for autonomous implementation"
+
+# Label an issue to fire the pipeline
+gh issue edit <ISSUE_NUMBER> \
+  --repo 11thandOrange/BusyBuddy_v2 \
+  --add-label "ready-to-implement"
+```
+
+## What the Pipeline Will Never Do
+
+- Merge to `main`
+- Run `shopify app deploy`
+- Modify production environment variables
+- Upload to the Shopify App Store
+
+## Related Files
+
+```
+.agents/agents/ticket-planner.md
+.agents/agents/busybuddy-implementer.md
+.agents/agents/shopify-extension-implementer.md
+.agents/agents/tester.md
+.agents/agents/build-check.md
+.agents/agents/pr-reviewer.md
+.agents/skills/env-setup.md
+.agents/skills/dev-server.md
+.github/workflows/node-ci.yml
+```
+
+User-level (HeyItsChloe/.agents):
+```
+agents/ticket-manager.md
+skills/ci-monitor.md
+skills/whatsapp-notifier.md
+```

@@ -1,0 +1,63 @@
+name: Node.js CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+            extensions/cart-transformer/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: web
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: web/frontend
+
+      - name: Install cart-transformer dependencies
+        run: npm ci
+        working-directory: extensions/cart-transformer
+
+      - name: Run backend tests
+        run: npm test
+        working-directory: web
+
+      - name: Run frontend tests
+        run: npm test
+        working-directory: web/frontend
+
+      - name: Run extension tests
+        run: npm test
+        working-directory: extensions/cart-transformer
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: web/frontend
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            web/coverage/
+            web/frontend/coverage/
