@@ -31,8 +31,9 @@ shopify-extension-implementer if extensions/ changes needed (plan determines thi
 
 | Field | Value |
 |-------|-------|
-| **Automation ID** | *(set after registration — see Setup below)* |
-| **Status** | Pending registration |
+| **Automation ID** | `3cfefdb0-a1bc-4f26-bcc6-4136ff0fb4da` |
+| **Status** | ✅ Enabled |
+| **Registered** | 2026-05-31 |
 | **Trigger** | `issues.labeled` → `ready-to-implement` on `11thandOrange/BusyBuddy_v2` |
 
 ## Required Secrets
