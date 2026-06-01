@@ -96,7 +96,7 @@ jobs:
         working-directory: web/frontend
 
       - name: Install stylelint-scss (peer dep of @shopify/stylelint-polaris)
-        run: npm install stylelint-scss --no-save
+        run: npm install stylelint-scss@4 --no-save --legacy-peer-deps
         working-directory: web/frontend
 
       - name: Stylelint — Polaris CSS compliance (frontend)
@@ -137,7 +137,7 @@ jobs:
           sleep 1
 
       - name: Run smoke tests
-        run: npm run smoke
+        run: npx playwright test tests/smoke/base.smoke.js --config=playwright.config.js
         working-directory: web/frontend
         env:
           CI: true
