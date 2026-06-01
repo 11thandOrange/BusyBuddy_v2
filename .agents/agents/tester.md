@@ -144,6 +144,33 @@ describe('FeatureForm', () => {
       );
     });
   });
+
+  it('shows error state when fetch throws a network error', async () => {
+    global.fetch.mockRejectedValueOnce(new Error('Network error'));
+    renderComponent();
+    fireEvent.click(screen.getByText(/save/i));
+    await waitFor(() => {
+      expect(screen.getByText(/error|failed|something went wrong/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows error state when API returns success: false', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ success: false, error: 'Validation failed' }),
+    });
+    renderComponent();
+    fireEvent.click(screen.getByText(/save/i));
+    await waitFor(() => {
+      expect(screen.getByText(/error|failed|validation/i)).toBeInTheDocument();
+    });
+  });
+
+  it('renders without crashing when optional props are omitted', () => {
+    // Verify the component handles missing optional props gracefully
+    renderComponent({});
+    expect(document.body).toBeTruthy();
+  });
 });
 ```
 
@@ -181,6 +208,48 @@ describe('cart transform function', () => {
     const result = run(input);
     expect(result.operations).toHaveLength(1);
     expect(result.operations[0].expand).toBeDefined();
+  });
+
+  it('returns no operations for a non-bundle line item', () => {
+    // Line item with no bundledProducts metadata — regular product, not a bundle
+    const input = {
+      cart: {
+        lines: [{
+          id: 'gid://shopify/CartLine/2',
+          merchandise: {
+            __typename: 'ProductVariant',
+            product: {
+              bundledProducts: { value: '' },
+              bundledDiscountValue: { value: '0' },
+              bundledDiscountType: { value: 'fixed' },
+            },
+          },
+          bundleVariantIds: { value: '' },
+        }],
+      },
+      presentmentCurrencyRate: 1.0,
+    };
+    const result = run(input);
+    expect(result.operations).toHaveLength(0);
+  });
+
+  it('returns no operations when product metafields are missing', () => {
+    // Malformed line — product has no bundle metadata at all
+    const input = {
+      cart: {
+        lines: [{
+          id: 'gid://shopify/CartLine/3',
+          merchandise: {
+            __typename: 'ProductVariant',
+            product: {},
+          },
+          bundleVariantIds: null,
+        }],
+      },
+      presentmentCurrencyRate: 1.0,
+    };
+    const result = run(input);
+    expect(result.operations).toHaveLength(0);
   });
 });
 ```
