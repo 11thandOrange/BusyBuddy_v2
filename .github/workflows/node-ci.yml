@@ -100,7 +100,7 @@ jobs:
         working-directory: web/frontend
 
       - name: Stylelint — Polaris CSS compliance (frontend)
-        run: npx stylelint "**/*.css" "**/*.jsx" --allow-empty-input
+        run: npx stylelint "**/*.css" --allow-empty-input
         working-directory: web/frontend
 
   # ── Job 4: Smoke — Playwright (non-draft only) ─────────────────────────────

@@ -45,11 +45,12 @@ export default {};
  */
 export async function setupMocks(page, apiOverrides = {}) {
   // ── Shopify App Bridge stub ──────────────────────────────────────────────
-  // Vite pre-bundles @shopify/app-bridge-react to a path like:
+  // Vite pre-bundles @shopify/app-bridge* to paths like:
   //   /node_modules/.vite/deps/@shopify_app-bridge-react.js
-  // Intercept every request whose URL contains "app-bridge-react" and return
+  //   /node_modules/.vite/deps/@shopify_app-bridge.js
+  // Intercept every request whose URL contains "app-bridge" and return
   // the stub so the app renders without a live embedded context.
-  await page.route('**app-bridge-react**', route =>
+  await page.route('**app-bridge**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/javascript; charset=utf-8',
@@ -75,14 +76,16 @@ export async function setupMocks(page, apiOverrides = {}) {
 
   // ── Location mock ─────────────────────────────────────────────────────────
   // Many components read window.location.search for the shop param.
+  // Use history.replaceState to avoid Illegal invocation from overriding
+  // the native Location object directly.
   await page.addInitScript(() => {
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      writable: true,
-      value: Object.assign(Object.create(window.location), {
-        search: '?shop=test-shop.myshopify.com',
-      }),
-    });
+    try {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('shop')) {
+        url.searchParams.set('shop', 'test-shop.myshopify.com');
+        history.replaceState({}, '', url.toString());
+      }
+    } catch (_) {}
   });
 }
 
