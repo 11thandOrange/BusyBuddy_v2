@@ -68,38 +68,3 @@ curl -X POST "https://app.all-hands.dev/api/automation/v1/preset/prompt" \
 |-------|----------|---------|
 | `ready-to-implement` | Standard pipeline — single implementation | 1 |
 | `complex-logic` | This pipeline — three approaches, reviewer picks best | 3 + 1 PR |
-
-## Pipeline Agent Sources
-
-The pipeline agents are user-level and live in `HeyItsChloe/.agents`:
-
-| Agent | Source |
-|-------|--------|
-| `approach-planner` | `HeyItsChloe/.agents/agents/approach-planner.md` |
-| `approach-implementer` | `HeyItsChloe/.agents/agents/approach-implementer.md` |
-| `approach-reviewer` | `HeyItsChloe/.agents/agents/approach-reviewer.md` |
-| `submit-winning-approach` | `HeyItsChloe/.agents/skills/submit-winning-approach.md` |
-
-## OpenHands Automation Setup
-
-```bash
-OPENHANDS_HOST="https://app.all-hands.dev"
-
-curl -X POST "${OPENHANDS_HOST}/api/automation/v1/preset/prompt" \
-  -H "Authorization: Bearer ${OPENHANDS_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "BusyBuddy_v2 Complex Logic Pipeline",
-    "prompt": "A GitHub Issue has been labelled complex-logic on BusyBuddy_v2.\n\n1. Run approach-planner: explore repo, post 3 approach comments on the issue\n2. Run approach-implementer for approach 1 on branch feat/issue-N-approach-1\n3. Run approach-implementer for approach 2 on branch feat/issue-N-approach-2\n4. Run approach-implementer for approach 3 on branch feat/issue-N-approach-3\n5. Run approach-reviewer: score all 3, post decision comment\n6. Run submit-winning-approach skill: open PR from winning branch\n\nReport the winning PR URL.",
-    "trigger": {
-      "type": "event",
-      "source": "github",
-      "on": "issues.labeled",
-      "filter": "contains(issue.labels[].name, \'complex-logic\') && glob(repository.full_name, \'11thandOrange/BusyBuddy_v2\')"
-    },
-    "timeout": 3600,
-    "repos": [
-      {"url": "https://github.com/11thandOrange/BusyBuddy_v2", "ref": "main"}
-    ]
-  }'
-```
