@@ -145,19 +145,6 @@ describe('DashboardHome', () => {
       }
     });
 
-      
-      // Click on Bundle Discounts Create button
-      const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-tile');
-      const createButton = bundleCard?.querySelector('button');
-      
-      if (createButton) {
-        fireEvent.click(createButton);
-        expect(mockOpen).toHaveBeenCalledWith(
-          expect.stringContaining('shop='),
-          '_blank'
-        );
-      }
-    });
 
     it('should render the Inactive Tab Message widget card', async () => {
       // useNavigate is already mocked globally in tests/setup.js
