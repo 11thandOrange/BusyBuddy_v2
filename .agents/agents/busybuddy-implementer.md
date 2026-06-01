@@ -155,29 +155,36 @@ const data = await response.json();
 - `process.env.*` for all environment variables
 - ES modules throughout (`import`/`export`) — no `require()`
 
-## Step 4 — Commit Incrementally
+## Step 4 — Run Tests Before Every Commit
+
+Run the relevant test suite after each logical unit of work. Fix all failures
+before moving to the commit step. Do not commit broken code.
 
 ```bash
+# After backend changes (routes / controller / model)
+cd web && npm test
+
+# After frontend changes (pages / app modules)
+cd web/frontend && npm test
+```
+
+If tests fail: fix the code, re-run, repeat until green. Do not skip or defer.
+
+## Step 5 — Commit Incrementally
+
+Only commit once the tests for that unit pass.
+
+```bash
+# Backend unit (after backend tests are green)
 git add web/backend/routes/<feature>/ web/backend/controller/<feature>/ web/backend/models/
 git commit -m "feat(<feature>): add backend route, controller, and model"
 
+# Frontend unit (after frontend tests are green)
 git add web/frontend/pages/ web/frontend/apps/<feature>/
 git commit -m "feat(<feature>): add frontend page and app module"
 ```
 
 Commit types: `feat`, `fix`, `refactor`, `test`, `chore`
-
-## Step 5 — Run Tests
-
-```bash
-# Backend
-cd web && npm test
-
-# Frontend
-cd web/frontend && npm test
-```
-
-Fix any failures before proceeding. Do not skip.
 
 ## Step 6 — Self-Check Before Handoff
 
