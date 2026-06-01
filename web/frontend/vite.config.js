@@ -64,7 +64,11 @@ export default defineConfig({
     host: process.env.SERVER_IP_ADDRESS || "localhost",
     port: process.env.FRONTEND_PORT,
     hmr: hmrConfig,
-    proxy: {
+    // In smoke-test mode (SMOKE_TEST=true), disable the backend proxy so:
+    //   1. The SPA is served at all paths (including root '/'), not proxied to
+    //      the Shopify auth-redirect backend.
+    //   2. Playwright's own route mocks handle /api/** calls.
+    proxy: process.env.SMOKE_TEST ? {} : {
       "^/(\\?.*)?$": proxyOptions,
       "^/api(/|(\\?.*)?$)": proxyOptions,
     },

@@ -35,6 +35,8 @@ export default defineConfig({
       SHOPIFY_API_KEY: 'smoke-test-key',
       FRONTEND_PORT: '4000',
       BACKEND_PORT: '3001',  // not used — all /api/* calls are intercepted
+      SMOKE_TEST: 'true',    // disables Vite's backend proxy so the SPA
+                             // serves all routes including root '/'
     },
   },
 
