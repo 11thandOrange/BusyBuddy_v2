@@ -120,3 +120,38 @@ agents/ticket-manager.md
 skills/ci-monitor.md
 skills/whatsapp-notifier.md
 ```
+
+## OpenHands Automation Setup
+
+Create this automation in OpenHands to trigger the pipeline automatically:
+
+```bash
+OPENHANDS_HOST="https://app.all-hands.dev"
+
+curl -X POST "${OPENHANDS_HOST}/api/automation/v1/preset/prompt" \
+  -H "Authorization: Bearer ${OPENHANDS_API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "BusyBuddy_v2 Autonomous Dev Pipeline",
+    "prompt": "A GitHub Issue has been labelled ready-to-implement on BusyBuddy_v2.\n\n1. Run ticket-planner for the issue number from the event payload\n2. Run busybuddy-implementer (and shopify-extension-implementer if plan requires it)\n3. Run tester on all three suites\n4. Run build-check skill\n5. Open a draft PR linking the issue\n6. Run pr-reviewer for a self-review pass\n\nDo not mark the PR as ready. Report the PR URL.",
+    "trigger": {
+      "type": "event",
+      "source": "github",
+      "on": "issues.labeled",
+      "filter": "contains(issue.labels[].name, \'ready-to-implement\') && glob(repository.full_name, \'11thandOrange/BusyBuddy_v2\')"
+    },
+    "timeout": 1800,
+    "repos": [
+      {"url": "https://github.com/11thandOrange/BusyBuddy_v2", "ref": "main"}
+    ]
+  }'
+```
+
+## Trigger Configuration
+
+| Setting | Value |
+|---------|-------|
+| Source | GitHub |
+| Event | `issues.labeled` |
+| Filter | `contains(issue.labels[].name, 'ready-to-implement') && glob(repository.full_name, '11thandOrange/BusyBuddy_v2')` |
+| Timeout | 1800 seconds (30 min) |

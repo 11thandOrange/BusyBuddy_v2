@@ -183,9 +183,35 @@ Save to `/tmp/plan-<NUMBER>.md` and output it below.
 [Low / Medium / High] — <one-line justification>
 ```
 
+## Step 7 — Post Plan via ticket-manager
+
+Once the plan is finalised, delegate all GitHub writes to the user-level `ticket-manager`.
+Do not call the GitHub API directly.
+
+Invoke `ticket-manager` with:
+
+```
+task: comment
+repo: 11thandOrange/BusyBuddy_v2
+issue: <ISSUE_NUMBER>
+body: <full plan markdown from Step 6>
+```
+
+Then invoke `ticket-manager` again to label:
+
+```
+task: label
+repo: 11thandOrange/BusyBuddy_v2
+issue: <ISSUE_NUMBER>
+add_labels: ["planned"]
+```
+
+`ticket-planner` owns the technical analysis. `ticket-manager` owns all GitHub writes.
+
 ## Gotchas
 
 - All authenticated routes go through `shopify.authenticate.admin` middleware — new routes must include it
 - Session storage is MongoDB-backed — never import SQLite alternatives
 - Frontend API calls proxy through Vite to the backend — no full URL needed in fetch calls
 - Do not reference files that do not exist — always verify with `find` or `cat` first
+- Never call `gh issue comment` or `gh issue edit` directly — always delegate to `ticket-manager`
