@@ -31,3 +31,7 @@ web/database.sqlite
 .shopify/*
 .shopify.lock
 shopify.app.toml
+
+# Playwright
+web/frontend/tests/smoke/.playwright-output/
+web/frontend/tests/smoke/.playwright-report/

@@ -47,8 +47,8 @@ const mockAnalyticsData = {
     { date: '2026-03-14', revenue: 700 },
   ],
   allBundles: [
-    { _id: '1', title: 'Summer Bundle', status: true, revenue: 2000, quantity: 20 },
-    { _id: '2', title: 'Winter Bundle', status: false, revenue: 1500, quantity: 15 },
+    { _id: '1', name: 'Summer Bundle', status: true, totalRevenue: 2000, totalQuantity: 20, averagePrice: 100 },
+    { _id: '2', name: 'Winter Bundle', status: false, totalRevenue: 1500, totalQuantity: 15, averagePrice: 100 },
   ],
 };
 
@@ -93,7 +93,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, revenueTrend: [] },
           }),
         })
@@ -111,7 +111,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, topBundles: [] },
           }),
         })
@@ -129,7 +129,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, topBundles: [] },
           }),
         })
@@ -147,7 +147,7 @@ describe('BundleAnalytics', () => {
         Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
-            success: true,
+            status: 'SUCCESS',
             data: { ...mockAnalyticsData, allBundles: [] },
           }),
         })
@@ -166,7 +166,7 @@ describe('BundleAnalytics', () => {
       global.fetch = vi.fn(() =>
         Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ success: true, data: mockAnalyticsData }),
+          json: () => Promise.resolve({ status: 'SUCCESS', data: mockAnalyticsData }),
         })
       );
     });
@@ -176,7 +176,7 @@ describe('BundleAnalytics', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Total Revenue')).toBeInTheDocument();
-        expect(screen.getByText('Total Orders')).toBeInTheDocument();
+        expect(screen.getByText('Total Orders Analyzed')).toBeInTheDocument();
       });
     });
 

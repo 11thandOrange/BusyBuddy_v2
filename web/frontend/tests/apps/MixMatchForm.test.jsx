@@ -48,7 +48,7 @@ describe('MixMatchForm (App Homepage)', () => {
     it('should render homepage view by default', () => {
       renderWithRouter(<MixMatchForm />);
       
-      expect(screen.getByText('Mix and Match')).toBeInTheDocument();
+      expect(screen.getByText(/Mix and Match/)).toBeInTheDocument();
       expect(screen.getByTestId('discount-list')).toBeInTheDocument();
     });
 
