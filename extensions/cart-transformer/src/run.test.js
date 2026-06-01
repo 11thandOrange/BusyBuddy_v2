@@ -7,7 +7,7 @@ import { run } from './run';
 
 describe('cart transform function', () => {
   it('returns no operations', () => {
-    const result = run({});
+    const result = run({ cart: { lines: [] } });
     const expected = /** @type {FunctionRunResult} */ ({ operations: [] });
 
     expect(result).toEqual(expected);
