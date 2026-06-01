@@ -154,7 +154,6 @@ gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement"
 | `busybuddy-implementer` | Writes JS/JSX/Express/Mongoose code following project patterns |
 | `shopify-extension-implementer` | Liquid blocks, storefront JS, cart-transformer Function logic |
 | `tester` | All 3 Vitest suites with correct commands and working directories |
-| `build-check` | Frontend build verification with correct `CI` flag handling |
 | `pr-reviewer` | Shopify/JS-specific review — Polaris, async errors, Mongoose, no secrets |
 
 ### Repo-Level Skills
@@ -163,6 +162,7 @@ gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement"
 |-------|-------------|
 | `env-setup` | Writes `web/.env` from OpenHands secrets before any run command |
 | `dev-server` | Full startup: install deps → write `.env` → `shopify app dev` |
+| `build-check` | Frontend build verification with correct `CI` flag handling |
 
 ### Shared User-Level (HeyItsChloe/.agents)
 

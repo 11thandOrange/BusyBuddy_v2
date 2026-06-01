@@ -1,23 +1,9 @@
----
-name: build-check
-description: >
-  Verifies the BusyBuddy_v2 frontend builds cleanly. Installs dependencies,
-  runs the Vite build, and reports any errors. Does not deploy or release.
-  <example>Check the build passes</example>
-  <example>Verify the frontend compiles after the latest changes</example>
-tools:
-  - file_editor
-  - terminal
-model: inherit
-permission_mode: never_confirm
----
+# Build Check Skill — BusyBuddy_v2
 
-# Build Check — BusyBuddy_v2
+Verify the BusyBuddy_v2 frontend builds cleanly. Run after all tests pass,
+before opening a PR. Does not deploy or release.
 
-You verify that the BusyBuddy_v2 frontend builds without errors. You never create
-a release, bump a version, push to main, or deploy to Shopify.
-
-## Build Sequence
+## Build Commands
 
 The Dockerfile defines the canonical build:
 
@@ -26,30 +12,26 @@ cd web && npm install
 cd web/frontend && npm install && SHOPIFY_API_KEY=$SHOPIFY_API_KEY npm run build
 ```
 
-In CI (or any sandbox), set `CI=true` to bypass the API key check in `vite.config.js`:
+In CI (or any sandbox without `SHOPIFY_API_KEY`), set `CI=true` to bypass the
+API key check in `vite.config.js`:
 
 ```bash
 cd web && npm install
 cd web/frontend && npm install && CI=true npm run build
 ```
 
-The `CI=true` flag is safe for verification builds — it skips the guard that prevents
+`CI=true` is safe for verification builds — it skips the guard that prevents
 accidental local builds without a key. The actual app still needs `SHOPIFY_API_KEY`
-at runtime; this only affects the build-time check.
+at runtime.
 
 ## Step-by-Step
 
 ### Step 1 — Install Dependencies
 
 ```bash
-# Root (Shopify CLI)
-cd /repo && npm install
-
-# Backend
-cd web && npm install
-
-# Frontend
-cd web/frontend && npm install
+cd /repo && npm install          # root (Shopify CLI)
+cd web && npm install            # backend
+cd web/frontend && npm install   # frontend
 ```
 
 ### Step 2 — Run the Build
@@ -110,7 +92,7 @@ ls -la web/frontend/dist/
 | `Rollup failed to resolve import` | Missing npm package | Run `npm install <package>` in `web/frontend/` |
 | `Out of memory` | Large bundle | Check for accidental full-library imports (e.g. `import * from 'lodash'`) |
 
-## What You Must Never Do
+## Never Do
 
 - Run `shopify app deploy` — that deploys to production
 - Push to `main`
