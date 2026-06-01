@@ -44,12 +44,25 @@ export default {};
  *   { success: true, data: [] }.  E.g. { '/bundles': { success: true, data: [{ name: 'Test' }] } }
  */
 export async function setupMocks(page, apiOverrides = {}) {
-  // ── Shopify App Bridge stub ──────────────────────────────────────────────
+  // ── Shopify App Bridge CDN stub ──────────────────────────────────────────
+  // index.html loads the App Bridge CDN script via a plain <script> tag
+  // (no type="module").  Returning an ESM stub would throw
+  // "Unexpected token 'export'", so intercept it first with a safe IIFE.
+  await page.route('**/shopifycloud/app-bridge.js', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/javascript; charset=utf-8',
+      body: '(function(){window.shopify=window.shopify||{};})();',
+    })
+  );
+
+  // ── Shopify App Bridge module stub ───────────────────────────────────────
   // Vite pre-bundles @shopify/app-bridge* to paths like:
   //   /node_modules/.vite/deps/@shopify_app-bridge-react.js
   //   /node_modules/.vite/deps/@shopify_app-bridge.js
-  // Intercept every request whose URL contains "app-bridge" and return
-  // the stub so the app renders without a live embedded context.
+  // Intercept every request whose URL contains "app-bridge" (but NOT the
+  // CDN IIFE above, which is already handled) and return the ESM stub so
+  // the app renders without a live embedded context.
   await page.route('**app-bridge**', route =>
     route.fulfill({
       status: 200,
