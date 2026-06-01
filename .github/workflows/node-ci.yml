@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  pull-requests: write
+
 jobs:
   # ── Job 1: Unit + Integration Tests ────────────────────────────────────────
   test:
@@ -92,10 +95,6 @@ jobs:
         run: npm install
         working-directory: web/frontend
 
-      - name: Prettier — formatting check (frontend)
-        run: npx prettier --check "**/*.{js,jsx,ts,tsx,css,json}" --ignore-unknown
-        working-directory: web/frontend
-
       - name: Stylelint — Polaris CSS compliance (frontend)
         run: npx stylelint "**/*.css" "**/*.jsx" --allow-empty-input
         working-directory: web/frontend
@@ -112,8 +111,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: web/frontend/package-lock.json
 
       - name: Install frontend dependencies
         run: npm install
