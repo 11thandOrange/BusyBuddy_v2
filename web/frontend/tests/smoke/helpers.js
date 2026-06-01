@@ -44,32 +44,30 @@ export default {};
  *   { success: true, data: [] }.  E.g. { '/bundles': { success: true, data: [{ name: 'Test' }] } }
  */
 export async function setupMocks(page, apiOverrides = {}) {
-  // ── Shopify App Bridge CDN stub ──────────────────────────────────────────
-  // index.html loads the App Bridge CDN script via a plain <script> tag
-  // (no type="module").  Returning an ESM stub would throw
-  // "Unexpected token 'export'", so intercept it first with a safe IIFE.
-  await page.route('**/shopifycloud/app-bridge.js', route =>
+  // ── Shopify App Bridge stub ──────────────────────────────────────────────
+  // Two kinds of App Bridge requests need different stubs:
+  //
+  // 1. CDN IIFE (non-module): index.html loads
+  //    https://cdn.shopify.com/shopifycloud/app-bridge.js via a plain
+  //    <script> tag.  Returning an ESM body (with `export`) causes
+  //    "Unexpected token 'export'" in a non-module context.  Return a safe
+  //    IIFE instead.
+  //
+  // 2. Vite ESM deps: Vite pre-bundles @shopify/app-bridge* to paths like
+  //    /node_modules/.vite/deps/@shopify_app-bridge-react.js
+  //    These are loaded as ES modules and need the ESM stub.
+  //
+  // A single handler checks the URL to pick the right body.
+  await page.route('**app-bridge**', route => {
+    const isCdnIife = route.request().url().includes('shopifycloud');
     route.fulfill({
       status: 200,
       contentType: 'application/javascript; charset=utf-8',
-      body: '(function(){window.shopify=window.shopify||{};})();',
-    })
-  );
-
-  // ── Shopify App Bridge module stub ───────────────────────────────────────
-  // Vite pre-bundles @shopify/app-bridge* to paths like:
-  //   /node_modules/.vite/deps/@shopify_app-bridge-react.js
-  //   /node_modules/.vite/deps/@shopify_app-bridge.js
-  // Intercept every request whose URL contains "app-bridge" (but NOT the
-  // CDN IIFE above, which is already handled) and return the ESM stub so
-  // the app renders without a live embedded context.
-  await page.route('**app-bridge**', route =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/javascript; charset=utf-8',
-      body: APP_BRIDGE_STUB,
-    })
-  );
+      body: isCdnIife
+        ? '(function(){window.shopify=window.shopify||{};})();'
+        : APP_BRIDGE_STUB,
+    });
+  });
 
   // ── API mock ─────────────────────────────────────────────────────────────
   // Return a safe default for every /api/* call.  Specific tests can pass
