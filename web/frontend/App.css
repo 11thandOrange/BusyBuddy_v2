@@ -10,7 +10,7 @@
   }
 
   #app {
-    padding: 25px;
+    padding: var(--p-space-6);
   }
   
   .layoutbox{

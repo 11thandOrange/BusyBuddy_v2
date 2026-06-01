@@ -1,0 +1,15 @@
+# These files pre-date the Polaris stylelint enforcement and contain
+# accumulated technical debt. They are excluded here so the lint gate
+# does not block unrelated PRs. Fix them incrementally in dedicated PRs.
+pages/DashboardHome.css
+pages/index.css
+apps/announcement-bar/announcementBarStyles.css
+apps/bundle-discounts/bundleDiscountStyles.css
+apps/buy-one-get-one/buyoneGetoneStyles.css
+apps/car-notice/carNoticeStyles.css
+apps/countdown-timer/countdownTimerStyles.css
+apps/inactive-tab-message/inactiveTabMessageStyles.css
+apps/mix-and-match-discounts/mixMatchStyles.css
+apps/volume-discounts/volumeDiscountStyles.css
+components/Editor/EditorLayout.css
+components/Plans/style.css

@@ -1,4 +1,5 @@
-pane /* Liquid Glass Panel Styles - iOS Liquid Glass Effect */
+/* stylelint-disable polaris/color/function-disallowed-list, polaris/color/color-no-hex, polaris/border/declaration-property-unit-disallowed-list, polaris/space/declaration-property-unit-disallowed-list, polaris/shadow/declaration-property-unit-disallowed-list -- Glass-morphism effect requires custom rgba/hex colors and pixel dimensions outside the Polaris token system */
+/* Liquid Glass Panel Styles - iOS Liquid Glass Effect */
 
 /* Base Panel Styles */
 .liquid-glass-panel {
