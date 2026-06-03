@@ -1,6 +1,8 @@
 import React from 'react';
 import { Modal, Button, Badge, Row, Col, ListGroup } from 'react-bootstrap';
 
+const PLACEHOLDER_IMG = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292';
+
 const DiscountPreviewModal = ({ show, onHide, discount }) => {
   if (!discount) return null;
 
@@ -74,12 +76,13 @@ const DiscountPreviewModal = ({ show, onHide, discount }) => {
                 <div key={idx} className="mb-4">
                   <div className="d-flex align-items-start mb-2">
                     <img
-                      src={product.media}
+                      src={product.media || PLACEHOLDER_IMG}
                       alt={product.title}
                       width={80}
                       height={80}
                       className="rounded me-3"
                       style={{ objectFit: 'cover' }}
+                      onError={(e) => { e.target.onerror = null; e.target.src = PLACEHOLDER_IMG; }}
                     />
                     <div>
                       <h6 className="fw-bold mb-1">{product.title}</h6>

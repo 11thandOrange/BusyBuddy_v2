@@ -811,11 +811,12 @@ const MixMatchActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                             <div className="d-flex align-items-center">
                               <img src={verticalicon} alt="T-Shirt" width={20} height={20} className="me-2" />
                               <img
-                                src={product.media}
+                                src={product.media || tshirtp}
                                 alt="T-Shirt"
                                 width={60}
                                 height={60}
                                 className="me-2"
+                                onError={(e) => { e.target.onerror = null; e.target.src = tshirtp; }}
                               />
                               <div className="bundlebox">
                                 <span className="productname">{product.title}</span>
