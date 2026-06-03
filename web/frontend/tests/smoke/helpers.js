@@ -65,7 +65,10 @@ export async function setupMocks(page, apiOverrides = {}) {
     const match = Object.entries(apiOverrides).find(([pattern]) =>
       url.includes(pattern)
     );
-    const body = match ? match[1] : { success: true, data: [] };
+    // Default covers both { success } and { status } conventions used across pages.
+    const body = match
+      ? match[1]
+      : { success: true, status: true, data: [], bundles: [], discounts: [], announcements: [] };
     route.fulfill({
       status: 200,
       contentType: 'application/json',

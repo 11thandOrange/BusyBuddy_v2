@@ -23,27 +23,29 @@ const PAGES = [
   {
     route: '/bundles',
     name: 'bundles',
-    selector: 'h1, h2, form, [class*="bundle"], .Page',
+    // Page renders h1 on success (status:true) or an Alert on error; both have .container
+    selector: 'h1, h2, h3, h4, h5, h6, form, [class*="bundle"], .container, .container-fluid, .Page',
   },
   {
     route: '/announcement-bar',
     name: 'announcement-bar',
-    selector: 'h1, h2, form, [class*="announcement"], .Page',
+    // AnnouncementBarForm renders an <h5> heading immediately
+    selector: 'h1, h2, h3, h4, h5, h6, form, [class*="announcement"], .container, .container-fluid, .Page',
   },
   {
     route: '/buy-one-get-one',
     name: 'buy-one-get-one',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, h3, h4, h5, h6, form, .container, .container-fluid, .Page',
   },
   {
     route: '/mix-and-match',
     name: 'mix-and-match',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, h3, h4, h5, h6, form, .container, .container-fluid, .Page',
   },
   {
     route: '/volume-discounts',
     name: 'volume-discounts',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, h3, h4, h5, h6, form, .container, .container-fluid, .Page',
   },
   {
     route: '/inactive-tab-message',
