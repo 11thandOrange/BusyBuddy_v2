@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  pull-requests: write
+
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
@@ -80,6 +83,18 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
         working-directory: web/frontend
+
+      - name: Start mock backend on port 3001
+        run: |
+          python3 -c "
+          import http.server, threading
+          class H(http.server.BaseHTTPRequestHandler):
+              def do_GET(self): self.send_response(200); self.send_header('Content-Type','application/json'); self.end_headers(); self.wfile.write(b'{}')
+              def do_POST(self): self.send_response(200); self.send_header('Content-Type','application/json'); self.end_headers(); self.wfile.write(b'{}')
+              def log_message(self, *a): pass
+          http.server.HTTPServer(('', 3001), H).serve_forever()
+          " &
+          sleep 1
 
       - name: Run smoke tests
         run: npm run smoke
