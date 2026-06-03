@@ -321,7 +321,7 @@ export const MixAndMatchEditor = () => {
           productId: product.id,
           title: product.title,
           price: variant?.price || "0.00",
-          media: product.images?.nodes?.[0]?.url || tshirt,
+          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
           quantity: 1,
           optionSelections: product.options?.map((opt) => ({
             name: opt.name,
@@ -512,7 +512,7 @@ export const MixAndMatchEditor = () => {
                     availableProducts.slice(0, 10).map(product => (
                       <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                          <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -540,7 +540,7 @@ export const MixAndMatchEditor = () => {
                   selectedProducts.map(product => (
                     <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(81, 105, 221, 0.3)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>

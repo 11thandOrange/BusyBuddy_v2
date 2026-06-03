@@ -17,6 +17,11 @@ async function getProducts(req, res) {
           node {
             id
             title
+            images(first: 1) {
+              edges {
+                node { url }
+              }
+            }
             featuredMedia {
               ... on MediaImage {
                 id

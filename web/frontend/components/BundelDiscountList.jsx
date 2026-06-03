@@ -382,7 +382,7 @@ export default function DiscountList({
                             {/* Left Side: Image + Details */}
                             <div className="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
                               <img
-                                src={discount.products[0]?.media}
+                                src={discount.products[0]?.media || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"}
                                 alt={discount.products[0]?.title || "Discount Product"}
                                 width={80}
                                 height={80}

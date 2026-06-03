@@ -74,7 +74,7 @@ const DiscountPreviewModal = ({ show, onHide, discount }) => {
                 <div key={idx} className="mb-4">
                   <div className="d-flex align-items-start mb-2">
                     <img
-                      src={product.media}
+                      src={product.media || "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292"}
                       alt={product.title}
                       width={80}
                       height={80}
