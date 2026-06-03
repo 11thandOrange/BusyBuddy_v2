@@ -812,7 +812,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
                             <div className="d-flex align-items-center">
                               <img src={verticalicon} alt="T-Shirt" width={20} height={20} className="me-2" />
                               <img
-                                src={product.media}
+                                src={product.media || tshirt}
                                 alt="T-Shirt"
                                 width={60}
                                 height={60}

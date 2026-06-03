@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Row,
@@ -20,28 +20,59 @@ import videoimg from "../../assets/videoimg.png";
 export default function DiscountList({ onMakeBundleClick }) {
   const tabs = ["Overview", "Discounts", "Settings", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
-  const [bundles, setBundles] = useState({ bundle1: false, bundle2: false });
+  const [bundles, setBundles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showBundleAction, setShowBundleAction] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [isToggled, setIsToggled] = useState(true); // Toggle button in active state
-  const [checkboxes, setCheckboxes] = useState([false, false, false, false]);
-  const [toggles, setToggles] = useState([true, true, true, true]);
-  const handleCheckboxChange = (index) => {
-    setCheckboxes((prev) =>
-      prev.map((checked, i) => (i === index ? !checked : checked))
-    );
+
+  useEffect(() => {
+    if (selectedTab === "Discounts") {
+      fetchDiscounts();
+    }
+  }, [selectedTab]);
+
+  const fetchDiscounts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/bundles", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to fetch discounts");
+      const { data } = await response.json();
+      const bogoDiscounts = data
+        .filter(({ type }) => type === "Buy One Get One")
+        .map((item) => ({ ...item, selected: false }));
+      setBundles(bogoDiscounts);
+    } catch (err) {
+      setError(err.message || "Failed to fetch discounts");
+      console.error("Error fetching discounts:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleToggleChange = (index) => {
-    setToggles((prev) =>
-      prev.map((toggled, i) => (i === index ? !toggled : toggled))
-    );
+  const handleBundleSelectionChange = (bundleId) => {
+    setBundles(bundles.map((b) => (b._id === bundleId ? { ...b, selected: !b.selected } : b)));
   };
-  const handleBundleChange = (e) => {
-    setBundles({
-      ...bundles,
-      [e.target.name]: e.target.checked,
-    });
+
+  const handlePriorityChange = (bundleId, value) => {
+    setBundles(bundles.map((b) => (b._id === bundleId ? { ...b, priority: value } : b)));
+  };
+
+  const handleToggleChange = (bundleId) => {
+    setBundles(bundles.map((b) => (b._id === bundleId ? { ...b, status: !b.status } : b)));
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleString("default", { month: "short" });
+    const day = date.getDate();
+    const hour = date.getHours();
+    const minute = date.getMinutes();
+    const ampm = hour >= 12 ? "pm" : "am";
+    return `${month} ${day} at ${hour % 12 || 12}:${minute.toString().padStart(2, "0")}${ampm}`;
   };
 
   if (showBundleAction) {
@@ -157,7 +188,11 @@ export default function DiscountList({ onMakeBundleClick }) {
               <div className="slecetbox">
                 <Form.Check
                   type="checkbox"
-                  checked={isChecked}
+                  checked={bundles.length > 0 && bundles.every((b) => b.selected)}
+                  onChange={() => {
+                    const allSelected = bundles.every((b) => b.selected);
+                    setBundles(bundles.map((b) => ({ ...b, selected: !allSelected })));
+                  }}
                   className="custom-checkbox me-2"
                 />{" "}
                 <p className="selecttext">Select All</p>
@@ -452,90 +487,82 @@ export default function DiscountList({ onMakeBundleClick }) {
         )}
 
         {selectedTab === "Discounts" && (
-          <div className="d-flex flex-column gap-3 ">
-            {" "}
-            {checkboxes.map((isChecked, index) => (
-              <>
-                <Row key={index} className="g-0 linrrow">
-                  {" "}
-                  {/* Each bundle in a separate row */}
+          <div className="d-flex flex-column gap-3">
+            {isLoading ? (
+              <div className="text-center py-5">Loading bundles…</div>
+            ) : error ? (
+              <div className="text-center py-5 text-danger">{error}</div>
+            ) : bundles.length === 0 ? (
+              <div className="text-center py-5">
+                <p>No Buy One Get One bundles found. Create your first bundle!</p>
+              </div>
+            ) : (
+              bundles.map((bundle, index) => (
+                <Row key={bundle._id} className="g-0 linrrow">
                   <Col sm={9} md={9} lg={12}>
-                  <Card
-                    className="border-0 w-150"
-                    style={{ background: "rgb(241, 242, 244)" }}
-                  >
-                    <Card.Body className="d-flex align-items-center justify-content-between">
-                      {/* Left side - Checkbox and Bundle Name */}
-                      <div className="d-flex align-items-center">
-                        <Form.Check
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleCheckboxChange(index)}
-                          className="custom-checkbox me-2"
-                        />
-
-                        <img
-                          src={tshirt}
-                          alt="T-Shirt"
-                          width={80}
-                          height={80}
-                          className="me-2"
-                        />
-                        <div className="bundlebox">
-                          <div className="bundletxxtb1">
-                            <span className="bundletext">
-                              Bundle #{index + 1}
-                            </span>
-                            <div className="previewbtn">
-                              <img src={view} width={13} height={13} />
-                              Preview
+                    <Card className="border-0 w-150" style={{ background: "rgb(241, 242, 244)" }}>
+                      <Card.Body className="d-flex align-items-center justify-content-between">
+                        <div className="d-flex align-items-center">
+                          <Form.Check
+                            type="checkbox"
+                            checked={bundle.selected}
+                            onChange={() => handleBundleSelectionChange(bundle._id)}
+                            className="custom-checkbox me-2"
+                          />
+                          <img
+                            src={bundle.productsX?.[0]?.media || bundle.productsY?.[0]?.media || tshirt}
+                            alt={bundle.productsX?.[0]?.title || "Bundle Product"}
+                            width={80}
+                            height={80}
+                            className="me-2"
+                            style={{ objectFit: "cover" }}
+                          />
+                          <div className="bundlebox">
+                            <div className="bundletxxtb1">
+                              <span className="bundletext">{bundle.title || `Bundle #${index + 1}`}</span>
+                              <div className="previewbtn">
+                                <img src={view} width={13} height={13} alt="preview" />
+                                Preview
+                              </div>
+                            </div>
+                            <p className="buymorebtn">{bundle.internalName || "Buy Together & Save More!🔥!"}</p>
+                            <div className="bundletxtb2">
+                              {(bundle.productsX || []).map((p) => (
+                                <p key={p.productId}>{p.title}</p>
+                              ))}
                             </div>
                           </div>
-                          <p className="buymorebtn">Buy Together & Save More!🔥!</p>
-                          <div className="bundletxtb2">
-                            <p>Product 1</p>
-                            <p>Product 3</p>
+                        </div>
+                        <div className="d-flex align-items-center justify-content-between gap-2" style={{ width: "25%" }}>
+                          <Form.Group className="mt-1 d-flex align-items-center gap-2">
+                            <Form.Label className="inputtitle mt-1">Priority</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder=""
+                              value={bundle.priority || ""}
+                              onChange={(e) => handlePriorityChange(bundle._id, e.target.value)}
+                              style={{ background: "white", width: "80px", height: "29px" }}
+                              className="inputbox"
+                            />
+                          </Form.Group>
+                          <div className="togglebox">
+                            <p className="datetext mt-2">{bundle.startDate ? formatDate(bundle.startDate) : ""}</p>
+                            <Form.Check
+                              type="switch"
+                              id={`bundle-toggle-${bundle._id}`}
+                              checked={!!bundle.status}
+                              onChange={() => handleToggleChange(bundle._id)}
+                              className="custom-switch-toggle"
+                              style={{ width: "41px", height: "21px" }}
+                            />
                           </div>
                         </div>
-                      </div>
-                      <div
-                        className="d-flex align-items-center justify-content-between gap-2"
-                        style={{ width: "25%" }}
-                      >
-                        <Form.Group className="mt-1 d-flex align-items-center gap-2">
-                          <Form.Label className="inputtitle mt-1">
-                            Priority
-                          </Form.Label>
-                          <Form.Control
-                            type="text"
-                            placeholder=""
-                            style={{
-                              background: "white",
-                              width: "80px",
-                              height: "29px",
-                            }}
-                            className="inputbox"
-                          />
-                        </Form.Group>
-
-                        <div className="togglebox">
-                          <p className="datetext mt-2">Feb 13 at 12:59pm</p>
-                          <Form.Check
-                            type="switch"
-                            id={`bundle-toggle-${index}`}
-                            checked={toggles[index]}
-                            onChange={() => handleToggleChange(index)}
-                            className="custom-switch-toggle"
-                            style={{ width: "41px", height: "21px" }}
-                          />
-                        </div>
-                      </div>
-                    </Card.Body>
-                  </Card>
+                      </Card.Body>
+                    </Card>
                   </Col>
                 </Row>
-              </>
-            ))}
+              ))
+            )}
           </div>
         )}
       </Row>

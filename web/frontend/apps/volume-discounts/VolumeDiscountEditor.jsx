@@ -290,7 +290,7 @@ export const VolumeDiscountEditor = () => {
             productId: edge.node.id,
             title: edge.node.title,
             price: edge.node.variants?.nodes?.[0]?.price || '0',
-            media: edge.node.images?.edges?.[0]?.node?.url || tshirt,
+            media: edge.node.images?.edges?.[0]?.node?.url || edge.node.featuredMedia?.image?.url || tshirt,
             variants: edge.node.variants?.nodes || [],
           })) || [];
           setStoreProducts(products);
