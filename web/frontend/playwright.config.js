@@ -26,7 +26,7 @@ export default defineConfig({
 
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:4000',
+    url: 'http://localhost:4000/index.html',
     reuseExistingServer: false,
     timeout: 45_000,
     env: {

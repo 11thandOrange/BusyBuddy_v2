@@ -65,7 +65,10 @@ export default defineConfig({
     port: process.env.FRONTEND_PORT,
     hmr: hmrConfig,
     proxy: {
-      "^/(\\?.*)?$": proxyOptions,
+      // Root proxy forwards the Shopify-embedded-app shell to the Express
+      // backend. Skip it in CI (smoke tests) — no backend is running and
+      // the bare "/" request would ECONNREFUSED before Playwright's mocks fire.
+      ...(process.env.CI ? {} : { "^/(\\?.*)?$": proxyOptions }),
       "^/api(/|(\\?.*)?$)": proxyOptions,
     },
     allowedHosts: [
