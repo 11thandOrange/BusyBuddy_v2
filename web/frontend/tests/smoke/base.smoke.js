@@ -23,32 +23,32 @@ const PAGES = [
   {
     route: '/bundles',
     name: 'bundles',
-    selector: 'h1, h2, form, [class*="bundle"], .Page',
+    selector: 'h1, h2, form, [class*="bundle"], .Page, [class*="container"], .alert',
   },
   {
     route: '/announcement-bar',
     name: 'announcement-bar',
-    selector: 'h1, h2, form, [class*="announcement"], .Page',
+    selector: 'h1, h2, form, [class*="announcement"], .Page, [class*="container"]',
   },
   {
     route: '/buy-one-get-one',
     name: 'buy-one-get-one',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, form, .Page, [class*="container"]',
   },
   {
     route: '/mix-and-match',
     name: 'mix-and-match',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, form, .Page, [class*="container"]',
   },
   {
     route: '/volume-discounts',
     name: 'volume-discounts',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, form, .Page, [class*="container"]',
   },
   {
     route: '/inactive-tab-message',
     name: 'inactive-tab-message',
-    selector: 'h1, h2, form, .Page',
+    selector: 'h1, h2, form, .Page, [class*="container"]',
   },
 ];
 
