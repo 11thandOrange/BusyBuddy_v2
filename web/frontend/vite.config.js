@@ -18,12 +18,15 @@ if (
 
 process.env.VITE_SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 
-const proxyOptions = {
-  target: `http://127.0.0.1:${process.env.BACKEND_PORT}`,
-  changeOrigin: false,
-  secure: true,
-  ws: false,
-};
+const backendPort = process.env.BACKEND_PORT;
+const proxyOptions = backendPort && /^\d+$/.test(backendPort)
+  ? {
+      target: `http://127.0.0.1:${backendPort}`,
+      changeOrigin: false,
+      secure: true,
+      ws: false,
+    }
+  : null;
 
 const host = process.env.HOST
   ? process.env.HOST.replace(/https?:\/\//, "")
@@ -64,10 +67,12 @@ export default defineConfig({
     host: process.env.SERVER_IP_ADDRESS || "localhost",
     port: process.env.FRONTEND_PORT,
     hmr: hmrConfig,
-    proxy: {
-      "^/(\\?.*)?$": proxyOptions,
-      "^/api(/|(\\?.*)?$)": proxyOptions,
-    },
+    proxy: proxyOptions
+      ? {
+          "^/(\\?.*)?$": proxyOptions,
+          "^/api(/|(\\?.*)?$)": proxyOptions,
+        }
+      : {},
     allowedHosts: [
       "work-1-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",
       "work-2-pbtafkyytqoiqdmo.prod-runtime.all-hands.dev",

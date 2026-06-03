@@ -33,7 +33,9 @@ export default defineConfig({
       CI: 'true',
       SHOPIFY_API_KEY: 'smoke-test-key',
       FRONTEND_PORT: '4000',
-      BACKEND_PORT: '3001',  // not used — all /api/* calls are intercepted
+      // BACKEND_PORT intentionally omitted — disables the Vite proxy so the
+      // smoke server starts cleanly without a running backend; all /api/*
+      // calls are intercepted by Playwright route handlers.
     },
   },
 
