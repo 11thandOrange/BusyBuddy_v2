@@ -2,9 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import DiscountPreviewModal from '../../../components/Modals/DiscountPreviewModal';
-
-const PLACEHOLDER_IMG =
-  'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292';
+import PLACEHOLDER_IMG from '../../../assets/tshirt.png';
 
 vi.mock('react-bootstrap', async () => {
   const React = await import('react');
