@@ -12,6 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/smoke',
+  testMatch: '**/*.smoke.{js,ts}',
   outputDir: './tests/smoke/.playwright-output',
   reporter: [['list'], ['html', { open: 'never', outputFolder: './tests/smoke/.playwright-report' }]],
   timeout: 30_000,

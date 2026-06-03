@@ -65,7 +65,10 @@ export default defineConfig({
     port: process.env.FRONTEND_PORT,
     hmr: hmrConfig,
     proxy: {
-      "^/(\\?.*)?$": proxyOptions,
+      // Root-path proxy handles Shopify OAuth/session in normal dev;
+      // skip it in CI so Playwright's webServer health-check (GET /)
+      // and smoke-test navigation hit Vite's SPA fallback instead.
+      ...(process.env.CI !== "true" && { "^/(\\?.*)?$": proxyOptions }),
       "^/api(/|(\\?.*)?$)": proxyOptions,
     },
     allowedHosts: [
