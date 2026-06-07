@@ -1,5 +1,5 @@
 ---
-name: tester
+name: busybuddy-tester
 description: >
   Writes and runs tests for BusyBuddy_v2 across all three test suites — backend
   (Vitest/Node), frontend (Vitest/jsdom), and cart-transformer extension (Vitest).

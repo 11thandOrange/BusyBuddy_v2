@@ -1,5 +1,5 @@
 ---
-name: ticket-planner
+name: busybuddy-ticket-planner
 description: >
   Reads a GitHub Issue and explores the BusyBuddy_v2 codebase to produce a
   structured implementation plan. Does not write any code.
