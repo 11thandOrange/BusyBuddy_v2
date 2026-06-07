@@ -1,5 +1,5 @@
 ---
-name: pr-reviewer
+name: busybuddy-pr-reviewer
 description: >
   Reviews pull requests for BusyBuddy_v2. Checks JavaScript, React, Express,
   Mongoose, and Shopify-specific patterns. Posts inline comments via GitHub API.
