@@ -47,10 +47,20 @@ jobs:
         run: |
           if [ -z "${{ secrets.OPENHANDS_API_KEY }}" ]; then
             echo "warning=OPENHANDS_API_KEY secret is not configured. Please add it to repository settings." >> $GITHUB_OUTPUT
+            echo "has_key=false" >> $GITHUB_OUTPUT
           else
             echo "warning=" >> $GITHUB_OUTPUT
+            echo "has_key=true" >> $GITHUB_OUTPUT
           fi
         shell: bash
+
+      - name: Note missing API key
+        if: steps.check_api.outputs.has_key == 'false'
+        run: |
+          echo "::warning::${{ steps.check_api.outputs.warning }}"
+          echo "Workflow cannot trigger OpenHands until OPENHANDS_API_KEY is configured."
+          echo "Please add the OPENHANDS_API_KEY secret to repository Settings > Secrets and Actions."
+          exit 78
 
       - name: Trigger OpenHands Cloud
         id: trigger
@@ -72,28 +82,31 @@ jobs:
               },
               "selected_repository": "${{ github.repository }}"
             }
+          responseHandle: 'body'
         continue-on-error: true
 
-      - name: Add comment to issue
-        if: steps.trigger.outcome == 'success'
+      - name: Check trigger result
+        id: check_result
+        run: |
+          response=${{ steps.trigger.outputs.response }}
+          echo "Response: $response"
+          if echo "$response" | grep -q '"id"'; then
+            echo "trigger_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "trigger_success=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Add comment on success
+        if: steps.check_result.outputs.trigger_success == 'true'
         run: |
           gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Note trigger failure
-        if: steps.trigger.outcome == 'failure' && steps.check_api.outputs.warning == ''
+        if: steps.check_result.outputs.trigger_success == 'false'
         run: |
-          echo "OpenHands API call failed - please check the OpenHands service status"
+          echo "::error::OpenHands API call failed - please check the OpenHands service status"
           echo "Issue #${{ steps.check_trigger.outputs.issue_number }} was not processed"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Note missing API key
-        if: steps.check_api.outputs.warning != ''
-        run: |
-          echo "${{ steps.check_api.outputs.warning }}"
-          echo "Workflow cannot trigger OpenHands until OPENHANDS_API_KEY is configured."
-          echo "Please add the OPENHANDS_API_KEY secret to repository Settings > Secrets and Actions."
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
