@@ -82,15 +82,15 @@ jobs:
               },
               "selected_repository": "${{ github.repository }}"
             }
-          responseHandle: 'body'
         continue-on-error: true
 
       - name: Check trigger result
         id: check_result
         run: |
-          response=${{ steps.trigger.outputs.response }}
-          echo "Response: $response"
-          if echo "$response" | grep -q '"id"'; then
+          status="${{ steps.trigger.outputs.status }}"
+          echo "HTTP Status: $status"
+          # Check if status starts with 2 (success)
+          if [[ "$status" == 2* ]]; then
             echo "trigger_success=true" >> $GITHUB_OUTPUT
           else
             echo "trigger_success=false" >> $GITHUB_OUTPUT
