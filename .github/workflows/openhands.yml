@@ -1,0 +1,122 @@
+name: OpenHands Issue Automation
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to process'
+        required: true
+        type: string
+      issue_title:
+        description: 'Issue title'
+        required: true
+        type: string
+      issue_body:
+        description: 'Issue body'
+        required: false
+        type: string
+
+env:
+  OPENHANDS_HOST: https://app.all-hands.dev
+
+jobs:
+  process-issue:
+    if: ${{ github.event.label.name == 'ready-to-implement' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine issue context
+        id: context
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "issue_title=${{ inputs.issue_title }}" >> $GITHUB_OUTPUT
+            echo "issue_body=${{ inputs.issue_body }}" >> $GITHUB_OUTPUT
+          else
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "issue_title=${{ github.event.issue.title }}" >> $GITHUB_OUTPUT
+            echo "issue_body=${{ github.event.issue.body }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create OpenHands conversation
+        id: conversation
+        run: |
+          RESPONSE=$(curl -s --max-time 60 -X POST \
+            "${{ env.OPENHANDS_HOST }}/api/automation/v1/conversations" \
+            -H "Authorization: Bearer ${{ secrets.OPENHANDS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repo": "11thandOrange/BusyBuddy_v2",
+              "branch": "main",
+              "head": "openhands-issue-${{ steps.context.outputs.issue_number }}",
+              "issue_number": ${{ steps.context.outputs.issue_number }},
+              "title": "${{ steps.context.outputs.issue_title }}"
+            }')
+          
+          echo "response=$RESPONSE" >> $GITHUB_OUTPUT
+          
+          CONVERSATION_ID=$(echo "$RESPONSE" | jq -r '.conversation_id // .id // empty')
+          if [ -z "$CONVERSATION_ID" ]; then
+            echo "conversation_id=" >> $GITHUB_OUTPUT
+            echo "error=$(echo "$RESPONSE" | jq -r '.detail // .message // "Unknown error"')" >> $GITHUB_OUTPUT
+          else
+            echo "conversation_id=$CONVERSATION_ID" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check conversation creation result
+        run: |
+          if [ -z "${{ steps.conversation.outputs.conversation_id }}" ]; then
+            echo "Failed to create conversation: ${{ steps.conversation.outputs.error }}"
+            exit 1
+          fi
+          echo "Conversation created: ${{ steps.conversation.outputs.conversation_id }}"
+
+      - name: Submit issue task to OpenHands
+        run: |
+          TASK_PROMPT="Process GitHub issue #${{ steps.context.outputs.issue_number }}: ${{ steps.context.outputs.issue_title }}
+
+${{ steps.context.outputs.issue_body }}
+
+You are the autonomous development pipeline for BusyBuddy_v2. Read the issue, implement code, write tests, create PR, and notify.
+
+IMPORTANT: When creating pull requests, use GitHub API via curl with the GITHUB_TOKEN environment variable. Create PRs using the GitHub API endpoint POST /repos/11thandOrange/BusyBuddy_v2/pulls.
+
+Clone the repository from: https://github.com/11thandOrange/BusyBuddy_v2"
+          
+          curl -s --max-time 60 -X POST \
+            "${{ env.OPENHANDS_HOST }}/api/automation/v1/conversations/${{ steps.conversation.outputs.conversation_id }}/messages" \
+            -H "Authorization: Bearer ${{ secrets.OPENHANDS_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"role\": \"user\", \"content\": $(echo "$TASK_PROMPT" | jq -Rs .)}"
+
+      - name: Wait for OpenHands to process
+        run: |
+          echo "Waiting for OpenHands to process the issue..."
+          sleep 30
+          echo "OpenHands conversation created: ${{ steps.conversation.outputs.conversation_id }}"
+          echo "Monitor progress at: ${{ env.OPENHANDS_HOST }}/conversations/${{ steps.conversation.outputs.conversation_id }}"
+
+      - name: Post status comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const conversationId = '${{ steps.conversation.outputs.conversation_id }}';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.context.outputs.issue_number }},
+              body: [
+                '## 🤖 OpenHands Processing Started',
+                '',
+                `Issue #${{ steps.context.outputs.issue_number }} has been queued for autonomous processing.`,
+                '',
+                '**OpenHands Cloud Conversation:**',
+                `[${conversationId}](${{ env.OPENHANDS_HOST }}/conversations/${conversationId})`,
+                '',
+                'The agent will read the issue, implement code, write tests, create a PR, and update this issue.',
+                '',
+                '---',
+                '*This comment was created by GitHub Actions OpenHands automation.*'
+              ].join('\n'),
+            });

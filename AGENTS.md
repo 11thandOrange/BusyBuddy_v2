@@ -76,3 +76,44 @@ Since this is a Shopify app that requires the Shopify development environment:
   - `components/Settings/AdvancedAnalyticsSettings.jsx` - Google Analytics connection settings
   - `components/Analytics/GoogleAnalyticsSection.jsx` - GA data display with empty state
   - Updated BundleAnalytics.jsx and AnnouncementAnalytics.jsx to include Google Analytics section
+
+## OpenHands Cloud Automation
+
+This repository uses OpenHands Cloud for autonomous issue processing. When issues are labeled `ready-to-implement`, a GitHub Actions workflow creates an OpenHands Cloud conversation to implement the requested changes.
+
+### Setup (One-time per repository)
+
+1. **Get OpenHands API Key:**
+   - Sign up at https://app.all-hands.dev
+   - Generate an API key from Settings → API Keys
+
+2. **Add GitHub Secret:**
+   - Go to repository Settings → Secrets and variables → Actions
+   - Add a new repository secret:
+     - Name: `OPENHANDS_API_KEY`
+     - Value: Your OpenHands Cloud API key
+
+### How It Works
+
+1. Label an issue with `ready-to-implement`
+2. GitHub Actions workflow triggers automatically
+3. Creates an OpenHands Cloud conversation
+4. OpenHands agent processes the issue:
+   - Reads the issue details
+   - Explores the codebase
+   - Implements the changes
+   - Writes tests
+   - Creates a pull request
+   - Comments on the issue with status
+
+### Manual Trigger
+
+You can also manually trigger the workflow:
+1. Go to Actions tab
+2. Select "OpenHands Issue Automation"
+3. Click "Run workflow"
+4. Enter the issue number, title, and body
+
+### Workflow File
+
+See `.github/workflows/openhands.yml` for the automation logic.
