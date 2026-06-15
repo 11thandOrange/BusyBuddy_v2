@@ -18,6 +18,30 @@ jobs:
   trigger-openhands:
     runs-on: ubuntu-latest
     steps:
+      - name: Check trigger type
+        id: check_trigger
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "trigger_type=manual" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "label_name=${{ inputs.label_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "trigger_type=automatic" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "label_name=${{ github.event.label.name }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Validate trigger
+        run: |
+          echo "Trigger type: ${{ steps.check_trigger.outputs.trigger_type }}"
+          echo "Issue: #${{ steps.check_trigger.outputs.issue_number }}"
+          echo "Label: ${{ steps.check_trigger.outputs.label_name }}"
+          if [[ "${{ steps.check_trigger.outputs.label_name }}" != "ready-to-implement" && "${{ steps.check_trigger.outputs.label_name }}" != "complex-logic" ]]; then
+            echo "Skipping - label is not ready-to-implement or complex-logic"
+            exit 78
+          fi
+
       - name: Trigger OpenHands Cloud
         uses: fjogeleit/http-request-action@master
         with:
@@ -31,16 +55,15 @@ jobs:
                 "content": [
                   {
                     "type": "text",
-                    "text": "Issue #${{ github.event.issue.number || inputs.issue_number }} has been labeled with '${{ github.event.label.name || inputs.label_name }}'. Please analyze this issue and implement the required changes. Issue URL: https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number || inputs.issue_number }}"
+                    "text": "Issue #${{ steps.check_trigger.outputs.issue_number }} has been labeled with '${{ steps.check_trigger.outputs.label_name }}'. Please analyze this issue and implement the required changes. Issue URL: https://github.com/${{ github.repository }}/issues/${{ steps.check_trigger.outputs.issue_number }}"
                   }
                 ]
               },
               "selected_repository": "${{ github.repository }}"
             }
-        if: ${{ (github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic') || (inputs.label_name == 'ready-to-implement' || inputs.label_name == 'complex-logic') }}
 
       - name: Add comment to issue
-        if: ${{ (github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic') || (inputs.label_name == 'ready-to-implement' || inputs.label_name == 'complex-logic') }}
-        run: gh issue comment "${{ github.event.issue.number || inputs.issue_number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
+        run: |
+          gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
