@@ -3,6 +3,16 @@ name: OpenHands Automation Trigger
 on:
   issues:
     types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        required: true
+        type: string
+      label_name:
+        description: 'Label name'
+        required: true
+        type: string
 
 jobs:
   trigger-openhands:
@@ -21,16 +31,16 @@ jobs:
                 "content": [
                   {
                     "type": "text",
-                    "text": "Issue #${{ github.event.issue.number }} has been labeled with '${{ github.event.label.name }}'. Please analyze this issue and implement the required changes. Issue URL: ${{ github.event.issue.html_url }}"
+                    "text": "Issue #${{ github.event.issue.number || github.inputs.issue_number }} has been labeled with '${{ github.event.label.name || github.inputs.label_name }}'. Please analyze this issue and implement the required changes. Issue URL: https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number || github.inputs.issue_number }}"
                   }
                 ]
               },
               "selected_repository": "${{ github.repository }}"
             }
-        if: ${{ github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic' }}
+        if: ${{ (github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic') || (github.inputs.label_name == 'ready-to-implement' || github.inputs.label_name == 'complex-logic') }}
 
       - name: Add comment to issue
-        if: ${{ github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic' }}
-        run: gh issue comment "${{ github.event.issue.number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
+        if: ${{ (github.event.label.name == 'ready-to-implement' || github.event.label.name == 'complex-logic') || (github.inputs.label_name == 'ready-to-implement' || github.inputs.label_name == 'complex-logic') }}
+        run: gh issue comment "${{ github.event.issue.number || github.inputs.issue_number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
