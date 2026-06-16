@@ -14,6 +14,12 @@ on:
         required: true
         type: string
 
+env:
+  # Default to local backend; override via repository secret OPENHANDS_HOST for cloud
+  OPENHANDS_HOST: ${{ secrets.OPENHANDS_HOST || 'http://localhost:18000' }}
+  # Use provided API key, or empty string for local backend (no auth required)
+  OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY || '' }}
+
 jobs:
   trigger-openhands:
     runs-on: ubuntu-latest
@@ -42,103 +48,55 @@ jobs:
             exit 78
           fi
 
-      - name: Check API key
-        id: check_api
-        run: |
-          if [ -z "${{ secrets.OPENHANDS_API_KEY }}" ]; then
-            echo "warning=OPENHANDS_API_KEY secret is not configured. Please add it to repository settings." >> $GITHUB_OUTPUT
-            echo "has_key=false" >> $GITHUB_OUTPUT
-          else
-            echo "warning=" >> $GITHUB_OUTPUT
-            echo "has_key=true" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
-      - name: Note missing API key
-        if: steps.check_api.outputs.has_key == 'false'
-        run: |
-          gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "🤖 **OpenHands Automation Setup Required**
-
-The \`OPENHANDS_API_KEY\` secret is not configured or has an empty value.
-
-To enable OpenHands automation:
-1. Go to repository **Settings → Secrets and Variables → Actions**
-2. Add a new repository secret named \`OPENHANDS_API_KEY\`
-3. Paste your OpenHands API key as the value
-4. Re-add the \`ready-to-implement\` label to this issue"
-          echo "::warning::OPENHANDS_API_KEY secret is not configured"
-          exit 78
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Trigger OpenHands Cloud
+      - name: Trigger OpenHands (local or cloud)
         id: trigger
-        uses: fjogeleit/http-request-action@master
-        with:
-          url: 'https://app.all-hands.dev/api/v1/app-conversations'
-          method: 'POST'
-          bearerToken: ${{ secrets.OPENHANDS_API_KEY }}
-          contentType: 'application/json'
-          data: >-
-            {
+        run: |
+          # Use curl for more control over the request
+          API_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 120 -X POST \
+            "${{ env.OPENHANDS_HOST }}/api/v1/app-conversations" \
+            -H "Content-Type: application/json" \
+            ${OPENHANDS_API_KEY:+-H "Authorization: Bearer ${{ env.OPENHANDS_API_KEY }}"} \
+            -d '{
               "initial_message": {
                 "content": [
                   {
                     "type": "text",
-                    "text": "Issue #${{ steps.check_trigger.outputs.issue_number }} has been labeled with '${{ steps.check_trigger.outputs.label_name }}'. Please analyze this issue and implement the required changes. Issue URL: https://github.com/${{ github.repository }}/issues/${{ steps.check_trigger.outputs.issue_number }}"
+                    "text": "Issue #${{ steps.check_trigger.outputs.issue_number }} has been labeled with '\''${{ steps.check_trigger.outputs.label_name }}'\''. Please analyze this issue and implement the required changes. Issue URL: https://github.com/${{ github.repository }}/issues/${{ steps.check_trigger.outputs.issue_number }}"
                   }
                 ]
               },
               "selected_repository": "${{ github.repository }}"
-            }
-        continue-on-error: true
-
-      - name: Check trigger result
-        id: check_result
-        run: |
-          status="${{ steps.trigger.outputs.status }}"
-          echo "HTTP Status: $status"
+            }')
           
-          # Check for 401 Unauthorized
-          if [[ "$status" == *"401"* ]]; then
-            echo "trigger_success=false" >> $GITHUB_OUTPUT
-            echo "error_type=unauthorized" >> $GITHUB_OUTPUT
-            echo "API returned 401 Unauthorized - the API key may be invalid or expired"
-          # Check if status starts with 2 (success)
-          elif [[ "$status" == 2* ]]; then
+          # Extract body and status code
+          HTTP_STATUS=$(echo "$API_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
+          
+          echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+          echo "response_body=$RESPONSE_BODY" >> $GITHUB_OUTPUT
+          
+          if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "201" ]]; then
             echo "trigger_success=true" >> $GITHUB_OUTPUT
-            echo "error_type=" >> $GITHUB_OUTPUT
           else
             echo "trigger_success=false" >> $GITHUB_OUTPUT
-            echo "error_type=other" >> $GITHUB_OUTPUT
           fi
 
       - name: Add comment on success
-        if: steps.check_result.outputs.trigger_success == 'true'
+        if: steps.trigger.outputs.trigger_success == 'true'
         run: |
-          gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "🤖 OpenHands has been triggered to work on this issue. Check progress here: https://app.all-hands.dev"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Handle API authentication error
-        if: steps.check_result.outputs.error_type == 'unauthorized'
-        run: |
-          gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "🤖 **OpenHands API Authentication Failed**
-
-The API key appears to be invalid or expired (401 Unauthorized).
-
-To fix this:
-1. Go to repository **Settings → Secrets and Variables → Actions**
-2. Find the \`OPENHANDS_API_KEY\` secret
-3. Update it with a fresh API key from your OpenHands dashboard
-4. Re-add the \`ready-to-implement\` label to this issue"
+          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" ]]; then
+            COMMENT_BODY="🤖 OpenHands (local) has been triggered to work on this issue. Check progress at http://localhost:3001"
+          else
+            COMMENT_BODY="🤖 OpenHands has been triggered to work on this issue. Check progress here: ${{ env.OPENHANDS_HOST }}"
+          fi
+          gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "$COMMENT_BODY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Note trigger failure
-        if: steps.check_result.outputs.trigger_success == 'false' && steps.check_result.outputs.error_type != 'unauthorized'
+        if: steps.trigger.outputs.trigger_success == 'false'
         run: |
-          echo "::error::OpenHands API call failed - please check the OpenHands service status"
+          echo "::error::OpenHands API call failed with status ${{ steps.trigger.outputs.http_status }}"
+          echo "Response: ${{ steps.trigger.outputs.response_body }}"
           echo "Issue #${{ steps.check_trigger.outputs.issue_number }} was not processed"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "OpenHands Host: ${{ env.OPENHANDS_HOST }}"
