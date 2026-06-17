@@ -1,0 +1,144 @@
+name: Automation Dispatcher
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number'
+        required: true
+        type: string
+      label_name:
+        description: 'Label name (e.g., ready-to-implement, ready-to-implement:openhands, ready-to-implement:claude)'
+        required: true
+        type: string
+
+env:
+  # OpenHands configuration
+  OPENHANDS_HOST: ${{ secrets.OPENHANDS_HOST || 'http://localhost:18000' }}
+  OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY || '' }}
+  # Claude configuration
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || '' }}
+  CLAUDE_MODEL: ${{ secrets.CLAUDE_MODEL || 'claude-sonnet-4-20250514' }}
+  # Default automation platform
+  DEFAULT_PLATFORM: ${{ secrets.DEFAULT_AUTOMATION_PLATFORM || 'openhands' }}
+
+jobs:
+  dispatch-automation:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check trigger type
+        id: check_trigger
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "trigger_type=manual" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ inputs.issue_number }}" >> $GITHUB_OUTPUT
+            echo "label_name=${{ inputs.label_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "trigger_type=automatic" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "label_name=${{ github.event.label.name }}" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+      - name: Validate trigger
+        run: |
+          echo "Trigger type: ${{ steps.check_trigger.outputs.trigger_type }}"
+          echo "Issue: #${{ steps.check_trigger.outputs.issue_number }}"
+          echo "Label: ${{ steps.check_trigger.outputs.label_name }}"
+          echo "Default platform: ${{ env.DEFAULT_PLATFORM }}"
+          
+          # Check if label is valid
+          VALID_LABELS="ready-to-implement ready-to-implement:openhands ready-to-implement:claude complex-logic"
+          IS_VALID=false
+          for valid in $VALID_LABELS; do
+            if [[ "${{ steps.check_trigger.outputs.label_name }}" == "$valid" ]]; then
+              IS_VALID=true
+              break
+            fi
+          done
+          
+          # Also check for any ready-to-implement:* pattern
+          if [[ "${{ steps.check_trigger.outputs.label_name }}" == ready-to-implement:* ]]; then
+            IS_VALID=true
+          fi
+          
+          if [[ "$IS_VALID" != "true" ]]; then
+            echo "Skipping - label '${{ steps.check_trigger.outputs.label_name }}' is not an automation trigger"
+            exit 78
+          fi
+
+      - name: Run automation dispatcher
+        id: dispatcher
+        run: |
+          echo "=== Running automation dispatcher ==="
+          echo "Issue: #${{ steps.check_trigger.outputs.issue_number }}"
+          echo "Label: ${{ steps.check_trigger.outputs.label_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo ""
+          
+          # Detect platform from label
+          LABEL="${{ steps.check_trigger.outputs.label_name }}"
+          if [[ "$LABEL" == ready-to-implement:* ]]; then
+            PLATFORM=$(echo "$LABEL" | cut -d':' -f2)
+          elif [[ "$LABEL" == "ready-to-implement" || "$LABEL" == "complex-logic" ]]; then
+            PLATFORM="${{ env.DEFAULT_PLATFORM }}"
+          else
+            echo "::error::Unknown label format: $LABEL"
+            exit 1
+          fi
+          
+          echo "Selected platform: $PLATFORM"
+          echo "platform=$PLATFORM" >> $GITHUB_OUTPUT
+          
+          # Check if platform script exists
+          PLATFORM_SCRIPT=".automation/platforms/${PLATFORM}.sh"
+          if [[ ! -f "$PLATFORM_SCRIPT" ]]; then
+            echo "::error::Platform script not found: $PLATFORM_SCRIPT"
+            echo "Available platforms:"
+            ls -1 .automation/platforms/
+            exit 1
+          fi
+          
+          echo ""
+          echo "=== Running $PLATFORM automation ==="
+          bash ".automation/dispatch.sh" \
+            "${{ steps.check_trigger.outputs.issue_number }}" \
+            "${{ steps.check_trigger.outputs.label_name }}" \
+            "${{ github.repository }}" \
+            "${{ secrets.GITHUB_TOKEN }}"
+          
+          if [[ $? -eq 0 ]]; then
+            echo "automation_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "automation_success=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Success summary
+        if: steps.dispatcher.outputs.automation_success == 'true'
+        run: |
+          echo "=== Automation completed successfully ==="
+          echo "Platform: ${{ steps.dispatcher.outputs.platform }}"
+          echo "Issue: #${{ steps.check_trigger.outputs.issue_number }}"
+          echo ""
+          echo "The automation has processed this issue. Check the comments on the issue for details."
+
+      - name: Failure summary
+        if: steps.dispatcher.outputs.automation_success == 'false'
+        run: |
+          echo "::error::Automation failed"
+          echo "Issue: #${{ steps.check_trigger.outputs.issue_number }}"
+          echo "Platform: ${{ steps.dispatcher.outputs.platform }}"
+          echo ""
+          echo "The automation could not process this issue. Check the workflow logs for details."
+          exit 1
