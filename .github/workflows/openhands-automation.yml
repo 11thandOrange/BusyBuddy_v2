@@ -51,9 +51,14 @@ jobs:
       - name: Trigger OpenHands (start tunnel and call API)
         id: trigger
         run: |
-          # For local backend, start cloudflared tunnel
-          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" ]]; then
-            echo "Setting up cloudflared tunnel..."
+          # For local backend (default), start cloudflared tunnel
+          # Check if OPENHANDS_HOST is empty or default localhost
+          HOST_URL="${OPENHANDS_HOST:-http://localhost:18000}"
+          echo "OPENHANDS_HOST env var: $OPENHANDS_HOST"
+          echo "Using HOST_URL: $HOST_URL"
+          
+          if [[ -z "$OPENHANDS_HOST" || "$OPENHANDS_HOST" == "http://localhost:18000" ]]; then
+            echo "Setting up cloudflared tunnel for local backend..."
             
             # Install cloudflared if not present
             if ! command -v cloudflared &> /dev/null; then
@@ -92,7 +97,7 @@ jobs:
             TARGET_URL="$TUNNEL_URL"
             rm -f "$TUNNEL_OUTPUT"
           else
-            TARGET_URL="${{ env.OPENHANDS_HOST }}"
+            TARGET_URL="$OPENHANDS_HOST"
           fi
           
           echo "Target URL: $TARGET_URL"
@@ -101,7 +106,7 @@ jobs:
           API_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 120 -X POST \
             "$TARGET_URL/api/v1/app-conversations" \
             -H "Content-Type: application/json" \
-            ${OPENHANDS_API_KEY:+-H "Authorization: Bearer ${{ env.OPENHANDS_API_KEY }}"} \
+            ${OPENHANDS_API_KEY:+-H "Authorization: Bearer $OPENHANDS_API_KEY"} \
             -d '{
               "initial_message": {
                 "content": [
