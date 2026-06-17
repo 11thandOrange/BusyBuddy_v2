@@ -18,6 +18,25 @@ import {
 import { useEditorNavigation } from '../../hooks';
 import tshirt from "./tshirt.png";
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = tshirt;
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Volume Discount settings configuration
 const VOLUME_SETTINGS = {
   bundle: [
@@ -546,7 +565,7 @@ export const VolumeDiscountEditor = () => {
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                       >
-                        <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '13px', fontWeight: 500, margin: 0, color: 'rgba(255,255,255,0.9)' }}>{product.title}</p>
                           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>${product.price}</p>
@@ -579,7 +598,7 @@ export const VolumeDiscountEditor = () => {
                       display: 'flex', alignItems: 'center', padding: '10px', backgroundColor: 'rgba(255,255,255,0.05)',
                       borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
+                      <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '13px', fontWeight: 500, margin: 0, color: 'rgba(255,255,255,0.9)' }}>{product.title}</p>
                         <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>${product.price}</p>
@@ -947,7 +966,7 @@ export const VolumeDiscountEditor = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <img
-                  src={selectedProducts[0]?.media || tshirt}
+                  src={getProductImageUrl(selectedProducts[0])}
                   alt={selectedProducts[0]?.title}
                   style={{
                     width: '80px',

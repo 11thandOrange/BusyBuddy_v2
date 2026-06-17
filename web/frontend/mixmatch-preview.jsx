@@ -20,6 +20,25 @@ import {
 // Mock product image
 const tshirt = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Mix and Match settings configuration
 const MIXMATCH_SETTINGS = {
   bundle: [
@@ -296,7 +315,7 @@ const MixMatchEditorPreview = () => {
                   {availableProducts.map(product => (
                     <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -323,7 +342,7 @@ const MixMatchEditorPreview = () => {
                   selectedProducts.map(product => (
                     <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(81, 105, 221, 0.3)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -706,7 +725,7 @@ const MixMatchEditorPreview = () => {
                   
                   <div style={{ display: 'flex', alignItems: 'center', paddingRight: '40px' }}>
                     <img 
-                      src={product.media || tshirt} 
+                      src={getProductImageUrl(product)} 
                       alt={product.title} 
                       style={{ 
                         width: '80px', 

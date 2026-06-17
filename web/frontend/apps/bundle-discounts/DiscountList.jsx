@@ -10,6 +10,25 @@ import { X, Trash } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = tshirt;
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 export default function DiscountList({ onMakeBundleClick }) {
   const tabs = ["Overview", "Discounts", "Settings", "Analytics"];
   const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -579,7 +598,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                               />
 
                               <img
-                                src={bundle.products[0]?.media || tshirt}
+                                src={getProductImageUrl(bundle.products[0])}
                                 alt={bundle.products[0]?.title || "Bundle Product"}
                                 width={80}
                                 height={80}

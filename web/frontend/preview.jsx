@@ -19,6 +19,25 @@ import {
   EditorRightContent
 } from './components/Editor';
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png?v=1530129292';
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Bundle settings configuration (same as StandardBundleEditor)
 const BUNDLE_SETTINGS = {
   bundle: [
@@ -277,7 +296,7 @@ const BundleEditorPreview = () => {
                         border: '1px solid rgba(255,255,255,0.1)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -325,7 +344,7 @@ const BundleEditorPreview = () => {
                         border: '1px solid rgba(81, 105, 221, 0.3)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -630,7 +649,7 @@ const BundleEditorPreview = () => {
             background: colorSettings.secondaryBackgroundColor, borderRadius: '12px',
             border: `1px solid ${colorSettings.borderColor}`, marginBottom: '8px'
           }}>
-            <img src={product.media} alt={product.title} style={{ width: '50px', height: '50px', borderRadius: '8px' }} />
+            <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '50px', height: '50px', borderRadius: '8px' }} />
             <div style={{ flex: 1 }}>
               <div style={{ color: colorSettings.primaryTextColor, fontSize: '13px', fontWeight: '500' }}>{product.title}</div>
               <div style={{ color: colorSettings.secondaryTextColor, fontSize: '12px' }}>${product.price}</div>

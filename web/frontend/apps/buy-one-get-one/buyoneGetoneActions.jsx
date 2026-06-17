@@ -16,6 +16,25 @@ import Products from "./products";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import DatePicker from "../../components/DatePicker";
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = tshirtp;
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
   const shopify = useAppBridge();
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -843,7 +862,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                           >
                             <div className="d-flex align-items-center">
                               <img
-                                src={product.media || tshirtp}
+                                src={getProductImageUrl(product)}
                                 alt={product.title}
                                 width={80}
                                 height={80}
@@ -947,7 +966,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                           >
                             <div className="d-flex align-items-center">
                               <img
-                                src={product.media || tshirtp}
+                                src={getProductImageUrl(product)}
                                 alt={product.title}
                                 width={80}
                                 height={80}
@@ -2054,7 +2073,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                 <div className="d-flex flex-column">
                                   <div className="d-flex align-items-center">
                                     <img
-                                      src={product.media || tshirtp}
+                                      src={getProductImageUrl(product)}
                                       alt={product.title}
                                       width={100}
                                       height={100}
@@ -2284,7 +2303,7 @@ const BuyoneGetoneActions = React.forwardRef(({ onSuccess, editData }, ref) => {
                                     <div className="d-flex flex-column">
                                       <div className="d-flex align-items-center">
                                         <img
-                                          src={product.media || tshirtp}
+                                          src={getProductImageUrl(product)}
                                           alt={product.title}
                                           width={100}
                                           height={100}

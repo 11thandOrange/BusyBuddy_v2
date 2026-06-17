@@ -97,6 +97,25 @@ const TABS = [
   { id: 'schedule', label: 'Schedule' },
 ];
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = tshirt;
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 const DISCOUNT_TYPE_OPTIONS = [
   { value: '', label: 'Select Discount Type' },
   { value: 'Percentage', label: 'Percentage' },
@@ -579,7 +598,7 @@ export const StandardBundleEditor = () => {
                         border: '1px solid rgba(255,255,255,0.1)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -627,7 +646,7 @@ export const StandardBundleEditor = () => {
                         border: '1px solid rgba(81, 105, 221, 0.3)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -1189,7 +1208,7 @@ export const StandardBundleEditor = () => {
                   border: `1px solid ${colorSettings.borderColor}`,
                 }}>
                   <img
-                    src={product.media || tshirt}
+                    src={getProductImageUrl(product)}
                     alt={product.title}
                     style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }}
                   />

@@ -19,6 +19,25 @@ import {
 import { useEditorNavigation } from '../../hooks';
 import tshirt from "./tshirt.png";
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = tshirt;
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Buy X Get Y specific settings configuration
 const BXGY_SETTINGS = {
   bundle: [
@@ -560,7 +579,7 @@ export const BuyXGetYEditor = () => {
                       display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
                       background: '#f5f5f5', borderRadius: '8px', gap: '10px'
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                      <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
                       <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
                       <button onClick={() => removeProductFromX(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
                     </div>
@@ -580,7 +599,7 @@ export const BuyXGetYEditor = () => {
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
                       background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
+                      <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
                         <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
@@ -620,7 +639,7 @@ export const BuyXGetYEditor = () => {
                       display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
                       background: '#E8F5E9', borderRadius: '8px', gap: '10px'
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                      <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
                       <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
                       <button onClick={() => removeProductFromY(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
                     </div>
@@ -640,7 +659,7 @@ export const BuyXGetYEditor = () => {
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
                       background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
+                      <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
                         <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
@@ -1044,7 +1063,7 @@ export const BuyXGetYEditor = () => {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <img
-                    src={product.media || tshirt}
+                    src={getProductImageUrl(product)}
                     alt={product.title}
                     style={{ width: 70, height: 70, borderRadius: '8px', objectFit: 'cover' }}
                   />
@@ -1123,7 +1142,7 @@ export const BuyXGetYEditor = () => {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
-                          src={product.media || tshirt}
+                          src={getProductImageUrl(product)}
                           alt={product.title}
                           style={{ width: 70, height: 70, borderRadius: '8px', objectFit: 'cover' }}
                         />

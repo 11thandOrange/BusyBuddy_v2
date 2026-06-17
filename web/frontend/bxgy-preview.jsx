@@ -20,6 +20,25 @@ import {
 // Mock product image
 const tshirt = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Buy X Get Y settings configuration - same structure as BUNDLE_SETTINGS in preview.jsx
 const BXGY_SETTINGS = {
   bundle: [
@@ -252,7 +271,7 @@ const BuyXGetYEditorPreview = () => {
                     availableProducts.map(product => (
                       <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -282,7 +301,7 @@ const BuyXGetYEditorPreview = () => {
                   selectedXProducts.map(product => (
                     <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(81, 105, 221, 0.3)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -325,7 +344,7 @@ const BuyXGetYEditorPreview = () => {
                     availableProducts.map(product => (
                       <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                          <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                           <div>
                             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -355,7 +374,7 @@ const BuyXGetYEditorPreview = () => {
                   selectedYProducts.map(product => (
                     <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(76, 175, 80, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(76, 175, 80, 0.3)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: '#4CAF50', fontSize: '11px' }}>${calculateDiscountedPrice(product.price)} <span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.4)' }}>${product.price}</span></div>
@@ -576,7 +595,7 @@ const BuyXGetYEditorPreview = () => {
         {selectedXProducts.map((product) => (
           <div key={product.productId} style={{ padding: '12px', borderRadius: `${Math.max(0, cornerRadius - 5)}px`, marginBottom: '12px', backgroundColor: colorSettings.primaryBackgroundColor, border: `1px solid ${colorSettings.borderColor}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src={product.media} alt={product.title} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
+              <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
               <div>
                 <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px', color: colorSettings.primaryTextColor }}>{product.title}</p>
                 <p style={{ fontWeight: 600, fontSize: '14px', margin: 0, color: colorSettings.primaryTextColor }}>${product.price}</p>
@@ -593,7 +612,7 @@ const BuyXGetYEditorPreview = () => {
             {selectedYProducts.map((product) => (
               <div key={product.productId} style={{ padding: '12px', borderRadius: `${Math.max(0, cornerRadius - 5)}px`, marginTop: '5px', backgroundColor: 'rgba(255,255,255,0.9)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <img src={product.media} alt={product.title} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
+                  <img src={getProductImageUrl(product)} alt={product.title} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover' }} />
                   <div>
                     <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px', color: colorSettings.primaryTextColor }}>{product.title}</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

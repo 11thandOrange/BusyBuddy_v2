@@ -20,6 +20,25 @@ import {
 // Mock product image
 const tshirt = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
 
+// Default placeholder image for products without images
+const DEFAULT_PRODUCT_IMAGE = 'https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-product-1_large.png';
+
+/**
+ * Get product image URL from various possible sources
+ * Shopify API returns product.featuredMedia.image.url
+ * Fallback to product.media for backward compatibility
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL
+ */
+const getProductImageUrl = (product) => {
+  if (!product) return DEFAULT_PRODUCT_IMAGE;
+  // Shopify API returns featuredMedia.image.url
+  if (product.featuredMedia?.image?.url) return product.featuredMedia.image.url;
+  // Fallback to media property for backward compatibility
+  if (product.media) return product.media;
+  return DEFAULT_PRODUCT_IMAGE;
+};
+
 // Volume Discount settings configuration
 const VOLUME_SETTINGS = {
   bundle: [
@@ -245,7 +264,7 @@ const VolumeDiscountEditorPreview = () => {
                   {MOCK_PRODUCTS.filter(p => p.title.toLowerCase().includes(productSearchQuery.toLowerCase())).map(product => (
                     <div key={product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -272,7 +291,7 @@ const VolumeDiscountEditorPreview = () => {
                   selectedProducts.map(product => (
                     <div key={product.productId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(81, 105, 221, 0.3)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <img src={product.media} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <img src={getProductImageUrl(product)} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
                         <div>
                           <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
                           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
@@ -522,7 +541,7 @@ const VolumeDiscountEditorPreview = () => {
             {/* Product Display */}
             <div style={{ padding: '15px', backgroundColor: colorSettings.primaryBackgroundColor, borderRadius: `${Math.max(0, cornerRadius - 5)}px`, border: `1px solid ${colorSettings.borderColor}`, marginBottom: '15px' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img src={selectedProducts[0]?.media || tshirt} alt={selectedProducts[0]?.title} style={{ width: '80px', height: '80px', borderRadius: '10px', marginRight: '15px', objectFit: 'cover', border: `1px solid ${colorSettings.borderColor}` }} />
+                <img src={getProductImageUrl(selectedProducts[0])} alt={selectedProducts[0]?.title} style={{ width: '80px', height: '80px', borderRadius: '10px', marginRight: '15px', objectFit: 'cover', border: `1px solid ${colorSettings.borderColor}` }} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>{selectedProducts[0]?.title}</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
