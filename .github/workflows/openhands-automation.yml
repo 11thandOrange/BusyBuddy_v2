@@ -50,6 +50,7 @@ jobs:
 
       - name: Start cloudflared tunnel (for local backend)
         if: env.OPENHANDS_HOST == 'http://localhost:18000'
+        id: start-cloudflared-tunnel
         run: |
           # Install cloudflared if not present
           if ! command -v cloudflared &> /dev/null; then
@@ -58,26 +59,44 @@ jobs:
             chmod +x /usr/local/bin/cloudflared
           fi
           
-          # Start tunnel in background and capture the URL
-          cloudflared tunnel --url http://localhost:18000 2>&1 &
+          # Start tunnel and capture URL from stdout
+          # Use script command to capture cloudflared's "Your quick Tunnel has been created!" output
+          TUNNEL_OUTPUT=$(mktemp)
+          cloudflared tunnel --url http://localhost:18000 > "$TUNNEL_OUTPUT" 2>&1 &
           CF_PID=$!
           echo "cloudflared PID: $CF_PID"
-          echo "cf_pid=$CF_PID" >> $GITHUB_OUTPUT
           
-          # Wait for tunnel URL
+          # Wait for tunnel URL to appear in output
           echo "Waiting for tunnel URL..."
           for i in {1..30}; do
             sleep 2
-            TUNNEL_URL=$(curl -s http://127.0.0.1:20241/api/v1/tunnel 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+            # Extract URL from cloudflared output (format: "https://xxx.trycloudflare.com")
+            TUNNEL_URL=$(grep -o 'https://[^ ]*trycloudflare.com' "$TUNNEL_OUTPUT" | head -1)
             if [[ -n "$TUNNEL_URL" ]]; then
               echo "Tunnel URL: $TUNNEL_URL"
               echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+              rm -f "$TUNNEL_OUTPUT"
               exit 0
             fi
             echo "Attempt $i/30 - waiting for tunnel..."
           done
           
+          # Also try the metrics API as fallback
+          for i in {1..10}; do
+            sleep 2
+            TUNNEL_URL=$(curl -s http://127.0.0.1:20241/api/v1/tunnel 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | sed 's/"url":"//;s/"//')
+            if [[ -n "$TUNNEL_URL" ]]; then
+              echo "Tunnel URL (from API): $TUNNEL_URL"
+              echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+              rm -f "$TUNNEL_OUTPUT"
+              exit 0
+            fi
+          done
+          
           echo "::error::Failed to get tunnel URL"
+          echo "Cloudflared output:"
+          cat "$TUNNEL_OUTPUT"
+          rm -f "$TUNNEL_OUTPUT"
           kill $CF_PID 2>/dev/null || true
           exit 1
 
