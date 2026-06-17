@@ -48,12 +48,57 @@ jobs:
             exit 78
           fi
 
+      - name: Start cloudflared tunnel (for local backend)
+        if: env.OPENHANDS_HOST == 'http://localhost:18000'
+        run: |
+          # Install cloudflared if not present
+          if ! command -v cloudflared &> /dev/null; then
+            echo "Installing cloudflared..."
+            curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+            chmod +x /usr/local/bin/cloudflared
+          fi
+          
+          # Start tunnel in background and capture the URL
+          cloudflared tunnel --url http://localhost:18000 2>&1 &
+          CF_PID=$!
+          echo "cloudflared PID: $CF_PID"
+          echo "cf_pid=$CF_PID" >> $GITHUB_OUTPUT
+          
+          # Wait for tunnel URL
+          echo "Waiting for tunnel URL..."
+          for i in {1..30}; do
+            sleep 2
+            TUNNEL_URL=$(curl -s http://127.0.0.1:20241/api/v1/tunnel 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | cut -d'"' -f4)
+            if [[ -n "$TUNNEL_URL" ]]; then
+              echo "Tunnel URL: $TUNNEL_URL"
+              echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "Attempt $i/30 - waiting for tunnel..."
+          done
+          
+          echo "::error::Failed to get tunnel URL"
+          kill $CF_PID 2>/dev/null || true
+          exit 1
+
       - name: Trigger OpenHands (local or cloud)
         id: trigger
         run: |
+          # Determine the URL to use
+          # For local backend, use the tunnel URL from the previous step
+          # For cloud, use the OPENHANDS_HOST environment variable
+          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" && -n "${{ steps.start-cloudflared-tunnel.outputs.tunnel_url }}" ]]; then
+            TARGET_URL="${{ steps.start-cloudflared-tunnel.outputs.tunnel_url }}"
+          else
+            TARGET_URL="${{ env.OPENHANDS_HOST }}"
+          fi
+          
+          echo "Target URL: $TARGET_URL"
+          echo "target_url=$TARGET_URL" >> $GITHUB_OUTPUT
+          
           # Use curl for more control over the request
           API_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 120 -X POST \
-            "${{ env.OPENHANDS_HOST }}/api/v1/app-conversations" \
+            "$TARGET_URL/api/v1/app-conversations" \
             -H "Content-Type: application/json" \
             ${OPENHANDS_API_KEY:+-H "Authorization: Bearer ${{ env.OPENHANDS_API_KEY }}"} \
             -d '{
@@ -85,7 +130,7 @@ jobs:
         if: steps.trigger.outputs.trigger_success == 'true'
         run: |
           if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" ]]; then
-            COMMENT_BODY="🤖 OpenHands (local) has been triggered to work on this issue. Check progress at http://localhost:3001"
+            COMMENT_BODY="🤖 OpenHands (local) has been triggered to work on this issue. Check progress at ${{ steps.trigger.outputs.target_url }}"
           else
             COMMENT_BODY="🤖 OpenHands has been triggered to work on this issue. Check progress here: ${{ env.OPENHANDS_HOST }}"
           fi
