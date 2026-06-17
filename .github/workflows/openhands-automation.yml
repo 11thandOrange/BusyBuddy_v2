@@ -48,74 +48,56 @@ jobs:
             exit 78
           fi
 
-      - name: Start cloudflared tunnel (for local backend)
-        if: env.OPENHANDS_HOST == 'http://localhost:18000'
-        id: start-cloudflared-tunnel
-        run: |
-          # Install cloudflared if not present
-          if ! command -v cloudflared &> /dev/null; then
-            echo "Installing cloudflared..."
-            curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
-            chmod +x /usr/local/bin/cloudflared
-          fi
-          
-          # Start tunnel and capture URL from stdout
-          # Use script command to capture cloudflared's "Your quick Tunnel has been created!" output
-          TUNNEL_OUTPUT=$(mktemp)
-          cloudflared tunnel --url http://localhost:18000 > "$TUNNEL_OUTPUT" 2>&1 &
-          CF_PID=$!
-          echo "cloudflared PID: $CF_PID"
-          
-          # Wait for tunnel URL to appear in output
-          echo "Waiting for tunnel URL..."
-          for i in {1..30}; do
-            sleep 2
-            # Extract URL from cloudflared output (format: "https://xxx.trycloudflare.com")
-            TUNNEL_URL=$(grep -o 'https://[^ ]*trycloudflare.com' "$TUNNEL_OUTPUT" | head -1)
-            if [[ -n "$TUNNEL_URL" ]]; then
-              echo "Tunnel URL: $TUNNEL_URL"
-              echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
-              rm -f "$TUNNEL_OUTPUT"
-              exit 0
-            fi
-            echo "Attempt $i/30 - waiting for tunnel..."
-          done
-          
-          # Also try the metrics API as fallback
-          for i in {1..10}; do
-            sleep 2
-            TUNNEL_URL=$(curl -s http://127.0.0.1:20241/api/v1/tunnel 2>/dev/null | grep -o '"url":"[^"]*"' | head -1 | sed 's/"url":"//;s/"//')
-            if [[ -n "$TUNNEL_URL" ]]; then
-              echo "Tunnel URL (from API): $TUNNEL_URL"
-              echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
-              rm -f "$TUNNEL_OUTPUT"
-              exit 0
-            fi
-          done
-          
-          echo "::error::Failed to get tunnel URL"
-          echo "Cloudflared output:"
-          cat "$TUNNEL_OUTPUT"
-          rm -f "$TUNNEL_OUTPUT"
-          kill $CF_PID 2>/dev/null || true
-          exit 1
-
-      - name: Trigger OpenHands (local or cloud)
+      - name: Trigger OpenHands (start tunnel and call API)
         id: trigger
         run: |
-          # Determine the URL to use
-          # For local backend, use the tunnel URL from the previous step
-          # For cloud, use the OPENHANDS_HOST environment variable
-          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" && -n "${{ steps.start-cloudflared-tunnel.outputs.tunnel_url }}" ]]; then
-            TARGET_URL="${{ steps.start-cloudflared-tunnel.outputs.tunnel_url }}"
+          # For local backend, start cloudflared tunnel
+          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" ]]; then
+            echo "Setting up cloudflared tunnel..."
+            
+            # Install cloudflared if not present
+            if ! command -v cloudflared &> /dev/null; then
+              echo "Installing cloudflared..."
+              curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+              chmod +x /usr/local/bin/cloudflared
+            fi
+            
+            # Start tunnel in background
+            TUNNEL_OUTPUT=$(mktemp)
+            cloudflared tunnel --url http://localhost:18000 > "$TUNNEL_OUTPUT" 2>&1 &
+            CF_PID=$!
+            echo "cloudflared PID: $CF_PID"
+            
+            # Wait for tunnel URL
+            echo "Waiting for tunnel URL..."
+            TUNNEL_URL=""
+            for i in {1..30}; do
+              sleep 2
+              TUNNEL_URL=$(grep -o 'https://[^ ]*trycloudflare.com' "$TUNNEL_OUTPUT" | head -1)
+              if [[ -n "$TUNNEL_URL" ]]; then
+                echo "Tunnel URL: $TUNNEL_URL"
+                break
+              fi
+              echo "Attempt $i/30 - waiting for tunnel..."
+            done
+            
+            if [[ -z "$TUNNEL_URL" ]]; then
+              echo "::error::Failed to get tunnel URL"
+              cat "$TUNNEL_OUTPUT"
+              rm -f "$TUNNEL_OUTPUT"
+              kill $CF_PID 2>/dev/null || true
+              exit 1
+            fi
+            
+            TARGET_URL="$TUNNEL_URL"
+            rm -f "$TUNNEL_OUTPUT"
           else
             TARGET_URL="${{ env.OPENHANDS_HOST }}"
           fi
           
           echo "Target URL: $TARGET_URL"
-          echo "target_url=$TARGET_URL" >> $GITHUB_OUTPUT
           
-          # Use curl for more control over the request
+          # Make the API call
           API_RESPONSE=$(curl -s -w "\n%{http_code}" --max-time 120 -X POST \
             "$TARGET_URL/api/v1/app-conversations" \
             -H "Content-Type: application/json" \
@@ -136,23 +118,22 @@ jobs:
           HTTP_STATUS=$(echo "$API_RESPONSE" | tail -n1)
           RESPONSE_BODY=$(echo "$API_RESPONSE" | sed '$d')
           
-          echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
-          echo "response_body=$RESPONSE_BODY" >> $GITHUB_OUTPUT
+          echo "http_status=$HTTP_STATUS"
+          echo "response_body=$RESPONSE_BODY"
           
           if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "201" ]]; then
             echo "trigger_success=true" >> $GITHUB_OUTPUT
+            echo "triggered_url=$TARGET_URL" >> $GITHUB_OUTPUT
           else
             echo "trigger_success=false" >> $GITHUB_OUTPUT
+            echo "::error::OpenHands API call failed with status $HTTP_STATUS"
+            echo "Response: $RESPONSE_BODY"
           fi
 
       - name: Add comment on success
         if: steps.trigger.outputs.trigger_success == 'true'
         run: |
-          if [[ "${{ env.OPENHANDS_HOST }}" == "http://localhost:18000" ]]; then
-            COMMENT_BODY="🤖 OpenHands (local) has been triggered to work on this issue. Check progress at ${{ steps.trigger.outputs.target_url }}"
-          else
-            COMMENT_BODY="🤖 OpenHands has been triggered to work on this issue. Check progress here: ${{ env.OPENHANDS_HOST }}"
-          fi
+          COMMENT_BODY="🤖 OpenHands (local) has been triggered to work on this issue. Check progress at ${{ steps.trigger.outputs.triggered_url }}"
           gh issue comment "${{ steps.check_trigger.outputs.issue_number }}" --body "$COMMENT_BODY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -160,7 +141,4 @@ jobs:
       - name: Note trigger failure
         if: steps.trigger.outputs.trigger_success == 'false'
         run: |
-          echo "::error::OpenHands API call failed with status ${{ steps.trigger.outputs.http_status }}"
-          echo "Response: ${{ steps.trigger.outputs.response_body }}"
           echo "Issue #${{ steps.check_trigger.outputs.issue_number }} was not processed"
-          echo "OpenHands Host: ${{ env.OPENHANDS_HOST }}"
