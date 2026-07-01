@@ -31,8 +31,10 @@ assignees: ""
 
 <!--
 ──────────────────────────────────────────────
-PIPELINE TRIGGER
-Add the label "ready-to-implement" to start the autonomous dev pipeline.
-The pipeline will: plan → implement → test → open PR → CI → WhatsApp you.
+PIPELINE TRIGGER (LEGACY — RETIRED)
+The old "ready-to-implement" label / OpenHands pipeline has been retired.
+Issue automation is now handled by a GitHub Actions + Claude Code pipeline
+maintained in a separate agent-ops control repo — see that repo for how to
+trigger it.
 ──────────────────────────────────────────────
 -->

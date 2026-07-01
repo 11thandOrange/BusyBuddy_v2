@@ -1,4 +1,15 @@
-name: OpenHands Issue Automation
+# LEGACY — RETIRED
+# This workflow drove the old OpenHands Cloud automation pipeline. It has been
+# retired in favor of a new GitHub Actions + Claude Code pipeline maintained in
+# a separate agent-ops control repo. It is kept only for historical reference.
+#
+# - The label check below no longer matches the live `ready-to-implement`
+#   label (which has been renamed to `ready-to-implement-legacy`), so applying
+#   the current label cannot re-trigger this workflow.
+# - The `if: false` guard hard-disables the job as a second line of defense.
+# - `workflow_dispatch` is left registered (GitHub requires it to keep the
+#   manual-trigger UI), but the job will not run due to the guard above.
+name: "[LEGACY] OpenHands Issue Automation (retired)"
 
 on:
   issues:
@@ -23,7 +34,7 @@ env:
 
 jobs:
   process-issue:
-    if: ${{ github.event.label.name == 'ready-to-implement' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ false && (github.event.label.name == 'ready-to-implement-legacy' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     steps:
       - name: Determine issue context

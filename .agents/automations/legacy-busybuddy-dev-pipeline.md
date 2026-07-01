@@ -1,5 +1,13 @@
 # Autonomous Dev Pipeline — BusyBuddy_v2
 
+> **LEGACY — RETIRED.** This OpenHands Cloud pipeline (including the
+> `ready-to-implement` trigger, the whatsapp-notifier handoff, and the
+> `.github/workflows/legacy-openhands.yml` workflow that fired it) has been
+> retired in favor of a GitHub Actions + Claude Code pipeline maintained in a
+> separate agent-ops control repo. The live trigger label is now
+> `ready-to-implement-legacy` and no longer maps to any active automation.
+> Kept for historical reference only.
+
 End-to-end automation: GitHub Issue labelled `ready-to-implement` →
 implemented → PR → reviewed → CI green → WhatsApp review request.
 

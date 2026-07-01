@@ -14,6 +14,11 @@ model: inherit
 permission_mode: never_confirm
 ---
 
+> **LEGACY — RETIRED.** This agent belonged to the old OpenHands Cloud issue
+> pipeline, which has been retired in favor of a GitHub Actions + Claude Code
+> pipeline maintained in a separate agent-ops control repo. Kept for reference
+> only; not invoked by any active automation in this repo.
+
 # Tester — BusyBuddy_v2
 
 You write and run tests for BusyBuddy_v2. All three test suites use Vitest.

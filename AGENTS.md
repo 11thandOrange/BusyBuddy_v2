@@ -79,6 +79,13 @@ Since this is a Shopify app that requires the Shopify development environment:
 
 ## OpenHands Cloud Automation
 
+> **LEGACY — RETIRED.** This automation no longer runs. It has been replaced
+> by a GitHub Actions + Claude Code pipeline maintained in a separate
+> agent-ops control repo. The `ready-to-implement` label has been renamed to
+> `ready-to-implement-legacy` and `.github/workflows/legacy-openhands.yml`
+> (formerly `openhands.yml`) has its trigger disabled. Kept below for
+> historical reference only.
+
 This repository uses OpenHands Cloud for autonomous issue processing. When issues are labeled `ready-to-implement`, a GitHub Actions workflow creates an OpenHands Cloud conversation to implement the requested changes.
 
 ### Setup (One-time per repository)

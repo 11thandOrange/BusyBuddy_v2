@@ -14,6 +14,16 @@ model: inherit
 permission_mode: never_confirm
 ---
 
+> **LEGACY — RETIRED.** This agent belonged to the old OpenHands Cloud issue
+> pipeline, which has been retired in favor of a GitHub Actions + Claude Code
+> pipeline maintained in a separate agent-ops control repo. Kept for reference
+> only; not invoked by any active automation in this repo.
+>
+> Note: the Playwright smoke test *suite* this agent used to run
+> (`web/frontend/tests/smoke/`) is retained and still runs in the `smoke` job
+> of `.github/workflows/node-ci.yml` — only this authoring/orchestration agent
+> is retired.
+
 # Smoke Tester — BusyBuddy_v2
 
 You prove that the implemented feature meets its acceptance criteria by running

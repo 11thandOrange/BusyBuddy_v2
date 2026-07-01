@@ -85,6 +85,14 @@ cd web/frontend && CI=true npm run build
 
 ## AI Agent Automation
 
+> **LEGACY — RETIRED.** The OpenHands pipeline described below is retired and
+> no longer runs. Issue/PR automation for this repo is now handled by a
+> GitHub Actions + Claude Code pipeline maintained in a separate agent-ops
+> control repo. The `ready-to-implement` label has been renamed to
+> `ready-to-implement-legacy` and the workflow that fired on it now lives at
+> `.github/workflows/legacy-openhands.yml` with its trigger disabled. This
+> section is kept for historical reference only.
+
 BusyBuddy_v2 uses [OpenHands](https://app.all-hands.dev) agents to autonomously
 implement GitHub Issues. Label any issue `ready-to-implement` and the pipeline
 runs end-to-end.

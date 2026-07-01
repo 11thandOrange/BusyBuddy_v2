@@ -1,5 +1,11 @@
 # Complex Logic Pipeline — BusyBuddy_v2
 
+> **LEGACY — RETIRED.** This OpenHands Cloud pipeline (including the
+> whatsapp-notifier handoff) has been retired in favor of a GitHub Actions +
+> Claude Code pipeline maintained in a separate agent-ops control repo. Kept
+> for historical reference only; the `complex-logic` label is not wired to
+> any active automation in this repo.
+
 For GitHub Issues labelled `complex-logic`, the pipeline generates three
 distinct implementations on separate branches, reviews them, and opens a PR
 from the best one.
