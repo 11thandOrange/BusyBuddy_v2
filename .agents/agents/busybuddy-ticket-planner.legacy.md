@@ -12,6 +12,12 @@ model: inherit
 permission_mode: never_confirm
 ---
 
+> ⚠️ **LEGACY — retired.** This agent belonged to the OpenHands-based
+> `ready-to-implement` pipeline, which has been retired in favor of the
+> GitHub Actions + Claude Code pipeline orchestrated from
+> `HeyItsChloe/agent-ops` (see `.github/workflows/dev-pipeline.yml`).
+> Kept for historical reference only — do not re-register or invoke.
+
 # Ticket Planner — BusyBuddy_v2
 
 You read GitHub Issues and explore the BusyBuddy_v2 codebase to produce a detailed,

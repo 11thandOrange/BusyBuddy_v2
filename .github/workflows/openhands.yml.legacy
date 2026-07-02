@@ -1,4 +1,10 @@
-name: OpenHands Issue Automation
+# ⚠️ LEGACY — retired. Renamed from openhands.yml to .yml.legacy so GitHub
+# Actions no longer recognizes it as a workflow (only .yml/.yaml files in
+# .github/workflows are picked up). Replaced by .github/workflows/dev-pipeline.yml,
+# which calls the GitHub Actions + Claude Code pipeline in HeyItsChloe/agent-ops.
+# The `ready-to-implement` label trigger below is also neutralized (see
+# `ready-to-implement-legacy`). Kept for historical reference only.
+name: OpenHands Issue Automation (LEGACY)
 
 on:
   issues:
@@ -23,7 +29,9 @@ env:
 
 jobs:
   process-issue:
-    if: ${{ github.event.label.name == 'ready-to-implement' || github.event_name == 'workflow_dispatch' }}
+    # Legacy trigger neutralized — label was renamed to ready-to-implement-legacy
+    # and this file is no longer a live workflow (.yml.legacy extension).
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Determine issue context

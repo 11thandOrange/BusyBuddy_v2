@@ -32,7 +32,9 @@ assignees: ""
 <!--
 ──────────────────────────────────────────────
 PIPELINE TRIGGER
-Add the label "ready-to-implement" to start the autonomous dev pipeline.
-The pipeline will: plan → implement → test → open PR → CI → WhatsApp you.
+Add the label "approach-ready" to have the pipeline draft a plan, then
+"approved" to have it implement. Or comment "@dev-agent plan" / "@dev-agent implement".
+The pipeline will: plan → implement → test → open PR → CI.
+(The old "ready-to-implement" / OpenHands pipeline is retired.)
 ──────────────────────────────────────────────
 -->
