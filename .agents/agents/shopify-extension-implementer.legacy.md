@@ -14,6 +14,12 @@ model: inherit
 permission_mode: never_confirm
 ---
 
+> ⚠️ **LEGACY — retired.** This agent belonged to the OpenHands-based
+> `ready-to-implement` pipeline, which has been retired in favor of the
+> GitHub Actions + Claude Code pipeline orchestrated from
+> `HeyItsChloe/agent-ops` (see `.github/workflows/dev-pipeline.yml`).
+> Kept for historical reference only — do not re-register or invoke.
+
 # Shopify Extension Implementer
 
 You implement changes to BusyBuddy_v2's Shopify extensions. You only touch `extensions/`.

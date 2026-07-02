@@ -85,9 +85,17 @@ cd web/frontend && CI=true npm run build
 
 ## AI Agent Automation
 
-BusyBuddy_v2 uses [OpenHands](https://app.all-hands.dev) agents to autonomously
-implement GitHub Issues. Label any issue `ready-to-implement` and the pipeline
-runs end-to-end.
+> ⚠️ **The OpenHands-based pipeline described below is retired.** BusyBuddy_v2
+> now uses a GitHub Actions + Claude Code pipeline orchestrated from
+> `HeyItsChloe/agent-ops` — see `.github/workflows/dev-pipeline.yml`. Label
+> an issue `approach-ready` (plan) or `approved` (implement), or comment
+> `@dev-agent plan` / `@dev-agent implement`, to trigger it. The section
+> below is kept for historical reference only.
+
+BusyBuddy_v2 used to use [OpenHands](https://app.all-hands.dev) agents to autonomously
+implement GitHub Issues. Label any issue `ready-to-implement-legacy` (previously
+`ready-to-implement`) and the old pipeline would run end-to-end — this trigger
+is now retired.
 
 ### Autonomous Dev Pipeline
 
@@ -110,11 +118,11 @@ shopify-extension-implementer implements Liquid/Function extension changes (if n
         ↓
    ci-monitor                 waits for GitHub Actions to go green (max 3 retries)
         ↓
- whatsapp-notifier            sends "PR #N is ready for your review" to your phone
+ whatsapp-notifier            [REMOVED — retired with the rest of this pipeline]
 ```
 
 The pipeline **never** merges to `main`, runs `shopify app deploy`, or modifies
-production environment variables. The WhatsApp message is the handoff — you review and merge.
+production environment variables.
 
 ### One-Time Setup
 
@@ -126,27 +134,28 @@ production environment variables. The WhatsApp message is the handoff — you re
 | `SHOPIFY_API_KEY` | Shopify Partners → Apps → API credentials |
 | `SHOPIFY_API_SECRET` | Same as above |
 | `SHOPIFY_CLI_PARTNERS_TOKEN` | Shopify Partners → Personal profile → CLI tokens |
-| `WHATSAPP_PHONE` | Your number, international format, no `+` (e.g. `447911123456`) |
-| `WHATSAPP_API_KEY` | Message `+34 644 76 60 71` on WhatsApp: `I allow callmebot to send me messages` |
+| ~~`WHATSAPP_PHONE`~~ | _Removed — whatsapp-notifier retired_ |
+| ~~`WHATSAPP_API_KEY`~~ | _Removed — whatsapp-notifier retired_ |
 
 **2. Create the label**
 ```bash
-gh label create "ready-to-implement" --color "0075ca" \
-  --description "Queued for autonomous implementation"
+gh label create "ready-to-implement-legacy" --color "0075ca" \
+  --description "[LEGACY] Formerly queued for OpenHands autonomous implementation"
 ```
 
 **3. Activate the automation**
 
-Already registered in OpenHands — ID `3cfefdb0-a1bc-4f26-bcc6-4136ff0fb4da`.
-See `.agents/automations/autonomous-dev-pipeline.md` to re-register if needed.
+~~Already registered in OpenHands — ID `3cfefdb0-a1bc-4f26-bcc6-4136ff0fb4da`.~~
+**Retired.** Disable/delete this registration on the OpenHands Cloud side.
+See `.agents/automations/busybuddy-dev-pipeline.legacy.md` for historical reference only — do not re-register.
 
-### Trigger the Pipeline
+### Trigger the Pipeline (legacy — do not use)
 
 ```bash
-gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement"
+gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement-legacy"
 ```
 
-### Repo-Level Agents
+### Repo-Level Agents (legacy — retired, see `.agents/agents/*.legacy.md`)
 
 | Agent | Description |
 |-------|-------------|
@@ -172,7 +181,7 @@ gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement"
 |------|-------------|
 | `ticket-manager` agent | Generic GitHub Issues + PR management |
 | `ci-monitor` skill | Polls `gh pr checks`, surfaces failure logs, retry cap |
-| `whatsapp-notifier` skill | callmebot/Twilio WhatsApp sender |
+| ~~`whatsapp-notifier` skill~~ | ~~callmebot/Twilio WhatsApp sender~~ _(removed)_ |
 
 ### CI
 

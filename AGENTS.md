@@ -77,9 +77,16 @@ Since this is a Shopify app that requires the Shopify development environment:
   - `components/Analytics/GoogleAnalyticsSection.jsx` - GA data display with empty state
   - Updated BundleAnalytics.jsx and AnnouncementAnalytics.jsx to include Google Analytics section
 
-## OpenHands Cloud Automation
+## OpenHands Cloud Automation (LEGACY — retired)
 
-This repository uses OpenHands Cloud for autonomous issue processing. When issues are labeled `ready-to-implement`, a GitHub Actions workflow creates an OpenHands Cloud conversation to implement the requested changes.
+> ⚠️ This entire section is retired. BusyBuddy_v2 now uses a GitHub Actions +
+> Claude Code pipeline orchestrated from `HeyItsChloe/agent-ops` — see
+> `.github/workflows/dev-pipeline.yml`. Trigger it by labeling an issue
+> `approach-ready` (plan) or `approved` (implement), or commenting
+> `@dev-agent plan` / `@dev-agent implement`. Everything below describes the
+> old, retired pipeline and is kept for historical reference only.
+
+This repository used OpenHands Cloud for autonomous issue processing. When issues were labeled `ready-to-implement-legacy` (previously `ready-to-implement`), a GitHub Actions workflow (now `.github/workflows/openhands.yml.legacy`, disabled) created an OpenHands Cloud conversation to implement the requested changes.
 
 ### Setup (One-time per repository)
 
@@ -93,27 +100,19 @@ This repository uses OpenHands Cloud for autonomous issue processing. When issue
      - Name: `OPENHANDS_API_KEY`
      - Value: Your OpenHands Cloud API key
 
-### How It Works
+### How It Worked (legacy)
 
-1. Label an issue with `ready-to-implement`
-2. GitHub Actions workflow triggers automatically
-3. Creates an OpenHands Cloud conversation
-4. OpenHands agent processes the issue:
-   - Reads the issue details
-   - Explores the codebase
-   - Implements the changes
-   - Writes tests
-   - Creates a pull request
-   - Comments on the issue with status
+1. Label an issue with `ready-to-implement-legacy`
+2. GitHub Actions workflow triggered automatically
+3. Created an OpenHands Cloud conversation
+4. OpenHands agent processed the issue:
+   - Read the issue details
+   - Explored the codebase
+   - Implemented the changes
+   - Wrote tests
+   - Created a pull request
+   - Commented on the issue with status
 
-### Manual Trigger
+### Workflow File (legacy)
 
-You can also manually trigger the workflow:
-1. Go to Actions tab
-2. Select "OpenHands Issue Automation"
-3. Click "Run workflow"
-4. Enter the issue number, title, and body
-
-### Workflow File
-
-See `.github/workflows/openhands.yml` for the automation logic.
+See `.github/workflows/openhands.yml.legacy` for the retired automation logic.

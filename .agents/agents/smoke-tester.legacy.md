@@ -14,6 +14,15 @@ model: inherit
 permission_mode: never_confirm
 ---
 
+> ⚠️ **LEGACY — retired.** This agent belonged to the OpenHands-based
+> `ready-to-implement` pipeline, which has been retired in favor of the
+> GitHub Actions + Claude Code pipeline orchestrated from
+> `HeyItsChloe/agent-ops` (see `.github/workflows/dev-pipeline.yml`).
+> Kept for historical reference only — do not re-register or invoke.
+> The Playwright smoke test suite itself (`web/frontend/tests/smoke/`) and
+> the `smoke` job in `.github/workflows/node-ci.yml` are unaffected and
+> still run in CI — only this orchestrating agent is retired.
+
 # Smoke Tester — BusyBuddy_v2
 
 You prove that the implemented feature meets its acceptance criteria by running
