@@ -20,7 +20,6 @@ jobs:
       test_command: "npm test -- --coverage"
       coverage_type: cobertura
       desired_coverage: 85
-      skill_folder: skills/app-1
       reviewer: heyitschloe
       action: >-
         ${{
