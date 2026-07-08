@@ -121,26 +121,30 @@ export default function PlanPage() {
   }, []);
 
   const fetchUserSubscription = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       setLoading(true);
-      const response = await fetch("/api/subscription/getUserSubscription");
+      const response = await fetch("/api/subscription/getUserSubscription", {
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("data", data);
       if (data.status === "SUCCESS") {
         setCurrentPlan(data.data.planName);
       } else {
-        console.log("data error", data);
         setError(data.data.error || "Failed to fetch subscription data");
       }
     } catch (err) {
       console.error("Error fetching subscription:", err);
-      setError(err.message);
+      setError(err.name === "AbortError" ? "Request timed out. Please try again." : err.message);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
   };
@@ -164,17 +168,17 @@ export default function PlanPage() {
         return;
       }
     }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const response = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Headers": "*",
-          Origin: "*",
-          "Access-Control-Allow-Credentials": true,
         },
         body: JSON.stringify({ planName }),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -221,10 +225,11 @@ export default function PlanPage() {
       console.error("Error subscribing to plan:", err);
       setModalContent({
         title: "Subscription Error",
-        message: err.message || "An error occurred during subscription.",
+        message: err.name === "AbortError" ? "Request timed out. Please try again." : (err.message || "An error occurred during subscription."),
       });
       setModalShow(true);
     } finally {
+      clearTimeout(timeoutId);
       setProcessing(false);
     }
   };
@@ -272,6 +277,9 @@ export default function PlanPage() {
     setCancelling(true);
     setConfirmCancelShow(false);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     try {
       const response = await fetch("/api/subscription/cancel-subscription", {
         method: "POST",
@@ -279,6 +287,7 @@ export default function PlanPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ planName }),
+        signal: controller.signal,
       });
 
       const data = await response.json();
@@ -302,11 +311,12 @@ export default function PlanPage() {
       console.error("Error cancelling subscription:", err);
       setModalContent({
         title: "Cancellation Error",
-        message: err.message || "An error occurred while cancelling your subscription.",
+        message: err.name === "AbortError" ? "Request timed out. Please try again." : (err.message || "An error occurred while cancelling your subscription."),
         isError: true,
       });
       setModalShow(true);
     } finally {
+      clearTimeout(timeoutId);
       setCancelling(false);
     }
   };
