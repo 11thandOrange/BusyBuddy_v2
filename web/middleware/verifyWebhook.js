@@ -11,11 +11,10 @@ export function verifyShopifyWebhook(req, res, next) {
   }
 
   const hmac = req.get('X-Shopify-Hmac-Sha256');
-  
-  // If no HMAC header, this might be an internal call (e.g., subscription changes)
-  // For internal webhooks, you can add additional verification like IP whitelist or internal tokens
+
   if (!hmac) {
-    return next();
+    console.error('Webhook request missing HMAC signature');
+    return res.status(401).json({ error: 'Unauthorized - Missing webhook signature' });
   }
 
   const body = req.rawBody || JSON.stringify(req.body);

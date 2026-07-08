@@ -84,7 +84,7 @@ async function createAnnouncementBar(req, res) {
       });
     }
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -145,7 +145,7 @@ async function getAnnouncementBars(req, res) {
     const { shop } = res.locals.shopify.session;
     const { page = 1, limit = 10, status, isBundleActive } = req.query;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -193,7 +193,7 @@ async function getAnnouncementBarById(req, res) {
     const { shop } = res.locals.shopify.session;
     const { id } = req.params;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -241,7 +241,7 @@ async function updateAnnouncementBar(req, res) {
       });
     }
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -307,7 +307,7 @@ async function deleteAnnouncementBar(req, res) {
     const { shop } = res.locals.shopify.session;
     const { id } = req.params;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -357,7 +357,7 @@ async function toggleAnnouncementBarStatus(req, res) {
     const { id } = req.params;
     const { status, isBundleActive } = req.body;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -430,7 +430,7 @@ async function getActiveAnnouncementBar(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -493,7 +493,7 @@ async function updateAnnouncementBarPriority(req, res) {
     const { shop } = res.locals.shopify.session;
     const { priorities } = req.body;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -527,7 +527,7 @@ async function trackAnnouncementBarAnalytics(req, res) {
     const { id } = req.params;
     const { action } = req.body;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -591,7 +591,7 @@ async function getAnnouncementBarAnalytics(req, res) {
     const { shop } = res.locals.shopify.session;
     const { range = "30d", dateFrom, dateTo } = req.query;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -765,7 +765,7 @@ async function bulkDeleteAnnouncementBars(req, res) {
       });
     }
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -799,7 +799,7 @@ async function updateAnnouncementBarCountdown(req, res) {
     const { id } = req.params;
     const { targetDate, targetTime, isTimerActive } = req.body;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,

@@ -456,14 +456,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           `${data.messageAnimationSpeed || 20}s`
         );
 
-        const messageContent = Array(10)
-          .fill(data.message || "Type text here")
-          .map(
-            (msg, i) =>
-              `<span key="${i}" style="margin-right: 40px;">${msg}</span>`
-          )
-          .join("");
-        h2.innerHTML = messageContent;
+        const messageText = data.message || "Type text here";
+        for (let i = 0; i < 10; i++) {
+          const span = document.createElement("span");
+          span.style.marginRight = "40px";
+          span.textContent = messageText;
+          h2.appendChild(span);
+        }
       } else {
         h2.innerText = data.message || "Type text here";
       }

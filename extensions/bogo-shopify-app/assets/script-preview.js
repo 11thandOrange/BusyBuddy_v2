@@ -1,3 +1,24 @@
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Only allow well-formed CSS color values (hex, rgb/rgba, hsl/hsla, or a short
+// alphabetic keyword) into inline style attributes, so a malicious value can't
+// break out of the attribute (e.g. via a stray quote) into surrounding markup.
+function sanitizeCssColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim();
+  const safePattern =
+    /^(#[0-9a-fA-F]{3,8}|rgba?\([0-9.,%\s]+\)|hsla?\([0-9.,%\s]+\)|[a-zA-Z]{3,20})$/;
+  return safePattern.test(trimmed) ? trimmed : fallback;
+}
+
 class BOGOBundle {
   constructor() {
     this.currentProduct = null;
@@ -1356,20 +1377,26 @@ class BOGOBundle {
     const bg = isSelected ? "#EAEDFB" : "white";
     const borderColor = isSelected
       ? "#5169DD"
-      : appearance?.borderColor || "rgba(34, 34, 34, 0.1)";
-    const nameText = (breakItem.name || "Buy [quantity], get [discount] OFF")
-      .replace("[quantity]", quantity)
-      .replace(
-        "[discount]",
-        this.bundleConfig.discountType === "Percentage"
-          ? `${breakItem.discount}%`
-          : `${breakItem.discount}`
-      );
+      : sanitizeCssColor(appearance?.borderColor, "rgba(34, 34, 34, 0.1)");
+    const nameText = escapeHtml(
+      (breakItem.name || "Buy [quantity], get [discount] OFF")
+        .replace("[quantity]", quantity)
+        .replace(
+          "[discount]",
+          this.bundleConfig.discountType === "Percentage"
+            ? `${breakItem.discount}%`
+            : `${breakItem.discount}`
+        )
+    );
 
     const savedPct =
       originalTotal > 0
         ? Math.round(((originalTotal - finalTotal) / originalTotal) * 100)
         : 0;
+
+    const secondaryText = sanitizeCssColor(appearance?.secondaryTextColor, "#303030");
+    const primaryText = sanitizeCssColor(appearance?.primaryTextColor, "#303030");
+    const strikeColor = sanitizeCssColor(appearance?.secondaryTextColor, "#616161");
 
     return `
       <div data-break-index="${index}" style="
@@ -1379,29 +1406,21 @@ class BOGOBundle {
         background-color: ${bg};
         border: 1px solid ${borderColor};
         cursor: pointer;
-        overflow-x: auto;          
-        white-space: nowrap;       
-        max-width: 100%;          
-        -webkit-overflow-scrolling: touch; 
+        overflow-x: auto;
+        white-space: nowrap;
+        max-width: 100%;
+        -webkit-overflow-scrolling: touch;
         ">
         <div style="display:flex; align-items:center;  min-width: 445px;">
           <div style="flex:1;">
-           <p style="margin:8px 0 0 0; font-size:13px; font-weight:600; color:${
-             appearance?.secondaryTextColor || "#303030"
-           };">${nameText}</p>
+           <p style="margin:8px 0 0 0; font-size:13px; font-weight:600; color:${secondaryText};">${nameText}</p>
             <div style="display:flex; align-items:center; gap:8px;">
-              <p style="font-weight:600; font-size:14px; margin:0; color:${
-                appearance?.primaryTextColor || "#303030"
-              };">Rs.${this.formatCurrency(finalTotal)}</p>
+              <p style="font-weight:600; font-size:14px; margin:0; color:${primaryText};">Rs.${this.formatCurrency(finalTotal)}</p>
               ${
                 finalTotal !== originalProductsTotal
                   ? `
-                <p style="width:1.5px; height:10px; background:${
-                  appearance?.primaryTextColor || "#222"
-                }; opacity:0.3; margin:0;"></p>
-                <p style="color:${
-                  appearance?.secondaryTextColor || "#616161"
-                }; font-size:12px; text-decoration: line-through; margin:0;">Rs. ${this.formatCurrency(
+                <p style="width:1.5px; height:10px; background:${primaryText}; opacity:0.3; margin:0;"></p>
+                <p style="color:${strikeColor}; font-size:12px; text-decoration: line-through; margin:0;">Rs. ${this.formatCurrency(
                       originalProductsTotal
                     )}</p>
               `
@@ -1425,7 +1444,7 @@ class BOGOBundle {
         const col = isSelected ? "#ffffff" : "#222222";
         const subCol = isSelected
           ? "#ffffff"
-          : appearance?.secondaryTextColor || "#616161";
+          : sanitizeCssColor(appearance?.secondaryTextColor, "#616161");
         const suffix = discountType === "Percentage" ? "%" : "";
         return `
         <button data-tier="${tierKey}" style="
@@ -1476,42 +1495,33 @@ class BOGOBundle {
     const original = this.formatCurrency(unit);
     const final = this.formatCurrency(finalUnit);
     const showCompare = finalUnit !== unit;
+    const safeTitle = escapeHtml(product.title);
+    const primaryBg = sanitizeCssColor(appearance?.primaryBackgroundColor, "#ffffff");
+    const borderColor = sanitizeCssColor(appearance?.borderColor, "#e5e5e5");
+    const primaryText = sanitizeCssColor(appearance?.primaryTextColor, "#303030");
+    const secondaryText = sanitizeCssColor(appearance?.secondaryTextColor, "#616161");
     return `
       <div style="padding: 15px; border-radius: ${Math.max(
         0,
         parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
-      )}px; margin-bottom: 15px; background-color: ${
-      appearance?.primaryBackgroundColor || "#ffffff"
-    }; border: 1px solid ${appearance?.borderColor || "#e5e5e5"}; 
-    overflow-x: auto;          
-    white-space: nowrap;       
-    max-width: 100%;           
+      )}px; margin-bottom: 15px; background-color: ${primaryBg}; border: 1px solid ${borderColor};
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
     -webkit-overflow-scrolling: touch; ">
         <div style="display:flex; align-items:center; min-width: 445px;">
           <img src="${
             product.image || product.images
-          }" width="100" height="100" alt="${
-      product.title
-    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
-      appearance?.borderColor || "#e5e5e5"
-    };" />
+          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
           <div style="flex:1;">
-            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${
-              appearance?.primaryTextColor || "#303030"
-            };">${product.title}</p>
+            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${primaryText};">${safeTitle}</p>
             <div style="display:flex; align-items:center; gap:8px;">
-              <p style="font-weight:600; font-size:14px; margin:0; color:${
-                appearance?.primaryTextColor || "#303030"
-              };">Rs.${final}</p>
+              <p style="font-weight:600; font-size:14px; margin:0; color:${primaryText};">Rs.${final}</p>
               ${
                 showCompare
                   ? `
-                <p style="width:1.5px; height:10px; background:${
-                  appearance?.primaryTextColor || "#222"
-                }; opacity:0.3; margin:0;"></p>
-                <p style="color:${
-                  appearance?.secondaryTextColor || "#616161"
-                }; font-size:12px; text-decoration: line-through; margin:0;">Rs.${original}</p>
+                <p style="width:1.5px; height:10px; background:${primaryText}; opacity:0.3; margin:0;"></p>
+                <p style="color:${secondaryText}; font-size:12px; text-decoration: line-through; margin:0;">Rs.${original}</p>
               `
                   : ""
               }
@@ -1539,38 +1549,29 @@ class BOGOBundle {
     }
     const final = this.formatCurrency(finalUnit);
     const showCompare = finalUnit !== unit;
+    const safeTitle = escapeHtml(product.title);
+    const primaryBg = sanitizeCssColor(appearance?.primaryBackgroundColor, "#ffffff");
+    const borderColor = sanitizeCssColor(appearance?.borderColor, "#e5e5e5");
+    const primaryText = sanitizeCssColor(appearance?.primaryTextColor, "#303030");
+    const secondaryText = sanitizeCssColor(appearance?.secondaryTextColor, "#616161");
     return `
       <div style="padding: 15px; border-radius: ${Math.max(
         0,
         parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
-      )}px; margin-bottom: 15px; background-color: ${
-      appearance?.primaryBackgroundColor || "#ffffff"
-    }; border: 1px solid ${appearance?.borderColor || "#e5e5e5"};">
+      )}px; margin-bottom: 15px; background-color: ${primaryBg}; border: 1px solid ${borderColor};">
         <div style="display:flex; align-items:center;">
           <img src="${
             product.image || product.images
-          }" width="100" height="100" alt="${
-      product.title
-    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
-      appearance?.borderColor || "#e5e5e5"
-    };" />
+          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
           <div style="flex:1;">
-            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${
-              appearance?.primaryTextColor || "#303030"
-            };">${product.title}</p>
+            <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${primaryText};">${safeTitle}</p>
             <div style="display:flex; align-items:center; gap:8px;">
-              <p style="font-weight:600; font-size:14px; margin:0; color:${
-                appearance?.primaryTextColor || "#303030"
-              };">Rs.${final}</p>
+              <p style="font-weight:600; font-size:14px; margin:0; color:${primaryText};">Rs.${final}</p>
               ${
                 showCompare
                   ? `
-                <p style=\"width:1.5px; height:10px; background:${
-                  appearance?.primaryTextColor || "#222"
-                }; opacity:0.3; margin:0;\"></p>
-                <p style=\"color:${
-                  appearance?.secondaryTextColor || "#616161"
-                }; font-size:12px; text-decoration: line-through; margin:0;\">Rs.${original}</p>
+                <p style=\"width:1.5px; height:10px; background:${primaryText}; opacity:0.3; margin:0;\"></p>
+                <p style=\"color:${secondaryText}; font-size:12px; text-decoration: line-through; margin:0;\">Rs.${original}</p>
               `
                   : ""
               }
@@ -1652,7 +1653,7 @@ class BOGOBundle {
         : this.selectedYProducts.get(product.instanceId);
 
     if (!selectedVariantInfo) {
-      return `<div>Product details unavailable for ${product.title}</div>`;
+      return `<div>Product details unavailable for ${escapeHtml(product.title)}</div>`;
     }
 
     const originalPrice = this.formatCurrency(
@@ -1688,6 +1689,11 @@ class BOGOBundle {
     );
 
     const groupIndicator = "";
+    const safeTitle = escapeHtml(product.title);
+    const borderColor = sanitizeCssColor(appearance?.borderColor, "#e5e5e5");
+    const primaryBg = sanitizeCssColor(appearance?.primaryBackgroundColor, "white");
+    const primaryText = sanitizeCssColor(appearance?.primaryTextColor, "#303030");
+    const secondaryText = sanitizeCssColor(appearance?.secondaryTextColor, "#999");
 
     return `
       <div class="bogo-single-product" data-instance-id="${
@@ -1699,40 +1705,24 @@ class BOGOBundle {
           parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
         )}px;
         margin-bottom: ${groupType === "Y" ? "5px" : "6px"};
-        background-color: ${
-          groupType === "Y"
-            ? "#FFFFFFB2"
-            : appearance?.primaryBackgroundColor || "white"
-        };
-        border: 1px solid ${appearance?.borderColor || "#e5e5e5"};
+        background-color: ${groupType === "Y" ? "#FFFFFFB2" : primaryBg};
+        border: 1px solid ${borderColor};
       ">
         <div style="display: flex; align-items: center;">
           <img src="${
             product.image || product.images
-          }" width="100" height="100" alt="${
-      product.title
-    } Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${
-      appearance?.borderColor || "#e5e5e5"
-    };" />
+          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
           <div style="flex-grow: 1;">
-            <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: ${
-              appearance?.primaryTextColor || "#303030"
-            };">
-              ${product.title}
+            <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: ${primaryText};">
+              ${safeTitle}
             </p>
             <div class="bogo-product-price-display" style="display: flex; align-items: center; gap: 8px;">
-              <p style="font-weight: 600; font-size: 14px; margin: 0; color: ${
-                appearance?.primaryTextColor || "#303030"
-              };">Rs.${finalPrice}</p>
+              <p style="font-weight: 600; font-size: 14px; margin: 0; color: ${primaryText};">Rs.${finalPrice}</p>
               ${
                 showDiscount
                   ? `
-                <p style=\"width: 1.5px; height: 10px; background: ${
-                  appearance?.primaryTextColor || "#222222"
-                }; opacity: 0.3; margin: 0;\"></p>
-                <p style=\"color: ${
-                  appearance?.secondaryTextColor || "#999"
-                }; font-size: 12px; text-decoration: line-through; margin: 0;\">Rs.${originalPrice}</p>
+                <p style=\"width: 1.5px; height: 10px; background: ${primaryText}; opacity: 0.3; margin: 0;\"></p>
+                <p style=\"color: ${secondaryText}; font-size: 12px; text-decoration: line-through; margin: 0;\">Rs.${originalPrice}</p>
               `
                   : ""
               }
@@ -1842,7 +1832,7 @@ class BOGOBundle {
         `No selected variant info found for instanceId: ${instanceId}. Product:`,
         product
       );
-      return `<div>Product details unavailable for ${product.title}</div>`;
+      return `<div>Product details unavailable for ${escapeHtml(product.title)}</div>`;
     }
 
     const originalPrice = this.formatCurrency(
@@ -1855,9 +1845,10 @@ class BOGOBundle {
       selectedVariantInfo.id
     );
 
+    const safeTitle = escapeHtml(product.title);
     const bundleIndicator =
       !isCurrentProduct && product.bundleTitle
-        ? `<div style="font-size: 10px; color: #666; margin-bottom: 3px;">${product.bundleTitle}</div>`
+        ? `<div style="font-size: 10px; color: #666; margin-bottom: 3px;">${escapeHtml(product.bundleTitle)}</div>`
         : "";
 
     return `
@@ -1871,12 +1862,10 @@ class BOGOBundle {
         <div style="display: flex; align-items: center;">
           <img src="${
             product.image || product.images
-          }" width="100" height="100" alt="${
-      product.title
-    } Image" style="border-radius: 10px; margin-right: 15px;" />
+          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px;" />
           <div style="flex-grow: 1;">
             <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">
-              ${product.title}
+              ${safeTitle}
               ${
                 isCurrentProduct
                   ? '<span style="color: #3B82F6; font-size: 12px;"> (Current Product)</span>'

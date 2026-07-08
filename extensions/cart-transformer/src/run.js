@@ -9,7 +9,16 @@ export function run(input) {
     const operations = input.cart.lines.reduce(
         /** @param {CartOperation[]} acc */
         (acc, cartLine) => {
-            const expandOperation = optionallyBuildExpandOperation(cartLine, input.presentmentCurrencyRate);
+            // A single malformed bundle (e.g. missing/legacy discount data)
+            // must not abort the transform for the rest of the cart - skip
+            // just this line item and let checkout proceed for everything else.
+            let expandOperation;
+            try {
+                expandOperation = optionallyBuildExpandOperation(cartLine, input.presentmentCurrencyRate);
+            } catch (error) {
+                console.error(`Skipping bundle expansion for cart line ${cartLine.id}:`, error);
+                return acc;
+            }
 
             if (expandOperation) {
                 return [...acc, { expand: expandOperation }];
@@ -30,7 +39,10 @@ function optionallyBuildExpandOperation({ id: cartLineId, merchandise, bundleVar
         let bundleDiscountType = merchandise?.product?.bundledDiscountType?.value || null;
         let bundleProductsLength = bundleVariantIds.value.split(",").length; // Get the number of products in the bundle
 
-        let discountAmount = bundleDiscounts[bundleProductsLength - 2] ? parseFloat(bundleDiscounts[bundleProductsLength - 2]) : 0; // Get the discount amount for the last product in the bundle
+        const discountIndex = bundleProductsLength - 2;
+        let discountAmount = (discountIndex >= 0 && bundleDiscounts?.[discountIndex])
+            ? parseFloat(bundleDiscounts[discountIndex])
+            : 0; // Get the discount amount for the last product in the bundle
         if (bundleProducts && bundleProducts.length > 0) {
             
             bundleProducts = bundleProducts.split(",").map((item) => {
@@ -62,7 +74,7 @@ function optionallyBuildExpandOperation({ id: cartLineId, merchandise, bundleVar
         }
         
 
-        if (bundleData.length === 0 || bundleProducts.length === 0) {
+        if (bundleData.length === 0 || !bundleProducts || bundleProducts.length === 0) {
             throw new Error("Invalid bundle composition");
         }
 

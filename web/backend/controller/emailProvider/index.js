@@ -28,7 +28,7 @@ async function connectEmailProvider(req, res) {
     }
 
     // Get shop data
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -100,7 +100,7 @@ async function getEmailProvider(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -150,7 +150,7 @@ async function disconnectEmailProvider(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -188,7 +188,7 @@ async function syncEmailProvider(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -257,7 +257,7 @@ async function getEmailLists(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -297,7 +297,7 @@ async function getEmailTemplates(req, res) {
   try {
     const { shop } = res.locals.shopify.session;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,
@@ -338,7 +338,7 @@ async function setDefaultList(req, res) {
     const { shop } = res.locals.shopify.session;
     const { listId } = req.body;
 
-    const shopData = await Shop.findOne({ shopDomain: shop });
+    const shopData = await Shop.findOne({ myshopify_domain: shop });
     if (!shopData) {
       return res.status(404).json({
         success: false,

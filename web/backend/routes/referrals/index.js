@@ -1,5 +1,6 @@
 import express from "express";
 import { adminAuth } from "../../middleware/adminAuth.js";
+import { partnerAuth } from "../../middleware/partnerAuth.js";
 import {
   createReferral,
   getAllReferrals,
@@ -43,27 +44,31 @@ router.get("/:code/fraud", adminAuth, getFraudDetection);
 router.get("/:code/query", adminAuth, getReferralQuery);
 
 // ============================================
-// PARTNER ROUTES - Accessible with referral code
-// Code acts as authentication (know the code = access)
+// PARTNER ROUTES
+// The referral `code` is public (it's embedded in shareable links), so it
+// cannot double as a credential. Financial/analytics data requires the
+// partner's separate `partner_token` secret via the `x-referral-token`
+// header (see middleware/partnerAuth.js). Non-financial lookups that are
+// meant to work from the public shareable link stay open.
 // ============================================
 
 // Get referral by code
 router.get("/:code", getReferralByCode);
 
-// Get referral analytics
-router.get("/:code/analytics", getReferralAnalytics);
-
 // Generate referral URL
 router.get("/:code/url", generateReferralUrl);
 
-// Get MRR metrics
-router.get("/:code/mrr", getMRR);
+// Get referral analytics (requires partner token)
+router.get("/:code/analytics", partnerAuth, getReferralAnalytics);
 
-// Get commission owed
-router.get("/:code/commission", getCommission);
+// Get MRR metrics (requires partner token)
+router.get("/:code/mrr", partnerAuth, getMRR);
 
-// Get dashboard metrics
-router.get("/:code/dashboard", getDashboardMetrics);
+// Get commission owed (requires partner token)
+router.get("/:code/commission", partnerAuth, getCommission);
+
+// Get dashboard metrics (requires partner token)
+router.get("/:code/dashboard", partnerAuth, getDashboardMetrics);
 
 // ============================================
 // PUBLIC ROUTES - No authentication required

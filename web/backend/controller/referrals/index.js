@@ -151,6 +151,17 @@ async function trackReferralEvent(req, res) {
     const { code } = req.params;
     const { event_type, shop_domain, myshopify_domain, plan_name, metadata } = req.body;
 
+    // This route is public (it's hit by click-throughs on partners' shared
+    // links), so only "click" may be recorded here. "install"/"paid" reflect
+    // real app state and must come from the app's own internal install/
+    // subscription flow, not an arbitrary public request body.
+    if (event_type !== "click") {
+      return res.status(403).json({
+        status: "ERROR",
+        error: "Only 'click' events may be reported through this endpoint",
+      });
+    }
+
     const event = await referralService.trackReferralEvent(code, event_type, {
       shop_domain,
       myshopify_domain,

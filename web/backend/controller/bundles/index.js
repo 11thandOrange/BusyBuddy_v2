@@ -429,7 +429,7 @@ async function createProductBundleV2(req, res) {
 
     // 6. Add bundle to your app's DB
     const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ shopDomain }); // Assuming shopDomain is the correct field
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       // Handle case where shop is not found in your DB, perhaps create it or return error
       console.error(`Shop not found in DB: ${shopDomain}`);
@@ -761,7 +761,7 @@ mutation setPriceForMixAndMatchProduct {
       throw new Error("Failed to update Mix and Match bundle prices on Shopify.");
     }
     const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ shopDomain }); // Assuming shopDomain is the correct field
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       // Handle case where shop is not found in your DB, perhaps create it or return error
       console.error(`Shop not found in DB: ${shopDomain}`);
@@ -1020,7 +1020,7 @@ mutation setPriceForMixAndMatchProduct {
       throw new Error("Failed to update Mix and Match bundle prices on Shopify.");
     }
     const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ shopDomain }); // Assuming shopDomain is the correct field
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       // Handle case where shop is not found in your DB, perhaps create it or return error
       console.error(`Shop not found in DB: ${shopDomain}`);
@@ -1463,7 +1463,7 @@ async function getActiveBundles(req, res) {
   try {
     const shopDomain = res.locals.shopify.session.shop;
     // Ensure you are querying by the correct field for shop domain, e.g., 'shopDomain' or 'myshopify_domain'
-    let findShop = await Shop.findOne({ shopDomain: shopDomain });
+    let findShop = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!findShop) {
       return res.status(404).json({ status: false, message: "Shop not found in local database." });
     }
@@ -1479,7 +1479,7 @@ async function getShopBundles(req, res) {
   try {
     const shopDomain = res.locals.shopify.session.shop;
     console.log("shopDomain", shopDomain);
-    let shopData = await Shop.findOne({ shopDomain });
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(400).json({ status: false, message: "Shop not found" });
     }

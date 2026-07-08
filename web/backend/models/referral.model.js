@@ -8,6 +8,17 @@ const referralSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
+  // Separate from `code`: `code` is embedded in public, shareable referral
+  // links (/:code/redirect, /:code/url) so it cannot double as a secret.
+  // `partner_token` gates access to the partner's own financial data
+  // (analytics/mrr/commission/dashboard) and must only ever be given to
+  // that partner directly, never included in a shareable URL.
+  partner_token: {
+    type: String,
+    unique: true,
+    sparse: true,
+    select: false,
+  },
   partner_name: {
     type: String,
     required: true,
@@ -44,10 +55,13 @@ const referralSchema = new mongoose.Schema({
   },
 });
 
-// Generate unique referral code before save
+// Generate unique referral code and partner token before save
 referralSchema.pre("save", function (next) {
   if (!this.code) {
     this.code = crypto.randomBytes(6).toString("hex");
+  }
+  if (!this.partner_token) {
+    this.partner_token = crypto.randomBytes(24).toString("hex");
   }
   this.updated_at = new Date();
   next();

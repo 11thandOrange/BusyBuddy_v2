@@ -127,7 +127,7 @@ async function getActiveBundle(req, res) {
       return res.status(200).json({ status: true, bundles: [] });
     }
     const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ shopDomain });
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     // Query your database for bundles containing this product
     const bundles = await Bundle.find({
       $or: [
@@ -273,7 +273,7 @@ async function getAnnouncementBar(req, res) {
       console.log(`Returning blank announcement bar. Reason: ${accessCheck.reason}`);
       return res.status(200).json({ status: "SUCCESS", data: null });
     }
-    let shopData = await Shop.findOne({ shopDomain });
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(400).json({ status: false, message: "Shop not found" });
     }
@@ -304,7 +304,7 @@ async function subscribeEmail(req, res) {
     }
 
     // Get shop data
-    const shopData = await Shop.findOne({ shopDomain });
+    const shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(404).json({
         success: false,
