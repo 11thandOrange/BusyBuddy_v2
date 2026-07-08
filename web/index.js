@@ -34,7 +34,7 @@ let db = process.env.DB_CONNECTION || "";
 mongoose.set("strictQuery", true);
 mongoose.connect(db).then(
   function (value) {
-    console.log("mongodb successfully connected***********************************");
+    console.log("mongodb successfully connected");
   },
   function (error) {
     console.log("mongodb failed to connect : ", error);
@@ -56,7 +56,6 @@ app.get(
   shopify.auth.callback(),
   shopData.shopData,
     async (req, res, next) => {
-    console.log("-------->**************<--------------")
     next();
   },
   shopify.redirectToShopifyOrAppRoot()
@@ -96,29 +95,18 @@ app.use(
   "/api/*",
   conditional(
     (_req, res, next) => {
-      console.log("[AUTH DEBUG] Checking shop param:", _req.query.shop ? "present" : "absent");
-      if (_req.query.shop) {
-        return true;
-      } else {
-        return false;
-      }
+      return Boolean(_req.query.shop);
     },
     async (_req, res, next) => {
-      console.log("[AUTH DEBUG] Using offline session path for shop:", _req.query.shop);
       // @ts-ignore
       var shop = _req.query.shop.toString();
       const isValid = verifySHA256(_req);
-      console.log("[AUTH DEBUG] SHA256 verification:", isValid ? "valid" : "invalid");
       if (!isValid) {
-        console.log("[AUTH DEBUG] Returning 401 - invalid signature");
         return res.status(401).send("Unauthorized");
       }
       const sessionId = await shopify.api.session.getOfflineId(shop);
-      console.log("[AUTH DEBUG] Session ID:", sessionId);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
-      console.log("[AUTH DEBUG] Session loaded:", session ? "yes" : "no");
       if (!session) {
-        console.log("[AUTH DEBUG] Returning 401 - no session");
         return res.status(401).send("Unauthorized");
       }
       res.locals.shopify = {
@@ -126,11 +114,9 @@ app.use(
         shopOrigin: shop,
         accessToken: session.accessToken,
       };
-      console.log("[AUTH DEBUG] Session attached, proceeding to route");
       return next();
     },
     (...args) => {
-      console.log("[AUTH DEBUG] Using validateAuthenticatedSession middleware");
       return shopify.validateAuthenticatedSession()(...args);
     }
   )
@@ -157,13 +143,12 @@ app.use("/api", router);
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
 app.use("/", async (_req, res, _next) => {
-  console.log("**********#@@!#!#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@***********");
-  // console.log("_req.query", _req.query)
-  // console.log("res.locals",res.locals)
-  if (_req.query.charge_id) {
-    //find session
+  // Shopify redirects here with charge_id+shop after a billing confirmation.
+  // Only trust it enough to trigger a resync if the request carries a valid
+  // Shopify HMAC signature - otherwise an arbitrary caller could force a
+  // resync for any shop=<value> they choose.
+  if (_req.query.charge_id && _req.query.shop && verifySHA256(_req)) {
     const session = await sessionModel.findOne({ shop: _req.query.shop });
-    // console.log("session:::",session)
     if (session) {
       subscriptionUpdate(session);
     }

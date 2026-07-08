@@ -313,7 +313,7 @@ announcementBarSchema.virtual("conversionRate").get(function () {
 announcementBarSchema.index({ shopId: 1, status: 1 });
 announcementBarSchema.index({ shopId: 1, isActive: 1 });
 announcementBarSchema.index({ priority: 1 });
-announcementBarSchema.index({ scheduleStart: 1, scheduleEnd: 1 });
+announcementBarSchema.index({ startDate: 1, endDate: 1 });
 
 const AnnouncementBar = mongoose.model("AnnouncementBar", announcementBarSchema);
 
