@@ -457,6 +457,14 @@ export const BuyXGetYEditor = () => {
       shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
       return;
     }
+    if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
+      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      return;
+    }
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      return;
+    }
 
     const bundleData = {
       title: bundleTitle,

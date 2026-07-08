@@ -442,7 +442,13 @@ export const StandardBundleEditor = () => {
       });
       return;
     }
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+    if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
+      shopify?.toast?.show("Percentage discount cannot exceed 100.", {
+        duration: 4000,
+      });
+      return;
+    }
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
       shopify?.toast?.show("End date must be after start date.", {
         duration: 4000,
       });

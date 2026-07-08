@@ -408,6 +408,19 @@ export const MixAndMatchEditor = () => {
       shopify?.toast?.show("Please select a discount type", { duration: 3000 });
       return;
     }
+    if (discountType === 'Percentage') {
+      const invalidTier = Object.entries(tierDiscounts).find(
+        ([, value]) => value === '' || value === null || isNaN(value) || parseFloat(value) < 0 || parseFloat(value) > 100
+      );
+      if (invalidTier) {
+        shopify?.toast?.show("Each tier discount must be a percentage between 0 and 100", { duration: 3000 });
+        return;
+      }
+    }
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      return;
+    }
 
     const bundleData = {
       title: bundleTitle,

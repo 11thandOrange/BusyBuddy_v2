@@ -14,6 +14,107 @@ import Shop from "../../models/shop.model.js";
 import Bundle from "../../models/bundle.model.js";
 import activityLogService from "../../services/activityLogService.js";
 
+const MAX_TITLE_LENGTH = 255;
+
+/**
+ * Server-side validation for bundle create/update payloads. Client-side
+ * checks exist too, but every one of these fields is directly reachable via
+ * a raw API call, so the server must enforce them independently.
+ *
+ * @param {Object} body - The request body (title, products, discountType,
+ *   discountValue, startDate, endDate, quantityBreaks, tierDiscounts, ...).
+ * @param {Object} [options]
+ * @param {boolean} [options.requireProducts] - Require at least one product.
+ * @param {boolean} [options.requireTitle] - Require a title to be present
+ *   (false for partial updates where title may be omitted unchanged).
+ * @returns {string|null} An error message, or null if the payload is valid.
+ */
+function validateBundlePayload(body, { requireProducts = true, requireTitle = true } = {}) {
+  const { title, products, productsX, productsY, discountType, discountValue, startDate, endDate, quantityBreaks, tierDiscounts } = body;
+
+  if (title !== undefined) {
+    if (typeof title !== "string" || title.trim().length === 0) {
+      return "Title cannot be empty.";
+    }
+    if (title.length > MAX_TITLE_LENGTH) {
+      return `Title must be ${MAX_TITLE_LENGTH} characters or fewer.`;
+    }
+  } else if (requireTitle) {
+    return "Title is required.";
+  }
+
+  const hasGeneralProducts = Array.isArray(products) && products.length > 0;
+  const hasBogoProducts = Array.isArray(productsX) && productsX.length > 0 && Array.isArray(productsY) && productsY.length > 0;
+  const productsFieldsPresent = "products" in body || "productsX" in body || "productsY" in body;
+
+  if (requireProducts) {
+    // Create: products are mandatory.
+    if (!hasGeneralProducts && !hasBogoProducts) {
+      return "At least one product is required.";
+    }
+  } else if (productsFieldsPresent) {
+    // Update: products aren't mandatory on every request (an update may only
+    // touch title/discount/etc.), but if the client does send a products
+    // field, it can't be used to wipe the bundle down to zero products.
+    if (!hasGeneralProducts && !hasBogoProducts) {
+      return "At least one product is required.";
+    }
+  }
+
+  if (discountValue !== undefined && discountValue !== null && discountValue !== "") {
+    const numericDiscount = parseFloat(discountValue);
+    if (Number.isNaN(numericDiscount) || numericDiscount < 0) {
+      return "Discount value must be a non-negative number.";
+    }
+    if (discountType === "Percentage" && numericDiscount > 100) {
+      return "Percentage discount cannot exceed 100.";
+    }
+  }
+
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && start >= end) {
+      return "Start date must be before end date.";
+    }
+  }
+
+  if (Array.isArray(quantityBreaks) && quantityBreaks.length > 0) {
+    const seenQuantities = new Set();
+    for (const tier of quantityBreaks) {
+      const quantity = typeof tier?.quantity === "number" ? tier.quantity : parseFloat(tier?.quantity);
+      const discount = parseFloat(tier?.discount);
+      if (!Number.isInteger(quantity) || quantity <= 0) {
+        return "Each quantity break must have a positive whole-number quantity.";
+      }
+      if (seenQuantities.has(quantity)) {
+        return `Duplicate quantity break for quantity ${quantity}.`;
+      }
+      seenQuantities.add(quantity);
+      if (Number.isNaN(discount) || discount < 0) {
+        return "Each quantity break must have a non-negative discount.";
+      }
+      if (discountType === "Percentage" && discount > 100) {
+        return "Percentage discount in a quantity break cannot exceed 100.";
+      }
+    }
+  }
+
+  if (tierDiscounts && typeof tierDiscounts === "object") {
+    for (const [tierKey, discount] of Object.entries(tierDiscounts)) {
+      const numericDiscount = parseFloat(discount);
+      if (Number.isNaN(numericDiscount) || numericDiscount < 0) {
+        return `Tier ${tierKey} discount must be a non-negative number.`;
+      }
+      if (discountType === "Percentage" && numericDiscount > 100) {
+        return `Tier ${tierKey} percentage discount cannot exceed 100.`;
+      }
+    }
+  }
+
+  return null;
+}
+
 /**
  * Fetches detailed information for a list of product IDs from Shopify.
  * @param {Object} client - GraphQL client.
@@ -339,6 +440,11 @@ async function createProductBundleV2(req, res) {
       originalVariantPrices, // Array of {productId, title, price} from frontend
     } = req.body;
 
+    const validationError = validateBundlePayload(req.body);
+    if (validationError) {
+      return res.status(400).json({ status: false, error: validationError });
+    }
+
     // Consolidate products for bundle creation based on type
     if (type === "Buy One Get One" && productsX && productsY) {
       products = [
@@ -586,6 +692,11 @@ async function createMixAndMatchBundle(req, res) {
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
     } = req.body;
+
+    const validationError = validateBundlePayload(req.body);
+    if (validationError) {
+      return res.status(400).json({ status: false, error: validationError });
+    }
 
     /*
         
@@ -844,6 +955,11 @@ async function updateMixAndMatchBundle(req, res) {
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
     } = req.body;
+
+    const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
+    if (validationError) {
+      return res.status(400).json({ status: false, error: validationError });
+    }
 
     /*
         
@@ -1595,7 +1711,12 @@ async function updateBundle(req, res) {
       originalVariantPrices,
       priority
     } = req.body;
-    console.log("Update bundle request body:", widgetAppearance);
+
+    const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
+    if (validationError) {
+      return res.status(400).json({ status: false, error: validationError });
+    }
+
     // 1. Update Shopify bundle product if title changed
     let shopifyUpdateResult = null;
     if (title && title !== existingBundle.title) {
@@ -1827,4 +1948,5 @@ export {
   updateBundle,
   deleteBundle,
   updateMixAndMatchBundle,
+  validateBundlePayload,
 };

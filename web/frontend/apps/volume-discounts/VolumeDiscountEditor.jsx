@@ -424,6 +424,18 @@ export const VolumeDiscountEditor = () => {
       shopify?.toast?.show("Please add at least one quantity break", { duration: 3000 });
       return;
     }
+    if (!discountValue || isNaN(discountValue) || parseFloat(discountValue) <= 0) {
+      shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
+      return;
+    }
+    if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
+      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      return;
+    }
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      return;
+    }
 
     const bundleData = {
       title: bundleTitle,
