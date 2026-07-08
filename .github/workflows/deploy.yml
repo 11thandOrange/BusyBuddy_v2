@@ -1,0 +1,34 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, busybuddy-prod]
+    steps:
+      - name: Pull latest main and rebuild
+        run: |
+          set -euo pipefail
+          cd /home/bitnami/BusyBuddy_v2
+
+          git fetch origin main
+          git reset --hard origin/main
+
+          cd web
+          npm install
+
+          cd frontend
+          npm install
+          npm run build
+
+          cd /home/bitnami/BusyBuddy_v2
+          pm2 restart BusyBuddy_v2 --update-env
+          pm2 save
+
+      - name: Report deployed commit
+        run: |
+          cd /home/bitnami/BusyBuddy_v2
+          echo "Deployed $(git rev-parse --short HEAD): $(git log -1 --pretty=%s)"
