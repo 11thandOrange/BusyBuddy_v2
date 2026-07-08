@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, busybuddy-prod]
+    runs-on: self-hosted
     steps:
       - name: Pull latest main and rebuild
         run: |
