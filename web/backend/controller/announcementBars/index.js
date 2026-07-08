@@ -2,8 +2,41 @@ import AnnouncementBar from "../../models/announcementBar.model.js";
 import Shop from "../../models/shop.model.js";
 import activityLogService from "../../services/activityLogService.js";
 
+const MAX_MESSAGE_LENGTH = 500;
+const SAFE_CSS_COLOR = /^(#[0-9a-fA-F]{3,8}|rgba?\([0-9.,%\s]+\)|hsla?\([0-9.,%\s]+\)|transparent|[a-zA-Z]{3,20})$/;
+
+// Walks any nested settings object and flags string values under a
+// *color*-named key that don't look like a real CSS color - covers every
+// nested color schema (colorSettings, timerColorSettings, saveBoxSettings,
+// emailButtonStyles, ...) without needing per-schema validators.
+function collectInvalidColorFields(obj, path = "") {
+  const invalid = [];
+  if (!obj || typeof obj !== "object") return invalid;
+
+  for (const [key, value] of Object.entries(obj)) {
+    const currentPath = path ? `${path}.${key}` : key;
+    if (value && typeof value === "object") {
+      invalid.push(...collectInvalidColorFields(value, currentPath));
+    } else if (/color/i.test(key) && typeof value === "string" && value.trim() !== "") {
+      if (!SAFE_CSS_COLOR.test(value.trim())) {
+        invalid.push(currentPath);
+      }
+    }
+  }
+  return invalid;
+}
+
 function validateAnnouncementBarData(data) {
   const errors = [];
+
+  if (data.message !== undefined && typeof data.message === "string" && data.message.length > MAX_MESSAGE_LENGTH) {
+    errors.push(`Message must be ${MAX_MESSAGE_LENGTH} characters or fewer`);
+  }
+
+  const invalidColorFields = collectInvalidColorFields(data);
+  if (invalidColorFields.length > 0) {
+    errors.push(`Invalid color value for: ${invalidColorFields.join(", ")}`);
+  }
 
   if (data.barWidth !== undefined) {
     if (typeof data.barWidth !== "number") {
@@ -890,4 +923,5 @@ export {
   getAnnouncementBarAnalytics,
   bulkDeleteAnnouncementBars,
   updateAnnouncementBarCountdown,
+  validateAnnouncementBarData,
 };

@@ -759,7 +759,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const email = emailInput.value.trim();
         
         // Basic validation
-        if (!email || !email.includes("@")) {
+        const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email || !EMAIL_PATTERN.test(email)) {
           errorMessage.textContent = "Please enter a valid email address";
           errorMessage.style.display = "block";
           return;

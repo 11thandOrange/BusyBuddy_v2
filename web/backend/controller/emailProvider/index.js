@@ -18,6 +18,13 @@ async function connectEmailProvider(req, res) {
       });
     }
 
+    if (typeof apiKey !== "string" || apiKey.trim().length < 8 || /\s/.test(apiKey.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: "API key is not in a valid format",
+      });
+    }
+
     // Validate provider type
     const validProviders = ['mailchimp', 'klaviyo', 'sendgrid', 'mailerlite'];
     if (!validProviders.includes(provider.toLowerCase())) {

@@ -296,7 +296,8 @@ async function subscribeEmail(req, res) {
     const shopDomain = res.locals.shopify.session.shop;
 
     // Validate email
-    if (!email || !email.includes('@')) {
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || !EMAIL_PATTERN.test(email.trim())) {
       return res.status(400).json({
         success: false,
         message: "Please provide a valid email address",
