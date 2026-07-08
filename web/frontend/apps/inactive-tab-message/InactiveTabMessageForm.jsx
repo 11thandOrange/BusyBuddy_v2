@@ -11,7 +11,7 @@ export default function InactiveTabMessageForm() {
   const location = useLocation();
   const [fromDiscountPage, setFromDiscountPage] = useState(false);
   const [resetDiscountList, setResetDiscountList] = useState(false);
-  
+
   const handleDiscard = () => {
     setFromDiscountPage(false);
     setResetDiscountList((prev) => !prev);
@@ -19,6 +19,16 @@ export default function InactiveTabMessageForm() {
 
   const handleBack = () => {
     navigate('/' + location.search);
+  };
+
+  // inactive_tab.liquid targets "body", so it's a real app embed and
+  // ?context=apps correctly opens the "App embeds" panel where merchants
+  // toggle it on (unlike the Announcement Bar's section block, which needs
+  // "Add block" instead).
+  const getThemeEmbedUrl = () => {
+    const params = new URLSearchParams(location.search);
+    const shop = params.get("shop");
+    return shop ? `https://${shop}/admin/themes/current/editor?context=apps` : "#";
   };
 
   return (
@@ -67,6 +77,14 @@ export default function InactiveTabMessageForm() {
               alert in the title of their browser tab, so they’ll remember their
               cart, discounts, or promotions!
             </p>
+            <a
+              href={getThemeEmbedUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "13px", fontWeight: 500 }}
+            >
+              Enable BusyBuddy Inactive Tab in Shopify Theme Extensions →
+            </a>
           </Col>
 
           {fromDiscountPage ? (

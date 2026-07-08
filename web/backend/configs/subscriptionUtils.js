@@ -89,10 +89,30 @@ export async function checkSubscriptionAccess(shopDomain, featureName) {
 // Map API endpoints to feature names
 export function getFeatureNameFromEndpoint(endpoint) {
   const featureMap = {
-    '/getActiveBundle': 'Bundle Discount',
-    '/getInactiveTab': 'Inactive Tab Message', 
+    // getActiveBundle intentionally omitted: it serves 4 different bundle
+    // types (Bundle Discount / Volume Discounts / Buy One Get One /
+    // Mix & Match) behind one route, so a single static feature name here
+    // would incorrectly gate the other 3. The controller itself checks
+    // access using the specific bundle's own type via
+    // getFeatureNameFromBundleType() once it knows which bundle matched.
+    '/getInactiveTab': 'Inactive Tab Message',
     '/getAnnouncementBar': 'Announcement Bar',
   };
-  
+
   return featureMap[endpoint] || null;
+}
+
+// Maps a Bundle document's `type` field (e.g. "Volume Discount") to the
+// subscription feature name used for plan gating (e.g. "Volume Discounts").
+// These differ for 2 of the 4 bundle types - keep this as the single
+// source of truth for that mapping rather than duplicating it.
+export function getFeatureNameFromBundleType(bundleType) {
+  const typeToFeatureMap = {
+    'Bundle Discount': 'Bundle Discount',
+    'Volume Discount': 'Volume Discounts',
+    'Buy One Get One': 'Buy One Get One',
+    'Mix and Match': 'Mix & Match',
+  };
+
+  return typeToFeatureMap[bundleType] || null;
 }

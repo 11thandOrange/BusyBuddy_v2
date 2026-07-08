@@ -264,6 +264,7 @@ const announcementBarSchema = new mongoose.Schema(
     endSaleMessageSettings: { type: endSaleMessageSettingsSchema, default: () => ({}) },
     showShopNowButton: { type: Boolean, default: true },
     shopNowButtonText: { type: String, default: "Shop Now" },
+    shopNowButtonUrl: { type: String, default: "" },
     animateShopNowButton: { type: Boolean, default: false },
     shopNowButtonSettings: { type: shopNowButtonSettingsSchema, default: () => ({}) },
     showSaveBox: { type: Boolean, default: false },

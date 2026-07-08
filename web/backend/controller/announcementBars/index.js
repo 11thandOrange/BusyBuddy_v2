@@ -26,11 +26,24 @@ function collectInvalidColorFields(obj, path = "") {
   return invalid;
 }
 
+function isSafeHttpUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function validateAnnouncementBarData(data) {
   const errors = [];
 
   if (data.message !== undefined && typeof data.message === "string" && data.message.length > MAX_MESSAGE_LENGTH) {
     errors.push(`Message must be ${MAX_MESSAGE_LENGTH} characters or fewer`);
+  }
+
+  if (data.shopNowButtonUrl && !isSafeHttpUrl(data.shopNowButtonUrl)) {
+    errors.push("Shop Now button URL must be a valid http(s) URL");
   }
 
   const invalidColorFields = collectInvalidColorFields(data);

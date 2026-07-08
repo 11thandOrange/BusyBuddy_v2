@@ -202,6 +202,7 @@ export const AnnouncementBarEditor = () => {
   // Shop Now Button
   const [showShopNowButton, setShowShopNowButton] = useState(false);
   const [shopNowButtonText, setShopNowButtonText] = useState('Shop Now');
+  const [shopNowButtonUrl, setShopNowButtonUrl] = useState('');
   const [shopNowButtonColor, setShopNowButtonColor] = useState('#ffffff');
   const [shopNowButtonBgColor, setShopNowButtonBgColor] = useState('#000000');
   
@@ -302,6 +303,7 @@ export const AnnouncementBarEditor = () => {
           setShowTimer(bar.showTimer || false);
           setShowShopNowButton(bar.showShopNowButton || false);
           setShopNowButtonText(bar.shopNowButtonText || 'Shop Now');
+          setShopNowButtonUrl(bar.shopNowButtonUrl || '');
           setShowSaveBox(bar.showSaveBox || false);
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
           
@@ -392,6 +394,7 @@ export const AnnouncementBarEditor = () => {
       timerEndTime,
       showShopNowButton,
       shopNowButtonText,
+      shopNowButtonUrl,
       shopNowButtonColor,
       shopNowButtonBgColor,
       showSaveBox,
@@ -578,7 +581,16 @@ export const AnnouncementBarEditor = () => {
                     placeholder="Shop Now"
                   />
                 </ConfigFormGroup>
-                
+
+                <ConfigFormGroup label="Button Link">
+                  <ConfigInput
+                    type="url"
+                    value={shopNowButtonUrl}
+                    onChange={(e) => setShopNowButtonUrl(e.target.value)}
+                    placeholder="https://your-store.com/collections/all"
+                  />
+                </ConfigFormGroup>
+
                 <ConfigFormGroup label="Text Color">
                   <ConfigInput
                     type="color"

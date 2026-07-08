@@ -261,7 +261,11 @@ export default function DashboardHome() {
     const params = new URLSearchParams(location.search);
     const shop = params.get("shop");
     if (shop) {
-      return `https://${shop}/admin/themes/current/editor?context=apps`;
+      // No ?context=apps here: that param opens the theme editor's "App
+      // embeds" panel, but the Announcement Bar block targets "section"
+      // (not an app embed), so it never appears there. Link to the plain
+      // editor instead - merchants add it via "Add block" > Apps.
+      return `https://${shop}/admin/themes/current/editor`;
     }
     return "#";
   };
@@ -419,7 +423,7 @@ export default function DashboardHome() {
                   className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
                 >
                   <ExternalLink size={16} className="notification-icon" />
-                  <span>Enable BusyBuddy In Shopify Theme Extensions <strong>Here</strong></span>
+                  <span>Enable BusyBuddy: open the theme editor, then <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong></span>
                 </a>
               )}
               {showUpgradeBanner && (

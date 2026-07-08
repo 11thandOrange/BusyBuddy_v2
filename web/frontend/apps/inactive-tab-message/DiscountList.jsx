@@ -777,7 +777,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                       </p>
 
                       {/* Enable/Disable Toggle */}
-                      {/* <Form.Group className="mt-3">
+                      <Form.Group className="mt-3">
                         <Form.Check
                           type="switch"
                           id="enable-switch"
@@ -786,7 +786,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                           onChange={handleToggleEnabled}
                           disabled={loading}
                         />
-                      </Form.Group> */}
+                      </Form.Group>
 
                       {/* Submit Button */}
                       <div className="mt-4">
