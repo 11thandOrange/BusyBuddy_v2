@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 import { apps, getApp } from '../data/apps';
 import { Badge } from '../components/ui/Badge';
 
@@ -10,7 +11,8 @@ export function AppList() {
 
   return (
     <Layout>
-      <div className="flex items-center gap-3">
+      <Breadcrumbs items={[{ title: 'App List', href: '/apps' }, { title: app.name }]} />
+      <div className="mt-4 flex items-center gap-3">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl"
           style={{ background: `${app.color}22`, color: app.color }}

@@ -1,9 +1,21 @@
 @import 'tailwindcss';
+@config "../tailwind.config.js";
 
 @theme {
-  --color-brand-DEFAULT: #5169DD;
-  --color-brand-hover: #4257c4;
-  --color-brand-dark: #3a4bb0;
+  --radius-card: 1rem;
+  --radius-button: 0.5rem;
+  --radius-input: 0.5rem;
+
+  --text-heading-lg: 2.25rem;
+  --text-heading-lg--font-weight: 700;
+  --text-heading-lg--line-height: 1.25;
+  --text-heading-sm: 1.25rem;
+  --text-heading-sm--font-weight: 700;
+  --text-heading-sm--line-height: 1.4;
+}
+
+@utility transition-fast {
+  transition: all 150ms ease;
 }
 
 html {

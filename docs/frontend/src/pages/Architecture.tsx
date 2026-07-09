@@ -1,4 +1,5 @@
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 
 function Box({ title, detail, className }: { title: string; detail: string; className?: string }) {
   return (
@@ -12,7 +13,8 @@ function Box({ title, detail, className }: { title: string; detail: string; clas
 export function Architecture() {
   return (
     <Layout>
-      <h1 className="text-heading-lg font-bold text-white">System Architecture</h1>
+      <Breadcrumbs items={[{ title: 'Architecture' }]} />
+      <h1 className="mt-4 text-heading-lg font-bold text-white">System Architecture</h1>
       <p className="mt-2 prose-body">
         BusyBuddy is a monorepo: an Express backend, a React admin frontend embedded in Shopify
         Admin via App Bridge, a Shopify Theme App Extension for storefront widgets, and a

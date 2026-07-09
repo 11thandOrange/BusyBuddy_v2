@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 import { workflows, getWorkflow } from '../data/workflows';
 import { Badge } from '../components/ui/Badge';
 
@@ -9,7 +10,8 @@ export function CiCd() {
 
   return (
     <Layout>
-      <h1 className="text-heading-lg font-bold text-white">{workflow.title}</h1>
+      <Breadcrumbs items={[{ title: 'CI/CD', href: '/ci-cd' }, { title: workflow.title }]} />
+      <h1 className="mt-4 text-heading-lg font-bold text-white">{workflow.title}</h1>
       <code className="mt-2 block font-mono text-sm text-content-muted">{workflow.file}</code>
 
       <div className="mt-4">

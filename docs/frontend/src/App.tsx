@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Home } from './pages/Home';
 import { GettingStarted } from './pages/GettingStarted';
@@ -17,13 +17,13 @@ function ScrollToTop() {
   return null;
 }
 
-// HashRouter, not BrowserRouter: this site is served from a GitHub Pages
-// project path (/BusyBuddy_v2/), which has no server to rewrite deep-link
-// requests back to index.html. Hash-based routes never hit the server on
-// navigation, so they work with zero extra GH Pages configuration.
+// BrowserRouter with real paths (/BusyBuddy_v2/api, not /#/api). GitHub
+// Pages has no server-side rewrite, so deep links are made to work via the
+// 404.html + index.html redirect pair (see public/404.html) instead of
+// falling back to hash routing.
 function App() {
   return (
-    <HashRouter>
+    <BrowserRouter basename="/BusyBuddy_v2">
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -41,7 +41,7 @@ function App() {
         <Route path="/stretch-features" element={<StretchFeatures />} />
         <Route path="*" element={<Home />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
