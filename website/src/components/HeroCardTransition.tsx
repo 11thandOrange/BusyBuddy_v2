@@ -1,23 +1,36 @@
 import { useState } from 'react';
 import { apps } from '../data/apps';
+import { Monster3D } from './Monster3D';
 import { MonsterCharacter } from './MonsterCharacter';
 import { AppWidgetIllustration } from './AppWidgetIllustration';
 import { cn } from '../lib/cn';
 
+function pastel(hex: string) {
+  const n = hex.replace('#', '');
+  const num = parseInt(n, 16);
+  const r = (num >> 16) & 0xff;
+  const g = (num >> 8) & 0xff;
+  const b = num & 0xff;
+  const mix = (c: number) => Math.round(c + (255 - c) * 0.72);
+  return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
+}
+
 // Original hero mechanic: six character cards sit in a row at the bottom.
-// Clicking one rotates/scales it up to center stage, with title top,
-// description left, and a widget illustration right - all keyed to the
-// active app so the transition replays on every switch.
+// Clicking one rotates the active monster to center stage in real 3D, with
+// title top, description left, and a widget illustration right - all keyed
+// to the active app. The full section (including the space behind the
+// fixed header) is filled with a solid pastel wash of the active app's
+// color, matched by <Home> making the header transparent on this page.
 export function HeroCardTransition() {
   const [active, setActive] = useState(0);
   const current = apps[active];
 
   return (
     <section
-      className="relative w-full overflow-hidden pt-16"
-      style={{ background: `linear-gradient(180deg, ${current.color}14 0%, #FBF7F0 65%)` }}
+      className="relative min-h-screen w-full overflow-hidden"
+      style={{ background: pastel(current.color), transition: 'background 400ms ease' }}
     >
-      <div className="relative mx-auto min-h-[720px] max-w-container-lg px-6 pb-56 pt-14 sm:pb-48">
+      <div className="relative mx-auto max-w-container-lg px-6 pb-56 pt-32 sm:pb-48">
         <div key={`title-${current.slug}`} className="text-center" style={{ animation: 'panel-rise-in 400ms ease' }}>
           <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: current.color }}>
             Meet the BusyBuddy apps
@@ -47,8 +60,8 @@ export function HeroCardTransition() {
             </div>
           </div>
 
-          <div key={`monster-${current.slug}`} className="order-1 flex justify-center lg:order-2" style={{ animation: 'monster-spin-in 550ms cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <MonsterCharacter variant={current.monsterVariant} color={current.color} icon={current.icon} size={220} />
+          <div key={`monster-${current.slug}`} className="order-1 flex justify-center lg:order-2">
+            <Monster3D variant={current.monsterVariant} color={current.color} icon={current.icon} size={280} />
           </div>
 
           <div
@@ -61,7 +74,7 @@ export function HeroCardTransition() {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-surface-border bg-white/70 backdrop-blur-sm">
+      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-black/5 bg-white/70 backdrop-blur-sm">
         <div className="mx-auto flex max-w-container-lg items-end justify-center gap-3 overflow-x-auto px-6 py-5 sm:justify-between">
           {apps.map((app, i) => {
             const isActive = i === active;
