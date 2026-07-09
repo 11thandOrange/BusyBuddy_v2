@@ -20,7 +20,7 @@ export function Contact() {
       <Header />
       <main className="mx-auto max-w-container px-6 pb-20 pt-32">
         <div className="text-xs font-semibold uppercase tracking-wider text-brand">Contact</div>
-        <h1 className="mt-2 text-heading-lg font-bold text-white">Get in touch</h1>
+        <h1 className="mt-2 text-heading-lg font-bold text-content">Get in touch</h1>
         <p className="mt-4 max-w-xl prose-body">
           Questions about a plan, a bug report, or a feature request - send a note and we'll get
           back to you.
@@ -34,7 +34,7 @@ export function Contact() {
                 required
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="w-full rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-content-muted focus:border-brand focus:outline-none"
+                className="w-full rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-content placeholder:text-content-muted focus:border-brand focus:outline-none"
                 placeholder="Your name"
               />
             </div>
@@ -45,7 +45,7 @@ export function Contact() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                className="w-full rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-content-muted focus:border-brand focus:outline-none"
+                className="w-full rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-content placeholder:text-content-muted focus:border-brand focus:outline-none"
                 placeholder="you@yourstore.com"
               />
             </div>
@@ -56,7 +56,7 @@ export function Contact() {
                 rows={5}
                 value={form.message}
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                className="w-full resize-none rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-white placeholder:text-content-muted focus:border-brand focus:outline-none"
+                className="w-full resize-none rounded-input border border-surface-border bg-background px-3 py-2.5 text-sm text-content placeholder:text-content-muted focus:border-brand focus:outline-none"
                 placeholder="How can we help?"
               />
             </div>
@@ -73,8 +73,8 @@ export function Contact() {
             )}
           </form>
 
-          <div className="rounded-card border border-surface-border bg-white/[0.02] p-6">
-            <div className="text-heading-sm font-bold text-white">Report a bug</div>
+          <div className="rounded-card border border-surface-border bg-surface p-6">
+            <div className="text-heading-sm font-bold text-content">Report a bug</div>
             <p className="mt-2 text-sm text-content-secondary">
               For technical issues, opening a GitHub issue is usually the fastest way to reach the
               team directly.
@@ -83,7 +83,7 @@ export function Contact() {
               href="https://github.com/11thandOrange/BusyBuddy_v2/issues"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 rounded-button border border-surface-border bg-surface px-4 py-2 text-sm text-content-secondary transition-fast hover:border-surface-border-hover hover:text-white"
+              className="mt-4 inline-flex items-center gap-2 rounded-button border border-surface-border bg-surface px-4 py-2 text-sm text-content-secondary transition-fast hover:border-surface-border-hover hover:text-content"
             >
               <Github size={15} />
               Open an issue

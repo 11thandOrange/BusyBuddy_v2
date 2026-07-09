@@ -6,7 +6,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-container-lg flex-col items-center gap-4 px-6 py-10 text-sm text-content-muted sm:flex-row sm:justify-between">
         <div className="flex items-center gap-1.5 font-bold">
           <span className="text-brand">Busy</span>
-          <span className="text-white">Buddy</span>
+          <span className="text-content">Buddy</span>
         </div>
         <div className="flex items-center gap-6">
           <Link to="/about" className="hover:text-content-secondary transition-fast">About</Link>

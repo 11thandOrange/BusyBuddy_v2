@@ -18,7 +18,7 @@ export function Header() {
       <div className="mx-auto flex h-full max-w-container-lg items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-1.5 text-xl font-bold shrink-0">
           <span className="text-brand">Busy</span>
-          <span className="text-white">Buddy</span>
+          <span className="text-content">Buddy</span>
         </Link>
 
         <nav className="hidden sm:flex items-center gap-7 text-sm">
@@ -28,7 +28,7 @@ export function Header() {
               to={item.href}
               className={cn(
                 'transition-fast',
-                location.pathname === item.href ? 'text-white font-medium' : 'text-content-secondary hover:text-white'
+                location.pathname === item.href ? 'text-content font-medium' : 'text-content-secondary hover:text-content'
               )}
             >
               {item.title}
