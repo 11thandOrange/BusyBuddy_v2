@@ -18,20 +18,20 @@ function scrollToEndpoint(slug: string) {
 export function ApiReference() {
   const { group: slug = endpointGroups[0].slug } = useParams();
   const group = getGroup(slug) ?? endpointGroups[0];
-  const liveEndpoints = group.endpoints.filter((e) => e.liveTestable);
-  const [activeLive, setActiveLive] = useState(liveEndpoints[0]?.slug);
-  const activeEndpoint = liveEndpoints.find((e) => e.slug === activeLive) ?? liveEndpoints[0];
+  const endpoints = group.endpoints;
+  const [activeSlug, setActiveSlug] = useState(endpoints[0]?.slug);
+  const activeEndpoint = endpoints.find((e) => e.slug === activeSlug) ?? endpoints[0];
 
   const rightPanel =
-    liveEndpoints.length > 0 && activeEndpoint ? (
+    endpoints.length > 0 && activeEndpoint ? (
       <div>
         <div className="mb-4 text-sm font-semibold text-white">Try it out</div>
-        {liveEndpoints.length > 1 && (
+        {endpoints.length > 1 && (
           <div className="mb-4 flex flex-wrap gap-1.5">
-            {liveEndpoints.map((e) => (
+            {endpoints.map((e) => (
               <button
                 key={e.slug}
-                onClick={() => setActiveLive(e.slug)}
+                onClick={() => setActiveSlug(e.slug)}
                 className={cn(
                   'rounded-full px-2.5 py-1 text-xs font-medium transition-fast',
                   activeEndpoint.slug === e.slug
