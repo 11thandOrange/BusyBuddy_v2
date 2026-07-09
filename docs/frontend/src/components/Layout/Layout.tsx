@@ -13,7 +13,7 @@ export function Layout({ children, rightPanel }: { children: ReactNode; rightPan
             <div className="px-6 py-8 md:px-10 max-w-content">{children}</div>
           </main>
           {rightPanel && (
-            <aside className="hidden xl:flex flex-col w-96 shrink-0 border-l border-surface-border bg-background-elevated/50">
+            <aside className="hidden lg:flex flex-col w-96 shrink-0 border-l border-surface-border bg-background-elevated/50">
               <div className="sticky top-16 overflow-y-auto max-h-[calc(100vh-64px)] p-6">{rightPanel}</div>
             </aside>
           )}
