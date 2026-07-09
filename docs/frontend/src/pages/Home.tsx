@@ -51,7 +51,7 @@ export function Home() {
   return (
     <Layout>
       <div className="text-sm text-content-muted">Documentation</div>
-      <h1 className="mt-2 text-display-sm font-extrabold text-white">
+      <h1 className="mt-2 text-heading-lg font-bold text-white">
         <span className="text-brand">Busy</span>Buddy Docs
       </h1>
       <p className="mt-3 max-w-content prose-body">
