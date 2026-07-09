@@ -8,7 +8,7 @@ interface SandboxProps {
   endpoint: EndpointDoc;
 }
 
-type Result = { status: number; body: string } | { error: string };
+type Result = { status: number; body: string; mock?: boolean } | { error: string };
 type CodeLang = 'curl' | 'fetch';
 
 export function Sandbox({ endpoint }: SandboxProps) {
@@ -52,6 +52,14 @@ export function Sandbox({ endpoint }: SandboxProps) {
   };
 
   const send = async () => {
+    if (!endpoint.liveTestable) {
+      setLoading(true);
+      setResult(null);
+      await new Promise((r) => setTimeout(r, 350));
+      setResult({ status: 200, body: endpoint.responseExample, mock: true });
+      setLoading(false);
+      return;
+    }
     if (!shop) return;
     setLoading(true);
     setResult(null);
@@ -81,22 +89,34 @@ export function Sandbox({ endpoint }: SandboxProps) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-start gap-2 rounded-input border border-status-warning/30 bg-status-warning/5 p-3 text-xs text-content-secondary">
-        <AlertTriangle size={14} className="mt-0.5 shrink-0 text-status-warning" />
-        <span>
-          This calls your real store through the Shopify App Proxy. Use a development/test store, not a live production shop.
-        </span>
-      </div>
+      {endpoint.liveTestable ? (
+        <div className="flex items-start gap-2 rounded-input border border-status-warning/30 bg-status-warning/5 p-3 text-xs text-content-secondary">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-status-warning" />
+          <span>
+            This calls your real store through the Shopify App Proxy. Use a development/test store, not a live production shop.
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2 rounded-input border border-surface-border bg-surface p-3 text-xs text-content-secondary">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0 text-content-muted" />
+          <span>
+            Not callable from a public docs site: {endpoint.authNote} "Try it" below returns the documented example
+            response instead of a live call.
+          </span>
+        </div>
+      )}
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-content-secondary">Store domain</label>
-        <input
-          value={shop}
-          onChange={(e) => setShop(e.target.value.trim())}
-          placeholder="your-store.myshopify.com"
-          className="w-full rounded-input border border-surface-border bg-background px-3 py-2 text-sm text-white placeholder:text-content-muted focus:border-brand focus:outline-none"
-        />
-      </div>
+      {endpoint.liveTestable && (
+        <div>
+          <label className="mb-1 block text-xs font-medium text-content-secondary">Store domain</label>
+          <input
+            value={shop}
+            onChange={(e) => setShop(e.target.value.trim())}
+            placeholder="your-store.myshopify.com"
+            className="w-full rounded-input border border-surface-border bg-background px-3 py-2 text-sm text-white placeholder:text-content-muted focus:border-brand focus:outline-none"
+          />
+        </div>
+      )}
 
       {[...queryParams, ...bodyParams].map((p) => (
         <div key={p.name}>
@@ -115,11 +135,11 @@ export function Sandbox({ endpoint }: SandboxProps) {
 
       <button
         onClick={send}
-        disabled={!shop || loading}
+        disabled={(endpoint.liveTestable && !shop) || loading}
         className="flex w-full items-center justify-center gap-2 rounded-button bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-button transition-fast hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Play size={14} />
-        {loading ? 'Sending...' : 'Try it'}
+        {loading ? 'Sending...' : endpoint.liveTestable ? 'Try it' : 'Try it (mock)'}
       </button>
 
       {result && (
@@ -131,7 +151,13 @@ export function Sandbox({ endpoint }: SandboxProps) {
           ) : (
             <>
               <div className="mb-1.5 text-xs font-medium text-content-secondary">
-                Response · <span className={result.status < 400 ? 'text-status-success' : 'text-status-error'}>{result.status}</span>
+                {result.mock ? (
+                  <span className="text-content-muted">Mocked response</span>
+                ) : (
+                  <>
+                    Response · <span className={result.status < 400 ? 'text-status-success' : 'text-status-error'}>{result.status}</span>
+                  </>
+                )}
               </div>
               <CodeBlock code={result.body} language="json" />
             </>
