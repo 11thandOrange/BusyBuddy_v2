@@ -33,5 +33,4 @@ web/database.sqlite
 shopify.app.toml
 
 # Playwright
-web/frontend/tests/smoke/.playwright-output/
-web/frontend/tests/smoke/.playwright-report/
+extensions/bogo-shopify-app/tests/e2e/.playwright-output/

@@ -10,11 +10,9 @@ import { Play } from "react-bootstrap-icons";
  * @param {Array} items - Array of {id, title, description, videoSrc, posterSrc}
  */
 export default function OverviewTab({ items = [] }) {
-  // Only show first 3 items
-  const displayItems = items.slice(0, 3);
-  const [selectedItem, setSelectedItem] = useState(displayItems[0] || null);
+  const [selectedItem, setSelectedItem] = useState(items[0] || null);
 
-  const currentItem = selectedItem || displayItems[0];
+  const currentItem = selectedItem || items[0];
 
   return (
     <Row className="g-4 p-3">
@@ -61,10 +59,13 @@ export default function OverviewTab({ items = [] }) {
         </Card>
       </Col>
 
-      {/* Right Column - Simple List (3 rows, no container/header/background) */}
+      {/* Right Column - Simple List (scrollable, no container/header/background) */}
       <Col lg={5} md={12}>
-        <div className="d-flex flex-column gap-3">
-          {displayItems.map((item, index) => {
+        <div
+          className="d-flex flex-column gap-3"
+          style={{ maxHeight: "420px", overflowY: "auto", paddingRight: "4px" }}
+        >
+          {items.map((item, index) => {
             const isSelected = selectedItem?.id === item.id;
             return (
             <div

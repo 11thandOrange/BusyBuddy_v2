@@ -32,13 +32,34 @@ export const billingConfig = planData.reduce((acc, plan) => {
   return acc;
 }, {});
 
+// Transactions default to test mode unless NODE_ENV is production, matching the
+// safe default documented in shopify.js. SHOPIFY_PAYMENT_MODE can override this,
+// but an unset or malformed value must never crash billing calls or silently
+// default to real charges.
+export function isTestPaymentMode() {
+  const raw = process.env.SHOPIFY_PAYMENT_MODE;
+  if (raw === undefined || raw === "") {
+    return process.env.NODE_ENV !== "production";
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed === "boolean") {
+      return parsed;
+    }
+    console.warn(`Invalid SHOPIFY_PAYMENT_MODE value "${raw}" - expected "true" or "false". Falling back to NODE_ENV-based default.`);
+  } catch {
+    console.warn(`Invalid SHOPIFY_PAYMENT_MODE value "${raw}" - expected "true" or "false". Falling back to NODE_ENV-based default.`);
+  }
+  return process.env.NODE_ENV !== "production";
+}
+
 export async function requestBilling(res, next) {
   const plans = Object.keys(billingConfig);
   const session = res.locals.shopify.session;
   const hasPayment = await shopify.api.billing.check({
     session,
     plans: plans,
-    isTest: JSON.parse(process.env.SHOPIFY_PAYMENT_MODE),
+    isTest: isTestPaymentMode(),
   });
 
   if (hasPayment) {
@@ -48,7 +69,7 @@ export async function requestBilling(res, next) {
       await shopify.api.billing.request({
         session,
         plan: plans[0],
-        isTest: JSON.parse(process.env.SHOPIFY_PAYMENT_MODE),
+        isTest: isTestPaymentMode(),
       })
     );
   }

@@ -17,8 +17,21 @@ import { verifySHA256 } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
+import logger, { reportError } from "./logger.js";
 dotenv.config();
 const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || "3000", 10);
+
+// A crash mid-request leaves the process in an undefined state (Node docs
+// recommend exiting rather than continuing); an unhandled rejection is
+// usually recoverable but must not vanish silently.
+process.on("unhandledRejection", (reason) => {
+  reportError(reason, { type: "unhandledRejection" });
+});
+
+process.on("uncaughtException", (error) => {
+  reportError(error, { type: "uncaughtException" });
+  process.exit(1);
+});
 
 const STATIC_PATH =
   process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
@@ -34,13 +47,41 @@ let db = process.env.DB_CONNECTION || "";
 mongoose.set("strictQuery", true);
 mongoose.connect(db).then(
   function (value) {
-    console.log("mongodb successfully connected***********************************");
+    logger.info("mongodb successfully connected");
   },
   function (error) {
-    console.log("mongodb failed to connect : ", error);
+    reportError(error, { context: "mongodb connection" });
   }
 );
 app.use(morgan("tiny"));
+
+// ============================================
+// WEBHOOK ROUTES - must be registered before any global body-parser
+// ============================================
+// shopify.processWebhooks() and the verify-signature json() below both need
+// the untouched raw request stream to verify Shopify's HMAC signature and
+// (for processWebhooks) to parse the body themselves. If a global
+// express.json() ran first, it would drain the stream before either of
+// these ever sees it - processWebhooks would fail with "No body was
+// received when processing webhook", and the HMAC check below would fall
+// back to a re-serialized body that doesn't match what Shopify signed.
+// These two blocks must stay registered ahead of the global express.json()
+// further down.
+app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
+
+// Webhook routes - mounted BEFORE authenticated routes
+// These endpoints receive events from Shopify and internal services without session auth
+app.use(
+  "/api/webhooks",
+  express.json({
+    verify: (req, _res, buf) => {
+      // Store raw body for HMAC verification
+      req.rawBody = buf.toString();
+    },
+  }),
+  verifyShopifyWebhook,
+  webhookRoutes
+);
 
 // ============================================
 // PUBLIC ROUTES - No Shopify authentication required
@@ -56,25 +97,9 @@ app.get(
   shopify.auth.callback(),
   shopData.shopData,
     async (req, res, next) => {
-    console.log("-------->**************<--------------")
     next();
   },
   shopify.redirectToShopifyOrAppRoot()
-);
-app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
-
-// Webhook routes - mounted BEFORE authenticated routes
-// These endpoints receive events from Shopify and internal services without session auth
-app.use(
-  "/api/webhooks",
-  express.json({
-    verify: (req, _res, buf) => {
-      // Store raw body for HMAC verification
-      req.rawBody = buf.toString();
-    },
-  }),
-  verifyShopifyWebhook,
-  webhookRoutes
 );
 
 // Google OAuth callback - must be BEFORE Shopify auth middleware
@@ -96,29 +121,18 @@ app.use(
   "/api/*",
   conditional(
     (_req, res, next) => {
-      console.log("[AUTH DEBUG] Checking shop param:", _req.query.shop ? "present" : "absent");
-      if (_req.query.shop) {
-        return true;
-      } else {
-        return false;
-      }
+      return Boolean(_req.query.shop);
     },
     async (_req, res, next) => {
-      console.log("[AUTH DEBUG] Using offline session path for shop:", _req.query.shop);
       // @ts-ignore
       var shop = _req.query.shop.toString();
       const isValid = verifySHA256(_req);
-      console.log("[AUTH DEBUG] SHA256 verification:", isValid ? "valid" : "invalid");
       if (!isValid) {
-        console.log("[AUTH DEBUG] Returning 401 - invalid signature");
         return res.status(401).send("Unauthorized");
       }
       const sessionId = await shopify.api.session.getOfflineId(shop);
-      console.log("[AUTH DEBUG] Session ID:", sessionId);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
-      console.log("[AUTH DEBUG] Session loaded:", session ? "yes" : "no");
       if (!session) {
-        console.log("[AUTH DEBUG] Returning 401 - no session");
         return res.status(401).send("Unauthorized");
       }
       res.locals.shopify = {
@@ -126,11 +140,9 @@ app.use(
         shopOrigin: shop,
         accessToken: session.accessToken,
       };
-      console.log("[AUTH DEBUG] Session attached, proceeding to route");
       return next();
     },
     (...args) => {
-      console.log("[AUTH DEBUG] Using validateAuthenticatedSession middleware");
       return shopify.validateAuthenticatedSession()(...args);
     }
   )
@@ -157,13 +169,12 @@ app.use("/api", router);
 
 app.use(serveStatic(STATIC_PATH, { index: false }));
 app.use("/", async (_req, res, _next) => {
-  console.log("**********#@@!#!#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@#!@***********");
-  // console.log("_req.query", _req.query)
-  // console.log("res.locals",res.locals)
-  if (_req.query.charge_id) {
-    //find session
+  // Shopify redirects here with charge_id+shop after a billing confirmation.
+  // Only trust it enough to trigger a resync if the request carries a valid
+  // Shopify HMAC signature - otherwise an arbitrary caller could force a
+  // resync for any shop=<value> they choose.
+  if (_req.query.charge_id && _req.query.shop && verifySHA256(_req)) {
     const session = await sessionModel.findOne({ shop: _req.query.shop });
-    // console.log("session:::",session)
     if (session) {
       subscriptionUpdate(session);
     }
@@ -217,4 +228,25 @@ app.use("/*", async (_req, res, _next) => {
 
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);
 
-app.listen(PORT);
+// Centralized error handler - must be registered last and take 4 args for
+// Express to recognize it as an error middleware. Anything thrown or passed
+// to next(err) in a route/middleware above lands here instead of hanging
+// the request or crashing the process silently.
+app.use((err, req, res, _next) => {
+  reportError(err, { path: req.originalUrl, method: req.method });
+  if (res.headersSent) {
+    return;
+  }
+  res.status(err.status || 500).json({
+    status: "ERROR",
+    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
+  });
+});
+
+// Skipped under test so integration tests can import `app` for supertest
+// without also binding a real port.
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT);
+}
+
+export default app;

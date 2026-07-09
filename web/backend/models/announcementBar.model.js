@@ -264,6 +264,7 @@ const announcementBarSchema = new mongoose.Schema(
     endSaleMessageSettings: { type: endSaleMessageSettingsSchema, default: () => ({}) },
     showShopNowButton: { type: Boolean, default: true },
     shopNowButtonText: { type: String, default: "Shop Now" },
+    shopNowButtonUrl: { type: String, default: "" },
     animateShopNowButton: { type: Boolean, default: false },
     shopNowButtonSettings: { type: shopNowButtonSettingsSchema, default: () => ({}) },
     showSaveBox: { type: Boolean, default: false },
@@ -313,7 +314,7 @@ announcementBarSchema.virtual("conversionRate").get(function () {
 announcementBarSchema.index({ shopId: 1, status: 1 });
 announcementBarSchema.index({ shopId: 1, isActive: 1 });
 announcementBarSchema.index({ priority: 1 });
-announcementBarSchema.index({ scheduleStart: 1, scheduleEnd: 1 });
+announcementBarSchema.index({ startDate: 1, endDate: 1 });
 
 const AnnouncementBar = mongoose.model("AnnouncementBar", announcementBarSchema);
 

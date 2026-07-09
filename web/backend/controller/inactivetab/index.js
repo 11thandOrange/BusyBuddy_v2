@@ -2,6 +2,17 @@ import InactiveTabModel from "../../models/inactiveTab.model.js";
 import shopify from "../../../shopify.js";
 import FormData from "form-data";
 
+const MAX_MESSAGE_LENGTH = 200;
+
+function isSafeHttpUrl(value) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 // Save inactive tab settings
 async function saveInactiveTabSettings(req, res) {
   try {
@@ -9,10 +20,28 @@ async function saveInactiveTabSettings(req, res) {
     const { message, startDate, endDate, imageUrl, isEnabled } = req.body;
 
     // Validate required fields
-    if (!message) {
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
       return res.status(400).json({
         status: "ERROR",
         error: "Message is required",
+      });
+    }
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({
+        status: "ERROR",
+        error: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer`,
+      });
+    }
+    if (imageUrl && !isSafeHttpUrl(imageUrl)) {
+      return res.status(400).json({
+        status: "ERROR",
+        error: "Image URL must be a valid http(s) URL",
+      });
+    }
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      return res.status(400).json({
+        status: "ERROR",
+        error: "Start date must be before end date",
       });
     }
 

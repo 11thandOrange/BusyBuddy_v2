@@ -252,10 +252,9 @@ const volumeDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
         throw new Error("Failed to fetch products");
       }
       const data = await response.json();
-      console.log("Products data in BundleDiscountActions:", data);
       setCurrency(data.symbol || "$");
     } catch (error) {
-      console.log("GetProductsError in BundleDiscountActions", error);
+      console.error("GetCurrencyError in VolumeDiscountActions", error);
     }
   }
   const handleSelectChange = (e) => {

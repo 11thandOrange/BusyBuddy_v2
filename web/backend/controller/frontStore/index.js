@@ -6,7 +6,7 @@ import AnnouncementBar from "../../models/announcementBar.model.js";
 import Shop from "../../models/shop.model.js";
 import EmailProvider from "../../models/emailProvider.model.js";
 import EmailService, { EmailServiceError } from "../../services/emailService.js";
-import { checkSubscriptionAccess, getFeatureNameFromEndpoint } from "../../configs/subscriptionUtils.js";
+import { checkSubscriptionAccess, getFeatureNameFromEndpoint, getFeatureNameFromBundleType } from "../../configs/subscriptionUtils.js";
 // async function getActiveBundle(req, res) {
 //   // In your backend route handler
 //   try {
@@ -119,15 +119,8 @@ async function getActiveBundle(req, res) {
       session: session,
       apiVersion: "2024-10", // Ensure this is a valid and supported API version
     });
-    const accessCheck = await checkSubscriptionAccess(session.shop, "Bundle Discount");
-
-    // Return blank data if no subscription access
-    if (accessCheck.shouldReturnBlank) {
-      console.log(`Returning blank bundles. Reason: ${accessCheck.reason}`);
-      return res.status(200).json({ status: true, bundles: [] });
-    }
     const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ shopDomain });
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     // Query your database for bundles containing this product
     const bundles = await Bundle.find({
       $or: [
@@ -145,6 +138,16 @@ async function getActiveBundle(req, res) {
     console.log("bundles", bundles);
     if (!bundles || bundles.length === 0) {
       return res.json({ bundles: [] });
+    }
+
+    // Gate on the plan feature for THIS bundle's actual type - the same
+    // endpoint serves Bundle Discount/Volume Discounts/Buy One Get One/
+    // Mix & Match, so the feature name can't be hardcoded to one of them.
+    const featureName = getFeatureNameFromBundleType(bundles[0].type);
+    const accessCheck = await checkSubscriptionAccess(session.shop, featureName || "Bundle Discount");
+    if (accessCheck.shouldReturnBlank) {
+      console.log(`Returning blank bundles. Reason: ${accessCheck.reason}`);
+      return res.status(200).json({ status: true, bundles: [] });
     }
 
     // Get all product IDs from these bundles (excluding the current product)
@@ -273,11 +276,28 @@ async function getAnnouncementBar(req, res) {
       console.log(`Returning blank announcement bar. Reason: ${accessCheck.reason}`);
       return res.status(200).json({ status: "SUCCESS", data: null });
     }
-    let shopData = await Shop.findOne({ shopDomain });
+    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(400).json({ status: false, message: "Shop not found" });
     }
     let inactiveTabContent = await AnnouncementBar.findOne({ shopId: shopData._id, status: "active" }).lean();
+
+    // Enforce the merchant-configured schedule window. Only actually filter
+    // when a boundary is a real, parseable date - many bars predate this
+    // check and rely on the schema's Date.now default rather than a
+    // deliberately-set date, so treat missing/invalid boundaries as "no
+    // restriction on that side" instead of silently hiding legacy bars.
+    if (inactiveTabContent) {
+      const now = new Date();
+      const start = inactiveTabContent.startDate ? new Date(inactiveTabContent.startDate) : null;
+      const end = inactiveTabContent.endDate ? new Date(inactiveTabContent.endDate) : null;
+      const startOk = !start || isNaN(start.getTime()) || start <= now;
+      const endOk = !end || isNaN(end.getTime()) || end >= now;
+      if (!startOk || !endOk) {
+        inactiveTabContent = null;
+      }
+    }
+
     if (inactiveTabContent && inactiveTabContent?.selectedTheme !== "solid") {
       inactiveTabContent.selectedTheme = `${process.env.HOST}/assets/${inactiveTabContent.selectedTheme}.svg`;
     }
@@ -296,7 +316,8 @@ async function subscribeEmail(req, res) {
     const shopDomain = res.locals.shopify.session.shop;
 
     // Validate email
-    if (!email || !email.includes('@')) {
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || !EMAIL_PATTERN.test(email.trim())) {
       return res.status(400).json({
         success: false,
         message: "Please provide a valid email address",
@@ -304,7 +325,7 @@ async function subscribeEmail(req, res) {
     }
 
     // Get shop data
-    const shopData = await Shop.findOne({ shopDomain });
+    const shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(404).json({
         success: false,

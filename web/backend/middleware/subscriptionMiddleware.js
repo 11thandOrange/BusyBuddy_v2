@@ -38,9 +38,15 @@ export async function requireSubscriptionAccess(req, res, next) {
 
     next();
   } catch (error) {
+    // Legitimate "no access" cases are already handled above via
+    // accessCheck.shouldReturnBlank - anything reaching this catch is an
+    // unexpected failure (DB error, bug), so it must surface as a real
+    // error rather than silently rendering storefront widgets as "off".
     console.error('Subscription middleware error:', error);
-    // On error, return blank data instead of error
-    return returnBlankData(req, res, 'Unknown');
+    return res.status(500).json({
+      status: 'ERROR',
+      error: 'Failed to verify subscription access',
+    });
   }
 }
 

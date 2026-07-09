@@ -333,7 +333,8 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
       const edges = data.data.products.edges || [];
       setProducts(edges);
     } catch (error) {
-      console.log("GetProductsError in BundleDiscountActions", error);
+      console.error("GetProductsError in BundleDiscountActions", error);
+      shopify?.toast?.show("Failed to load products. Please try again.", { isError: true, duration: 5000 });
     }
   }
   async function getCurrency() {
@@ -351,7 +352,7 @@ const BundleDiscountActions = React.forwardRef(({ onSuccess, editData }, ref) =>
       // console.log("Products data in BundleDiscountActions:", data);
       setCurrency(data.symbol || "$");
     } catch (error) {
-      console.log("GetProductsError in BundleDiscountActions", error);
+      console.error("GetCurrencyError in BundleDiscountActions", error);
     }
   }
   const handleSelectChange = (e) => {

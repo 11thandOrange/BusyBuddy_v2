@@ -8,6 +8,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import { store } from "./store";
 import { initI18n, getPolarisTranslations } from "./utils/i18nUtils";
 import { QueryProvider } from "./components";
+import ErrorBoundary from "./components/ErrorBoundary";
 import "./App.css";
 import "./assets/fonts/stylesheet.css";
 
@@ -50,7 +51,9 @@ initI18n().then(() => {
   const root = createRoot(document.getElementById("app"));
   root.render(
     <Provider store={store}>
-      <EditorApp />
+      <ErrorBoundary>
+        <EditorApp />
+      </ErrorBoundary>
     </Provider>
   );
 });

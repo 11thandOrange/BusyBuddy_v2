@@ -18,7 +18,7 @@ async function getRecentActivity(req, res) {
     }
 
     // Look up the Shop to get the MongoDB ObjectId
-    const shopData = await Shop.findOne({ shopDomain: session.shop });
+    const shopData = await Shop.findOne({ myshopify_domain: session.shop });
     if (!shopData) {
       // Return empty data if shop not found (new install)
       return res.json({
@@ -89,7 +89,7 @@ async function getActivityStats(req, res) {
     }
 
     // Look up the Shop to get the MongoDB ObjectId
-    const shopData = await Shop.findOne({ shopDomain: session.shop });
+    const shopData = await Shop.findOne({ myshopify_domain: session.shop });
     if (!shopData) {
       // Return empty stats if shop not found
       return res.json({

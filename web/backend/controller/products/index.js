@@ -148,7 +148,7 @@ async function fetchStoreCurrency(req, res) {
   try {
     const shopDomain = res.locals.shopify.session.shop;
 
-    const shopData = await Shop.findOne({ shopDomain });
+    const shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     if (!shopData) {
       return res.status(400).json({ status: false, message: "Shop not found" });
     }

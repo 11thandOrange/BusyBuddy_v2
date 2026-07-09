@@ -1,4 +1,9 @@
 // subscriptionConfig.js
+// price must match the amounts actually charged via Shopify Billing
+// (web/billing.js's planData) and shown to merchants (Plan.jsx's planData) -
+// this copy feeds revenue reporting (see referral.js's calculateMRR), so a
+// mismatch here silently understates/overstates MRR without affecting what
+// merchants are actually billed.
 export const subscriptionConfig = {
   Free: {
     maxApps: 1,
@@ -16,7 +21,7 @@ export const subscriptionConfig = {
       "volume_discounts",
       "mix_match",
     ],
-    price: 9.99,
+    price: 30,
     features: ["3 apps enabled", "All discount apps available", "Priority support"],
   },
   Advanced: {
@@ -29,7 +34,7 @@ export const subscriptionConfig = {
       "volume_discounts",
       "mix_match",
     ],
-    price: 19.99,
+    price: 60,
     features: ["All 6 apps enabled", "Complete feature set", "24/7 support"],
   },
 };
