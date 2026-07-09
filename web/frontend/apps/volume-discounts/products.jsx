@@ -239,7 +239,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       setProducts((prev) => (append ? [...prev, ...edges] : edges));
       setBaseProducts((prev) => (append ? [...prev, ...edges] : edges));
     } catch (error) {
-      console.log("GetProductsError", error);
+      console.error("GetProductsError", error);
     }
   }
 
@@ -251,7 +251,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       const fetched = data.data.collections.nodes || [];
       setCollections(fetched);
     } catch (error) {
-      console.log("GetCollectionsError", error);
+      console.error("GetCollectionsError", error);
     }
   }
 

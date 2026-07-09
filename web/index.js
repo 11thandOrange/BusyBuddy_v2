@@ -17,8 +17,21 @@ import { verifySHA256 } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
+import logger, { reportError } from "./logger.js";
 dotenv.config();
 const PORT = parseInt(process.env.BACKEND_PORT || process.env.PORT || "3000", 10);
+
+// A crash mid-request leaves the process in an undefined state (Node docs
+// recommend exiting rather than continuing); an unhandled rejection is
+// usually recoverable but must not vanish silently.
+process.on("unhandledRejection", (reason) => {
+  reportError(reason, { type: "unhandledRejection" });
+});
+
+process.on("uncaughtException", (error) => {
+  reportError(error, { type: "uncaughtException" });
+  process.exit(1);
+});
 
 const STATIC_PATH =
   process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
@@ -34,10 +47,10 @@ let db = process.env.DB_CONNECTION || "";
 mongoose.set("strictQuery", true);
 mongoose.connect(db).then(
   function (value) {
-    console.log("mongodb successfully connected");
+    logger.info("mongodb successfully connected");
   },
   function (error) {
-    console.log("mongodb failed to connect : ", error);
+    reportError(error, { context: "mongodb connection" });
   }
 );
 app.use(morgan("tiny"));
@@ -201,5 +214,20 @@ app.use("/*", async (_req, res, _next) => {
 });
 
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);
+
+// Centralized error handler - must be registered last and take 4 args for
+// Express to recognize it as an error middleware. Anything thrown or passed
+// to next(err) in a route/middleware above lands here instead of hanging
+// the request or crashing the process silently.
+app.use((err, req, res, _next) => {
+  reportError(err, { path: req.originalUrl, method: req.method });
+  if (res.headersSent) {
+    return;
+  }
+  res.status(err.status || 500).json({
+    status: "ERROR",
+    error: process.env.NODE_ENV === "production" ? "Internal server error" : err.message,
+  });
+});
 
 app.listen(PORT);

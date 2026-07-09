@@ -235,7 +235,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       setProducts((prev) => (append ? [...prev, ...edges] : edges));
       setBaseProducts((prev) => (append ? [...prev, ...edges] : edges));
     } catch (error) {
-      console.log("GetProductsError", error);
+      console.error("GetProductsError", error);
     }
   }
   async function getCollections() {
@@ -257,7 +257,7 @@ export default function Products({ onClose, setSelectedProducts, selectedProduct
       console.log("Products collections:", fetched);
       setCollections(fetched);
     } catch (error) {
-      console.log("GetCollectionsError", error);
+      console.error("GetCollectionsError", error);
     }
   }
 
