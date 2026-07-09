@@ -1,10 +1,33 @@
 import { useParams } from 'react-router-dom';
+import { CheckCircle2 } from 'lucide-react';
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 import { Badge } from '../components/ui/Badge';
 
-const SECTIONS: Record<string, { title: string; body: React.ReactNode }> = {
+function StepCard({ number, title, children }: { number: number; title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-card border border-surface-border bg-white/[0.02] p-5">
+      <div className="font-semibold text-white">
+        {number}. {title}
+      </div>
+      <div className="mt-2 text-sm text-content-secondary">{children}</div>
+    </div>
+  );
+}
+
+function CheckItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-center gap-2.5 text-sm text-content-secondary">
+      <CheckCircle2 size={16} className="shrink-0 text-status-success" />
+      {children}
+    </li>
+  );
+}
+
+const SECTIONS: Record<string, { title: string; subtitle: string; body: React.ReactNode }> = {
   introduction: {
     title: 'Introduction',
+    subtitle: 'What BusyBuddy is and how it\'s put together.',
     body: (
       <>
         <p className="prose-body">
@@ -24,65 +47,64 @@ const SECTIONS: Record<string, { title: string; body: React.ReactNode }> = {
   },
   install: {
     title: 'Install & Choose a Plan',
+    subtitle: 'Get BusyBuddy running on a shop in a few minutes.',
     body: (
       <>
-        <p className="prose-body">Install BusyBuddy from the Shopify App Store like any other app. On first install, the shop starts on the <Badge tone="brand">Free</Badge> plan automatically.</p>
-        <div className="mt-6 space-y-3">
-          <div className="rounded-input border border-surface-border p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-white">Free</span>
-              <span className="text-content-secondary">$0/mo</span>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">Prerequisites</div>
+        <ul className="mb-6 space-y-2">
+          <CheckItem>A Shopify store (development or live)</CheckItem>
+          <CheckItem>Store owner or staff access with app-install permission</CheckItem>
+        </ul>
+
+        <div className="space-y-4">
+          <StepCard number={1} title="Install from the Shopify App Store">
+            Installing starts the shop on the <Badge tone="muted">Free</Badge> plan automatically - no
+            payment info needed until you choose to upgrade.
+          </StepCard>
+          <StepCard number={2} title="Choose a plan">
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center justify-between rounded-input border border-surface-border px-3 py-2">
+                <span className="font-medium text-white">Free</span>
+                <span className="text-content-secondary">$0/mo · Announcement Bar + Inactive Tab, 1 app at a time</span>
+              </div>
+              <div className="flex items-center justify-between rounded-input border border-surface-border px-3 py-2">
+                <span className="font-medium text-white">Starter</span>
+                <span className="text-content-secondary">$30/mo · +3 discount apps, up to 3 apps at once</span>
+              </div>
+              <div className="flex items-center justify-between rounded-input border border-surface-border px-3 py-2">
+                <span className="font-medium text-white">Advanced</span>
+                <span className="text-content-secondary">$60/mo · +Mix & Match, up to 6 apps at once</span>
+              </div>
             </div>
-            <p className="mt-1 text-sm text-content-secondary">Announcement Bar + Inactive Tab Message. 1 app enabled at a time.</p>
-          </div>
-          <div className="rounded-input border border-surface-border p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-white">Starter</span>
-              <span className="text-content-secondary">$30/mo</span>
-            </div>
-            <p className="mt-1 text-sm text-content-secondary">Adds Bundle Discounts, Buy One Get One, Volume Discounts. Up to 3 apps enabled at once.</p>
-          </div>
-          <div className="rounded-input border border-surface-border p-4">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-white">Advanced</span>
-              <span className="text-content-secondary">$60/mo</span>
-            </div>
-            <p className="mt-1 text-sm text-content-secondary">Adds Mix &amp; Match. Up to 6 apps enabled at once.</p>
-          </div>
+          </StepCard>
+          <StepCard number={3} title="Confirm billing">
+            Plan changes - including switching directly between two paid plans - always go
+            through Shopify's real billing confirmation screen before anything changes.
+          </StepCard>
         </div>
-        <p className="mt-6 prose-body">
-          Changing plans always goes through Shopify's real billing confirmation screen before
-          anything changes - including switching directly between two paid plans.
-        </p>
       </>
     ),
   },
   'enable-extension': {
     title: 'Enable the Theme Extension',
+    subtitle: 'Installing the app doesn\'t make widgets appear on the storefront by itself.',
     body: (
       <>
         <p className="prose-body">
-          Installing the app and configuring a widget in the admin dashboard doesn't make it
-          appear on the storefront by itself - the corresponding block/embed also needs to be
-          turned on in the Shopify Theme Editor. There are two distinct flows, and BusyBuddy
-          apps split across both:
+          Configuring a widget in the admin dashboard is one step - the corresponding
+          block/embed also needs to be turned on in the Shopify Theme Editor. There are two
+          distinct flows, and BusyBuddy apps split across both:
         </p>
         <div className="mt-6 space-y-4">
-          <div className="rounded-input border border-surface-border p-4">
-            <div className="font-semibold text-white">Add Block (section-based)</div>
-            <p className="mt-1 text-sm text-content-secondary">
-              Announcement Bar and all four discount/bundle apps render via section blocks.
-              In the Theme Editor: <code className="font-mono text-brand">Add block → Apps → BusyBuddy Announcement</code> (or the
-              relevant bundle block). <code className="font-mono">?context=apps</code> in a deep link does <em>not</em> open this panel.
-            </p>
-          </div>
-          <div className="rounded-input border border-surface-border p-4">
-            <div className="font-semibold text-white">App Embeds</div>
-            <p className="mt-1 text-sm text-content-secondary">
-              Inactive Tab Message is a true app embed (target: "body"). In the Theme Editor:
-              the <code className="font-mono">App embeds</code> panel, reachable via <code className="font-mono">?context=apps</code>.
-            </p>
-          </div>
+          <StepCard number={1} title="Add Block (section-based)">
+            Announcement Bar and all four discount/bundle apps render via section blocks.
+            In the Theme Editor: <code className="font-mono text-brand">Add block → Apps → BusyBuddy Announcement</code> (or
+            the relevant bundle block). <code className="font-mono">?context=apps</code> in a deep link does <em>not</em> open this panel.
+          </StepCard>
+          <StepCard number={2} title="App Embeds">
+            Inactive Tab Message is a true app embed (target: "body"). In the Theme Editor:
+            the <code className="font-mono">App embeds</code> panel, reachable via <code className="font-mono">?context=apps</code>.
+          </StepCard>
         </div>
         <p className="mt-6 prose-body">
           The admin dashboard's "Enable BusyBuddy" banner links to the correct flow for the app
@@ -99,7 +121,9 @@ export function GettingStarted() {
 
   return (
     <Layout>
-      <h1 className="text-heading-lg font-bold text-white">{content.title}</h1>
+      <Breadcrumbs items={[{ title: 'Getting Started', href: '/getting-started' }, { title: content.title }]} />
+      <h1 className="mt-4 text-heading-lg font-bold text-white">{content.title}</h1>
+      <p className="mt-2 text-content-secondary">{content.subtitle}</p>
       <div className="mt-6">{content.body}</div>
     </Layout>
   );

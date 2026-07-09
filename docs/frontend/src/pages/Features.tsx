@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 import { features, getFeature } from '../data/features';
 
 export function Features() {
@@ -9,7 +10,8 @@ export function Features() {
 
   return (
     <Layout>
-      <div className="flex items-center gap-3">
+      <Breadcrumbs items={[{ title: 'Features', href: '/features' }, { title: feature.title }]} />
+      <div className="mt-4 flex items-center gap-3">
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl"
           style={{ background: `${feature.color}22`, color: feature.color }}

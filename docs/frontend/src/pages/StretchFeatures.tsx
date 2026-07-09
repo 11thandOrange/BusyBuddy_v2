@@ -1,10 +1,12 @@
 import { AlertTriangle } from 'lucide-react';
 import { Layout } from '../components/Layout/Layout';
+import { Breadcrumbs } from '../components/Layout/Breadcrumbs';
 
 export function StretchFeatures() {
   return (
     <Layout>
-      <h1 className="text-heading-lg font-bold text-white">Stretch Features</h1>
+      <Breadcrumbs items={[{ title: 'Stretch Features' }]} />
+      <h1 className="mt-4 text-heading-lg font-bold text-white">Stretch Features</h1>
 
       <div className="mt-4 flex items-start gap-2 rounded-input border border-status-warning/30 bg-status-warning/5 p-4 text-sm text-content-secondary">
         <AlertTriangle size={16} className="mt-0.5 shrink-0 text-status-warning" />

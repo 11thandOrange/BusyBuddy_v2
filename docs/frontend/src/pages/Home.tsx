@@ -1,120 +1,100 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, LayoutGrid, DollarSign, BarChart3, Sparkles } from 'lucide-react';
-import { Header } from '../components/Layout/Header';
-import { apps } from '../data/apps';
-import { features } from '../data/features';
+import { ArrowRight, BookOpen, LayoutGrid, Code2, Workflow, Boxes, Sparkles } from 'lucide-react';
+import { Layout } from '../components/Layout/Layout';
+
+const TOPICS = [
+  {
+    title: 'Getting Started',
+    description: 'Install BusyBuddy, choose a plan, and enable the theme extension.',
+    href: '/getting-started',
+    icon: BookOpen,
+    color: '#5169DD',
+  },
+  {
+    title: 'App List',
+    description: 'All six apps - what they do, how to configure them, and how they render.',
+    href: '/apps/announcement-bar',
+    icon: LayoutGrid,
+    color: '#e67e00',
+  },
+  {
+    title: 'Features',
+    description: 'Multi-app suite, easy editor, competitive pricing, analytics, and more.',
+    href: '/features/multi-app',
+    icon: Sparkles,
+    color: '#34c759',
+  },
+  {
+    title: 'API Reference',
+    description: 'Every endpoint, sourced from the real routes - with a live sandbox for public ones.',
+    href: '/api/storefront',
+    icon: Code2,
+    color: '#af52de',
+  },
+  {
+    title: 'CI/CD',
+    description: 'The three real pipelines: PR checks, production deploy, and the AI dev-agent.',
+    href: '/ci-cd/node-ci',
+    icon: Workflow,
+    color: '#ff2d55',
+  },
+  {
+    title: 'Architecture',
+    description: 'How the backend, admin frontend, theme extension, and Cart Transform Function fit together.',
+    href: '/architecture',
+    icon: Boxes,
+    color: '#5856d6',
+  },
+];
 
 export function Home() {
   return (
-    <div className="min-h-screen bg-background text-content">
-      <Header />
-      <main className="pt-16">
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
-          <div className="relative mx-auto max-w-container px-6 py-24 text-center">
-            <h1 className="text-display-lg font-extrabold tracking-tight text-white">
-              <span className="text-brand">Busy</span>Buddy Documentation
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-body-lg text-content-secondary">
-              Six storefront apps, one install. Announcement bars, tab re-engagement, and four
-              product-bundling apps for Shopify - all documented here, generated from the real
-              codebase.
-            </p>
-            <div className="mt-8 flex items-center justify-center gap-3">
-              <Link
-                to="/getting-started"
-                className="flex items-center gap-2 rounded-button bg-brand px-5 py-3 text-sm font-semibold text-white shadow-button transition-fast hover:bg-brand-hover"
+    <Layout>
+      <div className="text-sm text-content-muted">Documentation</div>
+      <h1 className="mt-2 text-display-sm font-extrabold text-white">
+        <span className="text-brand">Busy</span>Buddy Docs
+      </h1>
+      <p className="mt-3 max-w-content prose-body">
+        Everything you need to work with BusyBuddy: the six-app suite, the admin API, the
+        storefront theme extension, and the CI/CD pipelines that ship it - all documented
+        straight from the codebase.
+      </p>
+
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {TOPICS.map((topic) => {
+          const Icon = topic.icon;
+          return (
+            <Link
+              key={topic.href}
+              to={topic.href}
+              className="rounded-card border border-surface-border bg-white/[0.02] p-5 transition-fast hover:border-surface-border-hover hover:bg-surface-hover"
+            >
+              <div
+                className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg"
+                style={{ background: `${topic.color}22`, color: topic.color }}
               >
-                Get Started <ArrowRight size={16} />
-              </Link>
-              <Link
-                to="/api"
-                className="rounded-button border border-surface-border bg-surface px-5 py-3 text-sm font-semibold text-content-secondary transition-fast hover:text-white hover:border-surface-border-hover"
-              >
-                API Reference
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-container px-6 py-16">
-          <h2 className="text-heading-lg font-bold text-white text-center">Why BusyBuddy</h2>
-          <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {features.map((f) => {
-              const Icon = f.icon;
-              return (
-                <Link
-                  key={f.slug}
-                  to={`/features/${f.slug}`}
-                  className="group rounded-card border border-surface-border bg-surface p-6 transition-fast hover:border-surface-border-hover hover:bg-surface-hover"
-                >
-                  <div
-                    className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl"
-                    style={{ background: `${f.color}22`, color: f.color }}
-                  >
-                    <Icon size={20} />
-                  </div>
-                  <h3 className="font-semibold text-white">{f.title}</h3>
-                  <p className="mt-1.5 text-sm text-content-secondary">{f.tagline}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-container px-6 py-16">
-          <h2 className="text-heading-lg font-bold text-white text-center">The Six Apps</h2>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {apps.map((app) => {
-              const Icon = app.icon;
-              return (
-                <Link
-                  key={app.slug}
-                  to={`/apps/${app.slug}`}
-                  className="group rounded-card border border-surface-border bg-surface p-6 transition-fast hover:border-surface-border-hover hover:bg-surface-hover"
-                >
-                  <div
-                    className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl"
-                    style={{ background: `${app.color}22`, color: app.color }}
-                  >
-                    <Icon size={20} />
-                  </div>
-                  <h3 className="font-semibold text-white">{app.name}</h3>
-                  <p className="mt-1.5 text-sm text-content-secondary">{app.tagline}</p>
-                  <div className="mt-3 flex gap-1.5">
-                    {app.plans.map((p) => (
-                      <span key={p} className="rounded-full bg-white/5 px-2 py-0.5 text-xs text-content-muted">
-                        {p}
-                      </span>
-                    ))}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-container px-6 py-16 pb-24">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Link to="/ci-cd/node-ci" className="flex items-center gap-3 rounded-card border border-surface-border bg-surface p-5 transition-fast hover:border-surface-border-hover">
-              <BarChart3 className="text-brand" size={20} />
-              <span className="text-sm font-medium text-white">CI/CD Pipelines</span>
+                <Icon size={17} />
+              </div>
+              <div className="font-semibold text-white">{topic.title}</div>
+              <p className="mt-1 text-sm text-content-secondary">{topic.description}</p>
             </Link>
-            <Link to="/architecture" className="flex items-center gap-3 rounded-card border border-surface-border bg-surface p-5 transition-fast hover:border-surface-border-hover">
-              <LayoutGrid className="text-brand" size={20} />
-              <span className="text-sm font-medium text-white">Architecture</span>
-            </Link>
-            <Link to="/stretch-features" className="flex items-center gap-3 rounded-card border border-surface-border bg-surface p-5 transition-fast hover:border-surface-border-hover">
-              <Sparkles className="text-brand" size={20} />
-              <span className="text-sm font-medium text-white">Stretch Features</span>
-            </Link>
-          </div>
-        </section>
-      </main>
-      <footer className="border-t border-surface-border py-8 text-center text-xs text-content-muted">
-        <DollarSign className="mx-auto mb-2 text-content-muted" size={16} />
-        BusyBuddy · Documentation generated from the live BusyBuddy_v2 codebase
-      </footer>
-    </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-8 rounded-card border border-surface-border bg-white/[0.02] p-6">
+        <div className="text-heading-sm font-bold text-white">Quick Start</div>
+        <p className="mt-2 max-w-content text-sm text-content-secondary">
+          New to BusyBuddy? Start with the install &amp; plan guide, then enable the theme
+          extension on your storefront - most setup questions come from that second step.
+        </p>
+        <Link
+          to="/getting-started/install"
+          className="mt-4 inline-flex items-center gap-2 rounded-button bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-button transition-fast hover:bg-brand-hover"
+        >
+          Get Started <ArrowRight size={15} />
+        </Link>
+      </div>
+    </Layout>
   );
 }
