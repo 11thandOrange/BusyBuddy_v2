@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+@config "../tailwind.config.js";
+
+@theme {
+  --radius-card: 1rem;
+  --radius-button: 0.5rem;
+  --radius-input: 0.5rem;
+
+  --text-display: 3rem;
+  --text-display--font-weight: 800;
+  --text-display--line-height: 1.1;
+  --text-heading-lg: 2.25rem;
+  --text-heading-lg--font-weight: 700;
+  --text-heading-lg--line-height: 1.25;
+  --text-heading-sm: 1.25rem;
+  --text-heading-sm--font-weight: 700;
+  --text-heading-sm--line-height: 1.4;
+}
+
+@utility transition-fast {
+  transition: all 150ms ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #0f1117;
+  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(81, 105, 221, 0.3);
+}
+
+.prose-body {
+  color: #a1a1aa;
+  line-height: 1.7;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+@keyframes hero-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes hero-bg-in {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes hero-text-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-card-in {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: translateX(0); }
+}
