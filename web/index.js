@@ -56,6 +56,34 @@ mongoose.connect(db).then(
 app.use(morgan("tiny"));
 
 // ============================================
+// WEBHOOK ROUTES - must be registered before any global body-parser
+// ============================================
+// shopify.processWebhooks() and the verify-signature json() below both need
+// the untouched raw request stream to verify Shopify's HMAC signature and
+// (for processWebhooks) to parse the body themselves. If a global
+// express.json() ran first, it would drain the stream before either of
+// these ever sees it - processWebhooks would fail with "No body was
+// received when processing webhook", and the HMAC check below would fall
+// back to a re-serialized body that doesn't match what Shopify signed.
+// These two blocks must stay registered ahead of the global express.json()
+// further down.
+app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
+
+// Webhook routes - mounted BEFORE authenticated routes
+// These endpoints receive events from Shopify and internal services without session auth
+app.use(
+  "/api/webhooks",
+  express.json({
+    verify: (req, _res, buf) => {
+      // Store raw body for HMAC verification
+      req.rawBody = buf.toString();
+    },
+  }),
+  verifyShopifyWebhook,
+  webhookRoutes
+);
+
+// ============================================
 // PUBLIC ROUTES - No Shopify authentication required
 // These must be registered BEFORE the Shopify auth middleware
 // ============================================
@@ -72,21 +100,6 @@ app.get(
     next();
   },
   shopify.redirectToShopifyOrAppRoot()
-);
-app.post(shopify.config.webhooks.path, shopify.processWebhooks({ webhookHandlers: PrivacyWebhookHandlers }));
-
-// Webhook routes - mounted BEFORE authenticated routes
-// These endpoints receive events from Shopify and internal services without session auth
-app.use(
-  "/api/webhooks",
-  express.json({
-    verify: (req, _res, buf) => {
-      // Store raw body for HMAC verification
-      req.rawBody = buf.toString();
-    },
-  }),
-  verifyShopifyWebhook,
-  webhookRoutes
 );
 
 // Google OAuth callback - must be BEFORE Shopify auth middleware
