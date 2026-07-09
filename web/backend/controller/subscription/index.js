@@ -1,6 +1,6 @@
 import subscriptionModel from "../../models/subscription.model.js";
 import shopify from "../../../shopify.js";
-import { billingConfig, cancelSubscriptionPlan, getAppSubscription } from "../../../billing.js";
+import { billingConfig, cancelSubscriptionPlan, getAppSubscription, isTestPaymentMode } from "../../../billing.js";
 import { subscriptionUpdate } from "../../services/subscription.js";
 import { subscriptionConfig, appMapping } from "../../configs/subscriptionConfig.js";
 import { merchantEventService } from "../../services/merchantEventService.js";
@@ -142,20 +142,37 @@ async function subscribeToPlan(_req, res) {
       });
     }
 
-    // Handle free to paid upgrade or paid to paid change
+    // Handle free to paid upgrade, paid to paid change, or paid to paid downgrade
     if (planName !== "Free") {
-      const plans = Object.keys(billingConfig);
-      let isSubscribed = await shopify.api.billing.check({
+      // Check specifically against the target plan, not "any paid plan" -
+      // otherwise switching between two different paid plans (e.g. Starter ->
+      // Advanced) would be mistaken for "already subscribed" since the shop
+      // does have an active subscription among the checked plans, just not
+      // the one being requested. That skipped the charge entirely and left
+      // the old plan's Shopify subscription running, undercharging the
+      // merchant for the upgraded features.
+      let isSubscribedToTargetPlan = await shopify.api.billing.check({
         session,
-        plans: plans,
-        isTest: JSON.parse(process.env.SHOPIFY_PAYMENT_MODE),
+        plans: [planName],
+        isTest: isTestPaymentMode(),
       });
 
-      if (!isSubscribed) {
+      if (!isSubscribedToTargetPlan) {
+        // Cancel any existing paid subscription for a different plan before
+        // charging for the new one, so the merchant isn't billed for both.
+        if (currentPlan !== "Free" && currentPlan !== planName) {
+          try {
+            const cancellationResult = await cancelSubscriptionPlan(session, currentPlan);
+            console.log("Cancellation result (plan change):", cancellationResult);
+          } catch (cancelError) {
+            console.warn("Could not cancel previous Shopify subscription before plan change:", cancelError);
+          }
+        }
+
         const redirectObj = await shopify.api.billing.request({
           session,
           plan: planName,
-          isTest: JSON.parse(process.env.SHOPIFY_PAYMENT_MODE),
+          isTest: isTestPaymentMode(),
         });
 
         return res.json({
@@ -166,7 +183,7 @@ async function subscribeToPlan(_req, res) {
           },
         });
       } else {
-        // Already subscribed to a paid plan, just update our database
+        // Already subscribed to this exact plan, just sync our database
         const updatedSubscriptions =
           currentSubscription?.activeSubscriptions.map((sub) => {
             if (sub.status === "active") {
