@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { apps } from '../data/apps';
-import { LongNeckMonster3D } from './LongNeckMonster3D';
+import { LongNeckMonsterSVG } from './LongNeckMonsterSVG';
 import { MonsterCharacter } from './MonsterCharacter';
 import { AppWidgetIllustration } from './AppWidgetIllustration';
 import { cn } from '../lib/cn';
@@ -61,7 +61,7 @@ export function HeroCardTransition() {
           </div>
 
           <div key={`monster-${current.slug}`} className="order-1 flex justify-center lg:order-2">
-            <LongNeckMonster3D color={current.color} icon={current.icon} size={280} />
+            <LongNeckMonsterSVG color={current.color} icon={current.icon} size={280} />
           </div>
 
           <div
