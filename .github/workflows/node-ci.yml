@@ -18,6 +18,7 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             extensions/cart-transformer/package-lock.json
+            extensions/bogo-shopify-app/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -34,6 +35,10 @@ jobs:
         run: npm ci
         working-directory: extensions/cart-transformer
 
+      - name: Install bogo-shopify-app dependencies
+        run: npm ci
+        working-directory: extensions/bogo-shopify-app
+
       - name: Run backend tests
         run: npx vitest run
         working-directory: web/backend
@@ -45,6 +50,10 @@ jobs:
       - name: Run extension tests
         run: npm test
         working-directory: extensions/cart-transformer
+
+      - name: Run bogo-shopify-app unit tests
+        run: npm test
+        working-directory: extensions/bogo-shopify-app
 
       - name: Build frontend
         run: npm run build
@@ -61,7 +70,15 @@ jobs:
             web/coverage/
             web/frontend/coverage/
 
-  smoke:
+  # Browser-driven e2e coverage of the storefront theme extension
+  # (extensions/bogo-shopify-app). There is intentionally no equivalent
+  # suite for the admin app here: it would need to navigate through Vite's
+  # dev-server proxy and shopify.ensureInstalledOnShop(), which requires a
+  # live backend plus a real installed-shop session - infra this workflow
+  # doesn't stand up. (A prior "smoke" suite attempted this without that
+  # infra and, due to a separate testMatch bug, silently ran 0 tests for
+  # a while before being removed.)
+  storefront-e2e:
     runs-on: ubuntu-latest
     needs: test-and-build
     if: github.event.pull_request.draft == false
@@ -73,30 +90,19 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: web/frontend/package-lock.json
+          cache-dependency-path: extensions/bogo-shopify-app/package-lock.json
 
-      - name: Install frontend dependencies
-        run: npm install
-        working-directory: web/frontend
+      - name: Install bogo-shopify-app dependencies
+        run: npm ci
+        working-directory: extensions/bogo-shopify-app
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
-        working-directory: web/frontend
+        working-directory: extensions/bogo-shopify-app
 
-      - name: Run smoke tests
-        run: npm run smoke
-        working-directory: web/frontend
-        env:
-          CI: true
-          SHOPIFY_API_KEY: smoke-test-key
-
-      - name: Upload smoke screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smoke-screenshots
-          path: .smoke-results/
-          if-no-files-found: warn
+      - name: Run storefront e2e tests
+        run: npm run test:e2e
+        working-directory: extensions/bogo-shopify-app
 
       - name: Post PR comment
         if: always() && github.event_name == 'pull_request'
@@ -112,11 +118,10 @@ jobs:
               repo:  context.repo.repo,
               issue_number: context.issue.number,
               body: [
-                `## ${icon} Smoke Tests — ${status}`,
+                `## ${icon} Storefront E2E Tests — ${status}`,
                 '',
-                `Download the **smoke-screenshots** artifact from the [CI run](${runUrl}) `,
-                `to view full-page AC screenshots captured in headless Chromium.`,
+                `See the [CI run](${runUrl}) for details.`,
                 '',
-                `> Base pages tested: dashboard, bundles, announcement-bar, buy-one-get-one, mix-and-match, volume-discounts, inactive-tab-message`,
+                `> Covers: announcement bar rendering + enable/disable/date-window gating + email capture, inactive tab title/favicon + enable/disable/date-window gating.`,
               ].join('\n'),
             });

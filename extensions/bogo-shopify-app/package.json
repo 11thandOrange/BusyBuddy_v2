@@ -1,0 +1,17 @@
+{
+  "name": "bogo-shopify-app",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install chromium --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "vitest": "^1.6.1"
+  }
+}

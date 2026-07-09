@@ -243,4 +243,10 @@ app.use((err, req, res, _next) => {
   });
 });
 
-app.listen(PORT);
+// Skipped under test so integration tests can import `app` for supertest
+// without also binding a real port.
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT);
+}
+
+export default app;
