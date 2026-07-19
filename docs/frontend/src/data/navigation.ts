@@ -9,6 +9,7 @@ export const topNav: { title: string; href: string }[] = [
   { title: 'CI/CD', href: '/ci-cd/node-ci' },
   { title: 'Architecture', href: '/architecture' },
   { title: 'Stretch Features', href: '/stretch-features' },
+  { title: 'Changelog', href: '/changelog' },
 ];
 
 /** Sidebar sections, one per top-level tab, each with real sub-tabs. */
@@ -43,6 +44,7 @@ export const sidebarSections: Record<string, NavSection> = {
       { title: 'Buy One Get One', href: '/apps/buy-one-get-one' },
       { title: 'Volume Discounts', href: '/apps/volume-discounts' },
       { title: 'Mix & Match', href: '/apps/mix-and-match' },
+      { title: 'Star Rating', href: '/apps/star-rating' },
     ],
   },
   api: {
@@ -69,6 +71,7 @@ export const sidebarSections: Record<string, NavSection> = {
       { title: 'Node CI (test + e2e)', href: '/ci-cd/node-ci' },
       { title: 'Production Deploy', href: '/ci-cd/deploy' },
       { title: 'AI Dev-Agent Pipeline', href: '/ci-cd/dev-pipeline' },
+      { title: 'Deploy Docs Site', href: '/ci-cd/deploy-docs' },
     ],
   },
   architecture: {
@@ -81,6 +84,11 @@ export const sidebarSections: Record<string, NavSection> = {
     href: '/stretch-features',
     children: [{ title: 'Custom App Creation', href: '/stretch-features' }],
   },
+  changelog: {
+    title: 'Changelog',
+    href: '/changelog',
+    children: [{ title: 'All changes', href: '/changelog' }],
+  },
 };
 
 export function sectionKeyForPath(pathname: string): string {
@@ -92,5 +100,6 @@ export function sectionKeyForPath(pathname: string): string {
   if (seg === 'ci-cd') return 'ci-cd';
   if (seg === 'architecture') return 'architecture';
   if (seg === 'stretch-features') return 'stretch-features';
+  if (seg === 'changelog') return 'changelog';
   return 'getting-started';
 }

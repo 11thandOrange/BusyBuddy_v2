@@ -10,19 +10,20 @@ export const features: FeatureDoc[] = [
     color: '#5169DD',
     sections: [
       {
-        title: 'One install, six apps',
+        title: 'One install, seven apps',
         content:
-          'BusyBuddy bundles six separate storefront/engagement apps behind a single install: Announcement Bar, Inactive Tab Message, Bundle Discounts, Buy One Get One, Volume Discounts, and Mix & Match. Instead of installing and paying for six separate Shopify apps, merchants manage everything from one dashboard.',
+          'BusyBuddy bundles seven separate storefront/engagement apps behind a single install: Announcement Bar, Inactive Tab Message, Bundle Discounts, Buy One Get One, Volume Discounts, Mix & Match, and Star Rating. Instead of installing and paying for seven separate Shopify apps, merchants manage everything from one dashboard.',
         bullets: [
           'Single dashboard shows every app\'s status, quick stats, and recent activity',
           'Consistent editor and theming pattern across every discount app',
           'One subscription, one billing relationship with Shopify',
+          'Star Rating ships enabled on every plan - it isn\'t part of the plan-gated app-toggle system the other six apps use',
         ],
       },
       {
         title: 'Grows with the store',
         content:
-          'Every plan includes Announcement Bar and Inactive Tab Message. Paid plans unlock the four discount/bundle apps as the store grows, without a separate install or re-authentication for each one.',
+          'Every plan includes Announcement Bar and Inactive Tab Message. Paid plans unlock the four discount/bundle apps as the store grows, without a separate install or re-authentication for each one. Star Rating sits outside this plan gating entirely and is always available.',
       },
     ],
   },
@@ -65,6 +66,7 @@ export const features: FeatureDoc[] = [
           'Free: Announcement Bar + Inactive Tab Message, 1 app enabled at a time',
           'Starter: adds Bundle Discounts, Buy One Get One, and Volume Discounts, up to 3 apps enabled at once',
           'Advanced: adds Mix & Match, up to 6 apps enabled at once',
+          'Star Rating is not part of this toggle/limit system - it\'s available on every plan regardless of how many of the other six apps are enabled',
         ],
       },
       {

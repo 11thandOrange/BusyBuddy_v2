@@ -67,6 +67,13 @@ export interface WorkflowStep {
   detail: string;
 }
 
+export interface ChangelogEntry {
+  date: string;
+  added: string[];
+  changed: string[];
+  fixed: string[];
+}
+
 export interface WorkflowDoc {
   slug: string;
   title: string;

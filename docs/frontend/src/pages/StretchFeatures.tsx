@@ -20,8 +20,11 @@ export function StretchFeatures() {
       <p className="mt-2 prose-body">
         The concept: let a merchant (or BusyBuddy internally) compose a new storefront
         widget/app from existing primitives - the same product-picker, scheduling, and
-        appearance-editor building blocks already shared across the six current apps - without
-        writing a new editor, controller, and theme-extension script from scratch each time.
+        appearance-editor building blocks already shared across six of the current seven apps
+        - without writing a new editor, controller, and theme-extension script from scratch
+        each time. (Star Rating, the seventh app, already skips most of this pattern - it has
+        no dedicated admin editor or plan gating - but it's too narrow a case to generalize
+        from on its own.)
       </p>
       <p className="mt-4 prose-body">
         This would require generalizing the current per-app pattern (editor component +
@@ -29,7 +32,7 @@ export function StretchFeatures() {
         today) into a configuration-driven system: a schema describing a widget's fields and
         appearance options, a single generic editor that renders from that schema, and a single
         generic storefront-rendering script that reads the same schema. Not attempted in this
-        pass - the current six apps intentionally stay as independent, purpose-built
+        pass - the current six plan-gated apps intentionally stay as independent, purpose-built
         implementations.
       </p>
     </Layout>

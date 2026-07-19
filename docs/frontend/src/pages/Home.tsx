@@ -12,7 +12,7 @@ const TOPICS = [
   },
   {
     title: 'App List',
-    description: 'All six apps - what they do, how to configure them, and how they render.',
+    description: 'All seven apps - what they do, how to configure them, and how they render.',
     href: '/apps/announcement-bar',
     icon: LayoutGrid,
     color: '#e67e00',
@@ -33,7 +33,7 @@ const TOPICS = [
   },
   {
     title: 'CI/CD',
-    description: 'The three real pipelines: PR checks, production deploy, and the AI dev-agent.',
+    description: 'The four real pipelines: PR checks, production deploy, the AI dev-agent, and the docs-site deploy.',
     href: '/ci-cd/node-ci',
     icon: Workflow,
     color: '#ff2d55',
@@ -55,7 +55,7 @@ export function Home() {
         <span className="text-brand">Busy</span>Buddy Docs
       </h1>
       <p className="mt-3 max-w-content prose-body">
-        Everything you need to work with BusyBuddy: the six-app suite, the admin API, the
+        Everything you need to work with BusyBuddy: the seven-app suite, the admin API, the
         storefront theme extension, and the CI/CD pipelines that ship it - all documented
         straight from the codebase.
       </p>
