@@ -31,10 +31,11 @@ const SECTIONS: Record<string, { title: string; subtitle: string; body: React.Re
     body: (
       <>
         <p className="prose-body">
-          BusyBuddy is a Shopify embedded app suite: one install grants access to six
+          BusyBuddy is a Shopify embedded app suite: one install grants access to seven
           storefront/engagement apps - Announcement Bar, Inactive Tab Message, Bundle
-          Discounts, Buy One Get One, Volume Discounts, and Mix &amp; Match. Merchants manage
-          all six from a single admin dashboard, and enable/pay for only the ones they use.
+          Discounts, Buy One Get One, Volume Discounts, Mix &amp; Match, and Star Rating.
+          Merchants manage the plan-gated six from a single admin dashboard and enable/pay for
+          only the ones they use; Star Rating ships enabled on every plan.
         </p>
         <p className="mt-4 prose-body">
           The app is built as a standard Shopify embedded app: an Express backend, a React

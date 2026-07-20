@@ -1,4 +1,4 @@
-import { Megaphone, Eye, Package, Gift, Layers, Shuffle } from 'lucide-react';
+import { Megaphone, Eye, Package, Gift, Layers, Shuffle, Star } from 'lucide-react';
 import type { AppDoc } from '../types';
 
 export const apps: AppDoc[] = [
@@ -129,6 +129,27 @@ export const apps: AppDoc[] = [
     ],
     storefrontBehavior:
       'Same rendering/discount-application pattern as Bundle Discounts, scoped to Mix & Match-type bundle documents.',
+  },
+  {
+    slug: 'star-rating',
+    name: 'Star Rating',
+    color: '#ffcc00',
+    icon: Star,
+    tagline: 'Capture and surface merchant reviews of BusyBuddy',
+    plans: ['Free', 'Starter', 'Advanced'],
+    overview:
+      'A star-rating theme block (extensions/bogo-shopify-app/blocks/star_rating.liquid) added via the Theme Editor, backed by a MongoDB MerchantReview record per shop. Unlike the six apps above, Star Rating has no entry in the plan/app-toggle system (subscriptionConfig.js) - it ships with every install regardless of plan and isn\'t counted against a plan\'s max-enabled-apps limit.',
+    keyFeatures: [
+      '1-5 star rating rendered via the shared stars.liquid snippet',
+      'Review capture flow backed by the MerchantReview model (rating, review text, source, verification status)',
+      'Submitting a review triggers a thank-you email via the review-submitted webhook flow',
+    ],
+    configuration: [
+      'Add the block to the storefront via Shopify Theme Editor → Add Block, the same mechanism as Announcement Bar',
+      'No dedicated admin editor tab - there is no web/frontend/apps/star-rating directory the way the other apps have; review data is read-only from the merchant\'s perspective via the API',
+    ],
+    storefrontBehavior:
+      'Review submissions are processed by POST /api/webhooks/review-submitted, which upserts the shop\'s MerchantReview record and can trigger a thank-you email; GET /api/webhooks/reviews lists submitted reviews (both documented on the API Reference page under Webhooks).',
   },
 ];
 

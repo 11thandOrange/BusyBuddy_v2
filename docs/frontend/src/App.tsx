@@ -8,6 +8,7 @@ import { ApiReference } from './pages/ApiReference';
 import { CiCd } from './pages/CiCd';
 import { Architecture } from './pages/Architecture';
 import { StretchFeatures } from './pages/StretchFeatures';
+import { Changelog } from './pages/Changelog';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -17,13 +18,14 @@ function ScrollToTop() {
   return null;
 }
 
-// BrowserRouter with real paths (/BusyBuddy_v2/api, not /#/api). GitHub
+// BrowserRouter with real paths (busybuddy.dev/api, not /#/api). GitHub
 // Pages has no server-side rewrite, so deep links are made to work via the
 // 404.html + index.html redirect pair (see public/404.html) instead of
-// falling back to hash routing.
+// falling back to hash routing. No basename needed - the custom domain
+// (see public/CNAME) serves the site from the root.
 function App() {
   return (
-    <BrowserRouter basename="/BusyBuddy_v2">
+    <BrowserRouter>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -39,6 +41,7 @@ function App() {
         <Route path="/ci-cd/:workflow" element={<CiCd />} />
         <Route path="/architecture" element={<Architecture />} />
         <Route path="/stretch-features" element={<StretchFeatures />} />
+        <Route path="/changelog" element={<Changelog />} />
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>

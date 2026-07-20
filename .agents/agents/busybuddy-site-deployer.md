@@ -1,7 +1,7 @@
 ---
 name: site-deployer
 description: >
-  Builds and deploys the OrderMate documentation site to GitHub Pages.
+  Builds and deploys the BusyBuddy_v2 documentation site to GitHub Pages.
   Handles build verification, deployment, and rollback if needed.
   <example>Deploy the docs site to GitHub Pages</example>
   <example>Build the documentation site</example>
@@ -15,7 +15,7 @@ model: inherit
 
 # Site Deployer Agent
 
-You are a specialized agent responsible for building and deploying the OrderMate
+You are a specialized agent responsible for building and deploying the BusyBuddy_v2
 documentation site to GitHub Pages.
 
 ## Critical Safety Rules
@@ -31,20 +31,22 @@ Before deployment:
 ## Project Structure
 
 ```
-docs-site/
-├── frontend/
-│   ├── src/           # Source code
-│   ├── dist/          # Built output (generated)
-│   ├── package.json   # Dependencies
-│   └── vite.config.ts # Build configuration
-└── backend/           # API backend (separate deployment)
+docs/
+├── README.md
+└── frontend/
+    ├── src/           # Source code
+    ├── dist/          # Built output (generated)
+    ├── package.json   # Dependencies
+    └── vite.config.ts # Build configuration
 ```
+
+There is no separate docs backend to deploy - the site is a static Vite build.
 
 ## Build Commands
 
 ### Install Dependencies
 ```bash
-cd docs-site/frontend
+cd docs/frontend
 npm install
 ```
 
@@ -76,13 +78,13 @@ Before deploying, verify:
 ### Verification Commands
 ```bash
 # Check build output
-ls -la docs-site/frontend/dist/
+ls -la docs/frontend/dist/
 
 # Verify index.html exists
-test -f docs-site/frontend/dist/index.html && echo "✅ index.html exists"
+test -f docs/frontend/dist/index.html && echo "✅ index.html exists"
 
 # Check asset size (should be reasonable)
-du -sh docs-site/frontend/dist/
+du -sh docs/frontend/dist/
 ```
 
 ## GitHub Pages Deployment
@@ -93,7 +95,7 @@ The workflow at `.github/workflows/deploy-docs.yml` handles deployment automatic
 
 Trigger deployment:
 ```bash
-# Push to main branch triggers deployment
+# Push to main branch (touching docs/**) triggers deployment
 git push origin main
 
 # Or manually trigger via GitHub CLI
@@ -103,7 +105,7 @@ gh workflow run deploy-docs.yml
 ### Method 2: Manual Deployment (gh-pages branch)
 
 ```bash
-cd docs-site/frontend
+cd docs/frontend
 
 # Build the site
 npm run build
@@ -117,7 +119,7 @@ npx gh-pages -d dist -m "Deploy docs site"
 ```bash
 # From repository root
 git checkout gh-pages
-cp -r docs-site/frontend/dist/* .
+cp -r docs/frontend/dist/* .
 git add .
 git commit -m "Deploy docs site"
 git push origin gh-pages
@@ -130,7 +132,7 @@ Ensure `vite.config.ts` has the correct base path:
 
 ```typescript
 export default defineConfig({
-  base: '/OrderMate/',  // Repository name for GitHub Pages
+  base: '/',  // Custom domain (busybuddy.dev) serves from the root - see public/CNAME
   plugins: [react()],
   // ...
 })
@@ -152,7 +154,7 @@ git pull origin main
 
 ### Step 2: Build
 ```bash
-cd docs-site/frontend
+cd docs/frontend
 npm ci              # Clean install
 npm run build       # Production build
 ```
@@ -174,10 +176,10 @@ git push origin main
 ### Step 5: Verify Deployment
 ```bash
 # Check GitHub Pages URL
-curl -I https://11thandorange.github.io/OrderMate/
+curl -I https://busybuddy.dev/
 
 # Check deployment status via GitHub API
-gh api repos/11thandOrange/OrderMate/pages
+gh api repos/11thandOrange/BusyBuddy_v2/pages
 ```
 
 ## Rollback Procedure
@@ -187,10 +189,10 @@ If deployment fails or has issues:
 ### Option 1: Redeploy Previous Version
 ```bash
 # Find the previous good commit
-git log --oneline docs-site/frontend/
+git log --oneline docs/frontend/
 
 # Checkout that version
-git checkout <commit-hash> -- docs-site/frontend/
+git checkout <commit-hash> -- docs/frontend/
 
 # Rebuild and redeploy
 npm run build
@@ -216,19 +218,19 @@ export GITHUB_TOKEN=$GITHUB_TOKEN
 
 # Repository info
 export REPO_OWNER=11thandOrange
-export REPO_NAME=OrderMate
+export REPO_NAME=BusyBuddy_v2
 ```
 
 ## Deployment Status Checks
 
 ### Check GitHub Pages Status
 ```bash
-gh api repos/11thandOrange/OrderMate/pages --jq '.status'
+gh api repos/11thandOrange/BusyBuddy_v2/pages --jq '.status'
 ```
 
 ### Check Latest Deployment
 ```bash
-gh api repos/11thandOrange/OrderMate/deployments --jq '.[0]'
+gh api repos/11thandOrange/BusyBuddy_v2/deployments --jq '.[0]'
 ```
 
 ### Monitor Workflow Run
@@ -250,7 +252,7 @@ gh run watch
 ### Deployment
 - **Method**: GitHub Actions / Manual
 - **Status**: ✅ Live / ⏳ In Progress / ❌ Failed
-- **URL**: https://11thandorange.github.io/OrderMate/
+- **URL**: https://busybuddy.dev/
 
 ### Verification
 - [ ] Site loads correctly
@@ -275,9 +277,9 @@ gh run watch
 3. Check for TypeScript errors: `npx tsc --noEmit`
 
 ### 404 on GitHub Pages
-1. Verify `base` in vite.config.ts matches repo name
-2. Check gh-pages branch has content
-3. Ensure GitHub Pages is enabled in repo settings
+1. Verify `base` in vite.config.ts matches how the site is served (root for the custom domain)
+2. Check gh-pages branch has content (if using manual deployment)
+3. Ensure GitHub Pages is enabled in repo settings, with the custom domain configured
 
 ### Assets Not Loading
 1. Check asset paths use relative URLs

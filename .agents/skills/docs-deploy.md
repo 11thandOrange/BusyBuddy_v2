@@ -1,17 +1,17 @@
 # Docs Deploy Skill
 
-Deploy the OrderMate documentation site to GitHub Pages using GitHub Actions.
+Deploy the BusyBuddy_v2 documentation site to GitHub Pages using GitHub Actions.
 
 ## Quick Commands
 
 ### Build Site
 ```bash
-cd docs-site/frontend && npm ci && npm run build
+cd docs/frontend && npm ci && npm run build
 ```
 
 ### Deploy via gh-pages
 ```bash
-cd docs-site/frontend && npx gh-pages -d dist
+cd docs/frontend && npx gh-pages -d dist
 ```
 
 ### Trigger GitHub Action
@@ -21,12 +21,12 @@ gh workflow run deploy-docs.yml
 
 ### Check Deployment Status
 ```bash
-gh api repos/11thandOrange/OrderMate/pages --jq '.status'
+gh api repos/11thandOrange/BusyBuddy_v2/pages --jq '.status'
 ```
 
 ## GitHub Actions Workflow
 
-Create `.github/workflows/deploy-docs.yml`:
+`.github/workflows/deploy-docs.yml` (already exists):
 
 ```yaml
 name: Deploy Docs Site
@@ -35,7 +35,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs-site/**'
+      - 'docs/**'
   workflow_dispatch:
 
 permissions:
@@ -59,14 +59,14 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: docs-site/frontend/package-lock.json
+          cache-dependency-path: docs/frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: docs-site/frontend
+        working-directory: docs/frontend
         run: npm ci
 
       - name: Build
-        working-directory: docs-site/frontend
+        working-directory: docs/frontend
         run: npm run build
 
       - name: Setup Pages
@@ -75,7 +75,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs-site/frontend/dist
+          path: docs/frontend/dist
 
   deploy:
     needs: build
@@ -91,14 +91,14 @@ jobs:
 
 ## Vite Configuration
 
-Ensure `docs-site/frontend/vite.config.ts` has:
+`docs/frontend/vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  base: '/OrderMate/',  // Must match repo name
+  base: '/',  // Served from the custom domain root - see public/CNAME
   plugins: [react()],
   build: {
     outDir: 'dist',
@@ -112,20 +112,21 @@ export default defineConfig({
 ### Enable GitHub Pages
 1. Go to repo Settings → Pages
 2. Source: GitHub Actions
-3. Save
+3. Custom domain: `busybuddy.dev` (requires `docs/frontend/public/CNAME` containing `busybuddy.dev`, plus DNS records pointing at GitHub Pages)
+4. Save, then enable "Enforce HTTPS" once the certificate provisions
 
 ### Verify Settings via API
 ```bash
-gh api repos/11thandOrange/OrderMate/pages
+gh api repos/11thandOrange/BusyBuddy_v2/pages
 ```
 
 ### Expected Response
 ```json
 {
-  "url": "https://11thandorange.github.io/OrderMate/",
+  "url": "https://busybuddy.dev/",
   "status": "built",
   "source": {
-    "branch": "gh-pages",
+    "branch": "main",
     "path": "/"
   }
 }
@@ -137,7 +138,7 @@ If GitHub Actions is not available:
 
 ```bash
 # 1. Build the site
-cd docs-site/frontend
+cd docs/frontend
 npm ci
 npm run build
 
@@ -148,7 +149,7 @@ git checkout --orphan gh-pages
 git rm -rf .
 
 # 4. Copy dist contents
-cp -r docs-site/frontend/dist/* .
+cp -r docs/frontend/dist/* .
 
 # 5. Add .nojekyll to bypass Jekyll processing
 touch .nojekyll
@@ -166,17 +167,17 @@ git checkout main
 
 ### Check Site is Live
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://11thandorange.github.io/OrderMate/
+curl -s -o /dev/null -w "%{http_code}" https://busybuddy.dev/
 # Should return 200
 ```
 
 ### Check Specific Routes
 ```bash
 # Home page
-curl -I https://11thandorange.github.io/OrderMate/
+curl -I https://busybuddy.dev/
 
 # API docs (SPA route, should return index.html)
-curl -I https://11thandorange.github.io/OrderMate/api/orders
+curl -I https://busybuddy.dev/api
 ```
 
 ### Monitor Workflow
@@ -191,25 +192,15 @@ gh run list --workflow=deploy-docs.yml --limit=5
 ## Troubleshooting
 
 ### 404 on Routes
-Add `404.html` that redirects to `index.html`:
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <script>
-    // Redirect to index.html with path preserved
-    sessionStorage.redirect = location.href;
-    location.replace(location.origin + '/OrderMate/');
-  </script>
-</head>
-</html>
-```
+`docs/frontend/public/404.html` already handles this via the rafgraph SPA-fallback redirect
+pattern (redirects to `index.html` with the path preserved as a query string). If deep
+links 404 after a domain change, check `pathSegmentsToKeep` in `404.html` matches the
+current base path (0 for the custom domain root, 1 if ever reverted to the
+`/BusyBuddy_v2/` GitHub Pages project path).
 
 ### Assets Not Loading
 Check browser console for 404s. Common fixes:
-- Verify `base` in vite.config.ts
+- Verify `base` in vite.config.ts matches how the site is actually served
 - Ensure paths use relative URLs or start with base path
 
 ### Stale Cache

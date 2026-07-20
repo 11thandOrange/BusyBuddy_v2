@@ -25,7 +25,7 @@ export function Architecture() {
         <Box title="web/frontend — React Admin UI" detail="Vite + React, embedded in Shopify Admin via App Bridge. One editor per app (Announcement Bar, 4 discount apps), a dashboard, and a plan/billing page." />
         <Box title="web/backend — Express API" detail="REST API under /api/*. Routes split by feature (bundles, announcement-bars, subscription, referrals, webhooks, activity, products, email-provider, google-analytics)." />
         <Box title="MongoDB" detail="Sessions, shops, bundles, announcement bars, inactive-tab config, subscriptions, referrals, activity logs, email logs, merchant events." />
-        <Box title="extensions/bogo-shopify-app — Theme App Extension" detail="Storefront-facing JS/Liquid: announcement bar rendering, inactive tab title-swap, bundle widget rendering. Talks to the backend through the Shopify App Proxy (/apps/bogo-app/*), so it works without a merchant session." />
+        <Box title="extensions/bogo-shopify-app — Theme App Extension" detail="Storefront-facing JS/Liquid: announcement bar rendering, inactive tab title-swap, bundle widget rendering, and the Star Rating block (blocks/star_rating.liquid + snippets/stars.liquid). Talks to the backend through the Shopify App Proxy (/apps/bogo-app/*), so it works without a merchant session." />
         <Box title="extensions/cart-transformer — Shopify Function" detail="A Cart Transform Function that applies bundle/BOGO/volume discounts server-side at checkout - the discount is never computed client-side, so it can't be tampered with." />
       </div>
 
@@ -51,6 +51,17 @@ export function Architecture() {
         deciding whether a new charge confirmation is needed - so switching directly between two
         paid plans always surfaces Shopify's real billing confirmation screen rather than
         silently swapping plans without a corresponding charge.
+      </p>
+
+      <h2 className="mt-8 text-heading-sm font-semibold text-white">Deploy paths</h2>
+      <p className="mt-2 prose-body">
+        Production runs via <code className="font-mono">.github/workflows/deploy.yml</code> on a
+        self-hosted runner (pull latest main, rebuild, restart under pm2). A Docker path also
+        exists alongside it: the root <code className="font-mono">Dockerfile</code> builds{' '}
+        <code className="font-mono">web</code> (installing and building{' '}
+        <code className="font-mono">web/frontend</code>) and serves it on port 8081, and{' '}
+        <code className="font-mono">docker-compose.yml</code> maps host port 8080 to it and
+        mounts <code className="font-mono">./web/images</code> into the container.
       </p>
 
       <h2 className="mt-8 text-heading-sm font-semibold text-white">Compliance & lifecycle webhooks</h2>

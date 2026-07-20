@@ -10,7 +10,7 @@
       // index.html, which decodes it back into a real history entry (see
       // the inline script in index.html) before React Router ever sees it.
       // Standard GH Pages SPA fallback: https://github.com/rafgraph/spa-github-pages
-      var pathSegmentsToKeep = 1; // keep "/BusyBuddy_v2"
+      var pathSegmentsToKeep = 0; // custom domain serves from root, no path segment to keep
       var l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
