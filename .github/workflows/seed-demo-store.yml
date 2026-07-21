@@ -1,0 +1,26 @@
+name: Seed Demo Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      store_domain:
+        description: 'Target store domain (e.g. daisys-electronics-9kihd5yl.myshopify.com)'
+        required: true
+        default: 'daisys-electronics-9kihd5yl.myshopify.com'
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run seed script
+        run: node scripts/seed-demo-store/seed.mjs
+        env:
+          SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_DEMO_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_DEMO_CLIENT_SECRET }}
