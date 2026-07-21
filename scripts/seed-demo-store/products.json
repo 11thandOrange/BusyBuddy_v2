@@ -1,0 +1,252 @@
+[
+  {
+    "handle": "vintage-macintosh-laptop",
+    "title": "Vintage Macintosh Laptop",
+    "description": "A beige workhorse from the golden age of personal computing. This vintage Macintosh laptop features its original clamshell design, monochrome display, and clicky keyboard — fully restored and powered on for display. A conversation piece for any collector's desk.",
+    "price": "649.00",
+    "vendor": "Apple",
+    "productType": "Laptops",
+    "tags": ["vintage", "collectible", "90s", "laptop", "retro-computing"],
+    "inventoryQuantity": 6
+  },
+  {
+    "handle": "imac-g3",
+    "title": "iMac G3",
+    "description": "The all-in-one that made translucent plastic cool again. This iMac G3 comes in its iconic bubble-shaped shell with a candy-colored finish, CRT display, and tray-loading CD drive. Boots up and hums exactly like it did in 1999.",
+    "price": "429.00",
+    "vendor": "Apple",
+    "productType": "Desktop Computers",
+    "tags": ["vintage", "collectible", "90s", "desktop", "retro-computing"],
+    "inventoryQuantity": 8
+  },
+  {
+    "handle": "original-ipod",
+    "title": "Original iPod",
+    "description": "The one that started the pocket-music revolution. This first-generation iPod features the mechanical click wheel, FireWire dock connector, and that unmistakable 'Do not steal music' engraving on the back. 1,000 songs, right in your pocket.",
+    "price": "249.00",
+    "vendor": "Apple",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "2000s", "mp3-player", "music"],
+    "inventoryQuantity": 12
+  },
+  {
+    "handle": "ipod-mini",
+    "title": "iPod Mini",
+    "description": "Small, anodized, and unmistakably early-2000s. The iPod Mini shrank the original down to a candy-colored aluminum shell you could clip to a gym bag. Includes the signature click wheel and a battery that still holds a decent charge.",
+    "price": "179.00",
+    "vendor": "Apple",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "2000s", "mp3-player", "music"],
+    "inventoryQuantity": 14
+  },
+  {
+    "handle": "ipod-classic",
+    "title": "iPod Classic",
+    "description": "The last of the true click-wheel giants. With enough storage to hold an entire CD collection twice over, the iPod Classic was the finish line of portable music before streaming took over. Comes with original earbuds and dock cable.",
+    "price": "199.00",
+    "vendor": "Apple",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "2000s", "mp3-player", "music"],
+    "inventoryQuantity": 10
+  },
+  {
+    "handle": "ipod-nano",
+    "title": "iPod Nano",
+    "description": "Impossibly thin for its time, and still a pocket-friendly delight today. This iPod Nano comes in its original aluminum finish with a sharp little color screen — perfect for a nostalgic workout playlist or a shelf display.",
+    "price": "129.00",
+    "vendor": "Apple",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "2000s", "mp3-player", "music"],
+    "inventoryQuantity": 16
+  },
+  {
+    "handle": "iphone-2g",
+    "title": "iPhone 2G",
+    "description": "The phone that redefined the category. This original iPhone (2G) is the one that started it all — no App Store, no 3G, no copy-paste, just the device that made everyone rethink what a phone could be. A true piece of tech history.",
+    "price": "899.00",
+    "vendor": "Apple",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "smartphone", "iconic"],
+    "inventoryQuantity": 4
+  },
+  {
+    "handle": "iphone-3gs",
+    "title": "iPhone 3GS",
+    "description": "Faster, smarter, and finally with copy-paste. The iPhone 3GS was the phone that convinced the holdouts. This unit boots cleanly to its original home screen and is a favorite among collectors for its rounded, huggable form factor.",
+    "price": "349.00",
+    "vendor": "Apple",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "smartphone"],
+    "inventoryQuantity": 7
+  },
+  {
+    "handle": "motorola-razr",
+    "title": "Motorola Razr",
+    "description": "The flip phone that made flip phones aspirational. Impossibly thin for 2004, with a satisfying snap-open hinge and a chrome finish that still turns heads. Comes with charger and original box where available.",
+    "price": "149.00",
+    "vendor": "Motorola",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "flip-phone", "iconic"],
+    "inventoryQuantity": 15
+  },
+  {
+    "handle": "nokia-3310",
+    "title": "Nokia 3310",
+    "description": "Famously indestructible, endlessly meme-able. The Nokia 3310 is still the gold standard for battery life and Snake high scores. This one boots straight to the home screen and rings with the original monophonic tones.",
+    "price": "89.00",
+    "vendor": "Nokia",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "candy-bar-phone", "iconic"],
+    "inventoryQuantity": 20
+  },
+  {
+    "handle": "sony-walkman",
+    "title": "Sony Walkman",
+    "description": "The device that put music in motion. This cassette Walkman comes with its original foam headphones and belt clip, mechanical playback buttons and all. Pop in a mixtape and press play like it's 1985.",
+    "price": "119.00",
+    "vendor": "Sony",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "80s", "cassette", "music"],
+    "inventoryQuantity": 11
+  },
+  {
+    "handle": "sony-discman",
+    "title": "Sony Discman",
+    "description": "Anti-skip protection, meet your favorite CD. This Discman brought portable audio into the digital age with a satisfying top-loading lid and a headphone jack that's seen a lot of mileage. Skip protection included, mixtape nostalgia not.",
+    "price": "99.00",
+    "vendor": "Sony",
+    "productType": "Portable Audio",
+    "tags": ["vintage", "collectible", "90s", "cd-player", "music"],
+    "inventoryQuantity": 13
+  },
+  {
+    "handle": "tamagotchi",
+    "title": "Tamagotchi",
+    "description": "Feed it, clean up after it, don't let it die on your watch. This egg-shaped digital pet on a keychain sparked a global obsession in the late '90s. Batteries included — your new tiny responsibility awaits.",
+    "price": "39.00",
+    "vendor": "Bandai",
+    "productType": "Toys & Games",
+    "tags": ["vintage", "collectible", "90s", "digital-pet", "toy"],
+    "inventoryQuantity": 30
+  },
+  {
+    "handle": "nintendo-game-boy",
+    "title": "Nintendo Game Boy",
+    "description": "The brick that started handheld gaming. This original Game Boy has that unmistakable green-tinted screen and satisfyingly clicky D-pad. Runs on 4 AA batteries for roughly a small eternity of Tetris.",
+    "price": "129.00",
+    "vendor": "Nintendo",
+    "productType": "Handheld Gaming",
+    "tags": ["vintage", "collectible", "90s", "handheld-console", "gaming"],
+    "inventoryQuantity": 18
+  },
+  {
+    "handle": "game-boy-color",
+    "title": "Game Boy Color",
+    "description": "Same pocket-sized charm, now in actual color. The Game Boy Color kept the beloved form factor while finally giving Pokémon their proper palette. This unit's hinge-free shell and buttons are in great working order.",
+    "price": "119.00",
+    "vendor": "Nintendo",
+    "productType": "Handheld Gaming",
+    "tags": ["vintage", "collectible", "90s", "handheld-console", "gaming"],
+    "inventoryQuantity": 17
+  },
+  {
+    "handle": "nintendo-ds",
+    "title": "Nintendo DS",
+    "description": "Two screens, one stylus, endless possibilities. The Nintendo DS's clamshell design and touch-screen bottom display made it a genre-bending handheld. Hinge tested, speakers crisp, stylus included.",
+    "price": "89.00",
+    "vendor": "Nintendo",
+    "productType": "Handheld Gaming",
+    "tags": ["vintage", "collectible", "2000s", "handheld-console", "gaming"],
+    "inventoryQuantity": 19
+  },
+  {
+    "handle": "palm-pilot",
+    "title": "Palm Pilot",
+    "description": "Before smartphones, there was the PalmPilot. This stylus-driven organizer handled your calendar, contacts, and to-do lists with a satisfying tap-tap-tap on its monochrome touchscreen. A true pocket assistant, decades before the term existed.",
+    "price": "79.00",
+    "vendor": "Palm",
+    "productType": "PDAs & Organizers",
+    "tags": ["vintage", "collectible", "90s", "pda", "productivity"],
+    "inventoryQuantity": 14
+  },
+  {
+    "handle": "blackberry-bold",
+    "title": "BlackBerry Bold",
+    "description": "The physical keyboard that business travelers refused to give up. The BlackBerry Bold paired a satisfying clicky QWERTY keyboard with the once-essential BBM. This unit's trackpad and keys are all present and accounted for.",
+    "price": "89.00",
+    "vendor": "BlackBerry",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "smartphone", "qwerty"],
+    "inventoryQuantity": 12
+  },
+  {
+    "handle": "blackberry-curve",
+    "title": "BlackBerry Curve",
+    "description": "Compact, curved, and constantly buzzing with new email. The BlackBerry Curve brought the full keyboard experience down to a more pocketable size. A favorite of everyone who typed with their thumbs before it was cool.",
+    "price": "69.00",
+    "vendor": "BlackBerry",
+    "productType": "Mobile Phones",
+    "tags": ["vintage", "collectible", "2000s", "smartphone", "qwerty"],
+    "inventoryQuantity": 13
+  },
+  {
+    "handle": "sony-psp",
+    "title": "Sony PSP",
+    "description": "A widescreen gaming powerhouse that fit in a jacket pocket. The PSP played full games, movies on UMD, and streamed music — all on a display that felt years ahead of its time. Analog nub tested, screen bright and scratch-free.",
+    "price": "139.00",
+    "vendor": "Sony",
+    "productType": "Handheld Gaming",
+    "tags": ["vintage", "collectible", "2000s", "handheld-console", "gaming"],
+    "inventoryQuantity": 15
+  },
+  {
+    "handle": "sega-game-gear",
+    "title": "Sega Game Gear",
+    "description": "Sega's answer to the Game Boy came in full color a full decade early — at the cost of eating AA batteries for breakfast. The Game Gear's backlit screen still pops, and the D-pad still feels great under your thumb.",
+    "price": "109.00",
+    "vendor": "Sega",
+    "productType": "Handheld Gaming",
+    "tags": ["vintage", "collectible", "90s", "handheld-console", "gaming"],
+    "inventoryQuantity": 9
+  },
+  {
+    "handle": "flip-video-camera",
+    "title": "Flip Video Camera",
+    "description": "Point, shoot, upload — the Flip made viral videos possible before every phone had a camera. This pocket camcorder has a flip-out USB arm and a screen just big enough to check your shot. Peak 2007 energy.",
+    "price": "59.00",
+    "vendor": "Flip Video",
+    "productType": "Cameras & Camcorders",
+    "tags": ["vintage", "collectible", "2000s", "camcorder", "video"],
+    "inventoryQuantity": 16
+  },
+  {
+    "handle": "minidv-camcorder",
+    "title": "MiniDV Camcorder",
+    "description": "The camcorder that recorded a generation's home movies onto tiny tapes. This MiniDV camcorder features a flip-out LCD viewfinder and that satisfying mechanical tape-loading whirr. Includes a handful of blank MiniDV tapes.",
+    "price": "129.00",
+    "vendor": "Sony",
+    "productType": "Cameras & Camcorders",
+    "tags": ["vintage", "collectible", "90s", "camcorder", "video"],
+    "inventoryQuantity": 8
+  },
+  {
+    "handle": "crt-television",
+    "title": "CRT Television",
+    "description": "Heavy, boxy, and full of warm scanline charm. This CRT television brings the true look of retro gaming and VHS movie nights back to life — the kind of picture that makes old commercials feel right at home again.",
+    "price": "179.00",
+    "vendor": "Generic Brand",
+    "productType": "Televisions",
+    "tags": ["vintage", "collectible", "90s", "television", "retro-gaming"],
+    "inventoryQuantity": 5
+  },
+  {
+    "handle": "polaroid-instant-camera",
+    "title": "Polaroid Instant Camera",
+    "description": "Point, shoot, and watch the picture develop right in your hand. This classic instant camera brings back the magic of physical photos with that unmistakable whirr-and-eject sound. Compatible with standard instant film packs.",
+    "price": "79.00",
+    "vendor": "Polaroid",
+    "productType": "Cameras & Camcorders",
+    "tags": ["vintage", "collectible", "80s", "instant-camera", "photography"],
+    "inventoryQuantity": 22
+  }
+]
