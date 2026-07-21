@@ -121,6 +121,12 @@ const LOCATIONS_QUERY = `
   }
 `;
 
+const PRODUCT_BY_HANDLE_QUERY = `
+  query productByHandle($handle: String!) {
+    productByHandle(handle: $handle) { id }
+  }
+`;
+
 const PUBLICATIONS_QUERY = `
   {
     publications(first: 20) {
@@ -170,7 +176,12 @@ async function main() {
       console.warn(`⚠️  No images configured for "${product.title}" — skipping images.`);
     }
 
+    const { productByHandle } = await shopifyGraphql(PRODUCT_BY_HANDLE_QUERY, {
+      handle: product.handle,
+    });
+
     const input = {
+      ...(productByHandle ? { id: productByHandle.id } : {}),
       title: product.title,
       handle: product.handle,
       descriptionHtml: `<p>${product.description}</p>`,
