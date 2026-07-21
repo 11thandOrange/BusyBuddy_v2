@@ -121,9 +121,17 @@ const LOCATIONS_QUERY = `
   }
 `;
 
-const INVENTORY_SET_MUTATION = `
-  mutation inventorySetQuantities($input: InventorySetQuantitiesInput!) {
-    inventorySetQuantities(input: $input) {
+const PUBLICATIONS_QUERY = `
+  {
+    publications(first: 20) {
+      nodes { id name }
+    }
+  }
+`;
+
+const PUBLISH_MUTATION = `
+  mutation publishablePublish($id: ID!, $input: [PublicationInput!]!) {
+    publishablePublish(id: $id, input: $input) {
       userErrors { field message }
     }
   }
@@ -143,6 +151,16 @@ async function main() {
   const locationId = locations.nodes[0]?.id;
   if (!locationId) throw new Error("No fulfillment location found on this store.");
   console.log(`Using location: ${locationId}`);
+
+  const { publications } = await shopifyGraphql(PUBLICATIONS_QUERY);
+  const onlineStorePublicationId = publications.nodes.find(
+    (p) => p.name === "Online Store"
+  )?.id;
+  if (!onlineStorePublicationId) {
+    console.warn("⚠️  No \"Online Store\" publication found — products will not be published to the storefront.");
+  } else {
+    console.log(`Using publication: Online Store (${onlineStorePublicationId})`);
+  }
 
   let failureCount = 0;
 
@@ -195,6 +213,17 @@ async function main() {
         continue;
       }
       console.log(`✅ ${product.title} -> ${data.productSet.product.handle}`);
+
+      if (onlineStorePublicationId) {
+        const publishData = await shopifyGraphql(PUBLISH_MUTATION, {
+          id: data.productSet.product.id,
+          input: [{ publicationId: onlineStorePublicationId }],
+        });
+        const publishErrors = publishData.publishablePublish.userErrors;
+        if (publishErrors.length > 0) {
+          console.warn(`⚠️  ${product.title}: publish issue —`, publishErrors);
+        }
+      }
     } catch (err) {
       console.error(`❌ ${product.title} failed:`, err.message);
       failureCount++;
