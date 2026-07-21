@@ -144,6 +144,8 @@ async function main() {
   if (!locationId) throw new Error("No fulfillment location found on this store.");
   console.log(`Using location: ${locationId}`);
 
+  let failureCount = 0;
+
   for (const product of products) {
     const imageUrls = images[product.handle] || [];
     if (imageUrls.length === 0) {
@@ -162,8 +164,15 @@ async function main() {
         originalSource: url,
         contentType: "IMAGE",
       })),
+      productOptions: [
+        {
+          name: "Title",
+          values: [{ name: "Default Title" }],
+        },
+      ],
       variants: [
         {
+          optionValues: [{ optionName: "Title", name: "Default Title" }],
           price: product.price,
           inventoryPolicy: "DENY",
           inventoryQuantities: [
@@ -182,15 +191,21 @@ async function main() {
       const errors = data.productSet.userErrors;
       if (errors.length > 0) {
         console.error(`❌ ${product.title}:`, errors);
+        failureCount++;
         continue;
       }
       console.log(`✅ ${product.title} -> ${data.productSet.product.handle}`);
     } catch (err) {
       console.error(`❌ ${product.title} failed:`, err.message);
+      failureCount++;
     }
   }
 
   console.log("\nDone. Review the storefront to confirm images and inventory.");
+  if (failureCount > 0) {
+    console.error(`${failureCount} of ${products.length} products failed.`);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((err) => {
