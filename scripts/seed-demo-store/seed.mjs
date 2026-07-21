@@ -3,8 +3,12 @@
 // catalog in ./products.json + image URLs in ./images.json.
 //
 // Required env vars:
-//   SHOPIFY_STORE_DOMAIN   e.g. daisys-electronics.myshopify.com
-//   SHOPIFY_ADMIN_TOKEN    Custom app Admin API access token (shpat_...)
+//   SHOPIFY_STORE_DOMAIN     e.g. daisys-electronics-9kihd5yl.myshopify.com
+// Auth — provide EITHER of the following:
+//   SHOPIFY_ADMIN_TOKEN                    a ready-made Admin API access token (shpat_...), OR
+//   SHOPIFY_CLIENT_ID + SHOPIFY_CLIENT_SECRET   Dev Dashboard app credentials — the script
+//                                                exchanges these for an access token itself
+//                                                via the client_credentials grant.
 //
 // Usage: node scripts/seed-demo-store/seed.mjs
 
@@ -15,24 +19,63 @@ import path from "node:path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const STORE_DOMAIN = process.env.SHOPIFY_STORE_DOMAIN;
-const ADMIN_TOKEN = process.env.SHOPIFY_ADMIN_TOKEN;
 const API_VERSION = "2025-10";
 
-if (!STORE_DOMAIN || !ADMIN_TOKEN) {
-  console.error(
-    "Missing SHOPIFY_STORE_DOMAIN and/or SHOPIFY_ADMIN_TOKEN environment variables."
-  );
+if (!STORE_DOMAIN) {
+  console.error("Missing SHOPIFY_STORE_DOMAIN environment variable.");
   process.exit(1);
 }
 
 const ENDPOINT = `https://${STORE_DOMAIN}/admin/api/${API_VERSION}/graphql.json`;
+
+// Client-credentials access tokens expire after ~24h (Shopify returns
+// expires_in ~86399s), so we mint a fresh one per run rather than caching it.
+async function getAccessToken() {
+  if (process.env.SHOPIFY_ADMIN_TOKEN) {
+    return process.env.SHOPIFY_ADMIN_TOKEN;
+  }
+
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    console.error(
+      "Missing credentials: set SHOPIFY_ADMIN_TOKEN, or both SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET."
+    );
+    process.exit(1);
+  }
+
+  const res = await fetch(`https://${STORE_DOMAIN}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(
+      `Client credentials token exchange failed: HTTP ${res.status}: ${await res.text()}`
+    );
+  }
+
+  const { access_token: accessToken } = await res.json();
+  if (!accessToken) {
+    throw new Error("Token exchange response did not include an access_token.");
+  }
+  console.log("Obtained Admin API access token via client_credentials grant.");
+  return accessToken;
+}
+
+let ACCESS_TOKEN;
 
 async function shopifyGraphql(query, variables) {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Shopify-Access-Token": ADMIN_TOKEN,
+      "X-Shopify-Access-Token": ACCESS_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -87,6 +130,8 @@ const INVENTORY_SET_MUTATION = `
 `;
 
 async function main() {
+  ACCESS_TOKEN = await getAccessToken();
+
   const products = JSON.parse(
     await readFile(path.join(__dirname, "products.json"), "utf-8")
   );

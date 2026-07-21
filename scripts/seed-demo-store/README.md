@@ -6,14 +6,26 @@ does not touch `web/`.
 
 ## Setup
 
-1. Create a Custom App in the target store's admin (Settings → Apps and
-   sales channels → Develop apps) with scopes: `write_products`,
-   `read_products`, `write_inventory`, `read_inventory`, `write_files`,
-   `read_files`. Install it and copy the Admin API access token.
+1. Create an app for the target store (Dev Dashboard, or a Custom App via
+   Settings → Apps and sales channels → Develop apps) with Admin API scopes:
+   `write_products`, `read_products`, `write_inventory`, `read_inventory`,
+   `write_files`, `read_files`.
 
-2. Export credentials (do not commit these):
+2. Export credentials (do not commit these). Either form works — the script
+   handles both:
+
+   **Option A — Client ID/Secret (Dev Dashboard apps).** The script performs
+   the `client_credentials` token exchange itself at runtime; no separate
+   token-fetching step needed:
    ```bash
-   export SHOPIFY_STORE_DOMAIN="daisys-electronics.myshopify.com"
+   export SHOPIFY_STORE_DOMAIN="daisys-electronics-9kihd5yl.myshopify.com"
+   export SHOPIFY_CLIENT_ID="..."
+   export SHOPIFY_CLIENT_SECRET="..."
+   ```
+
+   **Option B — a ready-made Admin API access token** (Custom App token):
+   ```bash
+   export SHOPIFY_STORE_DOMAIN="daisys-electronics-9kihd5yl.myshopify.com"
    export SHOPIFY_ADMIN_TOKEN="shpat_..."
    ```
 
@@ -21,6 +33,9 @@ does not touch `web/`.
    ```bash
    node scripts/seed-demo-store/seed.mjs
    ```
+
+Client-credentials tokens expire after ~24h, so the script always mints a
+fresh one per run rather than caching it — safe to re-run any time.
 
 ## Files
 
