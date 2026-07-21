@@ -63,8 +63,18 @@ async function searchOne(handle, query) {
     console.warn(`${handle}: no results for "${query}"`);
     return null;
   }
-  console.log(`${handle}: ${first.urls.regular}`);
-  return first.urls.regular;
+
+  // Build a uniform square crop (Shopify's recommended product image size)
+  // from the raw asset instead of Unsplash's default arbitrary-aspect thumbnail.
+  const squareUrl = new URL(first.urls.raw);
+  squareUrl.searchParams.set("fit", "crop");
+  squareUrl.searchParams.set("crop", "entropy");
+  squareUrl.searchParams.set("w", "2048");
+  squareUrl.searchParams.set("h", "2048");
+  squareUrl.searchParams.set("q", "80");
+
+  console.log(`${handle}: ${squareUrl.toString()}`);
+  return squareUrl.toString();
 }
 
 async function main() {
