@@ -24,3 +24,10 @@ jobs:
           SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
           SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_DEMO_CLIENT_ID }}
           SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_DEMO_CLIENT_SECRET }}
+
+      - name: Check image media status
+        run: node scripts/seed-demo-store/check-images.mjs
+        env:
+          SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
+          SHOPIFY_CLIENT_ID: ${{ secrets.SHOPIFY_DEMO_CLIENT_ID }}
+          SHOPIFY_CLIENT_SECRET: ${{ secrets.SHOPIFY_DEMO_CLIENT_SECRET }}
