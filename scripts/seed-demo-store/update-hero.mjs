@@ -66,18 +66,6 @@ async function restGet(path) {
   return res.json();
 }
 
-async function restPut(path, body) {
-  const res = await fetch(`https://${STORE_DOMAIN}/admin/api/${API_VERSION}/${path}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": ACCESS_TOKEN,
-    },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`PUT ${path} -> HTTP ${res.status}: ${await res.text()}`);
-  return res.json();
-}
 
 async function findHeroImageUrl() {
   const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(HERO_QUERY)}&per_page=1&content_filter=high`;
@@ -120,6 +108,15 @@ const FILE_QUERY = `
         fileStatus
         image { url }
       }
+    }
+  }
+`;
+
+const THEME_FILES_UPSERT_MUTATION = `
+  mutation themeFilesUpsert($themeId: ID!, $files: [OnlineStoreThemeFilesUpsertFileInput!]!) {
+    themeFilesUpsert(themeId: $themeId, files: $files) {
+      upsertedThemeFiles { filename }
+      userErrors { field message }
     }
   }
 `;
@@ -175,12 +172,21 @@ async function main() {
   template.sections[heroSectionId].settings.image_1 = shopImageRef;
   template.sections[heroSectionId].settings.image_2 = shopImageRef;
 
-  await restPut(`themes/${mainTheme.id}/assets.json`, {
-    asset: {
-      key: "templates/index.json",
-      value: JSON.stringify(template, null, 2),
-    },
+  const themeGid = `gid://shopify/OnlineStoreTheme/${mainTheme.id}`;
+  const upsertData = await shopifyGraphql(THEME_FILES_UPSERT_MUTATION, {
+    themeId: themeGid,
+    files: [
+      {
+        filename: "templates/index.json",
+        body: { type: "TEXT", value: JSON.stringify(template, null, 2) },
+      },
+    ],
   });
+  if (upsertData.themeFilesUpsert.userErrors.length > 0) {
+    throw new Error(
+      `themeFilesUpsert errors: ${JSON.stringify(upsertData.themeFilesUpsert.userErrors)}`
+    );
+  }
 
   console.log(`\nUpdated hero section "${heroSectionId}" with new image.`);
 }
