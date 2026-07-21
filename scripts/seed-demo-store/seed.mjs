@@ -116,7 +116,7 @@ const PRODUCT_SET_MUTATION = `
 const LOCATIONS_QUERY = `
   {
     locations(first: 1) {
-      nodes { id name }
+      nodes { id }
     }
   }
 `;
@@ -142,7 +142,7 @@ async function main() {
   const { locations } = await shopifyGraphql(LOCATIONS_QUERY);
   const locationId = locations.nodes[0]?.id;
   if (!locationId) throw new Error("No fulfillment location found on this store.");
-  console.log(`Using location: ${locations.nodes[0].name} (${locationId})`);
+  console.log(`Using location: ${locationId}`);
 
   for (const product of products) {
     const imageUrls = images[product.handle] || [];
