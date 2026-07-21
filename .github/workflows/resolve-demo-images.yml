@@ -1,0 +1,17 @@
+name: Resolve Demo Store Images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Resolve image URLs
+        run: node scripts/seed-demo-store/resolve-images.mjs
