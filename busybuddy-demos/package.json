@@ -1,0 +1,13 @@
+{
+  "name": "busybuddy-demos",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:install": "playwright install chromium --with-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

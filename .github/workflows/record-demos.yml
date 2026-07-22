@@ -1,0 +1,63 @@
+name: Record BusyBuddy Demo Videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      store_domain:
+        description: 'Storefront domain (e.g. daisys-electronics-9kihd5yl.myshopify.com)'
+        required: true
+        default: 'daisys-electronics-9kihd5yl.myshopify.com'
+      admin_url:
+        description: 'BusyBuddy embedded admin URL (e.g. https://admin.shopify.com/store/daisys-electronics-9kihd5yl/apps/<app-handle>)'
+        required: true
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        working-directory: busybuddy-demos
+        run: npm install
+
+      - name: Install Chromium
+        working-directory: busybuddy-demos
+        run: npx playwright install --with-deps chromium
+
+      - name: Restore admin session
+        working-directory: busybuddy-demos
+        run: echo "$SHOPIFY_ADMIN_AUTH_STATE" | base64 -d > auth.json
+        env:
+          SHOPIFY_ADMIN_AUTH_STATE: ${{ secrets.SHOPIFY_ADMIN_AUTH_STATE }}
+
+      - name: Record demo journeys
+        working-directory: busybuddy-demos
+        run: npx playwright test
+        env:
+          SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
+          BUSYBUDDY_ADMIN_URL: ${{ inputs.admin_url }}
+
+      - name: Remove admin session before commit
+        working-directory: busybuddy-demos
+        run: rm -f auth.json
+
+      - name: Commit recordings into the repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add busybuddy-demos/videos busybuddy-demos/traces busybuddy-demos/screenshots
+          if git diff --cached --quiet; then
+            echo "No new recordings to commit"
+          else
+            git commit -m "Record BusyBuddy demo videos ($(date -u +%Y-%m-%d))"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
