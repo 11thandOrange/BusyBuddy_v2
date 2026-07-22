@@ -27,21 +27,42 @@ export const DASHBOARD_TILES = {
 };
 
 /**
- * BusyBuddy runs embedded inside admin.shopify.com's app-iframe. This
- * fixture navigates to the app and hands back a locator root scoped to
- * wherever the app actually rendered (iframe when embedded, top-level page
- * when loaded standalone) so every script can use the same `app.getByText`
- * / `app.locator` calls regardless of which context it ends up in.
+ * BusyBuddy runs embedded inside an admin.shopify.com iframe, but the
+ * iframe's name/id isn't stable across admin releases (Spring '26 doesn't
+ * use the traditional name="app-iframe"), so guessing a selector for it is
+ * fragile. Instead this polls the top-level page and every child frame for
+ * '.widget-tile' (the dashboard's own DOM, see web/frontend/pages/
+ * DashboardHome.jsx) and hands back whichever one actually has it - a
+ * Playwright Frame supports the same locator/getByText/getByRole API as
+ * Page, so every script below works unmodified against either.
  */
+async function resolveAppScope(page, timeoutMs = 30_000) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError;
+  while (Date.now() < deadline) {
+    try {
+      if (await page.locator('.widget-tile').count() > 0) return page;
+      for (const frame of page.frames()) {
+        if (frame === page.mainFrame()) continue;
+        if (await frame.locator('.widget-tile').count() > 0) return frame;
+      }
+    } catch (err) {
+      lastError = err; // frames can detach mid-poll while the app iframe loads/reloads
+    }
+    await page.waitForTimeout(500);
+  }
+  throw new Error(
+    `Timed out waiting for the BusyBuddy dashboard ('.widget-tile') in the top-level page or any iframe.${lastError ? ` Last error: ${lastError.message}` : ''}`
+  );
+}
+
 export const test = base.extend({
   app: async ({ page }, use) => {
     if (!ADMIN_URL) {
       throw new Error('BUSYBUDDY_ADMIN_URL is not set - see busybuddy-demos/README.md');
     }
     await page.goto(ADMIN_URL);
-    const iframe = page.frameLocator('iframe[name="app-iframe"]');
-    const embedded = (await page.locator('iframe[name="app-iframe"]').count()) > 0;
-    await use(embedded ? iframe : page);
+    await use(await resolveAppScope(page));
   },
 });
 
