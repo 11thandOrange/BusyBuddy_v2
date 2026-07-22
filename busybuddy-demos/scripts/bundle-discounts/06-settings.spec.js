@@ -1,5 +1,8 @@
 import { test, expect, dashboardTile, gotoTab } from '../../fixtures/app.js';
 
+// 1. Open the Bundle Discounts app, go to the Settings tab
+// 2. Click the "Disabled" then "Enabled" radio for Smart Bundle Detection
+// 3. Confirm the Discount Combination section is visible
 test('Bundle Discounts: Smart Bundle Detection priority setting', async ({ page, app }) => {
   await dashboardTile(app, 'Bundle Discounts').getByRole('button', { name: /manage/i }).click();
   await gotoTab(app, 'Settings');

@@ -1,5 +1,8 @@
 import { test, expect, dashboardTile } from '../../fixtures/app.js';
 
+// 1. Click "Create" on the Inactive Tab Message tile (jumps straight to Settings, no popup editor)
+// 2. Fill in the inactive-tab message text ("Come back! Your cart is waiting 🛒")
+// 3. Click "Save Settings"
 test('Inactive Tab Message: configure via Create (same-window, no standalone editor)', async ({ page, app }) => {
   // Unlike the other 5 apps, "Create" navigates straight to
   // /inactive-tab-message?tab=settings in the same window rather than

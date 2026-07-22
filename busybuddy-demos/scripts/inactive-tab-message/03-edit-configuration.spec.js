@@ -1,5 +1,8 @@
 import { test, expect, dashboardTile, gotoTab } from '../../fixtures/app.js';
 
+// 1. Open the Inactive Tab Message app, go to the Settings tab
+// 2. Change the message text to "Don't leave yet - 15% off waiting for you! 🎁"
+// 3. Click "Save Settings"
 test('Inactive Tab Message: edit the existing message text', async ({ page, app }) => {
   await dashboardTile(app, 'Inactive Tab Message').getByRole('button', { name: /manage/i }).click();
   await gotoTab(app, 'Settings');
