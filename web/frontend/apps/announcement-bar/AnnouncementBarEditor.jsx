@@ -16,6 +16,7 @@ import {
   EditorRightContent
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
+import { editorFetch } from '../../utils/editorAuth';
 
 // Announcement Bar specific settings configuration
 // Settings configuration for AnnouncementBar editor - Animation removed
@@ -277,7 +278,7 @@ export const AnnouncementBarEditor = () => {
 
     const fetchBar = async () => {
       try {
-        const response = await fetch(`/api/announcement-bars/${id}`);
+        const response = await editorFetch(`/api/announcement-bars/${id}`);
         if (!response.ok) throw new Error('Failed to fetch bar');
         const data = await response.json();
         const bar = data?.data;
@@ -412,7 +413,7 @@ export const AnnouncementBarEditor = () => {
       const url = id ? `/api/announcement-bars/${id}` : '/api/announcement-bars';
       const method = id ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      const response = await editorFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

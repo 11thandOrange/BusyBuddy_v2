@@ -13,7 +13,7 @@ import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
-import { verifySHA256 } from "./middleware/verify-signature.js";
+import { verifySHA256, generateSignature } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
@@ -195,11 +195,20 @@ const serveFrontendHtml = (_req, res) => {
 };
 
 // Helper function to serve the editor HTML (without App Bridge)
-const serveEditorHtml = (_req, res) => {
+// Injects a shop+signature pair (see verify-signature.js's generateSignature)
+// so the editor's own /api/* calls - which have no App Bridge session token
+// to authenticate with - can use the shop+signature path that web/index.js's
+// /api/* middleware already supports but nothing was previously feeding.
+const serveEditorHtml = (_req, res, shop, signature) => {
   return res
     .status(200)
     .set("Content-Type", "text/html")
-    .send(readFileSync(join(STATIC_PATH, "editor.html")).toString());
+    .send(
+      readFileSync(join(STATIC_PATH, "editor.html"))
+        .toString()
+        .replace("%EDITOR_SHOP%", shop || "")
+        .replace("%EDITOR_SIGNATURE%", signature || "")
+    );
 };
 
 // Editor routes opened in new tab - validate shop session from DB
@@ -208,21 +217,22 @@ app.use("/*", async (_req, res, _next) => {
   const fullPath = _req.originalUrl || _req.url;
   const isEditorRoute = fullPath.includes('/editor');
   const shop = _req.query.shop;
-  
+
   if (isEditorRoute && shop) {
     try {
       // Use sessionModel directly (same approach as API validation)
       const session = await sessionModel.findOne({ shop: shop });
-      
+
       if (session && session.accessToken) {
         // Valid session exists - serve the editor HTML (no App Bridge)
-        return serveEditorHtml(_req, res);
+        const signature = generateSignature({ shop });
+        return serveEditorHtml(_req, res, shop, signature);
       }
     } catch (error) {
       console.log("Editor session error:", error.message);
     }
   }
-  
+
   _next();
 });
 

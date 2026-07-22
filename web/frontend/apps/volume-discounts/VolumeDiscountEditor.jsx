@@ -16,6 +16,7 @@ import {
   EditorRightContent
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
+import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
 // Volume Discount settings configuration
@@ -208,7 +209,7 @@ export const VolumeDiscountEditor = () => {
 
     const fetchBundle = async () => {
       try {
-        const response = await fetch(`/api/bundles/${id}`);
+        const response = await editorFetch(`/api/bundles/${id}`);
         if (!response.ok) throw new Error('Failed to fetch bundle');
         const data = await response.json();
         const bundle = data?.data || data;
@@ -280,7 +281,7 @@ export const VolumeDiscountEditor = () => {
     const fetchProducts = async () => {
       setProductsLoading(true);
       try {
-        const response = await fetch("/api/products", {
+        const response = await editorFetch("/api/products", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
@@ -482,7 +483,7 @@ export const VolumeDiscountEditor = () => {
       const url = isEditing ? `/api/bundles/${id}` : "/api/bundles";
       const method = isEditing ? "PUT" : "POST";
 
-      const response = await fetch(url, {
+      const response = await editorFetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bundleData),

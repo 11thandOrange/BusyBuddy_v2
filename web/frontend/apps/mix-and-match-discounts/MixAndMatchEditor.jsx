@@ -16,6 +16,7 @@ import {
   EditorRightContent
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
+import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
 // Mix and Match settings configuration
@@ -220,7 +221,7 @@ export const MixAndMatchEditor = () => {
 
     const fetchBundle = async () => {
       try {
-        const response = await fetch(`/api/bundles/${id}`);
+        const response = await editorFetch(`/api/bundles/${id}`);
         if (!response.ok) throw new Error('Failed to fetch bundle');
         const data = await response.json();
         const bundle = data?.data || data;
@@ -304,7 +305,7 @@ export const MixAndMatchEditor = () => {
   const fetchStoreProducts = async () => {
     setProductsLoading(true);
     try {
-      const response = await fetch("/api/products", {
+      const response = await editorFetch("/api/products", {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -468,7 +469,7 @@ export const MixAndMatchEditor = () => {
       const url = isEditing ? `/api/bundles/mix-and-match/${id}` : "/api/bundles/mix-and-match";
       const method = "POST";
 
-      const response = await fetch(url, {
+      const response = await editorFetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bundleData),
