@@ -167,7 +167,6 @@ app.use(
 app.use(shopify.cspHeaders());
 app.use("/api", router);
 
-app.use(serveStatic(STATIC_PATH, { index: false }));
 app.use("/", async (_req, res, _next) => {
   // Shopify redirects here with charge_id+shop after a billing confirmation.
   // Only trust it enough to trigger a resync if the request carries a valid
@@ -211,11 +210,20 @@ const serveEditorHtml = (_req, res, shop, signature) => {
     );
 };
 
-// Editor routes opened in new tab - validate shop session from DB
-// This allows editor to work in standalone tab without Shopify embedded context
+// Editor routes opened in new tab - validate shop session from DB.
+// This allows editor to work in standalone tab without Shopify embedded
+// context. MUST run before the static file server below: the Vite build
+// outputs a real editor.html onto disk, so serve-static would otherwise
+// serve that raw file directly (skipping session validation *and* the
+// %EDITOR_SHOP%/%EDITOR_SIGNATURE% substitution below) for any request
+// that reaches it first - which prior to this comment is exactly what was
+// happening, silently, regardless of what this block below did.
 app.use("/*", async (_req, res, _next) => {
   const fullPath = _req.originalUrl || _req.url;
-  const isEditorRoute = fullPath.includes('/editor');
+  // Exact match (not a substring check) so this never accidentally catches
+  // a built asset whose filename happens to contain "editor" (e.g. Vite's
+  // /assets/editor-<hash>.js chunk for this same entry point).
+  const isEditorRoute = fullPath === '/editor.html' || fullPath.startsWith('/editor.html?');
   const shop = _req.query.shop;
 
   if (isEditorRoute && shop) {
@@ -235,6 +243,8 @@ app.use("/*", async (_req, res, _next) => {
 
   _next();
 });
+
+app.use(serveStatic(STATIC_PATH, { index: false }));
 
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);
 
