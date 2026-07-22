@@ -1,18 +1,22 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductToPool, selectConfigOption } from '../../fixtures/app.js';
 
 test('BOGO: create a Buy X Get Y offer', async ({ page, app }) => {
   const popup = await openEditorPopup(page, () =>
     dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /create/i }).click()
   );
 
-  await clickSidepaneItem(popup, 'Select Products');
-  const searchInputs = popup.getByPlaceholder('Search products...');
-  await searchInputs.first().fill('Sony Walkman');
-  await popup.getByText('Sony Walkman', { exact: false }).first().click();
-  await searchInputs.last().fill('Polaroid');
-  await popup.getByText('Polaroid', { exact: false }).first().click();
+  // BOGO's sidepane doesn't have a "Select Products" item - it splits
+  // into "Customer Buys (X)" and "Customer Gets (Y)" (BuyXGetYEditor.jsx).
+  await clickSidepaneItem(popup, 'Customer Buys (X)');
+  await addProductToPool(popup, 'Sony Walkman');
+
+  await clickSidepaneItem(popup, 'Customer Gets (Y)');
+  await addProductToPool(popup, 'Polaroid');
 
   await clickSidepaneItem(popup, 'Discount Settings');
+  // BOGO's own DISCOUNT_TYPE_OPTIONS label differs from the other 3 apps'
+  // plain "Percentage" - it's "Percentage Discount" here.
+  await selectConfigOption(popup, 'Discount Type', 'Percentage Discount');
   await popup.getByPlaceholder(/e\.g\., 20/).fill('50');
 
   await saveEditor(popup);

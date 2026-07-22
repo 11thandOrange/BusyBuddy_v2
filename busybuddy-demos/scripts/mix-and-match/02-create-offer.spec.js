@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductViaPicker } from '../../fixtures/app.js';
 
 test('Mix and Match: create an offer with a Buy 3 tier preset', async ({ page, app }) => {
   const popup = await openEditorPopup(page, () =>
@@ -6,11 +6,13 @@ test('Mix and Match: create an offer with a Buy 3 tier preset', async ({ page, a
   );
 
   await clickSidepaneItem(popup, 'Select Products');
-  await popup.getByPlaceholder('Search products...').fill('Cassette');
-  await popup.getByText('Cassette', { exact: false }).first().click();
+  await addProductViaPicker(popup, 'Cassette');
 
-  await popup.getByText('Tier Settings', { exact: true }).click();
-  await popup.getByText('Buy 3', { exact: true }).click();
+  await clickSidepaneItem(popup, 'Tier Settings');
+  // "Buy 3" also appears as a plain (non-interactive) form-group label in
+  // the Tier Settings panel itself - the real, clickable tier selector is
+  // a <button> in the live preview pane, so scope by role to land on it.
+  await popup.getByRole('button', { name: 'Buy 3' }).click();
 
   await saveEditor(popup);
   await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
