@@ -73,13 +73,31 @@ async function resolveAppScope(page, { attempts = 3, timeoutPerAttemptMs = 20_00
   );
 }
 
+/**
+ * DashboardHome.jsx renders widget tiles immediately (before the plan is
+ * known) and only gates Create/Manage clicks once its subscription fetch
+ * resolves - `if (!loading && !isWidgetAccessible(...))`. A fast Playwright
+ * click can land in that window and either race past the gate (landing in
+ * a real editor while still notionally on the stale/default plan) or get
+ * redirected to /plan with no explanation. Waiting for the subscription
+ * response here makes every script's Create/Manage click deterministic.
+ */
+async function waitForSubscriptionLoaded(subscriptionResponsePromise) {
+  await subscriptionResponsePromise; // best-effort; falls back to proceeding if it never fires (see .catch below)
+}
+
 export const test = base.extend({
   app: async ({ page }, use) => {
     if (!ADMIN_URL) {
       throw new Error('BUSYBUDDY_ADMIN_URL is not set - see busybuddy-demos/README.md');
     }
+    const subscriptionResponsePromise = page
+      .waitForResponse((res) => res.url().includes('/api/subscription/getUserSubscription'), { timeout: 20_000 })
+      .catch(() => null);
     await page.goto(ADMIN_URL);
-    await use(await resolveAppScope(page));
+    const scope = await resolveAppScope(page);
+    await waitForSubscriptionLoaded(subscriptionResponsePromise);
+    await use(scope);
   },
 });
 
