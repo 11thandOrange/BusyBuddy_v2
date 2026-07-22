@@ -312,7 +312,7 @@ export const MixAndMatchEditor = () => {
       if (!response.ok) throw new Error("Failed to fetch products");
 
       const data = await response.json();
-      const products = data.data?.products?.edges || [];
+      const products = data.data?.edges || [];
 
       const formattedProducts = products.map((edge) => {
         const product = edge.node;
