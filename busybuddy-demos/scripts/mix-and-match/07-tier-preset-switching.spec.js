@@ -1,5 +1,9 @@
 import { test, expect, dashboardTile, openEditorPopup, clickSidepaneItem, addProductViaPicker } from '../../fixtures/app.js';
 
+// 1. Click "Create" on the Mix and Match tile
+// 2. Open "Select Products", add "Cassette" (needed for the tier preview to render at all)
+// 3. Open Tier Settings
+// 4. Click through all four preset buttons in order: Buy 2, Buy 3, Buy 4, Buy 5
 test('Mix and Match: switch across all Buy 2/3/4/5 tier presets', async ({ page, app }) => {
   const popup = await openEditorPopup(page, () =>
     dashboardTile(app, 'Mix & Match').getByRole('button', { name: /create/i }).click()

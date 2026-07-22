@@ -108,6 +108,20 @@ export async function gotoTab(app, tabName) {
   await app.getByText(tabName, { exact: true }).click();
 }
 
+/**
+ * DiscountList/BundelDiscountList.jsx only refetches its items when
+ * `selectedTab` actually *changes* (its useEffect deps are
+ * [refreshTrigger, selectedTab]), so clicking a tab you're already on
+ * won't pick up something just saved in the editor popup. Bouncing
+ * through Overview first forces a real refetch before landing back on
+ * the list tab.
+ */
+export async function refreshAndVerifyInList(app, listTabName, textMatcher) {
+  await gotoTab(app, 'Overview');
+  await gotoTab(app, listTabName);
+  await expect(app.getByText(textMatcher)).toBeVisible({ timeout: 15_000 });
+}
+
 /** Scopes down to a single widget tile on the dashboard by its visible title. */
 export function dashboardTile(app, widgetTitle) {
   return app.locator('.widget-tile').filter({ hasText: widgetTitle });

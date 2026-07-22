@@ -1,5 +1,9 @@
 import { test, expect, dashboardTile, openEditorPopup } from '../../fixtures/app.js';
 
+// 1. Click "Create" on the Volume Discounts tile
+// 2. Open Quantity Breaks, count the existing tiers
+// 3. Click "+ Add Another Quantity Break", confirm the tier count increased
+// 4. Click the "✕" on the newly-added tier to remove it
 test('Volume Discounts: add and remove a quantity-break tier', async ({ page, app }) => {
   const popup = await openEditorPopup(page, () =>
     dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /create/i }).click()
