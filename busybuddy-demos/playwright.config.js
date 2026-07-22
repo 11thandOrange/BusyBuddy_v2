@@ -28,7 +28,9 @@ export default defineConfig({
   // descriptive filenames after the run finishes.
   outputDir: './.raw-output',
   reporter: [['list'], ['./fixtures/organize-reporter.js']],
-  timeout: 60_000,
+  // Generous headroom: resolveAppScope (fixtures/app.js) alone can take up
+  // to ~60s across its reload-retry attempts on a cold-start backend.
+  timeout: 120_000,
   fullyParallel: false,
   workers: 1,
   retries: 0,
