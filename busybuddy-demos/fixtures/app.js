@@ -119,9 +119,15 @@ export async function gotoStorefrontProduct(page, handle) {
   await page.goto(`https://${STORE_DOMAIN}/products/${handle}`);
 }
 
-/** Editor sidepane items (components/Editor/EditorSidepane.jsx) open a config panel by label. */
+/**
+ * Editor sidepane items (components/Editor/EditorSidepane.jsx) open a
+ * config panel by label. The same label text can also appear in the
+ * config panel's own heading once selected, so .first() (the sidepane nav
+ * item, which renders above the panel) disambiguates the strict-mode
+ * violation rather than picking an arbitrary match.
+ */
 export async function clickSidepaneItem(popup, label) {
-  await popup.getByText(label, { exact: true }).click();
+  await popup.getByText(label, { exact: true }).first().click();
 }
 
 /** Fills the first visible text input/textarea in the current config panel. */
