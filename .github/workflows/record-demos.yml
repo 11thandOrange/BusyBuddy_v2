@@ -10,6 +10,10 @@ on:
       admin_url:
         description: 'BusyBuddy embedded admin URL (e.g. https://admin.shopify.com/store/daisys-electronics-9kihd5yl/apps/<app-handle>)'
         required: true
+      test_filter:
+        description: 'Optional path (or substring) to run just one spec/dir while iterating on selectors, e.g. scripts/announcement-bar/01-tabs-navigation.spec.js'
+        required: false
+        default: ''
 
 jobs:
   record:
@@ -41,16 +45,20 @@ jobs:
 
       - name: Record demo journeys
         working-directory: busybuddy-demos
-        run: npx playwright test
+        run: npx playwright test ${{ inputs.test_filter }}
         env:
           SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
           BUSYBUDDY_ADMIN_URL: ${{ inputs.admin_url }}
 
+      # Runs even if the test step above failed, so whatever specs *did*
+      # pass still get committed instead of being silently discarded.
       - name: Remove admin session before commit
+        if: always()
         working-directory: busybuddy-demos
         run: rm -f auth.json
 
       - name: Commit recordings into the repo
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -61,3 +69,16 @@ jobs:
             git commit -m "Record BusyBuddy demo videos ($(date -u +%Y-%m-%d))"
             git push origin HEAD:${{ github.ref_name }}
           fi
+
+      # Temporary diagnostic aid for the first live run: uploads raw
+      # Playwright output (screenshots/error-context) on failure so we can
+      # see what page state the admin-app journeys actually hit. Safe to
+      # remove once the selectors are confirmed working - this is separate
+      # from the videos/traces/screenshots that get committed above.
+      - name: Upload diagnostic output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raw-output
+          path: busybuddy-demos/.raw-output
+          retention-days: 3
