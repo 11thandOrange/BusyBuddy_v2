@@ -1,0 +1,9 @@
+import { test, expect, dashboardTile, gotoTab } from '../../fixtures/app.js';
+
+test('BOGO: Analytics tab shows revenue, orders, and top offers', async ({ page, app }) => {
+  await dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /manage/i }).click();
+  await gotoTab(app, 'Analytics');
+
+  await expect(app.getByText(/total bundle revenue/i)).toBeVisible({ timeout: 15_000 });
+  await expect(app.getByText(/orders with bundles/i)).toBeVisible();
+});
