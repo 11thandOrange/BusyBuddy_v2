@@ -5,9 +5,9 @@ test('BOGO: toggle between the X (buy) and Y (get) product pools', async ({ page
     dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /create/i }).click()
   );
 
-  await clickSidepaneItem(popup, 'Select Products');
-  await expect(popup.getByPlaceholder('Search products...').first()).toBeVisible();
+  await clickSidepaneItem(popup, 'Customer Buys (X)');
+  await expect(popup.getByPlaceholder('Search products...')).toBeVisible();
 
-  await popup.getByText(/^X$|Buy Product/i).first().click().catch(() => {});
-  await popup.getByText(/^Y$|Get Product/i).first().click().catch(() => {});
+  await clickSidepaneItem(popup, 'Customer Gets (Y)');
+  await expect(popup.getByPlaceholder('Search products...')).toBeVisible();
 });

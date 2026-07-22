@@ -5,14 +5,18 @@ test('Volume Discounts: add and remove a quantity-break tier', async ({ page, ap
     dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /create/i }).click()
   );
 
-  await popup.getByText('Quantity Breaks', { exact: true }).click();
-  const tierCountBefore = await popup.locator('[class*="quantity-break"], [class*="tier-row"]').count();
+  await popup.getByText('Quantity Breaks', { exact: true }).first().click();
+  // Tier rows are unstyled divs labeled "Tier N" (optionally "★Tier N" for
+  // the default tier) - count those rather than a nonexistent CSS class.
+  const tierLabel = popup.getByText(/Tier \d+/);
+  const tierCountBefore = await tierLabel.count();
 
-  await popup.getByRole('button', { name: /add.*tier|add.*break/i }).click();
+  await popup.getByRole('button', { name: '+ Add Another Quantity Break' }).click();
   await expect(async () => {
-    const tierCountAfter = await popup.locator('[class*="quantity-break"], [class*="tier-row"]').count();
-    expect(tierCountAfter).toBeGreaterThan(tierCountBefore);
+    expect(await tierLabel.count()).toBeGreaterThan(tierCountBefore);
   }).toPass({ timeout: 10_000 });
 
-  await popup.getByRole('button', { name: /remove|delete/i }).last().click();
+  // Each tier's remove control is a bare "✕" button, only rendered once
+  // there's more than one tier.
+  await popup.getByRole('button', { name: '✕', exact: true }).last().click();
 });

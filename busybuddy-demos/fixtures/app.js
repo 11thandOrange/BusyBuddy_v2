@@ -153,3 +153,44 @@ export async function fillActiveConfigField(popup, value) {
   const field = popup.locator('.config-panel textarea, .config-panel input[type="text"]').first();
   await field.fill(value);
 }
+
+/**
+ * Adds a product from the inline "Select Products" picker shared by
+ * StandardBundleEditor.jsx, VolumeDiscountEditor.jsx, and
+ * MixAndMatchEditor.jsx: a "+ Add Products" button reveals a search field
+ * (placeholder "Search by product name...") and a filtered list, each row
+ * with its own "+ Add" button. BOGO's BuyXGetYEditor.jsx does not use this
+ * pattern - see addProductToPool below.
+ */
+export async function addProductViaPicker(popup, productName) {
+  const addProductsButton = popup.getByRole('button', { name: '+ Add Products' });
+  if (await addProductsButton.isVisible().catch(() => false)) {
+    await addProductsButton.click();
+  }
+  await popup.getByPlaceholder('Search by product name...').fill(productName);
+  await popup.getByRole('button', { name: '+ Add', exact: true }).first().click();
+}
+
+/**
+ * BOGO's BuyXGetYEditor.jsx renders its X/Y product pools as directly
+ * clickable rows (onClick={() => addProductToX(product)}) with an inline
+ * "Search products..." field - no separate "+ Add Products" toggle.
+ */
+export async function addProductToPool(popup, productName) {
+  await popup.getByPlaceholder('Search products...').fill(productName);
+  await popup.getByText(productName, { exact: false }).first().click();
+}
+
+/**
+ * Selects an option from a ConfigSelect (components/Editor/EditorConfigPanel.jsx)
+ * by the visible label of its enclosing ConfigFormGroup, e.g. selecting
+ * "Percentage" under "Discount Type" before the percentage/amount input
+ * renders (that field is conditionally shown only once a type is chosen).
+ */
+export async function selectConfigOption(popup, groupLabel, optionLabel) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
+    .locator('select')
+    .selectOption({ label: optionLabel });
+}

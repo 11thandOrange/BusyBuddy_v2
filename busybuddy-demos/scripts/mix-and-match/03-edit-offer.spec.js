@@ -11,8 +11,10 @@ test('Mix and Match: switch tier preset and change a tier discount', async ({ pa
     firstOffer.locator('..').locator('..').getByRole('button').first().click()
   );
 
-  await popup.getByText('Tier Settings', { exact: true }).click();
-  await popup.getByText('Buy 4', { exact: true }).click();
+  await popup.getByText('Tier Settings', { exact: true }).first().click();
+  // The clickable tier selector is a <button> in the live preview pane;
+  // "Buy 4" also appears as a plain label in the Tier Settings panel.
+  await popup.getByRole('button', { name: 'Buy 4' }).click();
 
   await saveEditor(popup);
 });
