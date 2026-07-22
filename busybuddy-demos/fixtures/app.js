@@ -36,7 +36,7 @@ export const DASHBOARD_TILES = {
  * Playwright Frame supports the same locator/getByText/getByRole API as
  * Page, so every script below works unmodified against either.
  */
-async function resolveAppScope(page, timeoutMs = 30_000) {
+async function pollForAppScope(page, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let lastError;
   while (Date.now() < deadline) {
@@ -51,8 +51,25 @@ async function resolveAppScope(page, timeoutMs = 30_000) {
     }
     await page.waitForTimeout(500);
   }
+  return { timedOut: true, lastError };
+}
+
+/**
+ * The app's backend occasionally 502s the embedded iframe on a cold start
+ * (a fresh container hasn't finished booting yet) - that response is
+ * static once loaded, so only a page reload gets a fresh attempt, not more
+ * polling. Retries a couple of full reloads before giving up.
+ */
+async function resolveAppScope(page, { attempts = 3, timeoutPerAttemptMs = 20_000 } = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const result = await pollForAppScope(page, timeoutPerAttemptMs);
+    if (result && !result.timedOut) return result;
+    lastError = result?.lastError;
+    if (attempt < attempts) await page.reload();
+  }
   throw new Error(
-    `Timed out waiting for the BusyBuddy dashboard ('.widget-tile') in the top-level page or any iframe.${lastError ? ` Last error: ${lastError.message}` : ''}`
+    `Timed out waiting for the BusyBuddy dashboard ('.widget-tile') in the top-level page or any iframe after ${attempts} attempts (page reloaded between each - likely a cold-start 502 from the app backend if this persists).${lastError ? ` Last error: ${lastError.message}` : ''}`
   );
 }
 
