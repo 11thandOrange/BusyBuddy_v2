@@ -302,7 +302,7 @@ export const StandardBundleEditor = () => {
         throw new Error("Failed to fetch products");
       }
       const data = await response.json();
-      const edges = data.data?.products?.edges || [];
+      const edges = data.data?.edges || [];
       // Transform products to match production bundle format
       const transformedProducts = edges.map(edge => {
         const product = edge.node;

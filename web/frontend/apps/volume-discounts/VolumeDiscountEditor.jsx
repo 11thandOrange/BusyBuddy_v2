@@ -287,7 +287,7 @@ export const VolumeDiscountEditor = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          const products = data.data?.products?.edges?.map(edge => ({
+          const products = data.data?.edges?.map(edge => ({
             productId: edge.node.id,
             title: edge.node.title,
             price: edge.node.variants?.nodes?.[0]?.price || '0',
