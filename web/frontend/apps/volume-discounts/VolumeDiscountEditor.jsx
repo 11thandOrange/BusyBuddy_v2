@@ -277,33 +277,46 @@ export const VolumeDiscountEditor = () => {
   }, [id]);
 
   // Fetch store products
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setProductsLoading(true);
-      try {
-        const response = await editorFetch("/api/products", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          const products = data.data?.edges?.map(edge => ({
-            productId: edge.node.id,
-            title: edge.node.title,
-            price: edge.node.variants?.nodes?.[0]?.price || '0',
-            media: edge.node.images?.edges?.[0]?.node?.url || tshirt,
-            variants: edge.node.variants?.nodes || [],
-          })) || [];
-          setStoreProducts(products);
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      } finally {
-        setProductsLoading(false);
+  const fetchStoreProducts = async (search = '') => {
+    setProductsLoading(true);
+    try {
+      const response = await editorFetch(`/api/products${search ? `?search=${encodeURIComponent(search)}` : ''}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const products = data.data?.edges?.map(edge => ({
+          productId: edge.node.id,
+          title: edge.node.title,
+          price: edge.node.variants?.nodes?.[0]?.price || '0',
+          media: edge.node.images?.edges?.[0]?.node?.url || tshirt,
+          variants: edge.node.variants?.nodes || [],
+        })) || [];
+        setStoreProducts(products);
       }
-    };
-    fetchProducts();
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStoreProducts();
   }, []);
+
+  // The picker only ever holds one page (10 products, newest first) - without
+  // this, searching for an older product that isn't in that page can never
+  // find it no matter what's typed, since filtering below only runs over
+  // what's already been fetched. Re-fetching with the search term lets the
+  // backend query the full catalog instead.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      fetchStoreProducts(productSearchQuery);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [productSearchQuery]);
 
   // Countdown timer effect
   useEffect(() => {

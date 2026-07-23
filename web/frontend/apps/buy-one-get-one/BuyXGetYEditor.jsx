@@ -294,6 +294,18 @@ export const BuyXGetYEditor = () => {
     fetchStoreProducts();
   }, []);
 
+  // The picker only ever holds one page (10 products, newest first) - without
+  // this, searching for an older product that isn't in that page can never
+  // find it no matter what's typed, since filtering below only runs over
+  // what's already been fetched. Re-fetching with the search term lets the
+  // backend query the full catalog instead.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      fetchStoreProducts(productSearchQuery);
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [productSearchQuery]);
+
   // Countdown timer effect
   useEffect(() => {
     if (!showCountdown) return;
@@ -320,10 +332,10 @@ export const BuyXGetYEditor = () => {
     return () => clearInterval(timer);
   }, [showCountdown]);
 
-  const fetchStoreProducts = async () => {
+  const fetchStoreProducts = async (search = '') => {
     setProductsLoading(true);
     try {
-      const response = await editorFetch("/api/products", {
+      const response = await editorFetch(`/api/products${search ? `?search=${encodeURIComponent(search)}` : ''}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
