@@ -28,6 +28,12 @@ test('BOGO: create a Buy X Get Y offer', async ({ page, app }) => {
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
+  // Unlike Bundle/Volume/Mix and Match, BOGO's payload sends its products
+  // as productsX/productsY (BuyXGetYEditor.jsx), not the shared `products`
+  // field the Discounts list badges are rendered from
+  // (BundelDiscountList.jsx) - so no product name ever appears in the
+  // list row for a BOGO offer. Verify via the title shown instead, which
+  // BundelDiscountList.jsx does render.
   await dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /manage/i }).click();
-  await refreshAndVerifyInList(app, 'Discounts', /Sony Walkman/i);
+  await refreshAndVerifyInList(app, 'Discounts', /Buy X Get Y - Save More/i);
 });
