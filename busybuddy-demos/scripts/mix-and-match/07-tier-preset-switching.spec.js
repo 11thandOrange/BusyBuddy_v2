@@ -3,8 +3,8 @@ import { test, expect, dashboardTile, openEditorPopup, clickSidepaneItem, addPro
 // 1. Click "Create" on the Mix and Match tile
 // 2. Open "Select Products", add "BlackBerry Bold" (needed for the tier preview to render at all)
 // 3. Open Tier Settings
-// 4. Click through all four preset buttons in order: Buy 2, Buy 3, Buy 4, Buy 5
-test('Mix and Match: switch across all Buy 2/3/4/5 tier presets', async ({ page, app }) => {
+// 4. Click through all three preset buttons in order: Buy 2, Buy 3, Buy 4
+test('Mix and Match: switch across all Buy 2/3/4 tier presets', async ({ page, app }) => {
   const popup = await openEditorPopup(page, () =>
     dashboardTile(app, 'Mix & Match').getByRole('button', { name: /create/i }).click()
   );
@@ -19,7 +19,9 @@ test('Mix and Match: switch across all Buy 2/3/4/5 tier presets', async ({ page,
   await addProductViaPicker(popup, 'BlackBerry Bold');
 
   await clickSidepaneItem(popup, 'Tier Settings');
-  for (const tier of ['Buy 2', 'Buy 3', 'Buy 4', 'Buy 5']) {
+  // The live-preview tier presets object (MixAndMatchEditor.jsx) only
+  // defines tiers 2, 3, and 4 - there is no "Buy 5" preset button to click.
+  for (const tier of ['Buy 2', 'Buy 3', 'Buy 4']) {
     const tierButton = popup.getByRole('button', { name: tier });
     await tierButton.click();
     await expect(tierButton).toBeVisible();
