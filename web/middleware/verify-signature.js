@@ -32,4 +32,17 @@ const generateSignature = (params) => {
     return crypto.createHmac('sha256', process.env.SHOPIFY_API_SECRET).update(message).digest('hex');
 }
 
-export { verifySHA256, generateSignature };
+// Verifies a signature minted by generateSignature({shop}) - unlike
+// verifySHA256 (which signs every query param present on the request, for
+// verifying Shopify's own outbound redirects where Shopify controls and
+// signs the full param set), this checks only the shop value the token was
+// actually minted for. Editor API calls legitimately carry other
+// business-logic query params (search, cursor, ...) that were never part of
+// what was signed, so including them in the check would reject every editor
+// request that isn't a bare shop-only lookup.
+const verifyShopSignature = (shop, signature) => {
+    if (!shop || !signature) return false;
+    return generateSignature({ shop }) === signature;
+}
+
+export { verifySHA256, generateSignature, verifyShopSignature };
