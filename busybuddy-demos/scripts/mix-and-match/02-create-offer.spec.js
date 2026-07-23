@@ -1,7 +1,7 @@
 import { test, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Mix and Match tile - opens the standalone editor
-// 2. Open "Select Products", add "Cassette" via the product picker
+// 2. Open "Select Products", add "Sega Game Gear" via the product picker
 // 3. Open Tier Settings, click the "Buy 3" preset button in the live preview
 // 4. Click Save and wait for the save confirmation
 // 5. Go back to the app, open the Discounts list tab, confirm the new offer is in the list
@@ -10,8 +10,13 @@ test('Mix and Match: create an offer with a Buy 3 tier preset', async ({ page, a
     dashboardTile(app, 'Mix & Match').getByRole('button', { name: /create/i }).click()
   );
 
+  // "Cassette" was never a seeded product title at all - see
+  // scripts/seed-demo-store/products.json. Products also get tagged
+  // busybuddybundles once used in any bundle-type discount (across every
+  // app), permanently excluding them from the picker afterward - so this
+  // needs to be a name confirmed currently available, not just real.
   await clickSidepaneItem(popup, 'Select Products');
-  await addProductViaPicker(popup, 'Cassette');
+  await addProductViaPicker(popup, 'Sega Game Gear');
 
   await clickSidepaneItem(popup, 'Tier Settings');
   // "Buy 3" also appears as a plain (non-interactive) form-group label in
@@ -23,5 +28,5 @@ test('Mix and Match: create an offer with a Buy 3 tier preset', async ({ page, a
   await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Mix & Match').getByRole('button', { name: /manage/i }).click();
-  await refreshAndVerifyInList(app, 'Discounts', /Cassette/i);
+  await refreshAndVerifyInList(app, 'Discounts', /Sega Game Gear/i);
 });
