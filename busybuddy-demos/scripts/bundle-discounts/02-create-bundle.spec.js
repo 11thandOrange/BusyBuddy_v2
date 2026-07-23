@@ -11,7 +11,12 @@ test('Bundle Discounts: create a bundle from 2 seeded products', async ({ page, 
   );
 
   await clickSidepaneItem(popup, 'Select Products');
-  await addProductViaPicker(popup, 'Game Boy');
+  // "Game Boy" alone would match both "Nintendo Game Boy" and "Game Boy
+  // Color", and .first() would consume whichever renders first - leaving
+  // the second search below unable to find anything (its target already
+  // selected, no other title matching). Searching the full unique title
+  // avoids that overlap.
+  await addProductViaPicker(popup, 'Nintendo Game Boy');
   await addProductViaPicker(popup, 'Game Boy Color');
 
   await clickSidepaneItem(popup, 'Discount Settings');
