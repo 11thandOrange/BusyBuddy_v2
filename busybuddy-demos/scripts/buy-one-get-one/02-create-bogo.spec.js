@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductToPool, selectConfigOption, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductToPool, selectConfigOption, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Buy One Get One tile - opens the standalone editor
 // 2. Open "Customer Buys (X)", add "Sony Walkman" to the buy-side pool
@@ -26,8 +26,7 @@ test('BOGO: create a Buy X Get Y offer', async ({ page, app }) => {
   await popup.getByPlaceholder(/e\.g\., 20/).fill('50');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', /Sony Walkman/i);

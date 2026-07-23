@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, clickSidepaneItem, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Buy One Get One app, go to the Discounts list tab
 // 2. Open the first existing offer in the list
@@ -20,8 +20,7 @@ test('BOGO: edit the "get" product selection and discount', async ({ page, app }
   await popup.getByPlaceholder(/e\.g\., 20/).fill('30');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await refreshAndVerifyInList(app, 'Discounts', /Sony Walkman/i);
 });

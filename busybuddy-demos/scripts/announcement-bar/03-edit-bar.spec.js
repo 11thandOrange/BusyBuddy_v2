@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, clickSidepaneItem, fillActiveConfigField, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, fillActiveConfigField, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Announcement Bar app, go to the Announcement Bars list tab
 // 2. Open the first existing bar in the list
@@ -19,8 +19,7 @@ test('Announcement Bar: edit an existing bar', async ({ page, app }) => {
   await fillActiveConfigField(popup, updatedMessage);
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await refreshAndVerifyInList(app, 'Announcement Bars', updatedMessage);
 });

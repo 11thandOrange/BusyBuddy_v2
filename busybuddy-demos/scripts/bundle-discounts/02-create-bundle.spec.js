@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductViaPicker, selectConfigOption, fillConfigInput, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPicker, selectConfigOption, fillConfigInput, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Bundle Discounts tile - opens the standalone editor
 // 2. Open "Select Products", add "Game Boy" and "Game Boy Color" via the product picker
@@ -24,8 +24,7 @@ test('Bundle Discounts: create a bundle from 2 seeded products', async ({ page, 
   await fillConfigInput(popup, 'Discount Value', '15');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Bundle Discounts').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', /Game Boy/i);

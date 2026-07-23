@@ -143,6 +143,18 @@ export async function saveEditor(popup) {
   await popup.locator('button.btn-save').click();
 }
 
+/**
+ * Waits for a successful save. The standalone editor runs without App
+ * Bridge (see useEditorNavigation.js), so every editor's success toast
+ * (shopify?.toast?.show(...)) silently no-ops - there is no "saved" text to
+ * wait for. The actual success signal is closeEditor() calling
+ * window.close() immediately after a successful save, so the popup closing
+ * on its own IS the confirmation.
+ */
+export async function waitForSaveAndClose(popup) {
+  await popup.waitForEvent('close', { timeout: 15_000 });
+}
+
 export async function gotoStorefrontHome(page) {
   await page.goto(`https://${STORE_DOMAIN}`);
 }
