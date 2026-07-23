@@ -122,6 +122,12 @@ export const MixAndMatchEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
   const { closeEditor } = useEditorNavigation();
+  // No App Bridge in the standalone editor (see useEditorNavigation.js), so
+  // there's no toast host to show one on. Declaring shopify as undefined
+  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
+  // call below a safe no-op instead of a ReferenceError that aborts
+  // handleSave before it can reach closeEditor().
+  const shopify = undefined;
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -442,7 +448,7 @@ export const MixAndMatchEditor = () => {
       discountType: discountType,
       discountValue: parseFloat(discountValue) || 0,
       status: bundleEnabled,
-      internalName: bundleInternalName,
+      internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Mix and Match",
       bundlePriority: parseInt(bundlePriority) || 0,
       selectedTier: selectedTier,
