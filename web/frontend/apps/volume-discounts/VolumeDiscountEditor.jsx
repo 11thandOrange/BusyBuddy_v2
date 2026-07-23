@@ -292,13 +292,28 @@ export const VolumeDiscountEditor = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        const products = data.data?.edges?.map(edge => ({
-          productId: edge.node.id,
-          title: edge.node.title,
-          price: edge.node.variants?.nodes?.[0]?.price || '0',
-          media: edge.node.images?.edges?.[0]?.node?.url || tshirt,
-          variants: edge.node.variants?.nodes || [],
-        })) || [];
+        const products = data.data?.edges?.map(edge => {
+          const product = edge.node;
+          // Required by formatComponentsStringForVolumeDiscount (backend) -
+          // Shopify's Bundles API rejects the mutation with "Missing or
+          // invalid options" if a component's optionSelections don't map
+          // every option of the underlying product.
+          const optionSelections = product.options?.map(opt => ({
+            componentOptionId: opt.id,
+            name: opt.name,
+            uniqueName: `${product.title} ${opt.name}`,
+            values: opt.values,
+          })) || [];
+
+          return {
+            productId: product.id,
+            title: product.title,
+            price: product.variants?.nodes?.[0]?.price || '0',
+            media: product.images?.edges?.[0]?.node?.url || tshirt,
+            variants: product.variants?.nodes || [],
+            optionSelections,
+          };
+        }) || [];
         setStoreProducts(products);
       }
     } catch (error) {
