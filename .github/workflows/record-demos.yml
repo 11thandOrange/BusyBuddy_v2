@@ -14,6 +14,11 @@ on:
         description: 'Optional path (or substring) to run just one spec/dir while iterating on selectors, e.g. scripts/announcement-bar/01-tabs-navigation.spec.js'
         required: false
         default: ''
+      record:
+        description: 'Capture video/trace/screenshot for this run? Uncheck for a fast pass/fail-only run with nothing committed.'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   record:
@@ -43,12 +48,20 @@ jobs:
         env:
           SHOPIFY_ADMIN_AUTH_STATE: ${{ secrets.SHOPIFY_ADMIN_AUTH_STATE }}
 
+      # One timestamp for the whole run, so every spec's video/trace/
+      # screenshot lands in the same videos/<ts>/, traces/<ts>/,
+      # screenshots/<ts>/ subfolder instead of overwriting the last run's.
+      - name: Set run folder
+        run: echo "DEMO_RUN_FOLDER=$(date -u +%Y-%m-%d_%H-%M-%S)" >> "$GITHUB_ENV"
+
       - name: Record demo journeys
         working-directory: busybuddy-demos
         run: npx playwright test ${{ inputs.test_filter }}
         env:
           SHOPIFY_STORE_DOMAIN: ${{ inputs.store_domain }}
           BUSYBUDDY_ADMIN_URL: ${{ inputs.admin_url }}
+          RECORD_DEMOS: ${{ inputs.record }}
+          DEMO_RUN_FOLDER: ${{ env.DEMO_RUN_FOLDER }}
 
       # Runs even if the test step above failed, so whatever specs *did*
       # pass still get committed instead of being silently discarded.
