@@ -156,7 +156,10 @@ export async function saveEditor(popup) {
  * on its own IS the confirmation.
  */
 export async function waitForSaveAndClose(popup) {
-  await popup.waitForEvent('close', { timeout: 30_000 });
+  // Volume Discount bundles can take Shopify up to ~60s to fully provision
+  // (see MAX_RETRIES in pollBundleStatus, web/backend/controller/bundles/index.js) -
+  // leaving margin above that within the 120s overall test timeout.
+  await popup.waitForEvent('close', { timeout: 90_000 });
 }
 
 export async function gotoStorefrontHome(page) {
