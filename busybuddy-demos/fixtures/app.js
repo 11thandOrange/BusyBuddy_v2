@@ -119,7 +119,11 @@ export async function gotoTab(app, tabName) {
 export async function refreshAndVerifyInList(app, listTabName, textMatcher) {
   await gotoTab(app, 'Overview');
   await gotoTab(app, listTabName);
-  await expect(app.getByText(textMatcher)).toBeVisible({ timeout: 15_000 });
+  // .first(): the store accumulates items across repeated runs, so more
+  // than one existing row can legitimately match the same text - this only
+  // needs to confirm at least one match is now present, not that it's
+  // unique.
+  await expect(app.getByText(textMatcher).first()).toBeVisible({ timeout: 15_000 });
 }
 
 /** Scopes down to a single widget tile on the dashboard by its visible title. */
