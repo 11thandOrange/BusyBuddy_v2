@@ -8,11 +8,11 @@ async function getProducts(req, res) {
     apiVersion: "2025-10",
   });
 
-  const { cursor } = req.query;
+  const { cursor, search } = req.query;
   console.log("Cursor received in getProducts:", cursor);
   const query = `
-    query getProducts {
-      products(first: 10, after: ${cursor?`"${cursor}"`:null}, sortKey: CREATED_AT, reverse: true, query: "bundles:false AND tag_not:busybuddybundles") {
+    query getProducts($cursor: String, $searchQuery: String!) {
+      products(first: 10, after: $cursor, sortKey: CREATED_AT, reverse: true, query: $searchQuery) {
         edges {
           node {
             id
@@ -44,8 +44,18 @@ async function getProducts(req, res) {
     }
   `;
 
+  // Product search is a merchant browsing their own catalog, not a trust
+  // boundary - but it's still interpolated into Shopify's search query DSL,
+  // so quotes/backslashes are escaped to keep the term from breaking out of
+  // the title:*...* clause.
+  const baseFilter = "bundles:false AND tag_not:busybuddybundles";
+  const escapedSearch = typeof search === "string" ? search.trim().replace(/["\\]/g, "\\$&") : "";
+  const searchQuery = escapedSearch ? `${baseFilter} AND title:*${escapedSearch}*` : baseFilter;
+
   try {
-    const response = await client.request(query);
+    const response = await client.request(query, {
+      variables: { cursor: cursor || null, searchQuery },
+    });
     const { edges, pageInfo } = response.data.products;
     res.status(200).json({
       status: true,
