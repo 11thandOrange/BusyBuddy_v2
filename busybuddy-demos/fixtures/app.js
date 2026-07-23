@@ -212,6 +212,23 @@ export async function addProductToPool(popup, productName) {
 }
 
 /**
+ * VolumeDiscountEditor.jsx renders its "+ Add Products" toggle and search
+ * field like Bundle/BOGO/Mix and Match, but each product row itself is a
+ * directly clickable <div onClick={() => handleAddProduct(product)}> (the
+ * "+" shown next to it is a decorative icon, not a real <button> with
+ * accessible text) - unlike the other 3 apps' actual `+ Add` buttons, so
+ * addProductViaPicker's button locator can never match here.
+ */
+export async function addProductViaPickerRow(popup, productName) {
+  const addProductsButton = popup.getByRole('button', { name: '+ Add Products' });
+  if (await addProductsButton.isVisible().catch(() => false)) {
+    await addProductsButton.click();
+  }
+  await popup.getByPlaceholder('Search by product name...').fill(productName);
+  await popup.getByText(productName, { exact: false }).first().click();
+}
+
+/**
  * Selects an option from a ConfigSelect (components/Editor/EditorConfigPanel.jsx)
  * by the visible label of its enclosing ConfigFormGroup, e.g. selecting
  * "Percentage" under "Discount Type" before the percentage/amount input

@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPickerRow, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Volume Discounts tile - opens the standalone editor
 // 2. Open "Select Products", add "Palm Pilot" via the product picker
@@ -15,8 +15,11 @@ test('Volume Discounts: create a discount with quantity-break tiers', async ({ p
   // app), permanently excluding them from the picker afterward - it's
   // apparently already been consumed by an earlier bundle. Use a name
   // confirmed currently available instead.
+  // VolumeDiscountEditor.jsx's product rows are directly clickable <div>s,
+  // not <button>+ Add</button> elements like the other 3 apps - see
+  // addProductViaPickerRow in fixtures/app.js.
   await clickSidepaneItem(popup, 'Select Products');
-  await addProductViaPicker(popup, 'Palm Pilot');
+  await addProductViaPickerRow(popup, 'Palm Pilot');
 
   await clickSidepaneItem(popup, 'Quantity Breaks');
   await expect(popup.getByText(/buy 2, get 10% off/i)).toBeVisible();
