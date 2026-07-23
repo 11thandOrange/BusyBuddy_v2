@@ -22,5 +22,8 @@ test('BOGO: edit the "get" product selection and discount', async ({ page, app }
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
-  await refreshAndVerifyInList(app, 'Discounts', /Sony Walkman/i);
+  // BOGO's payload sends products as productsX/productsY, not the shared
+  // `products` field the Discounts list badges render from - see
+  // 02-create-bogo.spec.js. Verify via the title instead.
+  await refreshAndVerifyInList(app, 'Discounts', /Buy X Get Y - Save More/i);
 });
