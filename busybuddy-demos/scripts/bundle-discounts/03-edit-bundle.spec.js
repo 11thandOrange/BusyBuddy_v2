@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, clickSidepaneItem, fillActiveConfigField, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, clickSidepaneItem, fillActiveConfigField, fillConfigInput, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Bundle Discounts app, go to the Discounts list tab
 // 2. Open the first existing bundle in the list
@@ -17,7 +17,7 @@ test('Bundle Discounts: edit an existing bundle\'s discount and message', async 
   );
 
   await clickSidepaneItem(popup, 'Discount Settings');
-  await popup.getByPlaceholder(/e\.g\., 20/).fill('25');
+  await fillConfigInput(popup, 'Discount Value', '25');
 
   await popup.getByText('Content', { exact: true }).click();
   await clickSidepaneItem(popup, 'Message Text');

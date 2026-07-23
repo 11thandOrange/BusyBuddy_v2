@@ -208,3 +208,18 @@ export async function selectConfigOption(popup, groupLabel, optionLabel) {
     .locator('select')
     .selectOption({ label: optionLabel });
 }
+
+/**
+ * Fills the text/number input inside a ConfigFormGroup by its visible label
+ * - avoids guessing placeholder text, which varies by app and by the
+ * currently selected discount type (e.g. StandardBundleEditor.jsx's
+ * "Discount Value" field placeholder is "10" for Percentage or "5.00" for a
+ * fixed amount, neither of which is BOGO's "e.g., 20"/"e.g., 10.00").
+ */
+export async function fillConfigInput(popup, groupLabel, value) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
+    .locator('input')
+    .fill(value);
+}
