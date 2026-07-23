@@ -13,7 +13,7 @@ import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
-import { verifySHA256, generateSignature } from "./middleware/verify-signature.js";
+import { verifySHA256, generateSignature, verifyShopSignature } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
@@ -126,7 +126,7 @@ app.use(
     async (_req, res, next) => {
       // @ts-ignore
       var shop = _req.query.shop.toString();
-      const isValid = verifySHA256(_req);
+      const isValid = verifyShopSignature(shop, _req.query.signature);
       if (!isValid) {
         return res.status(401).send("Unauthorized");
       }
