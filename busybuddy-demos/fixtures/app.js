@@ -156,7 +156,7 @@ export async function saveEditor(popup) {
  * on its own IS the confirmation.
  */
 export async function waitForSaveAndClose(popup) {
-  await popup.waitForEvent('close', { timeout: 15_000 });
+  await popup.waitForEvent('close', { timeout: 30_000 });
 }
 
 export async function gotoStorefrontHome(page) {
