@@ -1314,7 +1314,11 @@ function formatComponentsStringForVolumeDiscount(products, quantityBreaks) {
  * @returns {Promise<Object>} - Completed operation data
  */
 async function pollBundleStatus(client, session, operationId) {
-  const MAX_RETRIES = 30; // 30 seconds
+  // Volume Discount bundles (quantity-tier purchase options) take Shopify
+  // noticeably longer to fully provision than a plain 2-product bundle -
+  // observed taking ~41s and still exhausting a 30s/30-attempt budget with
+  // status COMPLETE but product data not yet populated.
+  const MAX_RETRIES = 60; // 60 seconds
   let attempts = 0;
 
   while (attempts < MAX_RETRIES) {
