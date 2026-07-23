@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, clickSidepaneItem, fillActiveConfigField, fillConfigInput, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, fillActiveConfigField, fillConfigInput, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Bundle Discounts app, go to the Discounts list tab
 // 2. Open the first existing bundle in the list
@@ -24,8 +24,7 @@ test('Bundle Discounts: edit an existing bundle\'s discount and message', async 
   await fillActiveConfigField(popup, 'Now 25% off - Bundle and Save!');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   // The Discounts list row shows each bundle's product-title badges, not
   // its message text (see BundelDiscountList.jsx), so verify presence via

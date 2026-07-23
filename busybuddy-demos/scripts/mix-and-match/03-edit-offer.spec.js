@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, waitForSaveAndClose, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Mix and Match app, go to the Discounts list tab
 // 2. Open the first existing offer in the list
@@ -22,8 +22,7 @@ test('Mix and Match: switch tier preset and change a tier discount', async ({ pa
   await popup.getByRole('button', { name: 'Buy 4' }).click();
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await refreshAndVerifyInList(app, 'Discounts', /Cassette/i);
 });

@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Volume Discounts tile - opens the standalone editor
 // 2. Open "Select Products", add "Discman" via the product picker
@@ -17,8 +17,7 @@ test('Volume Discounts: create a discount with quantity-break tiers', async ({ p
   await expect(popup.getByText(/buy 2, get 10% off/i)).toBeVisible();
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', /Discman/i);

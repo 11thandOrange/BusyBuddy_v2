@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, fillActiveConfigField, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, fillActiveConfigField, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Announcement Bar tile - opens the standalone editor
 // 2. Set the message text to "New arrivals just dropped - 20% off today only!"
@@ -20,8 +20,7 @@ test('Announcement Bar: create a new bar from the dashboard', async ({ page, app
   await clickSidepaneItem(popup, 'Background');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Announcement Bar').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Announcement Bars', message);

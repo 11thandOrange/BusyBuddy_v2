@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, gotoTab, openEditorPopup, saveEditor, waitForSaveAndClose, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Open the Volume Discounts app, go to the Discounts list tab
 // 2. Open the first existing discount in the list
@@ -28,8 +28,7 @@ test('Volume Discounts: adjust a quantity-break threshold and percentage', async
   await discountInput.fill('25');
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await refreshAndVerifyInList(app, 'Discounts', /Discman/i);
 });

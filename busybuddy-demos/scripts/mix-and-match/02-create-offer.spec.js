@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, addProductViaPicker, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Mix and Match tile - opens the standalone editor
 // 2. Open "Select Products", add "Cassette" via the product picker
@@ -20,8 +20,7 @@ test('Mix and Match: create an offer with a Buy 3 tier preset', async ({ page, a
   await popup.getByRole('button', { name: 'Buy 3' }).click();
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   await dashboardTile(app, 'Mix & Match').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', /Cassette/i);

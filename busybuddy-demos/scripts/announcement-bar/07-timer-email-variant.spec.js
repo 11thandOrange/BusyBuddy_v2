@@ -1,4 +1,4 @@
-import { test, expect, dashboardTile, openEditorPopup, saveEditor, clickSidepaneItem, refreshAndVerifyInList } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, openEditorPopup, saveEditor, waitForSaveAndClose, clickSidepaneItem, refreshAndVerifyInList } from '../../fixtures/app.js';
 
 // 1. Click "Create" on the Announcement Bar tile
 // 2. Open the Countdown Timer option and turn it on
@@ -18,8 +18,7 @@ test('Announcement Bar: countdown timer and email-capture bar variants', async (
   await expect(popup.getByText(/email form/i)).toBeVisible();
 
   await saveEditor(popup);
-  await expect(popup.getByText(/saved|success/i)).toBeVisible({ timeout: 15_000 });
-  await popup.close();
+  await waitForSaveAndClose(popup);
 
   // No custom message is set in this variant - AnnouncementBarEditor.jsx's
   // own default title/message ("Summer Sale Banner" / "Summer Sale") is
