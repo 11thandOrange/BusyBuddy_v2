@@ -12,6 +12,10 @@ const executablePath = fs.existsSync(SANDBOX_CHROMIUM_PATH) ? SANDBOX_CHROMIUM_P
 const AUTH_STATE_PATH = path.resolve('./auth.json');
 const hasAuthState = fs.existsSync(AUTH_STATE_PATH);
 
+// RECORD_DEMOS=false (set by record-demos.yml's `record` input) skips
+// video/trace/screenshot capture entirely for a fast pass/fail-only run.
+const RECORD = process.env.RECORD_DEMOS !== 'false';
+
 /**
  * Demo recording config for all 6 BusyBuddy apps' admin + storefront
  * journeys. Every project apps its own storageState (see fixtures/) - admin
@@ -39,9 +43,9 @@ export default defineConfig({
     headless: true,
     baseURL: process.env.BUSYBUDDY_ADMIN_URL,
     storageState: hasAuthState ? AUTH_STATE_PATH : undefined,
-    video: 'on',
-    trace: 'on',
-    screenshot: 'on',
+    video: RECORD ? 'on' : 'off',
+    trace: RECORD ? 'on' : 'off',
+    screenshot: RECORD ? 'on' : 'off',
     launchOptions: executablePath ? { executablePath } : {},
   },
 

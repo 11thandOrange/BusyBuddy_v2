@@ -3,6 +3,12 @@ import path from 'path';
 
 const DEST = { video: 'videos', trace: 'traces', screenshot: 'screenshots' };
 
+// One shared subfolder per workflow run, e.g. videos/2026-07-22_20-15-00/ -
+// record-demos.yml sets DEMO_RUN_FOLDER once per run so every spec in that
+// run lands together instead of each overwriting the last run's file.
+// Falls back to 'local' so `npx playwright test` still works unset.
+const RUN_FOLDER = process.env.DEMO_RUN_FOLDER || 'local';
+
 function slugify(testFilePath) {
   // scripts/announcement-bar/02-create-bar.spec.js -> announcement-bar-create-bar
   const rel = path.relative(path.resolve('./scripts'), testFilePath);
@@ -28,7 +34,7 @@ export default class OrganizeReporter {
       if (!attachment.path || !DEST[attachment.name]) continue;
       seen[attachment.name] = (seen[attachment.name] || 0) + 1;
       const suffix = seen[attachment.name] > 1 ? `-${seen[attachment.name]}` : '';
-      const destDir = path.resolve(DEST[attachment.name]);
+      const destDir = path.resolve(DEST[attachment.name], RUN_FOLDER);
       fs.mkdirSync(destDir, { recursive: true });
       const destPath = path.join(destDir, `${slug}${suffix}${EXT[attachment.name]}`);
       fs.copyFileSync(attachment.path, destPath);
