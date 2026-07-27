@@ -1,0 +1,38 @@
+# Thin caller for the shared e2e pipeline (BusyBuddy_v2#285 Phase 6).
+# Browser-driven e2e coverage of the storefront theme extension
+# (extensions/bogo-shopify-app). There is intentionally no equivalent
+# suite for the admin app here: it would need to navigate through Vite's
+# dev-server proxy and shopify.ensureInstalledOnShop(), which requires a
+# live backend plus a real installed-shop session - infra this workflow
+# doesn't stand up. (A prior "smoke" suite attempted this without that
+# infra and, due to a separate testMatch bug, silently ran 0 tests for
+# a while before being removed.)
+#
+# Covers: announcement bar rendering + enable/disable/date-window gating +
+# email capture, inactive tab title/favicon + enable/disable/date-window
+# gating.
+
+name: e2e-pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      record_video:
+        type: boolean
+        default: false
+
+jobs:
+  playwright:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: 11thandOrange/agent-ops/.github/workflows/e2e-pipeline-reusable.yml@main
+    with:
+      working_directory: extensions/bogo-shopify-app
+      install_command: "npm ci && npx playwright install chromium --with-deps"
+      test_command: "npm run test:e2e"
+      needs_emulator: false
+      record_video: ${{ inputs.record_video || false }}

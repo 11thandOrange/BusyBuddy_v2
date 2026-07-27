@@ -1,4 +1,4 @@
-name: Install, Test, Build & E2E
+name: Install, Test & Build
 
 on:
   pull_request:
@@ -78,66 +78,3 @@ jobs:
           path: |
             web/coverage/
             web/frontend/coverage/
-
-  # Browser-driven e2e coverage of the storefront theme extension
-  # (extensions/bogo-shopify-app). There is intentionally no equivalent
-  # suite for the admin app here: it would need to navigate through Vite's
-  # dev-server proxy and shopify.ensureInstalledOnShop(), which requires a
-  # live backend plus a real installed-shop session - infra this workflow
-  # doesn't stand up. (A prior "smoke" suite attempted this without that
-  # infra and, due to a separate testMatch bug, silently ran 0 tests for
-  # a while before being removed.)
-  storefront-e2e:
-    runs-on: ubuntu-latest
-    needs: test-and-build
-    if: github.event.pull_request.draft == false
-    # The default GITHUB_TOKEN in this repo doesn't carry pull-requests:
-    # write, so the "Post PR comment" step below 403'd with "Resource not
-    # accessible by integration" even when all 11 tests passed - the job
-    # showed red for a permissions problem, not a test failure.
-    permissions:
-      contents: read
-      pull-requests: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: extensions/bogo-shopify-app/package-lock.json
-
-      - name: Install bogo-shopify-app dependencies
-        run: npm ci
-        working-directory: extensions/bogo-shopify-app
-
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium --with-deps
-        working-directory: extensions/bogo-shopify-app
-
-      - name: Run storefront e2e tests
-        run: npm run test:e2e
-        working-directory: extensions/bogo-shopify-app
-
-      - name: Post PR comment
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const passed = '${{ job.status }}' === 'success';
-            const icon   = passed ? '✅' : '❌';
-            const status = passed ? 'PASSED' : 'FAILED';
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo:  context.repo.repo,
-              issue_number: context.issue.number,
-              body: [
-                `## ${icon} Storefront E2E Tests — ${status}`,
-                '',
-                `See the [CI run](${runUrl}) for details.`,
-                '',
-                `> Covers: announcement bar rendering + enable/disable/date-window gating + email capture, inactive tab title/favicon + enable/disable/date-window gating.`,
-              ].join('\n'),
-            });
