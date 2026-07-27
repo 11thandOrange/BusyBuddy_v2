@@ -1,0 +1,23 @@
+# Critical-flow manifest for e2e-pipeline-reusable.yml's coverage_manifest_path check
+# (agent-ops's check-flow-coverage.mjs, BusyBuddy_v2#285 Phase 6).
+#
+# Convention: each flow string must be a literal substring (case-insensitive) of a
+# PASSING Playwright test title in tests/e2e/storefront.spec.js. If a test title changes,
+# update the matching flow here too - the check has no other way to know the flow still
+# has coverage.
+
+flows:
+  # Announcement bar (tests/e2e/storefront.spec.js: "Announcement bar rendering")
+  - renders the bar and message
+  - no active bar
+  - returns an error status
+  - safe DOM construction
+  - email capture form
+  - invalid email client-side
+
+  # Inactive tab message (tests/e2e/storefront.spec.js: "Inactive tab message")
+  - changes the tab title when hidden
+  - feature is disabled
+  - does not show before startDate
+  - does not show after endDate
+  - within startDate/endDate range

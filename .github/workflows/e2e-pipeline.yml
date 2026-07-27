@@ -36,3 +36,4 @@ jobs:
       test_command: "npm run test:e2e"
       needs_emulator: false
       record_video: ${{ inputs.record_video || false }}
+      coverage_manifest_path: e2e-coverage.yaml
