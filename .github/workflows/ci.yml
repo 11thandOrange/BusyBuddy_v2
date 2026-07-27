@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Install, Test, Build & E2E
 
 on:
   pull_request:
