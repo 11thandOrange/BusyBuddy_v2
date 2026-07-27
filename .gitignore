@@ -34,3 +34,6 @@ shopify.app.toml
 
 # Playwright
 extensions/bogo-shopify-app/tests/e2e/.playwright-output/
+
+# Claude Code local tooling state (worktrees, local settings) — never project source
+.claude/
