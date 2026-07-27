@@ -189,3 +189,8 @@ gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement-legacy"
 - Installs all dependency trees (root, `web/`, `web/frontend/`, `extensions/cart-transformer/`)
 - Runs all 3 Vitest suites
 - Builds frontend with `CI=true`
+
+`.github/workflows/e2e-pipeline.yml` is a thin caller into the shared
+`11thandOrange/agent-ops` e2e pipeline — Playwright storefront e2e tests
+for `extensions/bogo-shopify-app`, run in parallel with `ci.yml` on every
+PR targeting `main`.
