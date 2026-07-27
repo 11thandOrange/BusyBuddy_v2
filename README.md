@@ -185,7 +185,7 @@ gh issue edit <ISSUE_NUMBER> --add-label "ready-to-implement-legacy"
 
 ### CI
 
-`.github/workflows/node-ci.yml` runs on every PR targeting `main`:
+`.github/workflows/ci.yml` runs on every PR targeting `main`:
 - Installs all dependency trees (root, `web/`, `web/frontend/`, `extensions/cart-transformer/`)
 - Runs all 3 Vitest suites
 - Builds frontend with `CI=true`
