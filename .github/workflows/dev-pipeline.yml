@@ -19,7 +19,7 @@ jobs:
       id-token: write
     uses: HeyItsChloe/pipeline-orchestrator/.github/workflows/dev-pipeline-reusable.yml@main
     with:
-      skills_repo_owner: HeyItsChloe
+      skills_repo_owner: 11thandOrange
       skills_repo_name: agent-ops
       skills_repo_branch: main
       project_language: typescript
