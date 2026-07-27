@@ -88,14 +88,14 @@ export const workflows: WorkflowDoc[] = [
     file: '.github/workflows/dev-pipeline.yml',
     trigger: 'issues: labeled  ·  issue_comment: created  ·  repository_dispatch: agent-trigger',
     description:
-      'Dispatches to a reusable workflow (HeyItsChloe/agent-ops) that runs an AI coding agent against a labeled/commented GitHub issue in two modes: "plan" (produces an implementation approach) and "implement" (writes the code). Triggered either by applying the approach-ready/approved labels or by commenting "@dev-agent plan"/"@dev-agent implement" on an issue. This replaced an older OpenHands-based pipeline (.github/workflows/openhands.yml.legacy), which is retired: renamed to a .yml.legacy extension so GitHub Actions no longer picks it up, its label trigger neutralized, kept only for historical reference.',
+      'Dispatches to a reusable workflow (HeyItsChloe/pipeline-orchestrator) that runs an AI coding agent against a labeled/commented GitHub issue in two modes: "plan" (produces an implementation approach) and "implement" (writes the code). Skills are pulled separately from HeyItsChloe/agent-ops. Triggered either by applying the approach-ready/approved labels or by commenting "@dev-agent plan"/"@dev-agent implement" on an issue. This replaced an older OpenHands-based pipeline (.github/workflows/openhands.yml.legacy), which is retired: renamed to a .yml.legacy extension so GitHub Actions no longer picks it up, its label trigger neutralized, kept only for historical reference.',
     jobs: [
       {
         name: 'dispatch',
-        runsOn: 'reusable workflow (HeyItsChloe/agent-ops/.github/workflows/dev-pipeline-reusable.yml)',
+        runsOn: 'reusable workflow (HeyItsChloe/pipeline-orchestrator/.github/workflows/dev-pipeline-reusable.yml)',
         steps: [
           { name: 'Determine action', detail: 'plan vs. implement, based on the label applied or comment text' },
-          { name: 'Run agent', detail: 'TypeScript project, test command npm test -- --coverage, 85% desired coverage threshold, cobertura coverage format' },
+          { name: 'Run agent', detail: 'TypeScript project, test command npm test -- --coverage, 85% desired coverage threshold, cobertura coverage format, skills pulled from HeyItsChloe/agent-ops@main' },
         ],
       },
       {
@@ -104,6 +104,92 @@ export const workflows: WorkflowDoc[] = [
         steps: [
           { name: 'Postman collection', detail: 'postman/OpenHands_Automations.postman_collection.json documents the retired OpenHands Cloud API this pipeline used to run on: POST /automation/v1/{id}/dispatch to trigger a run, GET /automation/v1/{id}/runs/{run_id} to poll status, POST and GET /conversation/{id}/messages to send issue context and read agent logs.' },
           { name: 'Status', detail: 'Superseded by the GitHub-native trigger above (labels/comments on the issue itself). Kept for historical reference only - do not re-register new automations against it.' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'seed-demo-store',
+    title: 'Seed Demo Store',
+    file: '.github/workflows/seed-demo-store.yml',
+    trigger: 'workflow_dispatch (input: store_domain, default daisys-electronics-9kihd5yl.myshopify.com)',
+    description:
+      'Manual workflow that seeds a demo Shopify store with sample data via scripts/seed-demo-store/seed.mjs, then verifies image media finished processing. Used to keep the demo/screenshot store in a known-good state.',
+    jobs: [
+      {
+        name: 'seed',
+        runsOn: 'ubuntu-latest',
+        steps: [
+          { name: 'Run seed script', detail: 'node scripts/seed-demo-store/seed.mjs against SHOPIFY_STORE_DOMAIN using SHOPIFY_DEMO_CLIENT_ID/SECRET' },
+          { name: 'Check image media status', detail: 'node scripts/seed-demo-store/check-images.mjs - confirms uploaded product images finished Shopify media processing' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'fetch-demo-images',
+    title: 'Fetch Demo Store Images (Unsplash API)',
+    file: '.github/workflows/fetch-demo-images.yml',
+    trigger: 'workflow_dispatch',
+    description:
+      'Manual workflow that fetches product photography from the Unsplash API and commits the resulting URL list back to the repo for use by the seeding scripts.',
+    jobs: [
+      {
+        name: 'fetch',
+        runsOn: 'ubuntu-latest',
+        steps: [
+          { name: 'Fetch images via Unsplash API', detail: 'node scripts/seed-demo-store/fetch-images.mjs, using UNSPLASH_ACCESS_KEY' },
+          { name: 'Commit updated images.json', detail: 'Commits and pushes scripts/seed-demo-store/images.json if it changed' },
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'resolve-demo-images',
+    title: 'Resolve Demo Store Images',
+    file: '.github/workflows/resolve-demo-images.yml',
+    trigger: 'workflow_dispatch',
+    description: 'Manual workflow that resolves/validates the demo store\'s image URL list via scripts/seed-demo-store/resolve-images.mjs.',
+    jobs: [
+      {
+        name: 'resolve',
+        runsOn: 'ubuntu-latest',
+        steps: [{ name: 'Resolve image URLs', detail: 'node scripts/seed-demo-store/resolve-images.mjs' }],
+      },
+    ],
+  },
+  {
+    slug: 'inspect-demo-theme',
+    title: 'Inspect Demo Store Theme',
+    file: '.github/workflows/inspect-demo-theme.yml',
+    trigger: 'workflow_dispatch (input: store_domain, default daisys-electronics-9kihd5yl.myshopify.com)',
+    description: 'Manual diagnostic workflow that inspects the demo store\'s current theme structure via scripts/seed-demo-store/inspect-theme.mjs, used while building/debugging the demo recordings.',
+    jobs: [
+      {
+        name: 'inspect',
+        runsOn: 'ubuntu-latest',
+        steps: [{ name: 'Inspect theme structure', detail: 'node scripts/seed-demo-store/inspect-theme.mjs against SHOPIFY_STORE_DOMAIN' }],
+      },
+    ],
+  },
+  {
+    slug: 'record-demos',
+    title: 'Record BusyBuddy Demo Videos',
+    file: '.github/workflows/record-demos.yml',
+    trigger: 'workflow_dispatch (inputs: store_domain, admin_url, test_filter, record)',
+    description:
+      'Manual workflow that runs the Playwright-based demo-recording suite in busybuddy-demos/ against a real storefront + embedded admin session, then commits the resulting videos/traces/screenshots into the repo under a per-run timestamped folder. The "record" input can be unchecked for a fast pass/fail-only run with nothing committed.',
+    jobs: [
+      {
+        name: 'record',
+        runsOn: 'ubuntu-latest',
+        steps: [
+          { name: 'Restore admin session', detail: 'Decodes SHOPIFY_ADMIN_AUTH_STATE into auth.json for the Playwright browser context' },
+          { name: 'Set run folder', detail: 'DEMO_RUN_FOLDER=<UTC timestamp> - keeps each run\'s videos/traces/screenshots in their own subfolder instead of overwriting the last run' },
+          { name: 'Record demo journeys', detail: 'npx playwright test (optionally filtered via test_filter) against store_domain / admin_url' },
+          { name: 'Remove admin session before commit', detail: 'Deletes auth.json (runs even on failure) so the session token is never committed' },
+          { name: 'Commit recordings into the repo', detail: 'Commits busybuddy-demos/videos, /traces, /screenshots if there\'s anything new, and pushes to the triggering branch (runs even on failure, so partial passes aren\'t lost)' },
+          { name: 'Upload diagnostic output on failure', detail: 'Uploads raw Playwright output (screenshots/error-context) as a 3-day artifact - temporary aid for debugging selector failures' },
         ],
       },
     ],

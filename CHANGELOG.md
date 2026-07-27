@@ -2,6 +2,79 @@
 
 All notable changes to BusyBuddy_v2 are documented here.
 
+## 2026-07-23
+
+### Changed
+- Record BusyBuddy demo videos (2026-07-23)
+- Add server-side product search to the standalone editors' picker
+- Add temporary diagnostic for the product-search title matching
+- Fix editor API auth rejecting requests with extra query params
+- Add diagnostic for picker state after a confirmed-working search
+- Fix overlapping product search terms in bundle-discounts/02
+- Fix guessed discount-value placeholder in bundle-discounts specs
+- Fix save-verification across all 11 create/edit specs
+- Add diagnostic for the save flow after waitForSaveAndClose still times out
+- Fix two real bugs blocking new-discount creation in standalone editors
+- Fix strict-mode violation in refreshAndVerifyInList
+- Add diagnostic to list currently available (untagged) products
+- Fix BOGO list-verification to check title instead of product name
+- Replace consumed/nonexistent product names in mix-and-match and volume-discounts specs
+- Fix mix-and-match tier-preset bugs; add diagnostic for Palm Pilot search
+- Fix volume-discounts product picker: rows are divs, not +Add buttons
+- Add diagnostic for volume-discounts save flow
+- Fix Volume Discounts: product fetch never built optionSelections
+- Bump waitForSaveAndClose timeout to 30s
+- Re-add volume-save-probe with a 60s wait
+- Increase pollBundleStatus retry budget for slow Volume Discount provisioning
+- Add per-run recording folders and optional recording toggle to record-demos.yml
+
+## 2026-07-22
+
+### Changed
+- Add BusyBuddy demo video recording pipeline (Phase 3)
+- Fix record-demos.yml to commit partial results and add diagnostics
+- Record BusyBuddy demo videos (2026-07-22)
+- Fix app fixture to not guess the embedded iframe's name
+- Retry on cold-start 502s from the app backend
+- Disambiguate strict-mode violations in sidepane/tier-preset clicks
+- Wait for the subscription fetch before clicking Create/Manage
+- Fix product-picker and tier-selector selectors from real source, not guesses
+- Add journey comments, save-then-verify-in-list checks, and tab pacing
+- Fix standalone editor's /api/* calls having no way to authenticate
+- Add temporary diagnostic for the standalone editor auth fix
+- Fix the real bug: serve-static ran before the editor auth handler
+- Fix product picker response-shape mismatch in standalone editors
+
+## 2026-07-21
+
+### Changed
+- Add demo store seed script scaffolding for Daisy's Electronics
+- Have seed script perform Shopify client_credentials token exchange itself
+- Add GH Actions workflow to run the demo store seed script
+- Add sourced Unsplash image URLs for demo store products
+- Drop unused location name field to avoid extra read_locations scope
+- Fix productSet variant creation and surface per-product failures in CI
+- Publish seeded products to the Online Store sales channel
+- Look up existing product by handle so re-runs update instead of colliding
+- Add media-status diagnostic to seed workflow
+- Add image URL resolver to fix failed media on demo store products
+- Use browser-like headers in image resolver to avoid 401s
+- Fetch demo store images via the official Unsplash Search API
+- Update demo store image URLs via Unsplash API
+- Crop demo store images to a uniform 2048x2048 square
+- Add theme inspector for editing the homepage hero image
+- Add script to set the homepage hero banner image
+- Use themeFilesUpsert GraphQL mutation instead of REST asset PUT
+- Remove hero image update tooling — blocked by Shopify's themeFilesUpsert exemption gate
+
+## 2026-07-20
+
+### Changed
+- Docs site: add Star Rating app, fix CI/CD staleness, add changelog, migrate to busybuddy.dev (#232)
+- Fix remaining OrderMate copy-paste bugs in agent docs (#233)
+- Point dev-pipeline caller at pipeline-orchestrator's reusable workflow (#234)
+- Pass dev-pipeline secrets explicitly instead of secrets: inherit (#236)
+
 ## 2026-07-09
 
 ### Changed

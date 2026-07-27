@@ -174,13 +174,40 @@ export const endpointGroups: EndpointGroup[] = [
     endpoints: [
       { slug: 'create', method: 'POST', path: '/api/referrals', title: 'Create referral partner', description: 'Admin-only: creates a new referral code.', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [], responseExample: '{ }', liveTestable: false },
       { slug: 'list', method: 'GET', path: '/api/referrals', title: 'List all referrals', description: 'Admin-only.', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [], responseExample: '{ }', liveTestable: false },
+      { slug: 'update', method: 'PUT', path: '/api/referrals/:code', title: 'Update referral partner', description: 'Admin-only: updates a referral partner\'s details.', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
+      { slug: 'deactivate', method: 'DELETE', path: '/api/referrals/:code', title: 'Deactivate referral partner', description: 'Admin-only: deactivates a referral partner (soft delete).', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
+      { slug: 'fraud', method: 'GET', path: '/api/referrals/:code/fraud', title: 'Get fraud detection report', description: 'Admin-only: runs fraud-detection heuristics against a partner\'s referral activity.', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
+      { slug: 'query', method: 'GET', path: '/api/referrals/:code/query', title: 'Get MongoDB query for referral', description: 'Admin-only: returns the raw MongoDB query used to attribute installs/orders to this referral code, for debugging attribution issues.', auth: 'admin-api-key', authNote: 'Requires x-api-key: <REFERRAL_ADMIN_API_KEY>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'get-by-code', method: 'GET', path: '/api/referrals/:code', title: 'Get referral by code', description: 'Public lookup by referral code - the code itself is not a secret, it\'s embedded in shareable links.', auth: 'none', authNote: 'Public - the code is not a credential.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'url', method: 'GET', path: '/api/referrals/:code/url', title: 'Generate referral URL', description: 'Returns the shareable install URL for a referral code.', auth: 'none', authNote: 'Public.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'analytics', method: 'GET', path: '/api/referrals/:code/analytics', title: 'Get referral analytics', description: 'Financial/analytics data for a partner - requires the partner\'s own secret token, since the code itself is public.', auth: 'partner-token', authNote: 'Requires x-referral-token: <partner_token>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'mrr', method: 'GET', path: '/api/referrals/:code/mrr', title: 'Get MRR', description: 'Monthly recurring revenue attributed to this partner, computed from real charged plan prices.', auth: 'partner-token', authNote: 'Requires x-referral-token: <partner_token>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'commission', method: 'GET', path: '/api/referrals/:code/commission', title: 'Get commission owed', description: 'Commission owed to this partner.', auth: 'partner-token', authNote: 'Requires x-referral-token: <partner_token>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
+      { slug: 'dashboard', method: 'GET', path: '/api/referrals/:code/dashboard', title: 'Get dashboard metrics', description: 'Combined dashboard metrics for a partner (referrals, installs, revenue at a glance) - requires the partner\'s own token.', auth: 'partner-token', authNote: 'Requires x-referral-token: <partner_token>.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ }', liveTestable: false },
       { slug: 'track', method: 'POST', path: '/api/referrals/:code/track', title: 'Track referral event', description: 'Public: records a click event. Only "click" events are accepted here - install/paid events are recorded server-side by the app itself.', auth: 'none', authNote: 'Public.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '{ "status": "SUCCESS" }', liveTestable: false },
       { slug: 'redirect', method: 'GET', path: '/api/referrals/:code/redirect', title: 'Redirect to App Store', description: 'The actual URL partners share - tracks the click, then redirects to the Shopify App Store listing.', auth: 'none', authNote: 'Public.', params: [{ name: 'code', type: 'string', required: true, in: 'path', description: 'Referral code' }], responseExample: '302 redirect', liveTestable: false },
+    ],
+  },
+  {
+    slug: 'bundle-analytics',
+    title: 'Bundle Analytics',
+    description:
+      'Computes bundle/discount revenue analytics from the shop\'s recent Shopify orders (via the Admin GraphQL API) for the dashboard analytics view. Mounted at /api/analytics - distinct from /api/analytics/google below.',
+    endpoints: [
+      { slug: 'get-analytics', method: 'GET', path: '/api/analytics', title: 'Get bundle revenue analytics', description: 'Fetches the shop\'s recent orders and computes bundle-attributed revenue, per-bundle sales, and a revenue trend, optionally filtered to the last 7/30/90 days.', auth: 'session', authNote: SESSION_NOTE, params: [{ name: 'range', type: 'string', required: false, in: 'query', description: '"7d", "30d", or "90d" - omit for all available orders' }], responseExample: `{
+  "status": true,
+  "data": {
+    "totalBundleRevenue": 0,
+    "ordersWithBundles": 0,
+    "topBundles": [],
+    "totalOrdersAnalyzed": 0,
+    "bundleCount": 0,
+    "currency": "USD",
+    "allBundles": [],
+    "revenueTrend": [],
+    "orderDates": []
+  }
+}`, liveTestable: false },
     ],
   },
   {
