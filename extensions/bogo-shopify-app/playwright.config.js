@@ -21,7 +21,10 @@ const executablePath = fs.existsSync(SANDBOX_CHROMIUM_PATH) ? SANDBOX_CHROMIUM_P
 export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './tests/e2e/.playwright-output',
-  reporter: [['list']],
+  // 'json' output feeds agent-ops's check-flow-coverage.mjs (e2e-pipeline-reusable.yml's
+  // coverage_manifest_path check) - it reads test-results/results.json to verify every
+  // flow in e2e-coverage.yaml has a matching passing test.
+  reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }]],
   timeout: 30_000,
 
   use: {
