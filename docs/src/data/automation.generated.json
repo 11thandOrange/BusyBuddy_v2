@@ -1,0 +1,27 @@
+[
+  {
+    "slug": "busybuddy-dev",
+    "name": "busybuddy-dev",
+    "handler": "dev-ticket-pipeline",
+    "executionKind": "github-actions",
+    "workflow": "dev-pipeline-reusable.yml",
+    "triggers": [
+      "label \"approach-ready\" -> plan",
+      "label \"approved\" -> implement",
+      "comment \"@dev-agent plan\" -> plan",
+      "comment \"@dev-agent implement\" -> implement"
+    ],
+    "params": {
+      "model_profile": "implementation",
+      "project_language": [
+        "typescript"
+      ],
+      "test_command": "npm test -- --coverage",
+      "coverage_type": "cobertura",
+      "desired_coverage": 85,
+      "reviewer": "heyitschloe"
+    },
+    "description": "Handler: dev-ticket-pipeline. Skill: skills/shared/dev/project-conventions.",
+    "_sourceHash": "8bb359144a7f3d191e20a31b59dbd5d1db3442ab"
+  }
+]

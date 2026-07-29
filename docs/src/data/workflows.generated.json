@@ -1,0 +1,323 @@
+[
+  {
+    "slug": "ci",
+    "title": "Install, Test & Build",
+    "file": ".github/workflows/ci.yml",
+    "trigger": "pull_request (branches: [main])",
+    "description": "Extracted from .github/workflows/ci.yml.",
+    "jobs": [
+      {
+        "name": "test-and-build",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Install root dependencies",
+            "detail": "run: npm ci"
+          },
+          {
+            "name": "Install web dependencies",
+            "detail": "run: npm install"
+          },
+          {
+            "name": "Install frontend dependencies",
+            "detail": "run: npm install"
+          },
+          {
+            "name": "Install cart-transformer dependencies",
+            "detail": "run: npm ci"
+          },
+          {
+            "name": "Install bogo-shopify-app dependencies",
+            "detail": "run: npm ci"
+          },
+          {
+            "name": "Install docs dependencies",
+            "detail": "run: npm ci"
+          },
+          {
+            "name": "Run backend tests",
+            "detail": "run: npx vitest run"
+          },
+          {
+            "name": "Run frontend tests",
+            "detail": "run: npm test"
+          },
+          {
+            "name": "Run extension tests",
+            "detail": "run: npm test"
+          },
+          {
+            "name": "Run bogo-shopify-app unit tests",
+            "detail": "run: npm test"
+          },
+          {
+            "name": "Build frontend",
+            "detail": "run: npm run build"
+          },
+          {
+            "name": "Build docs site",
+            "detail": "run: npm run build"
+          },
+          {
+            "name": "Upload test results",
+            "detail": "uses: actions/upload-artifact@v4"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "35aec33a7dc28bdbb6021df43c28f6b90429a935"
+  },
+  {
+    "slug": "deploy",
+    "title": "Deploy to Production",
+    "file": ".github/workflows/deploy.yml",
+    "trigger": "push (branches: [main])  ·  workflow_dispatch",
+    "description": "Extracted from .github/workflows/deploy.yml.",
+    "jobs": [
+      {
+        "name": "deploy",
+        "runsOn": "self-hosted",
+        "steps": [
+          {
+            "name": "Pull latest main and rebuild",
+            "detail": "run: set -euo pipefail"
+          },
+          {
+            "name": "Report deployed commit",
+            "detail": "run: cd /home/bitnami/BusyBuddy_v2"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "a09e7a39b584bb2fd6ec2b1f83d1b50057bf0eb7"
+  },
+  {
+    "slug": "dev-pipeline",
+    "title": "dev-pipeline",
+    "file": ".github/workflows/dev-pipeline.yml",
+    "trigger": "issues (types: [labeled])  ·  issue_comment (types: [created])  ·  repository_dispatch (types: [agent-trigger])",
+    "description": "Reusable-workflow permissions are the intersection of what this caller job\ngrants and what dev-pipeline-reusable.yml's own jobs request — id-token: write\nmust be granted here too, or the callee's own id-token: write (needed by\nanthropics/claude-code-action@v1's OIDC request) has no effect.",
+    "jobs": [
+      {
+        "name": "dispatch",
+        "runsOn": "unknown",
+        "steps": []
+      }
+    ],
+    "_sourceHash": "abd7ce545ede34684048bee1941f917b97987b44"
+  },
+  {
+    "slug": "e2e-pipeline",
+    "title": "e2e-pipeline",
+    "file": ".github/workflows/e2e-pipeline.yml",
+    "trigger": "pull_request (branches: [main])  ·  workflow_dispatch",
+    "description": "Thin caller for the shared e2e pipeline (BusyBuddy_v2#285 Phase 6).\nBrowser-driven e2e coverage of the storefront theme extension\n(extensions/bogo-shopify-app). There is intentionally no equivalent\nsuite for the admin app here: it would need to navigate through Vite's\ndev-server proxy and shopify.ensureInstalledOnShop(), which requires a\nlive backend plus a real installed-shop session - infra this workflow\ndoesn't stand up. (A prior \"smoke\" suite attempted this without that\ninfra and, due to a separate testMatch bug, silently ran 0 tests for\na while before being removed.)\n\nCovers: announcement bar rendering + enable/disable/date-window gating +\nemail capture, inactive tab title/favicon + enable/disable/date-window\ngating.",
+    "jobs": [
+      {
+        "name": "playwright",
+        "runsOn": "unknown",
+        "steps": []
+      }
+    ],
+    "_sourceHash": "5c6b11d876ce148e6a828b767b0b78d5699de3a5"
+  },
+  {
+    "slug": "fetch-demo-images",
+    "title": "Fetch Demo Store Images (Unsplash API)",
+    "file": ".github/workflows/fetch-demo-images.yml",
+    "trigger": "workflow_dispatch",
+    "description": "Extracted from .github/workflows/fetch-demo-images.yml.",
+    "jobs": [
+      {
+        "name": "fetch",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Fetch images via Unsplash API",
+            "detail": "run: node scripts/seed-demo-store/fetch-images.mjs"
+          },
+          {
+            "name": "Commit updated images.json",
+            "detail": "run: git config user.name \"github-actions[bot]\""
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "091418cc51f9d71f1c968a6760af33ae5f1c43b3"
+  },
+  {
+    "slug": "inspect-demo-theme",
+    "title": "Inspect Demo Store Theme",
+    "file": ".github/workflows/inspect-demo-theme.yml",
+    "trigger": "workflow_dispatch",
+    "description": "Extracted from .github/workflows/inspect-demo-theme.yml.",
+    "jobs": [
+      {
+        "name": "inspect",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Inspect theme structure",
+            "detail": "run: node scripts/seed-demo-store/inspect-theme.mjs"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "8898f1b96015b0ed616e5875e766fc552fdcc9dc"
+  },
+  {
+    "slug": "record-demos",
+    "title": "Record BusyBuddy Demo Videos",
+    "file": ".github/workflows/record-demos.yml",
+    "trigger": "workflow_dispatch",
+    "description": "One timestamp for the whole run, so every spec's video/trace/\nscreenshot lands in the same videos/<ts>/, traces/<ts>/,\nscreenshots/<ts>/ subfolder instead of overwriting the last run's.",
+    "jobs": [
+      {
+        "name": "record",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Install dependencies",
+            "detail": "run: npm install"
+          },
+          {
+            "name": "Install Chromium",
+            "detail": "run: npx playwright install --with-deps chromium"
+          },
+          {
+            "name": "Restore admin session",
+            "detail": "run: echo \"$SHOPIFY_ADMIN_AUTH_STATE\" | base64 -d > auth.json"
+          },
+          {
+            "name": "Set run folder",
+            "detail": "run: echo \"DEMO_RUN_FOLDER=$(date -u +%Y-%m-%d_%H-%M-%S)\" >> \"$GITHUB_ENV\""
+          },
+          {
+            "name": "Record demo journeys",
+            "detail": "run: npx playwright test ${{ inputs.test_filter }}"
+          },
+          {
+            "name": "Remove admin session before commit",
+            "detail": "run: rm -f auth.json"
+          },
+          {
+            "name": "Commit recordings into the repo",
+            "detail": "run: git config user.name \"github-actions[bot]\""
+          },
+          {
+            "name": "Upload diagnostic output on failure",
+            "detail": "uses: actions/upload-artifact@v4"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "c5a9b636a3aa59fcbb175b1e5b0bb8e7ab189490"
+  },
+  {
+    "slug": "resolve-demo-images",
+    "title": "Resolve Demo Store Images",
+    "file": ".github/workflows/resolve-demo-images.yml",
+    "trigger": "workflow_dispatch",
+    "description": "Extracted from .github/workflows/resolve-demo-images.yml.",
+    "jobs": [
+      {
+        "name": "resolve",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Resolve image URLs",
+            "detail": "run: node scripts/seed-demo-store/resolve-images.mjs"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "cd46439e5a6ea55d3bb235a53ae03eb2517cc384"
+  },
+  {
+    "slug": "seed-demo-store",
+    "title": "Seed Demo Store",
+    "file": ".github/workflows/seed-demo-store.yml",
+    "trigger": "workflow_dispatch",
+    "description": "Extracted from .github/workflows/seed-demo-store.yml.",
+    "jobs": [
+      {
+        "name": "seed",
+        "runsOn": "ubuntu-latest",
+        "steps": [
+          {
+            "name": "actions/checkout@v4",
+            "detail": "uses: actions/checkout@v4"
+          },
+          {
+            "name": "actions/setup-node@v4",
+            "detail": "uses: actions/setup-node@v4"
+          },
+          {
+            "name": "Run seed script",
+            "detail": "run: node scripts/seed-demo-store/seed.mjs"
+          },
+          {
+            "name": "Check image media status",
+            "detail": "run: node scripts/seed-demo-store/check-images.mjs"
+          }
+        ]
+      }
+    ],
+    "_sourceHash": "25d81eb73408af02c6a4ac847e18f39411b54af6"
+  },
+  {
+    "slug": "wiki-generate",
+    "title": "wiki-generate",
+    "file": ".github/workflows/wiki-generate.yml",
+    "trigger": "push (branches: [main], paths: [wiki.config.yaml, web/backend/routes/**, web/frontend/pages/DashboardHome.jsx, CHANGELOG.md, .github/workflows/*.yml])  ·  workflow_dispatch",
+    "description": "Thin caller for agent-ops's shared wiki generator (issue #286). Real logic\nlives once, centrally, in wiki-generate-reusable.yml - see that file's own\nheader comment for the full flow (checkout target + control repo -> run\nwiki-generate.mjs -> commit generated changes -> build -> deploy to Pages).\n\nPoints at the 11thandOrange/agent-ops fork, not HeyItsChloe/agent-ops\ndirectly: secrets: inherit only propagates within the calling repo's own\norg/enterprise, and this fork exists precisely so 11thandOrange-owned\nrepos can consume agent-ops content - including this reusable workflow -\nfrom a same-org source (see that fork's CONTRIBUTING.md).",
+    "jobs": [
+      {
+        "name": "generate",
+        "runsOn": "unknown",
+        "steps": []
+      }
+    ],
+    "_sourceHash": "ea3750205f7641c1d4df48d855044c9d81664deb"
+  }
+]

@@ -1,0 +1,99 @@
+[
+  {
+    "slug": "announcement-bar",
+    "name": "Announcement Bar",
+    "color": "orange",
+    "icon": "Megaphone",
+    "tagline": "Display alerts and promotions at the top of your store",
+    "plans": [
+      "Free",
+      "Starter",
+      "Advanced"
+    ],
+    "overview": "Display alerts and promotions at the top of your store",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "aceaf263229162dc260551f7ae3f8e147fd5169a"
+  },
+  {
+    "slug": "inactive-tab-message",
+    "name": "Inactive Tab Message",
+    "color": "indigo",
+    "icon": "Eye",
+    "tagline": "Re-engage visitors when they switch browser tabs",
+    "plans": [
+      "Free",
+      "Starter",
+      "Advanced"
+    ],
+    "overview": "Re-engage visitors when they switch browser tabs",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "2b2e83ac35554d2bfe07baab996ee2a8e433dbe4"
+  },
+  {
+    "slug": "bundle-discount",
+    "name": "Bundle Discounts",
+    "color": "blue",
+    "icon": "Package",
+    "tagline": "Create product bundles with automatic discounts",
+    "plans": [
+      "Starter",
+      "Advanced"
+    ],
+    "overview": "Create product bundles with automatic discounts",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "5c76ebfe9f518814b78a1df549522af06d1d3248"
+  },
+  {
+    "slug": "buy-one-get-one",
+    "name": "Buy One Get One",
+    "color": "green",
+    "icon": "Gift",
+    "tagline": "BOGO deals, free gifts, and special offers",
+    "plans": [
+      "Starter",
+      "Advanced"
+    ],
+    "overview": "BOGO deals, free gifts, and special offers",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "af993ab4da0735416bc4502bfd349fbf7f5846b1"
+  },
+  {
+    "slug": "volume-discounts",
+    "name": "Volume Discounts",
+    "color": "pink",
+    "icon": "Layers",
+    "tagline": "Quantity-based pricing tiers and bulk savings",
+    "plans": [
+      "Starter",
+      "Advanced"
+    ],
+    "overview": "Quantity-based pricing tiers and bulk savings",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "9b56dd3dfcfc6c355b9b5f6fe332ab6178e2cef6"
+  },
+  {
+    "slug": "mix-and-match",
+    "name": "Mix & Match",
+    "color": "purple",
+    "icon": "Shuffle",
+    "tagline": "Let customers build their own custom bundles",
+    "plans": [
+      "Advanced"
+    ],
+    "overview": "Let customers build their own custom bundles",
+    "keyFeatures": [],
+    "configuration": [],
+    "storefrontBehavior": "",
+    "_sourceHash": "77688a1419d5f525f8d4927a3f25537bfa0204e4"
+  }
+]
