@@ -32,5 +32,9 @@ jobs:
     with:
       site_dir: docs
       config_path: wiki.config.yaml
-      author_content: true
+      # author_content left off for now - the LiteLLM gateway wiki-author.mjs
+      # calls into is returning intermittent 500/503s (server-side, outside
+      # this repo's control), which was breaking otherwise-reliable runs.
+      # Re-enable once that service is confirmed stable.
+      author_content: false
     secrets: inherit
