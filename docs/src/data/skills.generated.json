@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "slug": "shopify-cart-transformer",
+    "title": "shopify-cart-transformer",
+    "description": "Domain knowledge for extensions/cart-transformer — the Shopify Function that implements bundle-discount pricing at checkout: input schema, run() behavior, Function constraints, and the theme extension half.",
+    "appliesTo": "repo:11thandOrange/BusyBuddy_v2",
+    "category": "general",
+    "path": "skills/shopify-cart-transformer/SKILL.md",
+    "_sourceHash": "a3f4cc6a955b3a1a2594f635df9a0d7f88161ade"
+  },
+  {
+    "slug": "backend-frontend-conventions",
+    "title": "backend-frontend-conventions",
+    "description": "Stack-specific implementation conventions for web/backend (Express + Mongoose) and web/frontend (React + Polaris) in BusyBuddy_v2 — route/controller/model split, shop-scoping, Polaris/Redux patterns, and test setup.",
+    "appliesTo": "repo:11thandOrange/BusyBuddy_v2",
+    "category": "general",
+    "path": "skills/backend-frontend-conventions/SKILL.md",
+    "_sourceHash": "cb47177b5024a97c9e5637d2c9769755e9ae1d15"
+  }
+]

@@ -79,6 +79,15 @@ extractors:
     widgetConfigExport: "widgetConfig"
     planFeaturesExport: "planFeatures"
 
+  # Repo-local skills (SKILL.md with name/description/applies_to frontmatter).
+  # These are the same files the dev-ticket pipeline reads from skills/ in this
+  # repo's checkout; the extractor globs skills/**/SKILL.md and ingests the
+  # frontmatter verbatim (never rewritten).
+  skills:
+    enabled: true
+    roots:
+      - "skills"
+
   # Third parties that live in no package.json - authored here (approach A)
   # and rendered on the Dependencies & Integrations page. Every field is a
   # literal from this config; nothing is derived or LLM-generated. Slugs are

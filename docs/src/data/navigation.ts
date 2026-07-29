@@ -6,6 +6,7 @@ import { endpointGroups } from './endpoints';
 import { apps } from './apps';
 import { workflows } from './workflows';
 import { automation } from './automation';
+import { skills } from './skills';
 import { testSuites } from './tests';
 import { markdownPages } from './pages';
 
@@ -16,6 +17,7 @@ export const topNav: { title: string; href: string }[] = [
   { title: "App List", href: '/apps' },
   { title: "CI/CD", href: '/ci-cd' },
   { title: "Automation", href: '/automation' },
+  { title: "Skills", href: '/skills' },
   { title: "Test Coverage", href: '/tests' },
   { title: "Dependencies & Integrations", href: '/dependencies' },
   { title: "Changelog", href: '/changelog' },
@@ -27,6 +29,7 @@ export const sidebarSections: Record<string, NavSection> = {
   'apps': { title: "App List", href: '/apps', children: apps.map((a) => ({ title: a.name, href: `/apps/${a.slug}` })) },
   'ci-cd': { title: "CI/CD", href: '/ci-cd', children: workflows.map((w) => ({ title: w.title, href: `/ci-cd/${w.slug}` })) },
   'automation': { title: "Automation", href: '/automation', children: automation.map((a) => ({ title: a.name, href: `/automation/${a.slug}` })) },
+  'skills': { title: "Skills", href: '/skills', children: skills.map((s) => ({ title: s.title, href: `/skills/${s.slug}` })) },
   'tests': { title: "Test Coverage", href: '/tests', children: testSuites.map((t) => ({ title: t.name, href: `/tests/${t.slug}` })) },
   'dependencies': { title: "Dependencies & Integrations", href: '/dependencies', children: [] },
   'changelog': { title: "Changelog", href: '/changelog', children: markdownPages.filter((p) => p.navSection === "Changelog").map((p) => ({ title: p.title, href: `/changelog/${p.slug}` })) },
