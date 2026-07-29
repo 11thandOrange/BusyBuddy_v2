@@ -1,0 +1,38 @@
+# wiki-content/authoring.yaml - authoring manifest for scripts/wiki-author.mjs
+# (agent-ops issue #286). Lists features to auto-draft via the LiteLLM
+# "documentation" alias when author_content: true is set on the
+# wiki-generate.yml caller. facts: are the only ground truth passed to the
+# model - real file/route names confirmed in this repo, nothing invented.
+# wiki-author.mjs never overwrites an existing docs/src/content/features/*.md
+# file, so re-runs are safe.
+
+features:
+  - slug: buy-one-get-one
+    title: "Buy One Get One (BOGO)"
+    order: 1
+    facts: |
+      Frontend page: web/frontend/pages/buy-one-get-one.jsx, rendering
+      web/frontend/apps/buy-one-get-one/buyoneGetone.jsx (a discount editor
+      built on the shared web/frontend/components/BundelDiscountList
+      component). Part of BusyBuddy's Shopify discount-app family alongside
+      bundles, bundle-discount, volume-discounts, and mix-and-match (all
+      under web/frontend/pages/).
+
+  - slug: subscription-management
+    title: "Subscription Management"
+    order: 2
+    facts: |
+      Backend routes at web/backend/routes/subscription/index.js:
+      GET /getUserSubscription, POST /subscribe, POST /cancel-subscription,
+      GET /checkBusyBuddyEnabled, GET /getThemeEditorUrl,
+      POST /toggle-app, GET /app-status/:appId?. Handlers live in
+      web/backend/controller/subscription/index.js. Governs whether the app
+      (and its widgets) are active/enabled for a given shop.
+
+  - slug: announcement-bars
+    title: "Announcement Bars"
+    order: 3
+    facts: |
+      Frontend page: web/frontend/pages/announcement-bar.jsx. Backend
+      routes: web/backend/routes/announcementBars/. A storefront widget
+      merchants configure to show promotional banners.
