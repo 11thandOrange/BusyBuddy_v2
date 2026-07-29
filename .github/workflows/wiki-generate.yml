@@ -32,9 +32,9 @@ jobs:
     with:
       site_dir: docs
       config_path: wiki.config.yaml
-      # author_content left off for now - the LiteLLM gateway wiki-author.mjs
-      # calls into is returning intermittent 500/503s (server-side, outside
-      # this repo's control), which was breaking otherwise-reliable runs.
-      # Re-enable once that service is confirmed stable.
-      author_content: false
+      # Automatic prose authoring (wiki-author.mjs) for every page kind. The
+      # step now degrades gracefully: each gateway call is wrapped per-entry, so
+      # an intermittent LiteLLM 500/503 just means "no new summaries this run"
+      # instead of a failed build - it no longer breaks otherwise-reliable runs.
+      author_content: true
     secrets: inherit
