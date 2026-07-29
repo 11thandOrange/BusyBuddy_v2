@@ -1,1 +1,108 @@
-[]
+[
+  {
+    "slug": "buy-one-get-one",
+    "title": "Buy One Get One (BOGO)",
+    "summary": "A Shopify discount app that lets merchants configure buy-X-get-Y promotions from the BusyBuddy dashboard.",
+    "order": 1,
+    "status": "stable",
+    "implements": {
+      "workflows": [
+        "ci",
+        "e2e-pipeline"
+      ],
+      "skills": [],
+      "dependencies": [],
+      "integrations": [
+        "shopify-admin-api",
+        "shopify-app-proxy"
+      ]
+    },
+    "runWith": [
+      "Open the BusyBuddy dashboard and choose the Buy One Get One app.",
+      "Create a discount in the editor, set the buy quantity and the reward, then save to publish it to your store.",
+      "Enable the app for the shop from the dashboard's app toggle before the storefront applies it."
+    ],
+    "tradeoffs": [
+      "BOGO is one member of BusyBuddy's discount-app family (bundles, bundle-discount, volume-discounts, mix-and-match); they share the BundelDiscountList editor component rather than each owning bespoke UI, which keeps them consistent but couples their editing surface.",
+      "Discount logic runs through Shopify's discount/cart machinery, so behavior is bounded by what the Shopify platform exposes."
+    ],
+    "notes": [
+      {
+        "kind": "note",
+        "body": "BOGO sits inside BusyBuddy's plan-gated app-toggle system: the promotion only affects the storefront while the app is enabled for the shop."
+      }
+    ],
+    "contentFile": "features/buy-one-get-one.md",
+    "_sourceHash": "1b5abf27052987b14ed1f6f20c77cecec842c2ce"
+  },
+  {
+    "slug": "subscription-management",
+    "title": "Subscription Management",
+    "summary": "Backend routes that govern whether BusyBuddy and its widgets are active and enabled for a given shop.",
+    "order": 2,
+    "status": "stable",
+    "implements": {
+      "workflows": [
+        "ci"
+      ],
+      "skills": [],
+      "dependencies": [],
+      "integrations": [
+        "shopify-admin-api",
+        "shopify-app-proxy"
+      ]
+    },
+    "runWith": [
+      "Merchants pick a plan from the dashboard; the frontend calls POST /api/subscription/subscribe.",
+      "The app checks GET /api/subscription/checkBusyBuddyEnabled before applying storefront behavior.",
+      "Individual apps are switched on or off per shop via POST /api/subscription/toggle-app and read back via GET /api/subscription/app-status/:appId?."
+    ],
+    "tradeoffs": [
+      "Subscription state is the single gate for the whole suite: if the app is not enabled for a shop, its widgets do not apply, so this route family is a dependency of every other feature.",
+      "Plan tiers are enforced server-side in the controller rather than in the client, so the dashboard reflects — but does not decide — entitlement."
+    ],
+    "notes": [
+      {
+        "kind": "important",
+        "body": "This route family is the source of truth for whether the app is active for a shop. Most other BusyBuddy features check it before doing anything on the storefront."
+      }
+    ],
+    "contentFile": "features/subscription-management.md",
+    "_sourceHash": "4a462d2c2c0566ede5c7af0606e912d9480af8df"
+  },
+  {
+    "slug": "announcement-bars",
+    "title": "Announcement Bars",
+    "summary": "A storefront widget merchants configure to show promotional banners, with full CRUD, an active-bar lookup, and click/impression analytics.",
+    "order": 3,
+    "status": "stable",
+    "implements": {
+      "workflows": [
+        "ci"
+      ],
+      "skills": [],
+      "dependencies": [],
+      "integrations": [
+        "shopify-admin-api",
+        "shopify-app-proxy"
+      ]
+    },
+    "runWith": [
+      "Create and edit bars from the Announcement Bar page in the BusyBuddy dashboard.",
+      "The storefront reads the current bar via GET /api/announcement-bars/active.",
+      "Impressions and clicks are recorded via POST /api/announcement-bars/:id/track and surfaced through GET /api/announcement-bars/analytics."
+    ],
+    "tradeoffs": [
+      "Analytics are tracked per-bar through a dedicated track endpoint rather than a general analytics pipeline, keeping the feature self-contained but separate from the app-wide analytics routes.",
+      "Like the rest of the suite, the bar only renders on the storefront while BusyBuddy is enabled for the shop (see Subscription Management)."
+    ],
+    "notes": [
+      {
+        "kind": "tip",
+        "body": "Use the /active endpoint to fetch only the bar that should currently display, rather than filtering the full list client-side."
+      }
+    ],
+    "contentFile": "features/announcement-bars.md",
+    "_sourceHash": "4afb7f3a03468ca28f2fb29db381edf03b128140"
+  }
+]

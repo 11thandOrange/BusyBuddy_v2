@@ -1,1 +1,77 @@
-[]
+[
+  {
+    "slug": "shopify-admin-api",
+    "name": "Shopify Admin API",
+    "kind": "api",
+    "summary": "The Shopify platform the app is built on - discounts, products, subscriptions, and theme integration all go through the Admin API.",
+    "auth": "OAuth session / admin API access token",
+    "url": "https://shopify.dev/docs/api/admin",
+    "notes": [
+      {
+        "kind": "note",
+        "body": "Session-authenticated backend routes under /api resolve the shop from the Shopify session."
+      }
+    ],
+    "_sourceHash": "b54cdf5decbd5e160d05ef6889a288af4a1f8549"
+  },
+  {
+    "slug": "shopify-app-proxy",
+    "name": "Shopify App Proxy",
+    "kind": "api",
+    "summary": "Serves BusyBuddy's public storefront endpoints (the frontStore router) so the theme can call the app without a merchant session.",
+    "auth": "App-proxy signature (no merchant session)",
+    "url": "https://shopify.dev/docs/apps/build/online-store/display-dynamic-store-data",
+    "notes": [
+      {
+        "kind": "tip",
+        "body": "Only the frontStore routes are reachable this way; everything else requires an admin session."
+      }
+    ],
+    "_sourceHash": "4f601a070392ce277ea5d1d35ff05e0e757faaa8"
+  },
+  {
+    "slug": "litellm-gateway",
+    "name": "LiteLLM Gateway",
+    "kind": "service",
+    "summary": "The documentation-authoring alias the wiki generator's optional wiki-author step calls to draft feature prose. Not on the storefront request path.",
+    "auth": "Virtual key (LITELLM_VIRTUAL_KEY)",
+    "url": "https://docs.litellm.ai/",
+    "notes": [
+      {
+        "kind": "warning",
+        "body": "author_content is currently off in the wiki-generate caller because this gateway was returning intermittent 500/503s; feature prose is committed directly instead."
+      }
+    ],
+    "_sourceHash": "2640d8404904109cd7305e78ca1bccf96d86969a"
+  },
+  {
+    "slug": "openhands-cloud",
+    "name": "OpenHands Cloud",
+    "kind": "service",
+    "summary": "Autonomous-dev and complex-logic automations that pick up GitHub issues for this repo and open pull requests. Driven from the Postman collection.",
+    "auth": "API key (OPENHANDS_API_KEY)",
+    "url": "https://app.all-hands.dev/",
+    "notes": [
+      {
+        "kind": "note",
+        "body": "See postman/README.md for the trigger -> poll -> send-issue-context workflow."
+      }
+    ],
+    "_sourceHash": "963d734e4c1d3460bd3a62f4c195999e24496a8b"
+  },
+  {
+    "slug": "pipeline-orchestrator",
+    "name": "Pipeline Orchestrator (agent-ops)",
+    "kind": "service",
+    "summary": "The agent-ops control repo whose pipelines.yaml registers this repo's automation entries and whose shared workflow generates this docs site.",
+    "auth": "GitHub App / repo secrets (secrets: inherit)",
+    "url": "https://github.com/11thandOrange/agent-ops",
+    "notes": [
+      {
+        "kind": "note",
+        "body": "The Automation page is generated from this repo's entries in agent-ops's orchestrator/src/registry/pipelines.yaml."
+      }
+    ],
+    "_sourceHash": "3aed2831e56833b8f8f71ffc53125630224ea79c"
+  }
+]
