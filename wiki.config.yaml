@@ -1,0 +1,84 @@
+# wiki.config.yaml - per-repo configuration for the shared wiki generator
+# (agent-ops issue #286). Read by agent-ops's scripts/wiki-generate.mjs via
+# the thin caller at .github/workflows/wiki-generate.yml.
+#
+# Every path/glob below was verified against this repo's real tree before
+# being written (not copied blind from agent-ops's
+# templates/wiki-site/wiki.config.example.yaml) - see that file's own
+# header comment for the general field reference.
+
+site:
+  title: "BusyBuddy Docs"
+  description: "Public documentation and API reference for BusyBuddy."
+  theme:
+    accent: "#5169DD"
+    accentHover: "#4257c4"
+    accentMuted: "rgba(81, 105, 221, 0.1)"
+  favicon: "/favicon.svg"
+  githubUrl: "https://github.com/11thandOrange/BusyBuddy_v2"
+  # Matches docs/CNAME's existing value - this domain is already live.
+  customDomain: "busybuddy.dev"
+
+# No wiki-backend instance is deployed yet (templates/wiki-backend), so the
+# frontend's Sandbox ("Try it") panel has nothing to proxy through until
+# one is stood up. Left as placeholders rather than guessed real values -
+# the rest of the site (API reference, workflows, tests, automation status)
+# doesn't depend on this.
+backend:
+  proxyBaseUrl: "https://busybuddy-wiki-backend.example.com"
+  targetApiBaseUrl: "https://your-store.myshopify.com"
+
+extractors:
+  endpointsExpress:
+    enabled: true
+    routesGlob:
+      - "web/backend/routes/**/index.js"
+    mountFile: "web/backend/routes/index.js"
+    controllerDir: "web/backend/controller"
+    publicRouteFiles:
+      - "web/backend/routes/frontStore/index.js"
+    apiPrefix: "/api"
+
+  endpointsKotlin:
+    enabled: false
+
+  workflows:
+    enabled: true
+    glob:
+      - ".github/workflows/*.yml"
+    exclude:
+      - "openhands.yml.legacy"
+
+  automation:
+    enabled: true
+    pipelinesYamlPath: "orchestrator/src/registry/pipelines.yaml"
+    repoMatch: "11thandOrange/BusyBuddy_v2"
+
+  tests:
+    enabled: true
+    suites:
+      - name: "Storefront E2E"
+        framework: playwright
+        glob: "extensions/bogo-shopify-app/tests/e2e/**/*.spec.js"
+      - name: "Backend unit/integration"
+        framework: vitest
+        glob: "web/backend/**/*.test.js"
+
+  # docs/planning/*.md and ROADMAP.md (agent-ops's own template example)
+  # don't exist in this repo - CHANGELOG.md does and is genuinely
+  # public-facing content.
+  markdown:
+    enabled: true
+    sources:
+      - glob: "CHANGELOG.md"
+        navSection: "Changelog"
+
+  appList:
+    enabled: true
+    sourceFile: "web/frontend/pages/DashboardHome.jsx"
+    widgetConfigExport: "widgetConfig"
+    planFeaturesExport: "planFeatures"
+
+output:
+  dataDir: "src/data"
+  contentDir: "src/content"
