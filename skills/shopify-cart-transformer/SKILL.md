@@ -1,3 +1,12 @@
+---
+name: shopify-cart-transformer
+description: >-
+  Domain knowledge for extensions/cart-transformer — the Shopify Function that
+  implements bundle-discount pricing at checkout: input schema, run() behavior,
+  Function constraints, and the theme extension half.
+applies_to: "repo:11thandOrange/BusyBuddy_v2"
+---
+
 # BusyBuddy_v2 Cart Transformer Extension
 
 Domain knowledge for `extensions/cart-transformer` — the Shopify Function that

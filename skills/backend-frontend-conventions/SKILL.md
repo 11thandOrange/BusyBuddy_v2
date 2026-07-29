@@ -1,3 +1,12 @@
+---
+name: backend-frontend-conventions
+description: >-
+  Stack-specific implementation conventions for web/backend (Express + Mongoose)
+  and web/frontend (React + Polaris) in BusyBuddy_v2 — route/controller/model
+  split, shop-scoping, Polaris/Redux patterns, and test setup.
+applies_to: "repo:11thandOrange/BusyBuddy_v2"
+---
+
 # BusyBuddy_v2 Backend/Frontend Conventions
 
 Stack-specific implementation conventions for `web/backend` (Express +
