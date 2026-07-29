@@ -79,6 +79,59 @@ extractors:
     widgetConfigExport: "widgetConfig"
     planFeaturesExport: "planFeatures"
 
+  # Third parties that live in no package.json - authored here (approach A)
+  # and rendered on the Dependencies & Integrations page. Every field is a
+  # literal from this config; nothing is derived or LLM-generated. Slugs are
+  # referenced by feature docs' implements.integrations.
+  integrations:
+    enabled: true
+    items:
+      - slug: shopify-admin-api
+        name: "Shopify Admin API"
+        kind: api
+        summary: "The Shopify platform the app is built on - discounts, products, subscriptions, and theme integration all go through the Admin API."
+        auth: "OAuth session / admin API access token"
+        url: "https://shopify.dev/docs/api/admin"
+        notes:
+          - kind: note
+            body: "Session-authenticated backend routes under /api resolve the shop from the Shopify session."
+      - slug: shopify-app-proxy
+        name: "Shopify App Proxy"
+        kind: api
+        summary: "Serves BusyBuddy's public storefront endpoints (the frontStore router) so the theme can call the app without a merchant session."
+        auth: "App-proxy signature (no merchant session)"
+        url: "https://shopify.dev/docs/apps/build/online-store/display-dynamic-store-data"
+        notes:
+          - kind: tip
+            body: "Only the frontStore routes are reachable this way; everything else requires an admin session."
+      - slug: litellm-gateway
+        name: "LiteLLM Gateway"
+        kind: service
+        summary: "The documentation-authoring alias the wiki generator's optional wiki-author step calls to draft feature prose. Not on the storefront request path."
+        auth: "Virtual key (LITELLM_VIRTUAL_KEY)"
+        url: "https://docs.litellm.ai/"
+        notes:
+          - kind: warning
+            body: "author_content is currently off in the wiki-generate caller because this gateway was returning intermittent 500/503s; feature prose is committed directly instead."
+      - slug: openhands-cloud
+        name: "OpenHands Cloud"
+        kind: service
+        summary: "Autonomous-dev and complex-logic automations that pick up GitHub issues for this repo and open pull requests. Driven from the Postman collection."
+        auth: "API key (OPENHANDS_API_KEY)"
+        url: "https://app.all-hands.dev/"
+        notes:
+          - kind: note
+            body: "See postman/README.md for the trigger -> poll -> send-issue-context workflow."
+      - slug: pipeline-orchestrator
+        name: "Pipeline Orchestrator (agent-ops)"
+        kind: service
+        summary: "The agent-ops control repo whose pipelines.yaml registers this repo's automation entries and whose shared workflow generates this docs site."
+        auth: "GitHub App / repo secrets (secrets: inherit)"
+        url: "https://github.com/11thandOrange/agent-ops"
+        notes:
+          - kind: note
+            body: "The Automation page is generated from this repo's entries in agent-ops's orchestrator/src/registry/pipelines.yaml."
+
   # Authored (not derived) - drafted via wiki-author.mjs from
   # wiki-content/authoring.yaml when author_content: true is set on the
   # caller, then read verbatim from docs/src/content/features/*.md here.
