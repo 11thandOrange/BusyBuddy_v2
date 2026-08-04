@@ -16,14 +16,13 @@
     "slug": "inactive-tab-message",
     "name": "Inactive Tab Message",
     "color": "#5169DD",
-    "icon": "AlarmClockOff",
     "tagline": "",
     "plans": [],
     "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "c8b4cbcb38d9833f5612798f4c0840da52123088"
+    "_sourceHash": "5ec5f60fa54a04f36bc107d449b26931fe83c849"
   },
   {
     "slug": "bundle-discount",
