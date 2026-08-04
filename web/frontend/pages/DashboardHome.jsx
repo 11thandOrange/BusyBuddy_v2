@@ -9,7 +9,7 @@ import {
   Plus,
   Settings,
   DollarSign,
-  Eye,
+  AlarmClockOff,
   ExternalLink,
   Zap,
   TrendingUp,
@@ -84,7 +84,7 @@ const widgetConfig = [
     appId: "inactive_tab",
     title: "Inactive Tab Message",
     subtitle: "Re-engage tab-switchers",
-    icon: Eye,
+    icon: AlarmClockOff,
     iconBg: "#f4f4f2",
     accent: "#6b7280",
     settingsRoute: "/inactive-tab-message?tab=settings",
@@ -177,7 +177,7 @@ const activityIconMap = {
   volume: Layers,
   "mix-match": Shuffle,
   announcement: Megaphone,
-  "inactive-tab": Eye,
+  "inactive-tab": AlarmClockOff,
 };
 
 export default function DashboardHome() {
@@ -425,7 +425,6 @@ export default function DashboardHome() {
             <div className="app-header-brand">
               <span className="logo">🐝</span>
               <span className="name">BusyBuddy</span>
-              <span className="app-tag">Home</span>
             </div>
             <div className="app-header-actions">
               <div className="pill-nav">

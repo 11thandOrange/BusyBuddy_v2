@@ -131,12 +131,12 @@ describe('DashboardHome', () => {
   });
 
   describe('Header', () => {
-    it('should render the app brand and a Home tag', async () => {
+    it('should render the app brand without a Home tag', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
         expect(screen.getByText('BusyBuddy')).toBeInTheDocument();
-        expect(screen.getByText('Home')).toBeInTheDocument();
+        expect(screen.queryByText('Home')).not.toBeInTheDocument();
       });
     });
 
