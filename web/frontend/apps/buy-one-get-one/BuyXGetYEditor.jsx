@@ -775,7 +775,7 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Emoji in Title"
               checked={showEmoji}
-              onChange={(e) => setShowEmoji(e.target.checked)}
+              onChange={setShowEmoji}
             />
           </div>
         );
@@ -786,7 +786,7 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Countdown Timer"
               checked={showCountdown}
-              onChange={(e) => setShowCountdown(e.target.checked)}
+              onChange={setShowCountdown}
             />
             {showCountdown && (
               <>
@@ -846,7 +846,7 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Skip Button"
               checked={showSkipButton}
-              onChange={(e) => setShowSkipButton(e.target.checked)}
+              onChange={setShowSkipButton}
             />
             {showSkipButton && (
               <>

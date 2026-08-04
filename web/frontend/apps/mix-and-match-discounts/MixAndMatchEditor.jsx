@@ -669,14 +669,14 @@ export const MixAndMatchEditor = () => {
       case 'emoji-icons':
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji display">
-            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={(e) => setShowEmoji(e.target.checked)} />
+            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={setShowEmoji} />
           </EditorConfigPanel>
         );
 
       case 'countdown-timer':
         return (
           <EditorConfigPanel title="Countdown Timer" description="Urgency timer settings">
-            <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={(e) => setShowCountdown(e.target.checked)} />
+            <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
             {showCountdown && (
               <>
                 <ConfigFormGroup label="Timer Background">
@@ -708,7 +708,7 @@ export const MixAndMatchEditor = () => {
       case 'skip-offer-button':
         return (
           <EditorConfigPanel title="Skip Offer Button" description="Optional button to dismiss the offer">
-            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={(e) => setShowSkipButton(e.target.checked)} />
+            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={setShowSkipButton} />
             {showSkipButton && (
               <>
                 <ConfigFormGroup label="Button Text">
