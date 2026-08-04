@@ -10,7 +10,6 @@ import {
   Settings,
   DollarSign,
   Eye,
-  MousePointer,
   ExternalLink,
   Zap,
   TrendingUp,
@@ -20,36 +19,30 @@ import {
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import "./DashboardHome.css";
 
-// Widget configuration with routes, colors, and the subscriptionConfig app id
-// used to read real plan-access + enabled/paused state from the subscription API.
+// Widget configuration: routes, plus the visual identity (icon/colors) and
+// short subtitle from the "Mockup A: Performance-first dashboard" reference,
+// and the subscriptionConfig app id used to read real plan-access/enabled
+// state from the subscription API. Order matches the reference layout.
 const widgetConfig = [
   {
     id: "announcement-bar",
     appId: "announcement_bar",
     title: "Announcement Bar",
-    description: "Display alerts and promotions at the top of your store",
+    subtitle: "Top-of-store alerts & promos",
     icon: Megaphone,
-    color: "orange",
+    iconBg: "#eef0ff",
+    accent: "#4f46e5",
     editorRoute: "/announcement-bar/editor",
     manageRoute: "/announcement-bar",
-  },
-  {
-    id: "inactive-tab-message",
-    appId: "inactive_tab",
-    title: "Inactive Tab Message",
-    description: "Re-engage visitors when they switch browser tabs",
-    icon: Eye,
-    color: "indigo",
-    settingsRoute: "/inactive-tab-message?tab=settings",
-    manageRoute: "/inactive-tab-message",
   },
   {
     id: "bundle-discount",
     appId: "bundle_discount",
     title: "Bundle Discounts",
-    description: "Create product bundles with automatic discounts",
+    subtitle: "Product bundles · auto discounts",
     icon: Package,
-    color: "blue",
+    iconBg: "#eaf3ff",
+    accent: "#0b76ef",
     editorRoute: "/bundle-discount/editor",
     manageRoute: "/bundle-discount",
   },
@@ -57,9 +50,10 @@ const widgetConfig = [
     id: "buy-one-get-one",
     appId: "buy_one_get_one",
     title: "Buy One Get One",
-    description: "BOGO deals, free gifts, and special offers",
+    subtitle: "BOGO deals & free gifts",
     icon: Gift,
-    color: "green",
+    iconBg: "#e8fbee",
+    accent: "#0f7a3b",
     editorRoute: "/buy-one-get-one/editor",
     manageRoute: "/buy-one-get-one",
   },
@@ -67,9 +61,10 @@ const widgetConfig = [
     id: "volume-discounts",
     appId: "volume_discounts",
     title: "Volume Discounts",
-    description: "Quantity-based pricing tiers and bulk savings",
+    subtitle: "Quantity tiers & bulk savings",
     icon: Layers,
-    color: "pink",
+    iconBg: "#fdecec",
+    accent: "#d63535",
     editorRoute: "/volume-discounts/editor",
     manageRoute: "/volume-discounts",
   },
@@ -77,11 +72,23 @@ const widgetConfig = [
     id: "mix-and-match",
     appId: "mix_match",
     title: "Mix & Match",
-    description: "Let customers build their own custom bundles",
+    subtitle: "Customer-built custom bundles",
     icon: Shuffle,
-    color: "purple",
+    iconBg: "#f2e8ff",
+    accent: "#7c3aed",
     editorRoute: "/mix-and-match/editor",
     manageRoute: "/mix-and-match",
+  },
+  {
+    id: "inactive-tab-message",
+    appId: "inactive_tab",
+    title: "Inactive Tab Message",
+    subtitle: "Re-engage tab-switchers",
+    icon: Eye,
+    iconBg: "#f4f4f2",
+    accent: "#6b7280",
+    settingsRoute: "/inactive-tab-message?tab=settings",
+    manageRoute: "/inactive-tab-message",
   },
 ];
 
@@ -89,25 +96,36 @@ const widgetConfig = [
 // as a safe default while the summary request is in flight.
 const IMPRESSION_TRACKED_WIDGET_IDS = ["announcement-bar"];
 
+// Maps ActivityLog widget slugs (returned by /api/activity/recent) to widget
+// ids, so "Recently edited" can rank widgets by their real last-touched event
+// instead of a fabricated timestamp.
+const ACTIVITY_SLUG_TO_WIDGET_ID = {
+  bundle: "bundle-discount",
+  bogo: "buy-one-get-one",
+  volume: "volume-discounts",
+  "mix-match": "mix-and-match",
+  announcement: "announcement-bar",
+  "inactive-tab": "inactive-tab-message",
+};
+
 const RANGE_OPTIONS = [
-  { id: "7d", label: "7D" },
-  { id: "30d", label: "30D" },
-  { id: "90d", label: "90D" },
+  { id: "7d", label: "7d" },
+  { id: "30d", label: "30d" },
+  { id: "90d", label: "90d" },
 ];
+
+const SORT_OPTIONS = [
+  { id: "revenue", label: "Revenue ↓" },
+  { id: "impressions", label: "Impressions" },
+  { id: "recent", label: "Recently edited" },
+];
+
+const ACTIVITY_REFRESH_MS = 30000;
+const ACTIVITY_VISIBLE_COUNT = 5;
 
 const EMPTY_WIDGET_METRICS = {
   revenue: { amount: 0, purchaseCount: 0, hasData: false, trend: [] },
   impressions: { tracked: false, hasData: false, views: null, clicks: null, ctr: null },
-};
-
-// Icon mapping for activity feed metric types
-const iconMap = {
-  bundle: Package,
-  announcement: Megaphone,
-  revenue: DollarSign,
-  views: Eye,
-  clicks: MousePointer,
-  default: Package,
 };
 
 function formatMoney(amount) {
@@ -121,7 +139,7 @@ function formatCompactNumber(n) {
   return `${value}`;
 }
 
-function Sparkline({ data, color = "#1c1c1e" }) {
+function Sparkline({ data, color }) {
   if (!data || data.length === 0) return null;
   const gradientId = `spark-${color.replace("#", "")}`;
   return (
@@ -130,7 +148,7 @@ function Sparkline({ data, color = "#1c1c1e" }) {
         <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+              <stop offset="0%" stopColor={color} stopOpacity={0.18} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
@@ -160,6 +178,15 @@ function RevenueChangeBadge({ change }) {
   );
 }
 
+const activityIconMap = {
+  bundle: Package,
+  bogo: Gift,
+  volume: Layers,
+  "mix-match": Shuffle,
+  announcement: Megaphone,
+  "inactive-tab": Eye,
+};
+
 export default function DashboardHome() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -172,8 +199,8 @@ export default function DashboardHome() {
   });
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
-  const [stats, setStats] = useState({ activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
   const [activityLoading, setActivityLoading] = useState(true);
+  const [activityExpanded, setActivityExpanded] = useState(false);
   const [extensionEnabled, setExtensionEnabled] = useState(null); // null = loading
   const [showExtensionBanner, setShowExtensionBanner] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
@@ -182,18 +209,25 @@ export default function DashboardHome() {
   const [range, setRange] = useState("7d");
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("revenue");
 
   useEffect(() => {
     fetchUserSubscription();
     fetchActivityData();
     checkExtensionStatus();
 
+    // Live activity rail: refresh periodically so "Streaming" is a real claim.
+    const activityInterval = setInterval(fetchActivityData, ACTIVITY_REFRESH_MS);
+
     // Fallback: Force loading to false after 8 seconds if still loading
     const fallbackTimeout = setTimeout(() => {
       setLoading((prev) => (prev ? false : prev));
     }, 8000);
 
-    return () => clearTimeout(fallbackTimeout);
+    return () => {
+      clearInterval(activityInterval);
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -271,7 +305,6 @@ export default function DashboardHome() {
         const data = await response.json();
         if (data.status === "SUCCESS") {
           setActivities(data.data.activities || []);
-          setStats(data.data.stats || { activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 });
         }
       }
     } catch (err) {
@@ -387,161 +420,215 @@ export default function DashboardHome() {
     };
   };
 
+  // "Recently edited" ranks widgets by their real most-recent activity event
+  // (activities already arrive newest-first from the API) rather than a
+  // fabricated edit timestamp.
+  const recentActivityRank = () => {
+    const rank = {};
+    activities.forEach((item, index) => {
+      const widgetId = ACTIVITY_SLUG_TO_WIDGET_ID[item.widget];
+      if (widgetId && !(widgetId in rank)) rank[widgetId] = index;
+    });
+    return rank;
+  };
+
+  const getSortedWidgets = () => {
+    const rank = recentActivityRank();
+    return widgetConfig
+      .map((widget) => {
+        const metrics = widgetMetrics(widget.id);
+        let value;
+        if (sortBy === "impressions") {
+          value = metrics.impressions.tracked ? metrics.impressions.views ?? 0 : -1;
+        } else if (sortBy === "recent") {
+          value = rank[widget.id] === undefined ? -Infinity : -rank[widget.id];
+        } else {
+          value = metrics.revenue.amount || 0;
+        }
+        return { widget, metrics, value };
+      })
+      .sort((a, b) => b.value - a.value);
+  };
+
   const rangeLabel = RANGE_OPTIONS.find((r) => r.id === range)?.label || range;
   const trackedWidgetNames = (summary?.impressions?.trackedWidgetIds || IMPRESSION_TRACKED_WIDGET_IDS)
     .map((id) => widgetConfig.find((w) => w.id === id)?.title || id)
     .join(", ");
 
+  const visibleActivities = activityExpanded ? activities : activities.slice(0, ACTIVITY_VISIBLE_COUNT);
+
   return (
     <div className="dashboard-home">
       <div className="dashboard-inner">
-        {/* Range selector */}
-        <div className="range-bar">
-          <div className="pill-nav">
-            {RANGE_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                className={range === opt.id ? "active" : ""}
-                onClick={() => setRange(opt.id)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Hero metrics band */}
-        <div className="hero-band">
-          <div className="hero-tile">
-            <div className="hero-label">Attributed revenue &middot; {rangeLabel}</div>
-            {summaryLoading ? (
-              <div className="hero-loading">Loading&hellip;</div>
-            ) : summary?.revenue?.hasData ? (
-              <>
-                <div className="hero-value-row">
-                  <span className="hero-value">{formatMoney(summary.revenue.amount)}</span>
-                  <RevenueChangeBadge change={summary.revenue.change} />
-                </div>
-                <Sparkline data={summary.revenue.trend} color="#1c1c1e" />
-              </>
-            ) : (
-              <div className="hero-empty">No attributed revenue recorded in this period yet.</div>
-            )}
-          </div>
-
-          <div className="hero-tile">
-            <div className="hero-label">Avg. attributed order value</div>
-            {summaryLoading ? (
-              <div className="hero-loading">Loading&hellip;</div>
-            ) : summary?.avgOrderValue != null ? (
-              <>
-                <div className="hero-value">{formatMoney(summary.avgOrderValue)}</div>
-                <div className="hero-sub">
-                  {summary.purchaseCount} attributed order{summary.purchaseCount === 1 ? "" : "s"}
-                </div>
-              </>
-            ) : (
-              <div className="hero-empty">No attributed purchases in this period yet.</div>
-            )}
-          </div>
-
-          <div className="hero-tile">
-            <div className="hero-label">Impressions</div>
-            {summaryLoading ? (
-              <div className="hero-loading">Loading&hellip;</div>
-            ) : summary?.impressions?.hasData ? (
-              <>
-                <div className="hero-value">{summary.impressions.views.toLocaleString()}</div>
-                <div className="hero-sub">
-                  CTR {summary.impressions.ctr.toFixed(1)}% &middot; tracked from {trackedWidgetNames}
-                </div>
-              </>
-            ) : (
-              <div className="hero-empty">
-                No impressions tracked yet{trackedWidgetNames ? ` (tracked from ${trackedWidgetNames})` : ""}.
+        <div className="app-frame">
+          {/* Header */}
+          <div className="app-header">
+            <div className="app-header-brand">
+              <span className="logo">🐝</span>
+              <span className="name">BusyBuddy</span>
+              <span className="app-tag">Home</span>
+            </div>
+            <div className="app-header-actions">
+              <div className="pill-nav">
+                {RANGE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    className={range === opt.id ? "active" : ""}
+                    onClick={() => setRange(opt.id)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
               </div>
-            )}
+              <a className="help-link" href="https://help.shopify.com" target="_blank" rel="noopener noreferrer">
+                Help
+              </a>
+            </div>
           </div>
 
-          <div className="hero-tile">
-            <div className="hero-label">Active widgets</div>
-            {loading ? (
-              <div className="hero-loading">Loading&hellip;</div>
-            ) : (
-              <>
-                <div className="hero-value">
-                  {subscription.enabledAppsCount}
-                  <span className="hero-value-sub"> / {subscription.maxAppsAllowed}</span>
+          {/* Hero metrics band */}
+          <div className="hero-band">
+            <div className="hero-tile">
+              <div className="hero-label">Attributed revenue &middot; {rangeLabel}</div>
+              {summaryLoading ? (
+                <div className="hero-loading">Loading&hellip;</div>
+              ) : summary?.revenue?.hasData ? (
+                <>
+                  <div className="hero-value-row">
+                    <span className="hero-value">{formatMoney(summary.revenue.amount)}</span>
+                    <RevenueChangeBadge change={summary.revenue.change} />
+                  </div>
+                  <Sparkline data={summary.revenue.trend} color="#111111" />
+                </>
+              ) : (
+                <div className="hero-empty">No attributed revenue recorded in this period yet.</div>
+              )}
+            </div>
+
+            <div className="hero-tile">
+              <div className="hero-label">Avg. attributed order value</div>
+              {summaryLoading ? (
+                <div className="hero-loading">Loading&hellip;</div>
+              ) : summary?.avgOrderValue != null ? (
+                <>
+                  <div className="hero-value">{formatMoney(summary.avgOrderValue)}</div>
+                  <div className="hero-sub">
+                    {summary.purchaseCount} attributed order{summary.purchaseCount === 1 ? "" : "s"}
+                  </div>
+                </>
+              ) : (
+                <div className="hero-empty">No attributed purchases in this period yet.</div>
+              )}
+            </div>
+
+            <div className="hero-tile">
+              <div className="hero-label">Impressions</div>
+              {summaryLoading ? (
+                <div className="hero-loading">Loading&hellip;</div>
+              ) : summary?.impressions?.hasData ? (
+                <>
+                  <div className="hero-value">{summary.impressions.views.toLocaleString()}</div>
+                  <div className="hero-sub">
+                    CTR {summary.impressions.ctr.toFixed(1)}% &middot; tracked from {trackedWidgetNames}
+                  </div>
+                </>
+              ) : (
+                <div className="hero-empty">
+                  No impressions tracked yet{trackedWidgetNames ? ` (tracked from ${trackedWidgetNames})` : ""}.
                 </div>
-                <div className="hero-sub">On the {subscription.planName} plan</div>
-              </>
-            )}
-          </div>
-        </div>
+              )}
+            </div>
 
-        <div className="dashboard-layout">
-          {/* Left Column - Widgets Grid */}
-          <div className="widgets-column">
-            <div className="widgets-container">
+            <div className="hero-tile">
+              <div className="hero-label">Active widgets</div>
+              {loading ? (
+                <div className="hero-loading">Loading&hellip;</div>
+              ) : (
+                <>
+                  <div className="hero-value">
+                    {subscription.enabledAppsCount}
+                    <span className="hero-value-sub"> / {subscription.maxAppsAllowed}</span>
+                  </div>
+                  <div className="hero-sub">On the {subscription.planName} plan</div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Main content: widgets (9/12) + activity rail (3/12) */}
+          <div className="dashboard-layout">
+            <div className="widgets-column">
               <div className="section-header">
-                <h2 className="section-title">Your Widgets</h2>
+                <h2 className="section-title">Your widgets</h2>
+                <div className="sort-controls">
+                  Sort by
+                  {SORT_OPTIONS.map((opt) => (
+                    <span
+                      key={opt.id}
+                      className={`tag ${sortBy === opt.id ? "active" : ""}`}
+                      onClick={() => setSortBy(opt.id)}
+                    >
+                      {opt.label}
+                    </span>
+                  ))}
+                </div>
               </div>
+
               <div className="widgets-grid">
-                {widgetConfig.map((widget) => {
+                {getSortedWidgets().map(({ widget, metrics }) => {
                   const IconComponent = widget.icon;
                   const status = getWidgetStatus(widget);
-                  const metrics = widgetMetrics(widget.id);
 
                   return (
                     <div key={widget.id} className="widget-tile">
-                      <div className={`status-indicator ${status.state}`}>
-                        {status.state === "locked" ? <Lock size={9} /> : <span className="status-dot"></span>}
-                        {status.label}
+                      <div className="widget-tile-top">
+                        <div className="widget-icon-large" style={{ background: widget.iconBg, color: widget.accent }}>
+                          <IconComponent size={20} />
+                        </div>
+                        <div className={`status-indicator ${status.state}`}>
+                          {status.state === "locked" ? <Lock size={9} /> : <span className="status-dot"></span>}
+                          {status.label}
+                        </div>
                       </div>
-                      <div className={`widget-icon-large ${widget.color}`}>
-                        <IconComponent size={32} />
-                      </div>
-                      <div className="widget-name">{widget.title}</div>
-                      <div className="widget-desc">{widget.description}</div>
 
-                      <div className="widget-metrics">
-                        {summaryLoading ? (
-                          <div className="widget-metrics-empty">Loading performance&hellip;</div>
-                        ) : (
-                          <>
-                            <div className="widget-metrics-grid">
-                              <div className="widget-metric">
-                                <div className="metric-label">Revenue</div>
-                                <div className="metric-value">
-                                  {metrics.revenue.hasData ? formatMoney(metrics.revenue.amount) : "—"}
-                                </div>
+                      <div className="widget-name">{widget.title}</div>
+                      <div className="widget-desc">{widget.subtitle}</div>
+                      <div className="widget-divider"></div>
+
+                      {summaryLoading ? (
+                        <div className="widget-metrics-empty">Loading performance&hellip;</div>
+                      ) : (
+                        <>
+                          <div className="widget-metrics-grid">
+                            <div className="widget-metric">
+                              <div className="metric-label">Rev</div>
+                              <div className="metric-value">
+                                {metrics.revenue.hasData ? formatMoney(metrics.revenue.amount) : "—"}
                               </div>
-                              {metrics.impressions.tracked ? (
-                                <>
-                                  <div className="widget-metric">
-                                    <div className="metric-label">Impr.</div>
-                                    <div className="metric-value">
-                                      {formatCompactNumber(metrics.impressions.views)}
-                                    </div>
-                                  </div>
-                                  <div className="widget-metric">
-                                    <div className="metric-label">CTR</div>
-                                    <div className="metric-value">
-                                      {metrics.impressions.hasData ? `${metrics.impressions.ctr.toFixed(1)}%` : "—"}
-                                    </div>
-                                  </div>
-                                </>
-                              ) : (
-                                <div className="widget-metric-note">Impressions are not tracked for this widget yet</div>
-                              )}
                             </div>
-                            {metrics.revenue.hasData && <Sparkline data={metrics.revenue.trend} color="#4f46e5" />}
-                            {!metrics.revenue.hasData && !metrics.impressions.hasData && (
-                              <div className="widget-metrics-empty">No activity recorded in this period yet.</div>
+                            {metrics.impressions.tracked ? (
+                              <>
+                                <div className="widget-metric">
+                                  <div className="metric-label">Impr</div>
+                                  <div className="metric-value">{formatCompactNumber(metrics.impressions.views)}</div>
+                                </div>
+                                <div className="widget-metric">
+                                  <div className="metric-label">CTR</div>
+                                  <div className="metric-value">
+                                    {metrics.impressions.hasData ? `${metrics.impressions.ctr.toFixed(1)}%` : "—"}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="widget-metric-note">Impressions are not tracked for this widget yet</div>
                             )}
-                          </>
-                        )}
-                      </div>
+                          </div>
+                          {metrics.revenue.hasData && <Sparkline data={metrics.revenue.trend} color={widget.accent} />}
+                          {!metrics.revenue.hasData && !metrics.impressions.hasData && (
+                            <div className="widget-metrics-empty">No activity recorded in this period yet.</div>
+                          )}
+                        </>
+                      )}
 
                       <div className="widget-buttons">
                         <button className="widget-btn create" onClick={() => handleCreate(widget)}>
@@ -556,86 +643,86 @@ export default function DashboardHome() {
                 })}
               </div>
             </div>
-          </div>
 
-          {/* Right Column - Recent Activity */}
-          <div className="history-column">
-            <div className="history-container">
+            {/* Activity rail */}
+            <div className="history-column">
               <div className="history-header">
-                <h2 className="history-title">Recent Activity</h2>
+                <h2 className="history-title">Live activity</h2>
+                <span className="app-tag">Streaming</span>
               </div>
 
-              {/* Quick Stats */}
-              <div className="quick-stats">
-                <div className="quick-stat">
-                  <div className="value">{stats.activeBundles}</div>
-                  <div className="label">Active Bundles</div>
-                </div>
-                <div className="quick-stat">
-                  <div className="value">{stats.activeAnnouncements}</div>
-                  <div className="label">Active Bars</div>
-                </div>
-              </div>
-
-              {/* Activity List */}
-              <div className="history-list-wrapper">
-                <div className="history-list">
-                  {activityLoading ? (
-                    <div className="history-loading">Loading activity...</div>
-                  ) : activities.length === 0 ? (
-                    <div className="history-empty">No activity yet</div>
-                  ) : (
-                    activities.map((item) => {
-                      const IconComponent = iconMap[item.iconClass] || iconMap[item.widget] || iconMap.default;
-                      return (
-                        <div key={item.id} className="history-item">
-                          <div className={`history-icon ${item.iconClass}`}>
-                            <IconComponent size={18} />
-                          </div>
-                          <div className="history-content">
-                            <div className="history-text">{item.title}</div>
-                            <div className="history-meta">{item.meta}</div>
-                          </div>
-                          {item.amount && <div className="history-amount">{item.amount}</div>}
-                          <div className="history-time">{item.time}</div>
+              <div className="history-list">
+                {activityLoading ? (
+                  <div className="history-loading">Loading activity...</div>
+                ) : activities.length === 0 ? (
+                  <div className="history-empty">No activity yet</div>
+                ) : (
+                  visibleActivities.map((item) => {
+                    const IconComponent = activityIconMap[item.widget] || DollarSign;
+                    const accent = widgetConfig.find((w) => w.id === ACTIVITY_SLUG_TO_WIDGET_ID[item.widget])?.accent || "#6b7280";
+                    return (
+                      <div key={item.id} className="history-item">
+                        <div className="history-icon" style={{ background: `${accent}1a`, color: accent }}>
+                          <IconComponent size={14} />
                         </div>
-                      );
-                    })
-                  )}
-                </div>
+                        <div className="history-content">
+                          <div className="history-text">
+                            <strong>{item.title}</strong>
+                          </div>
+                          <div className="history-meta">
+                            {item.meta}
+                            {item.amount && (
+                              <>
+                                {" "}
+                                &middot; <span className="history-amount">{item.amount}</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="history-meta">{item.time}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-            </div>
 
-            {/* Notification Banners Card */}
-            {(showExtensionBanner || showUpgradeBanner) && (
-              <div className="notification-card">
-                {showExtensionBanner && (
-                  <a
-                    href={getThemeExtensionUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
-                  >
-                    <ExternalLink size={16} className="notification-icon" />
-                    <span>
-                      Enable BusyBuddy: open the theme editor, then{" "}
-                      <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong>
-                    </span>
-                  </a>
-                )}
-                {showUpgradeBanner && (
-                  <div
-                    className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
-                    onClick={() => navigate("/plan" + location.search)}
-                  >
-                    <Zap size={16} className="notification-icon" />
-                    <span>Upgrade your plan for more features!</span>
-                  </div>
-                )}
+              {activities.length > ACTIVITY_VISIBLE_COUNT && (
+                <button className="view-all-btn" onClick={() => setActivityExpanded((prev) => !prev)}>
+                  {activityExpanded ? "Show less" : "View all activity"}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Banners */}
+        {(showExtensionBanner || showUpgradeBanner) && (
+          <div className="notification-card">
+            {showExtensionBanner && (
+              <a
+                href={getThemeExtensionUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
+              >
+                <ExternalLink size={16} className="notification-icon" />
+                <span>
+                  Enable BusyBuddy: open the theme editor, then{" "}
+                  <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong>
+                </span>
+              </a>
+            )}
+            {showUpgradeBanner && (
+              <div
+                className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
+                onClick={() => navigate("/plan" + location.search)}
+              >
+                <Zap size={16} className="notification-icon" />
+                <span>Upgrade your plan for more features!</span>
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

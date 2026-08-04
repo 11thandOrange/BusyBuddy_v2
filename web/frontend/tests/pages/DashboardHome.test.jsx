@@ -26,15 +26,9 @@ const renderWithRouter = (component) => {
 };
 
 const mockActivities = [
-  { id: '1', widget: 'bundle', title: 'Summer Bundle', meta: 'purchased', time: '2m ago', iconClass: 'text-success' },
-  { id: '2', widget: 'announcement', title: 'Free Shipping', meta: 'viewed', time: '5m ago', iconClass: 'text-primary' },
+  { id: '1', widget: 'bundle', title: 'Summer Bundle', meta: 'purchased', time: '2m ago', amount: '$35' },
+  { id: '2', widget: 'announcement', title: 'Free Shipping', meta: 'viewed', time: '5m ago' },
 ];
-
-const mockStats = {
-  activeBundles: 3,
-  activeAnnouncements: 2,
-  eventsToday: 15,
-};
 
 const subscriptionConfig = {
   Free: {
@@ -66,11 +60,11 @@ const emptySummary = {
   impressions: { hasData: false, views: 0, clicks: 0, ctr: null, trackedWidgetIds: ['announcement-bar'] },
   widgets: [
     'announcement-bar',
-    'inactive-tab-message',
     'bundle-discount',
     'buy-one-get-one',
     'volume-discounts',
     'mix-and-match',
+    'inactive-tab-message',
   ].map((id) => ({
     id,
     revenue: { amount: 0, purchaseCount: 0, hasData: false, trend: [] },
@@ -84,14 +78,14 @@ const emptySummary = {
   })),
 };
 
-function mockFetchWith({ planName = 'Advanced', enabledApps = [], summary = emptySummary } = {}) {
+function mockFetchWith({ planName = 'Advanced', enabledApps = [], summary = emptySummary, activities = mockActivities } = {}) {
   return vi.fn((url) => {
     if (url && url.includes('/api/activity/recent')) {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({
           status: 'SUCCESS',
-          data: { activities: mockActivities, stats: mockStats },
+          data: { activities, stats: {} },
         }),
       });
     }
@@ -133,6 +127,27 @@ describe('DashboardHome', () => {
         { appId: 'bundle_discount', enabled: true },
         { appId: 'buy_one_get_one', enabled: false },
       ],
+    });
+  });
+
+  describe('Header', () => {
+    it('should render the app brand and a Home tag', async () => {
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText('BusyBuddy')).toBeInTheDocument();
+        expect(screen.getByText('Home')).toBeInTheDocument();
+      });
+    });
+
+    it('should render lowercase 7d/30d/90d range pills', async () => {
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText('7d')).toBeInTheDocument();
+        expect(screen.getByText('30d')).toBeInTheDocument();
+        expect(screen.getByText('90d')).toBeInTheDocument();
+      });
     });
   });
 
@@ -253,6 +268,37 @@ describe('DashboardHome', () => {
     });
   });
 
+  describe('Sort controls', () => {
+    it('should render the Revenue / Impressions / Recently edited sort chips', async () => {
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        const sortControls = document.querySelector('.sort-controls');
+        expect(sortControls.textContent).toContain('Revenue ↓');
+        expect(sortControls.textContent).toContain('Impressions');
+        expect(sortControls.textContent).toContain('Recently edited');
+      });
+    });
+
+    it('should reorder widget cards by real revenue when the Revenue chip is active (default)', async () => {
+      const summary = {
+        ...emptySummary,
+        widgets: emptySummary.widgets.map((w) => {
+          if (w.id === 'mix-and-match') return { ...w, revenue: { amount: 900, purchaseCount: 1, hasData: true, trend: [] } };
+          if (w.id === 'announcement-bar') return { ...w, revenue: { amount: 100, purchaseCount: 1, hasData: true, trend: [] } };
+          return w;
+        }),
+      };
+      global.fetch = mockFetchWith({ summary });
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        const names = Array.from(document.querySelectorAll('.widget-tile .widget-name')).map((n) => n.textContent);
+        expect(names[0]).toBe('Mix & Match');
+      });
+    });
+  });
+
   describe('Hero metrics band', () => {
     it('should show an explicit no-data message instead of a fabricated $0 when there is no revenue', async () => {
       renderWithRouter(<DashboardHome />);
@@ -298,7 +344,7 @@ describe('DashboardHome', () => {
         expect(fetchedUrl('range=7d')).toBe(true);
       });
 
-      fireEvent.click(screen.getByText('30D'));
+      fireEvent.click(screen.getByText('30d'));
 
       await waitFor(() => {
         expect(fetchedUrl('range=30d')).toBe(true);
@@ -347,7 +393,7 @@ describe('DashboardHome', () => {
     });
   });
 
-  describe('Recent Activity Card', () => {
+  describe('Live activity rail', () => {
     it('should fetch activities from /api/activity/recent on mount', async () => {
       renderWithRouter(<DashboardHome />);
 
@@ -367,28 +413,40 @@ describe('DashboardHome', () => {
       });
     });
 
-    it('should display stats', async () => {
+    it('should render a Streaming tag next to Live activity', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('Active Bundles')).toBeInTheDocument();
-        expect(screen.getByText('Active Bars')).toBeInTheDocument();
+        expect(screen.getByText('Live activity')).toBeInTheDocument();
+        expect(screen.getByText('Streaming')).toBeInTheDocument();
+      });
+    });
+
+    it('should show "View all activity" only when there are more items than fit, and expand on click', async () => {
+      const manyActivities = Array.from({ length: 7 }, (_, i) => ({
+        id: String(i),
+        widget: 'bundle',
+        title: `Event ${i}`,
+        meta: 'purchased',
+        time: `${i}m ago`,
+      }));
+      global.fetch = mockFetchWith({ activities: manyActivities });
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Event 0')).toBeInTheDocument();
+        expect(screen.queryByText('Event 6')).not.toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('View all activity'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Event 6')).toBeInTheDocument();
       });
     });
 
     it('should show empty state when no activities', async () => {
-      global.fetch = vi.fn((url) => {
-        if (url && url.includes('/api/activity/recent')) {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve({
-              status: 'SUCCESS',
-              data: { activities: [], stats: { activeBundles: 0, activeAnnouncements: 0, eventsToday: 0 } },
-            }),
-          });
-        }
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ status: 'SUCCESS', data: { planName: 'Advanced', enabled: true } }) });
-      });
+      global.fetch = mockFetchWith({ activities: [] });
 
       renderWithRouter(<DashboardHome />);
 
@@ -399,19 +457,19 @@ describe('DashboardHome', () => {
   });
 
   describe('Layout', () => {
-    it('should render "Your Widgets" header', async () => {
+    it('should render "Your widgets" header', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('Your Widgets')).toBeInTheDocument();
+        expect(screen.getByText('Your widgets')).toBeInTheDocument();
       });
     });
 
-    it('should render "Recent Activity" header', async () => {
+    it('should render "Live activity" header', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('Recent Activity')).toBeInTheDocument();
+        expect(screen.getByText('Live activity')).toBeInTheDocument();
       });
     });
   });
