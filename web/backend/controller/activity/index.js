@@ -34,12 +34,12 @@ async function getRecentActivity(req, res) {
       });
     }
 
-    const shopId = shopData._id;
-
-    // Fetch real-time activities and stats in parallel
+    // ActivityLog documents are keyed by the shop's myshopify domain (a
+    // string), not the Mongo _id - Bundle/AnnouncementBar counts need the
+    // ObjectId instead, so both ids are passed through separately.
     const [activities, stats] = await Promise.all([
-      activityLogService.getRecentActivities(shopId, 20),
-      activityLogService.getQuickStats(shopId),
+      activityLogService.getRecentActivities(session.shop, 20),
+      activityLogService.getQuickStats(session.shop, shopData._id),
     ]);
 
     // Format activities for frontend display
@@ -102,7 +102,7 @@ async function getActivityStats(req, res) {
       });
     }
 
-    const stats = await activityLogService.getQuickStats(shopData._id);
+    const stats = await activityLogService.getQuickStats(session.shop, shopData._id);
 
     res.json({
       status: "SUCCESS",

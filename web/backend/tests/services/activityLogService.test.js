@@ -118,21 +118,21 @@ describe('activityLogService', () => {
       MockActivityLog.aggregate.mockResolvedValue([{ eventsToday: 10, revenueToday: 50 }]);
     });
 
-    it('should count active bundles by shopId and status', async () => {
-      const stats = await activityLogService.getQuickStats('test-shop.myshopify.com');
+    it('should count active bundles by the shop ObjectId (not the domain used for ActivityLog)', async () => {
+      const stats = await activityLogService.getQuickStats('test-shop.myshopify.com', 'shop-object-id-123');
 
       expect(Bundle.countDocuments).toHaveBeenCalledWith({
-        shopId: 'test-shop.myshopify.com',
+        shopId: 'shop-object-id-123',
         status: true,
       });
       expect(stats.activeBundles).toBe(5);
     });
 
-    it('should count active announcements by shopId and status', async () => {
-      const stats = await activityLogService.getQuickStats('test-shop.myshopify.com');
+    it('should count active announcements by the shop ObjectId (not the domain used for ActivityLog)', async () => {
+      const stats = await activityLogService.getQuickStats('test-shop.myshopify.com', 'shop-object-id-123');
 
       expect(AnnouncementBar.countDocuments).toHaveBeenCalledWith({
-        shopId: 'test-shop.myshopify.com',
+        shopId: 'shop-object-id-123',
         status: 'active',
       });
       expect(stats.activeAnnouncements).toBe(3);

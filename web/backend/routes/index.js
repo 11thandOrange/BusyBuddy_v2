@@ -10,6 +10,7 @@ import analyticsRoutes from './analytics/index.js';
 import emailProviderRoutes from './emailProvider/index.js';
 import googleAnalyticsRoutes from './googleAnalytics/index.js';
 import activityRoutes from './activity/index.js';
+import dashboardRoutes from './dashboard/index.js';
 // Note: webhookRoutes are mounted separately in web/index.js to bypass session auth
 // Note: referralRoutes are registered in web/index.js BEFORE Shopify auth middleware
 // to allow public access without shop authentication
@@ -24,5 +25,6 @@ router.use('/analytics', analyticsRoutes);
 router.use('/email-provider', emailProviderRoutes);
 router.use('/analytics/google', googleAnalyticsRoutes);
 router.use('/activity', activityRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 export default router;
