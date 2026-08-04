@@ -114,14 +114,7 @@ const RANGE_OPTIONS = [
   { id: "90d", label: "90d" },
 ];
 
-const SORT_OPTIONS = [
-  { id: "revenue", label: "Revenue ↓" },
-  { id: "impressions", label: "Impressions" },
-  { id: "recent", label: "Recently edited" },
-];
-
 const ACTIVITY_REFRESH_MS = 30000;
-const ACTIVITY_VISIBLE_COUNT = 5;
 
 const EMPTY_WIDGET_METRICS = {
   revenue: { amount: 0, purchaseCount: 0, hasData: false, trend: [] },
@@ -200,7 +193,6 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
-  const [activityExpanded, setActivityExpanded] = useState(false);
   const [extensionEnabled, setExtensionEnabled] = useState(null); // null = loading
   const [showExtensionBanner, setShowExtensionBanner] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
@@ -209,7 +201,6 @@ export default function DashboardHome() {
   const [range, setRange] = useState("7d");
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
-  const [sortBy, setSortBy] = useState("revenue");
 
   useEffect(() => {
     fetchUserSubscription();
@@ -420,42 +411,10 @@ export default function DashboardHome() {
     };
   };
 
-  // "Recently edited" ranks widgets by their real most-recent activity event
-  // (activities already arrive newest-first from the API) rather than a
-  // fabricated edit timestamp.
-  const recentActivityRank = () => {
-    const rank = {};
-    activities.forEach((item, index) => {
-      const widgetId = ACTIVITY_SLUG_TO_WIDGET_ID[item.widget];
-      if (widgetId && !(widgetId in rank)) rank[widgetId] = index;
-    });
-    return rank;
-  };
-
-  const getSortedWidgets = () => {
-    const rank = recentActivityRank();
-    return widgetConfig
-      .map((widget) => {
-        const metrics = widgetMetrics(widget.id);
-        let value;
-        if (sortBy === "impressions") {
-          value = metrics.impressions.tracked ? metrics.impressions.views ?? 0 : -1;
-        } else if (sortBy === "recent") {
-          value = rank[widget.id] === undefined ? -Infinity : -rank[widget.id];
-        } else {
-          value = metrics.revenue.amount || 0;
-        }
-        return { widget, metrics, value };
-      })
-      .sort((a, b) => b.value - a.value);
-  };
-
   const rangeLabel = RANGE_OPTIONS.find((r) => r.id === range)?.label || range;
   const trackedWidgetNames = (summary?.impressions?.trackedWidgetIds || IMPRESSION_TRACKED_WIDGET_IDS)
     .map((id) => widgetConfig.find((w) => w.id === id)?.title || id)
     .join(", ");
-
-  const visibleActivities = activityExpanded ? activities : activities.slice(0, ACTIVITY_VISIBLE_COUNT);
 
   return (
     <div className="dashboard-home">
@@ -560,24 +519,13 @@ export default function DashboardHome() {
             <div className="widgets-column">
               <div className="section-header">
                 <h2 className="section-title">Your widgets</h2>
-                <div className="sort-controls">
-                  Sort by
-                  {SORT_OPTIONS.map((opt) => (
-                    <span
-                      key={opt.id}
-                      className={`tag ${sortBy === opt.id ? "active" : ""}`}
-                      onClick={() => setSortBy(opt.id)}
-                    >
-                      {opt.label}
-                    </span>
-                  ))}
-                </div>
               </div>
 
               <div className="widgets-grid">
-                {getSortedWidgets().map(({ widget, metrics }) => {
+                {widgetConfig.map((widget) => {
                   const IconComponent = widget.icon;
                   const status = getWidgetStatus(widget);
+                  const metrics = widgetMetrics(widget.id);
 
                   return (
                     <div key={widget.id} className="widget-tile">
@@ -657,7 +605,7 @@ export default function DashboardHome() {
                 ) : activities.length === 0 ? (
                   <div className="history-empty">No activity yet</div>
                 ) : (
-                  visibleActivities.map((item) => {
+                  activities.map((item) => {
                     const IconComponent = activityIconMap[item.widget] || DollarSign;
                     const accent = widgetConfig.find((w) => w.id === ACTIVITY_SLUG_TO_WIDGET_ID[item.widget])?.accent || "#6b7280";
                     return (
@@ -685,12 +633,6 @@ export default function DashboardHome() {
                   })
                 )}
               </div>
-
-              {activities.length > ACTIVITY_VISIBLE_COUNT && (
-                <button className="view-all-btn" onClick={() => setActivityExpanded((prev) => !prev)}>
-                  {activityExpanded ? "Show less" : "View all activity"}
-                </button>
-              )}
             </div>
           </div>
         </div>

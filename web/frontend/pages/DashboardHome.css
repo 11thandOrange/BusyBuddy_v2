@@ -22,14 +22,13 @@
   overflow: hidden;
 }
 
-/* Sticky header: logo + range pills */
+/* Sticky header: logo + range pills - dark bar, distinct from the light card body */
 .app-header {
   padding: 12px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #ececec;
-  background: rgba(244, 244, 242, 0.85);
+  background: linear-gradient(135deg, #16171a 0%, #23252b 100%);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -48,7 +47,13 @@
 .app-header-brand .name {
   font-weight: 700;
   font-size: 15px;
-  color: #111;
+  color: #fff;
+}
+
+.app-header .app-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .app-tag {
@@ -70,9 +75,9 @@
 .pill-nav {
   display: inline-flex;
   padding: 4px;
-  background: #f4f4f2;
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  border: 1px solid #ececec;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .pill-nav button {
@@ -82,7 +87,7 @@
   border-radius: 7px;
   font-size: 13px;
   font-weight: 500;
-  color: #4b5563;
+  color: #b3b6bd;
   cursor: pointer;
   font-family: inherit;
 }
@@ -99,9 +104,9 @@
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  background: #f4f4f2;
-  color: #111;
-  border: 1px solid #ececec;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
   text-decoration: none;
 }
 
@@ -218,32 +223,6 @@
   margin: 0;
 }
 
-.sort-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.tag {
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 6px;
-  background: #f4f4f2;
-  color: #374151;
-  border: 1px solid #ececec;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.tag.active {
-  background: #111;
-  color: #fff;
-  border-color: #111;
-}
-
 /* Widgets Grid */
 .widgets-grid {
   display: grid;
@@ -262,6 +241,9 @@
   border: 1px solid #ececec;
   background: #fff;
   transition: box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .widget-tile:hover {
@@ -370,12 +352,14 @@
   padding: 2px 0;
 }
 
-/* Widget Buttons */
+/* Widget Buttons - always pinned to the bottom of the card, whether or not
+   a sparkline/metrics row is present above it */
 .widget-buttons {
   display: flex;
   gap: 8px;
   width: 100%;
-  margin-top: 12px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
 .widget-btn {
@@ -424,11 +408,6 @@
   gap: 14px;
 }
 
-.history-list.is-capped {
-  max-height: 380px;
-  overflow: hidden;
-}
-
 .history-item {
   display: flex;
   align-items: flex-start;
@@ -473,22 +452,6 @@
   padding: 16px 0;
   text-align: center;
 }
-
-.view-all-btn {
-  width: 100%;
-  margin-top: 14px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  background: #f4f4f2;
-  color: #111;
-  border: 1px solid #ececec;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.view-all-btn:hover { background: #ececec; }
 
 /* Notification banners - real app alerts, sit under the frame */
 .notification-card {

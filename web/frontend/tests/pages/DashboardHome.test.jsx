@@ -268,33 +268,29 @@ describe('DashboardHome', () => {
     });
   });
 
-  describe('Sort controls', () => {
-    it('should render the Revenue / Impressions / Recently edited sort chips', async () => {
-      renderWithRouter(<DashboardHome />);
-
-      await waitFor(() => {
-        const sortControls = document.querySelector('.sort-controls');
-        expect(sortControls.textContent).toContain('Revenue ↓');
-        expect(sortControls.textContent).toContain('Impressions');
-        expect(sortControls.textContent).toContain('Recently edited');
-      });
-    });
-
-    it('should reorder widget cards by real revenue when the Revenue chip is active (default)', async () => {
+  describe('Widget card layout', () => {
+    it('should keep Create/Manage buttons at the bottom of the card whether or not a sparkline is shown', async () => {
       const summary = {
         ...emptySummary,
-        widgets: emptySummary.widgets.map((w) => {
-          if (w.id === 'mix-and-match') return { ...w, revenue: { amount: 900, purchaseCount: 1, hasData: true, trend: [] } };
-          if (w.id === 'announcement-bar') return { ...w, revenue: { amount: 100, purchaseCount: 1, hasData: true, trend: [] } };
-          return w;
-        }),
+        widgets: emptySummary.widgets.map((w) =>
+          w.id === 'bundle-discount'
+            ? { ...w, revenue: { amount: 240, purchaseCount: 3, hasData: true, trend: [{ date: '2026-08-01', revenue: 240 }] } }
+            : w
+        ),
       };
       global.fetch = mockFetchWith({ summary });
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
-        const names = Array.from(document.querySelectorAll('.widget-tile .widget-name')).map((n) => n.textContent);
-        expect(names[0]).toBe('Mix & Match');
+        // Bundle Discounts has a sparkline (real revenue data); Volume Discounts has none.
+        const bundleCard = screen.getByText('Bundle Discounts').closest('.widget-tile');
+        const volumeCard = screen.getByText('Volume Discounts').closest('.widget-tile');
+        expect(bundleCard.querySelector('.widget-buttons')).toBeTruthy();
+        expect(volumeCard.querySelector('.widget-buttons')).toBeTruthy();
+        // Both button rows are the last element in their card, so they land at the
+        // bottom regardless of how much metrics content precedes them.
+        expect(bundleCard.lastElementChild.className).toContain('widget-buttons');
+        expect(volumeCard.lastElementChild.className).toContain('widget-buttons');
       });
     });
   });
@@ -422,7 +418,7 @@ describe('DashboardHome', () => {
       });
     });
 
-    it('should show "View all activity" only when there are more items than fit, and expand on click', async () => {
+    it('should render every fetched activity without a "View all" button', async () => {
       const manyActivities = Array.from({ length: 7 }, (_, i) => ({
         id: String(i),
         widget: 'bundle',
@@ -435,14 +431,10 @@ describe('DashboardHome', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Event 0')).toBeInTheDocument();
-        expect(screen.queryByText('Event 6')).not.toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByText('View all activity'));
-
-      await waitFor(() => {
         expect(screen.getByText('Event 6')).toBeInTheDocument();
       });
+
+      expect(screen.queryByText('View all activity')).not.toBeInTheDocument();
     });
 
     it('should show empty state when no activities', async () => {
