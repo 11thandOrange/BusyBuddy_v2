@@ -335,7 +335,7 @@ export default function DashboardHome() {
 
   const checkExtensionStatus = async () => {
     try {
-      const response = await fetch("/api/subscription/extension-status");
+      const response = await fetch("/api/subscription/checkBusyBuddyEnabled");
       if (response.ok) {
         const data = await response.json();
         if (data.status === "SUCCESS") {
