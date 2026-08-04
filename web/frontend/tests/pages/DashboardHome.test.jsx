@@ -131,22 +131,27 @@ describe('DashboardHome', () => {
   });
 
   describe('Header', () => {
-    it('should render the app brand without a Home tag', async () => {
+    it('should not render its own header bar (Shopify\'s page header is the only one)', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('BusyBuddy')).toBeInTheDocument();
+        expect(document.querySelector('.app-header')).toBeNull();
+        expect(document.querySelector('.app-frame')).toBeNull();
+        expect(screen.queryByText('BusyBuddy')).not.toBeInTheDocument();
         expect(screen.queryByText('Home')).not.toBeInTheDocument();
       });
     });
 
-    it('should render lowercase 7d/30d/90d range pills', async () => {
+    it('should render the range pills and Help link inside the hero band', async () => {
       renderWithRouter(<DashboardHome />);
 
       await waitFor(() => {
+        const heroBand = document.querySelector('.hero-band');
+        expect(heroBand.querySelector('.hero-controls-row')).toBeTruthy();
         expect(screen.getByText('7d')).toBeInTheDocument();
         expect(screen.getByText('30d')).toBeInTheDocument();
         expect(screen.getByText('90d')).toBeInTheDocument();
+        expect(screen.getByText('Help')).toBeInTheDocument();
       });
     });
   });
@@ -171,6 +176,16 @@ describe('DashboardHome', () => {
         expect(screen.getByText('Volume Discounts')).toBeInTheDocument();
         expect(screen.getByText('Mix & Match')).toBeInTheDocument();
         expect(screen.getByText('Inactive Tab Message')).toBeInTheDocument();
+      });
+    });
+
+    it('should use a snooze emoji (not a clock icon) for Inactive Tab Message', async () => {
+      renderWithRouter(<DashboardHome />);
+
+      await waitFor(() => {
+        const card = screen.getByText('Inactive Tab Message').closest('.widget-tile');
+        expect(card.querySelector('.icon-emoji')?.textContent).toBe('💤');
+        expect(card.querySelector('.widget-icon-large svg')).toBeNull();
       });
     });
 

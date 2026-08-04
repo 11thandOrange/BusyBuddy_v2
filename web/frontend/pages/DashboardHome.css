@@ -1,6 +1,7 @@
 /* Dashboard Home Styles - mirrors the "Mockup A: Performance-first dashboard"
-   reference layout (sticky header, gradient hero band, 12-col widgets/activity
-   split with a real border divider) rather than the app's older card style. */
+   reference layout (gradient hero band with the range pills/Help folded in,
+   full-width widgets/activity split with a real border divider). Shopify's
+   own page header is the only header - this component renders none of its own. */
 .dashboard-home {
   background: #f4f4f2;
   overflow-y: auto;
@@ -10,44 +11,7 @@
 }
 
 .dashboard-inner {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* Outer app frame - the whole dashboard lives inside one bordered card */
-.app-frame {
-  background: #fff;
-  border: 1px solid #ececec;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-/* Sticky header: logo + range pills - dark bar, distinct from the light card body */
-.app-header {
-  padding: 12px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, #16171a 0%, #23252b 100%);
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.app-header-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.app-header-brand .logo {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.app-header-brand .name {
-  font-weight: 700;
-  font-size: 15px;
-  color: #fff;
+  width: 100%;
 }
 
 .app-tag {
@@ -58,12 +22,6 @@
   background: #f4f4f2;
   color: #374151;
   border: 1px solid #ececec;
-}
-
-.app-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .pill-nav {
@@ -104,14 +62,29 @@
   text-decoration: none;
 }
 
-/* Hero metrics band */
+/* Hero band: the only "header" this component renders. Carries the range
+   pills + Help link (hero-controls-row) plus the 4 metric tiles
+   (hero-metrics). No outer card wraps this - it's a standalone rounded
+   block that sits directly on the page. */
 .hero-band {
-  padding: 20px 24px;
-  border-bottom: 1px solid #ececec;
-  background: linear-gradient(to bottom, #fff, #faf9f6);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #16171a 0%, #23252b 100%);
+  padding: 16px 22px 20px;
+}
+
+.hero-controls-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.hero-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .hero-tile {
@@ -123,7 +96,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6b7280;
+  color: #9aa0ab;
   margin-bottom: 6px;
 }
 
@@ -137,7 +110,7 @@
 .hero-value {
   font-size: 26px;
   font-weight: 700;
-  color: #111;
+  color: #fff;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
 }
@@ -145,12 +118,12 @@
 .hero-value-sub {
   font-size: 16px;
   font-weight: 500;
-  color: #9ca3af;
+  color: #7d838d;
 }
 
 .hero-sub {
   font-size: 12px;
-  color: #6b7280;
+  color: #9aa0ab;
   margin-top: 6px;
   line-height: 1.4;
 }
@@ -158,9 +131,10 @@
 .hero-empty,
 .hero-loading {
   font-size: 13px;
-  color: #6b7280;
+  color: #9aa0ab;
   margin-top: 4px;
   line-height: 1.4;
+  max-width: 22em;
 }
 
 .hero-badge {
@@ -173,9 +147,9 @@
   font-weight: 600;
 }
 
-.hero-badge-up { background: #e7f7ee; color: #0f7a3b; }
-.hero-badge-down { background: #fdecec; color: #d63535; }
-.hero-badge-new { background: #eaf3ff; color: #0b76ef; }
+.hero-badge-up { background: rgba(52, 199, 89, 0.18); color: #4ade80; }
+.hero-badge-down { background: rgba(255, 59, 48, 0.18); color: #ff6b6b; }
+.hero-badge-new { background: rgba(0, 122, 255, 0.18); color: #60a5fa; }
 
 .widget-spark {
   width: 100%;
@@ -183,21 +157,23 @@
   margin-top: 8px;
 }
 
-@media (max-width: 1200px) {
-  .hero-band { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 900px) {
+  .hero-metrics { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 640px) {
-  .hero-band { grid-template-columns: 1fr; }
+@media (max-width: 560px) {
+  .hero-metrics { grid-template-columns: 1fr; }
 }
 
-/* Content grid: widgets (9/12) + activity rail (3/12), like the reference layout */
+/* Content grid: widgets (left) + activity rail (right), full width, no
+   outer box - just a divider between the two columns. */
 .dashboard-layout {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  margin-top: 16px;
 }
 
 .widgets-column {
-  padding: 20px 24px;
+  padding: 20px 20px 20px 4px;
   border-right: 1px solid #ececec;
 }
 
@@ -258,6 +234,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.icon-emoji {
+  display: inline-block;
+  line-height: 1;
 }
 
 /* Status Indicator */
@@ -378,8 +359,9 @@
 
 /* Right rail - Live activity */
 .history-column {
-  background: #fafafa;
   padding: 20px;
+  background: rgba(17, 17, 17, 0.045);
+  border-radius: 0 14px 14px 0;
 }
 
 .history-header {
@@ -447,7 +429,7 @@
   text-align: center;
 }
 
-/* Notification banners - real app alerts, sit under the frame */
+/* Notification banners - real app alerts, sit below the main content */
 .notification-card {
   display: flex;
   flex-direction: column;
@@ -487,13 +469,21 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .dashboard-layout { grid-template-columns: 1fr; }
-  .widgets-column { border-right: none; border-bottom: 1px solid #ececec; }
+  .widgets-column {
+    border-right: none;
+    border-bottom: 1px solid #ececec;
+    padding: 20px;
+  }
+  .history-column {
+    border-radius: 14px;
+    margin-top: 16px;
+  }
 }
 
 @media (max-width: 640px) {
   .dashboard-home { padding: 10px; }
-  .app-header { padding: 10px 14px; }
   .hero-band { padding: 16px; }
+  .hero-controls-row { justify-content: center; }
   .widgets-column, .history-column { padding: 16px; }
   .widgets-grid { grid-template-columns: 1fr; }
 }

@@ -9,7 +9,6 @@ import {
   Plus,
   Settings,
   DollarSign,
-  AlarmClockOff,
   ExternalLink,
   Zap,
   TrendingUp,
@@ -84,7 +83,7 @@ const widgetConfig = [
     appId: "inactive_tab",
     title: "Inactive Tab Message",
     subtitle: "Re-engage tab-switchers",
-    icon: AlarmClockOff,
+    icon: "💤",
     iconBg: "#f4f4f2",
     accent: "#6b7280",
     settingsRoute: "/inactive-tab-message?tab=settings",
@@ -155,6 +154,21 @@ function Sparkline({ data, color }) {
   );
 }
 
+// Widget icons are usually a lucide component, but Inactive Tab Message uses
+// a plain "💤" glyph (no lucide icon reads as "snooze"), so this renders
+// either kind consistently at the given size.
+function WidgetIcon({ icon, size }) {
+  if (typeof icon === "string") {
+    return (
+      <span className="icon-emoji" style={{ fontSize: size }} role="img" aria-hidden="true">
+        {icon}
+      </span>
+    );
+  }
+  const IconComponent = icon;
+  return <IconComponent size={size} />;
+}
+
 function RevenueChangeBadge({ change }) {
   if (!change) return null;
   if (change.kind === "new") {
@@ -177,7 +191,7 @@ const activityIconMap = {
   volume: Layers,
   "mix-match": Shuffle,
   announcement: Megaphone,
-  "inactive-tab": AlarmClockOff,
+  "inactive-tab": "💤",
 };
 
 export default function DashboardHome() {
@@ -419,33 +433,27 @@ export default function DashboardHome() {
   return (
     <div className="dashboard-home">
       <div className="dashboard-inner">
-        <div className="app-frame">
-          {/* Header */}
-          <div className="app-header">
-            <div className="app-header-brand">
-              <span className="logo">🐝</span>
-              <span className="name">BusyBuddy</span>
+        {/* Hero band: this is the only "header" our component renders - the
+            Shopify page header above it already shows the app name/logo. */}
+        <div className="hero-band">
+          <div className="hero-controls-row">
+            <div className="pill-nav">
+              {RANGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.id}
+                  className={range === opt.id ? "active" : ""}
+                  onClick={() => setRange(opt.id)}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-            <div className="app-header-actions">
-              <div className="pill-nav">
-                {RANGE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    className={range === opt.id ? "active" : ""}
-                    onClick={() => setRange(opt.id)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <a className="help-link" href="https://help.shopify.com" target="_blank" rel="noopener noreferrer">
-                Help
-              </a>
-            </div>
+            <a className="help-link" href="https://help.shopify.com" target="_blank" rel="noopener noreferrer">
+              Help
+            </a>
           </div>
 
-          {/* Hero metrics band */}
-          <div className="hero-band">
+          <div className="hero-metrics">
             <div className="hero-tile">
               <div className="hero-label">Attributed revenue &middot; {rangeLabel}</div>
               {summaryLoading ? (
@@ -456,7 +464,7 @@ export default function DashboardHome() {
                     <span className="hero-value">{formatMoney(summary.revenue.amount)}</span>
                     <RevenueChangeBadge change={summary.revenue.change} />
                   </div>
-                  <Sparkline data={summary.revenue.trend} color="#111111" />
+                  <Sparkline data={summary.revenue.trend} color="#ffffff" />
                 </>
               ) : (
                 <div className="hero-empty">No attributed revenue recorded in this period yet.</div>
@@ -512,126 +520,125 @@ export default function DashboardHome() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* Main content: widgets (9/12) + activity rail (3/12) */}
-          <div className="dashboard-layout">
-            <div className="widgets-column">
-              <div className="section-header">
-                <h2 className="section-title">Your widgets</h2>
-              </div>
+        {/* Main content: widgets (left) + activity rail (right) - full width, no boxed container */}
+        <div className="dashboard-layout">
+          <div className="widgets-column">
+            <div className="section-header">
+              <h2 className="section-title">Your widgets</h2>
+            </div>
 
-              <div className="widgets-grid">
-                {widgetConfig.map((widget) => {
-                  const IconComponent = widget.icon;
-                  const status = getWidgetStatus(widget);
-                  const metrics = widgetMetrics(widget.id);
+            <div className="widgets-grid">
+              {widgetConfig.map((widget) => {
+                const status = getWidgetStatus(widget);
+                const metrics = widgetMetrics(widget.id);
 
-                  return (
-                    <div key={widget.id} className="widget-tile">
-                      <div className="widget-tile-top">
-                        <div className="widget-icon-large" style={{ background: widget.iconBg, color: widget.accent }}>
-                          <IconComponent size={20} />
-                        </div>
-                        <div className={`status-indicator ${status.state}`}>
-                          {status.state === "locked" ? <Lock size={9} /> : <span className="status-dot"></span>}
-                          {status.label}
-                        </div>
+                return (
+                  <div key={widget.id} className="widget-tile">
+                    <div className="widget-tile-top">
+                      <div className="widget-icon-large" style={{ background: widget.iconBg, color: widget.accent }}>
+                        <WidgetIcon icon={widget.icon} size={20} />
                       </div>
+                      <div className={`status-indicator ${status.state}`}>
+                        {status.state === "locked" ? <Lock size={9} /> : <span className="status-dot"></span>}
+                        {status.label}
+                      </div>
+                    </div>
 
-                      <div className="widget-name">{widget.title}</div>
-                      <div className="widget-desc">{widget.subtitle}</div>
-                      <div className="widget-divider"></div>
+                    <div className="widget-name">{widget.title}</div>
+                    <div className="widget-desc">{widget.subtitle}</div>
+                    <div className="widget-divider"></div>
 
-                      {summaryLoading ? (
-                        <div className="widget-metrics-empty">Loading performance&hellip;</div>
-                      ) : (
-                        <>
-                          <div className="widget-metrics-grid">
-                            <div className="widget-metric">
-                              <div className="metric-label">Rev</div>
-                              <div className="metric-value">
-                                {metrics.revenue.hasData ? formatMoney(metrics.revenue.amount) : "—"}
-                              </div>
+                    {summaryLoading ? (
+                      <div className="widget-metrics-empty">Loading performance&hellip;</div>
+                    ) : (
+                      <>
+                        <div className="widget-metrics-grid">
+                          <div className="widget-metric">
+                            <div className="metric-label">Rev</div>
+                            <div className="metric-value">
+                              {metrics.revenue.hasData ? formatMoney(metrics.revenue.amount) : "—"}
                             </div>
-                            {metrics.impressions.tracked ? (
-                              <>
-                                <div className="widget-metric">
-                                  <div className="metric-label">Impr</div>
-                                  <div className="metric-value">{formatCompactNumber(metrics.impressions.views)}</div>
-                                </div>
-                                <div className="widget-metric">
-                                  <div className="metric-label">CTR</div>
-                                  <div className="metric-value">
-                                    {metrics.impressions.hasData ? `${metrics.impressions.ctr.toFixed(1)}%` : "—"}
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="widget-metric-note">Impressions are not tracked for this widget yet</div>
-                            )}
                           </div>
-                          {metrics.revenue.hasData && <Sparkline data={metrics.revenue.trend} color={widget.accent} />}
-                          {!metrics.revenue.hasData && !metrics.impressions.hasData && (
-                            <div className="widget-metrics-empty">No activity recorded in this period yet.</div>
+                          {metrics.impressions.tracked ? (
+                            <>
+                              <div className="widget-metric">
+                                <div className="metric-label">Impr</div>
+                                <div className="metric-value">{formatCompactNumber(metrics.impressions.views)}</div>
+                              </div>
+                              <div className="widget-metric">
+                                <div className="metric-label">CTR</div>
+                                <div className="metric-value">
+                                  {metrics.impressions.hasData ? `${metrics.impressions.ctr.toFixed(1)}%` : "—"}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="widget-metric-note">Impressions are not tracked for this widget yet</div>
                           )}
-                        </>
-                      )}
+                        </div>
+                        {metrics.revenue.hasData && <Sparkline data={metrics.revenue.trend} color={widget.accent} />}
+                        {!metrics.revenue.hasData && !metrics.impressions.hasData && (
+                          <div className="widget-metrics-empty">No activity recorded in this period yet.</div>
+                        )}
+                      </>
+                    )}
 
-                      <div className="widget-buttons">
-                        <button className="widget-btn create" onClick={() => handleCreate(widget)}>
-                          <Plus size={12} /> Create
-                        </button>
-                        <button className="widget-btn manage" onClick={() => handleManage(widget)}>
-                          <Settings size={12} /> Manage
-                        </button>
+                    <div className="widget-buttons">
+                      <button className="widget-btn create" onClick={() => handleCreate(widget)}>
+                        <Plus size={12} /> Create
+                      </button>
+                      <button className="widget-btn manage" onClick={() => handleManage(widget)}>
+                        <Settings size={12} /> Manage
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Activity rail */}
+          <div className="history-column">
+            <div className="history-header">
+              <h2 className="history-title">Live activity</h2>
+              <span className="app-tag">Streaming</span>
+            </div>
+
+            <div className="history-list">
+              {activityLoading ? (
+                <div className="history-loading">Loading activity...</div>
+              ) : activities.length === 0 ? (
+                <div className="history-empty">No activity yet</div>
+              ) : (
+                activities.map((item) => {
+                  const icon = activityIconMap[item.widget] || DollarSign;
+                  const accent = widgetConfig.find((w) => w.id === ACTIVITY_SLUG_TO_WIDGET_ID[item.widget])?.accent || "#6b7280";
+                  return (
+                    <div key={item.id} className="history-item">
+                      <div className="history-icon" style={{ background: `${accent}1a`, color: accent }}>
+                        <WidgetIcon icon={icon} size={14} />
+                      </div>
+                      <div className="history-content">
+                        <div className="history-text">
+                          <strong>{item.title}</strong>
+                        </div>
+                        <div className="history-meta">
+                          {item.meta}
+                          {item.amount && (
+                            <>
+                              {" "}
+                              &middot; <span className="history-amount">{item.amount}</span>
+                            </>
+                          )}
+                        </div>
+                        <div className="history-meta">{item.time}</div>
                       </div>
                     </div>
                   );
-                })}
-              </div>
-            </div>
-
-            {/* Activity rail */}
-            <div className="history-column">
-              <div className="history-header">
-                <h2 className="history-title">Live activity</h2>
-                <span className="app-tag">Streaming</span>
-              </div>
-
-              <div className="history-list">
-                {activityLoading ? (
-                  <div className="history-loading">Loading activity...</div>
-                ) : activities.length === 0 ? (
-                  <div className="history-empty">No activity yet</div>
-                ) : (
-                  activities.map((item) => {
-                    const IconComponent = activityIconMap[item.widget] || DollarSign;
-                    const accent = widgetConfig.find((w) => w.id === ACTIVITY_SLUG_TO_WIDGET_ID[item.widget])?.accent || "#6b7280";
-                    return (
-                      <div key={item.id} className="history-item">
-                        <div className="history-icon" style={{ background: `${accent}1a`, color: accent }}>
-                          <IconComponent size={14} />
-                        </div>
-                        <div className="history-content">
-                          <div className="history-text">
-                            <strong>{item.title}</strong>
-                          </div>
-                          <div className="history-meta">
-                            {item.meta}
-                            {item.amount && (
-                              <>
-                                {" "}
-                                &middot; <span className="history-amount">{item.amount}</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="history-meta">{item.time}</div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                })
+              )}
             </div>
           </div>
         </div>
