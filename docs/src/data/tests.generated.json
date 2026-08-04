@@ -13,8 +13,8 @@
     "name": "Backend unit/integration",
     "framework": "vitest",
     "path": "web/backend/**/*.test.js",
-    "fileCount": 13,
-    "description": "13 file(s) matching web/backend/**/*.test.js.",
-    "_sourceHash": "9cec70a2cb8eb3a37534fc918d82f163ae5b8757"
+    "fileCount": 14,
+    "description": "14 file(s) matching web/backend/**/*.test.js.",
+    "_sourceHash": "f857f06781f563f2657bd984459adc80f24cafa6"
   }
 ]

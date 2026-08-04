@@ -2,98 +2,79 @@
   {
     "slug": "announcement-bar",
     "name": "Announcement Bar",
-    "color": "orange",
+    "color": "#5169DD",
     "icon": "Megaphone",
-    "tagline": "Display alerts and promotions at the top of your store",
-    "plans": [
-      "Free",
-      "Starter",
-      "Advanced"
-    ],
-    "overview": "Display alerts and promotions at the top of your store",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "aceaf263229162dc260551f7ae3f8e147fd5169a"
+    "_sourceHash": "623b986d9312a71d9d63d6305b1cda22504c17e4"
   },
   {
     "slug": "inactive-tab-message",
     "name": "Inactive Tab Message",
-    "color": "indigo",
-    "icon": "Eye",
-    "tagline": "Re-engage visitors when they switch browser tabs",
-    "plans": [
-      "Free",
-      "Starter",
-      "Advanced"
-    ],
-    "overview": "Re-engage visitors when they switch browser tabs",
+    "color": "#5169DD",
+    "icon": "AlarmClockOff",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "2b2e83ac35554d2bfe07baab996ee2a8e433dbe4"
+    "_sourceHash": "c8b4cbcb38d9833f5612798f4c0840da52123088"
   },
   {
     "slug": "bundle-discount",
     "name": "Bundle Discounts",
-    "color": "blue",
+    "color": "#5169DD",
     "icon": "Package",
-    "tagline": "Create product bundles with automatic discounts",
-    "plans": [
-      "Starter",
-      "Advanced"
-    ],
-    "overview": "Create product bundles with automatic discounts",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "5c76ebfe9f518814b78a1df549522af06d1d3248"
+    "_sourceHash": "127cdca2fb4b1161a85d63af9969414dac8e8df2"
   },
   {
     "slug": "buy-one-get-one",
     "name": "Buy One Get One",
-    "color": "green",
+    "color": "#5169DD",
     "icon": "Gift",
-    "tagline": "BOGO deals, free gifts, and special offers",
-    "plans": [
-      "Starter",
-      "Advanced"
-    ],
-    "overview": "BOGO deals, free gifts, and special offers",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "af993ab4da0735416bc4502bfd349fbf7f5846b1"
+    "_sourceHash": "2bf54107423d2d32d67d7c3588de66dc59b1bce7"
   },
   {
     "slug": "volume-discounts",
     "name": "Volume Discounts",
-    "color": "pink",
+    "color": "#5169DD",
     "icon": "Layers",
-    "tagline": "Quantity-based pricing tiers and bulk savings",
-    "plans": [
-      "Starter",
-      "Advanced"
-    ],
-    "overview": "Quantity-based pricing tiers and bulk savings",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "9b56dd3dfcfc6c355b9b5f6fe332ab6178e2cef6"
+    "_sourceHash": "5b3bb32d3c648e115683207aa6bafe588d2af84e"
   },
   {
     "slug": "mix-and-match",
     "name": "Mix & Match",
-    "color": "purple",
+    "color": "#5169DD",
     "icon": "Shuffle",
-    "tagline": "Let customers build their own custom bundles",
-    "plans": [
-      "Advanced"
-    ],
-    "overview": "Let customers build their own custom bundles",
+    "tagline": "",
+    "plans": [],
+    "overview": "",
     "keyFeatures": [],
     "configuration": [],
     "storefrontBehavior": "",
-    "_sourceHash": "77688a1419d5f525f8d4927a3f25537bfa0204e4"
+    "_sourceHash": "020523febd15b4f1da89af4de30b412dc0e4ba72"
   }
 ]

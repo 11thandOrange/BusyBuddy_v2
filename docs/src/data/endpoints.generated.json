@@ -1975,7 +1975,7 @@
         "description": "Handled by getRecentActivity() in web/backend/controller/activity/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "8928162a90d3af7bc69d0c83002b438e64cd15a3",
+        "_sourceHash": "4686f3b3e049bec6fd308a0096d08bcfe45a0f1d",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -1989,11 +1989,32 @@
         "description": "Handled by getActivityStats() in web/backend/controller/activity/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "4ed8b2c9026d47934aea189d65b0b9c765ba87ff",
+        "_sourceHash": "6cee55eb39181f7751137ad490259896ca099d70",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
         "sourceFile": "web/backend/routes/activity/index.js"
+      }
+    ]
+  },
+  {
+    "slug": "dashboard",
+    "title": "Dashboard",
+    "description": "Mounted at /dashboard. Extracted from web/backend/routes/dashboard/index.js.",
+    "endpoints": [
+      {
+        "slug": "get-summary",
+        "method": "GET",
+        "path": "/api/dashboard/summary",
+        "title": "DashboardSummary",
+        "description": "Handled by getDashboardSummary() in web/backend/controller/dashboard/index.js.",
+        "auth": "session",
+        "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
+        "_sourceHash": "2dd571780d522735b796e621270c8ab2f8530262",
+        "params": [],
+        "responseExample": "{ }",
+        "liveTestable": false,
+        "sourceFile": "web/backend/routes/dashboard/index.js"
       }
     ]
   }
