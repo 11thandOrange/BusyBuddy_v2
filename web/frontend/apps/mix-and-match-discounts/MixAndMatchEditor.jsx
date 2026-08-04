@@ -13,9 +13,10 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
@@ -123,11 +124,9 @@ export const MixAndMatchEditor = () => {
   const { id } = useParams();
   const { closeEditor } = useEditorNavigation();
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -239,7 +238,7 @@ export const MixAndMatchEditor = () => {
           setBundleInternalName(bundle.internalName || '');
           setSecondaryMessage(bundle.secondaryMessage || 'Select any items and save on your purchase');
           setBundleEnabled(bundle.status ?? true);
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setDiscountType(bundle.discountType || 'Percentage');
           setDiscountValue(bundle.discountValue?.toString() || '15');
 
@@ -294,7 +293,7 @@ export const MixAndMatchEditor = () => {
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -352,7 +351,7 @@ export const MixAndMatchEditor = () => {
       setStoreProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast("Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -416,15 +415,15 @@ export const MixAndMatchEditor = () => {
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
     if (selectedProducts.length < selectedTier) {
-      shopify?.toast?.show(`Please select at least ${selectedTier} products for this tier`, { duration: 3000 });
+      showToast(`Please select at least ${selectedTier} products for this tier`, { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage') {
@@ -432,12 +431,12 @@ export const MixAndMatchEditor = () => {
         ([, value]) => value === '' || value === null || isNaN(value) || parseFloat(value) < 0 || parseFloat(value) > 100
       );
       if (invalidTier) {
-        shopify?.toast?.show("Each tier discount must be a percentage between 0 and 100", { duration: 3000 });
+        showToast("Each tier discount must be a percentage between 0 and 100", { duration: 3000 });
         return;
       }
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
 
@@ -496,18 +495,19 @@ export const MixAndMatchEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -520,7 +520,7 @@ export const MixAndMatchEditor = () => {
     switch (activeSettingId) {
       case 'select-products':
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your mix & match bundle">
+          <EditorConfigPanel title="Select Products" description={`Add at least ${selectedTier} products - customers need that many to choose from to mix & match for this tier's discount.`}>
             {showProductPicker ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1061,6 +1061,7 @@ export const MixAndMatchEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
         <EditorSettingsPane
           groups={currentSettings}

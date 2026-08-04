@@ -30,7 +30,7 @@ const MAX_TITLE_LENGTH = 255;
  * @returns {string|null} An error message, or null if the payload is valid.
  */
 function validateBundlePayload(body, { requireProducts = true, requireTitle = true } = {}) {
-  const { title, products, productsX, productsY, discountType, discountValue, startDate, endDate, quantityBreaks, tierDiscounts } = body;
+  const { title, products, productsX, productsY, discountType, discountValue, startDate, endDate, quantityBreaks, tierDiscounts, type } = body;
 
   if (title !== undefined) {
     if (typeof title !== "string" || title.trim().length === 0) {
@@ -58,6 +58,18 @@ function validateBundlePayload(body, { requireProducts = true, requireTitle = tr
     // field, it can't be used to wipe the bundle down to zero products.
     if (!hasGeneralProducts && !hasBogoProducts) {
       return "At least one product is required.";
+    }
+  }
+
+  // Per-type product count rules. Only checked when the "products" field is
+  // actually present on this request (create always sends it; update may
+  // legitimately omit it to only touch other fields).
+  if ("products" in body && Array.isArray(products)) {
+    if (type === "Bundle Discount" && products.length < 2) {
+      return "A bundle needs at least 2 products - you can't bundle a single product.";
+    }
+    if (type === "Volume Discount" && products.length > 1) {
+      return "Volume Discount supports exactly 1 product per offer.";
     }
   }
 
@@ -1595,6 +1607,30 @@ async function getActiveBundles(req, res) {
     return res.status(500).json({ status: false, message: error.message });
   }
 }
+// GET /api/bundles/:id - fetch a single bundle for the editor's edit flow.
+// Without this, every "Edit" open 404s, the editor silently falls back to
+// blank state, and Save then overwrites the real record with defaults.
+async function getBundleById(req, res) {
+  try {
+    const { id } = req.params;
+    const shopDomain = res.locals.shopify.session.shop;
+    const shopData = await Shop.findOne({ myshopify_domain: shopDomain });
+    if (!shopData) {
+      return res.status(404).json({ status: false, message: "Shop not found" });
+    }
+
+    const bundle = await Bundle.findOne({ _id: id, shopId: shopData._id }).lean();
+    if (!bundle) {
+      return res.status(404).json({ status: false, message: "Bundle not found" });
+    }
+
+    return res.status(200).json({ status: true, data: bundle });
+  } catch (error) {
+    console.error("Error getting bundle by id:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
 async function getShopBundles(req, res) {
   try {
     const shopDomain = res.locals.shopify.session.shop;
@@ -1948,6 +1984,7 @@ export {
   createProductBundleV2,
   getActiveBundles,
   getShopBundles,
+  getBundleById,
   createMixAndMatchBundle,
   updateBundle,
   deleteBundle,

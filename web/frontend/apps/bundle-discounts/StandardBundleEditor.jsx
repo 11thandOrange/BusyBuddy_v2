@@ -14,9 +14,10 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
@@ -123,11 +124,9 @@ export const StandardBundleEditor = () => {
   const { id } = useParams();
   const { closeEditor } = useEditorNavigation();
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -250,7 +249,7 @@ export const StandardBundleEditor = () => {
           setDiscountValue(bundle.discountValue || '');
           setBundleTitle(bundle.title || 'Buy Together & Save More!🔥');
           setBundleInternalName(bundle.internalName || '');
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setColorSettings({
             primaryTextColor: bundle.widgetAppearance?.primaryTextColor || '#303030',
             secondaryTextColor: bundle.widgetAppearance?.secondaryTextColor || '#000000',
@@ -281,7 +280,7 @@ export const StandardBundleEditor = () => {
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -347,7 +346,7 @@ export const StandardBundleEditor = () => {
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast("Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -438,37 +437,37 @@ export const StandardBundleEditor = () => {
   const handleSave = async () => {
     // Validation
     if (selectedProducts.length < 2) {
-      shopify?.toast?.show("Please select at least 2 products for the bundle.", {
+      showToast("Please select at least 2 products for the bundle.", {
         duration: 4000,
       });
       return;
     }
     if (!bundleTitle || bundleTitle.trim() === "") {
-      shopify?.toast?.show("Please enter a bundle title.", {
+      showToast("Please enter a bundle title.", {
         duration: 4000,
       });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type.", {
+      showToast("Please select a discount type.", {
         duration: 4000,
       });
       return;
     }
     if (!discountValue || isNaN(discountValue) || discountValue <= 0) {
-      shopify?.toast?.show("Please enter a valid discount value.", {
+      showToast("Please enter a valid discount value.", {
         duration: 4000,
       });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100.", {
+      showToast("Percentage discount cannot exceed 100.", {
         duration: 4000,
       });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date.", {
+      showToast("End date must be after start date.", {
         duration: 4000,
       });
       return;
@@ -520,22 +519,25 @@ export const StandardBundleEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
           duration: 5000,
+          tone: "success",
         });
-        // Clear unsaved changes flag and close editor
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
+        const errorData = await response.json().catch(() => null);
         console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
-        shopify?.toast?.show(
-          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
+        showToast(
+          errorData?.error || `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
           { duration: 5000 }
         );
       }
     } catch (error) {
       console.error("Save error:", error);
-      shopify?.toast?.show("Failed to save bundle. Please try again.", {
+      showToast("Failed to save bundle. Please try again.", {
         duration: 5000,
       });
     } finally {
@@ -552,7 +554,7 @@ export const StandardBundleEditor = () => {
         const availableProducts = getFilteredProducts();
 
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your bundle">
+          <EditorConfigPanel title="Select Products" description="Add at least 2 products to your bundle - a single product can't be bundled with itself.">
             {showProductPicker ? (
               <>
                 {/* Product Picker Header */}
@@ -1339,6 +1341,7 @@ export const StandardBundleEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       {/* Left Sidepane */}
       <EditorSidepane
         tabs={TABS}

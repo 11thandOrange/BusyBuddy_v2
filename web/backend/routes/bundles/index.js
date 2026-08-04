@@ -4,7 +4,8 @@ import {
   createMixAndMatchBundle,
   createProductBundleV2,
   getActiveBundles,
-  getShopBundles, 
+  getShopBundles,
+  getBundleById,
   deleteBundle,
   updateBundle,
   updateMixAndMatchBundle
@@ -13,6 +14,9 @@ import {
 router.post("/", createProductBundleV2);
 router.get("/", getShopBundles);
 router.get("/activeBundles", getActiveBundles);
+// Must come after the static /activeBundles route above, or Express would
+// match "activeBundles" as an :id here instead.
+router.get("/:id", getBundleById);
 
 router.post("/mix-and-match", createMixAndMatchBundle);
 router.post("/mix-and-match/:id", updateMixAndMatchBundle);

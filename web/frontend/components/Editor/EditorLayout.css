@@ -953,3 +953,33 @@
 .scrolling-text span {
     display: inline-block;
 }
+
+/* Editor toast - visible feedback for Save validation/success/error,
+   replacing the old silent no-op App Bridge toast calls. */
+.editor-toast {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 10000;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    max-width: 360px;
+    animation: editorToastIn 0.15s ease-out;
+}
+
+.editor-toast-error {
+    background: #d63535;
+}
+
+.editor-toast-success {
+    background: #0f7a3b;
+}
+
+@keyframes editorToastIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}

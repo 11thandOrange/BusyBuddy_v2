@@ -122,6 +122,10 @@ async function getActiveBundle(req, res) {
     const shopDomain = res.locals.shopify.session.shop;
     let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
     // Query your database for bundles containing this product
+    // startDate/endDate are required fields on Bundle (unlike Announcement
+    // Bar's optional schedule), so a direct query filter is safe here - no
+    // need for the "null means unrestricted" leniency getAnnouncementBar uses.
+    const now = new Date();
     const bundles = await Bundle.find({
       $or: [
         { "products.productId": `gid://shopify/Product/${productId}` },
@@ -130,6 +134,8 @@ async function getActiveBundle(req, res) {
       ],
       status: true,
       shopId: shopData ? shopData._id : null,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
     })
       .sort({ priority: -1 }) // sort first
       .limit(1)
@@ -259,7 +265,25 @@ async function getInactiveTab(req, res) {
       return res.status(200).json({ status: "SUCCESS", data: null });
     }
 
-    const inactiveTabContent = await InactiveTab.findOne({ myshopify_domain: client.session.shop }).lean();
+    let inactiveTabContent = await InactiveTab.findOne({ myshopify_domain: client.session.shop }).lean();
+
+    // Enforce the merchant's enabled toggle and schedule window - previously
+    // this endpoint ignored both, so turning the widget off (or its schedule
+    // expiring) had no effect on what the storefront actually showed.
+    if (inactiveTabContent && inactiveTabContent.isEnabled === false) {
+      inactiveTabContent = null;
+    }
+    if (inactiveTabContent) {
+      const now = new Date();
+      const start = inactiveTabContent.startDate ? new Date(inactiveTabContent.startDate) : null;
+      const end = inactiveTabContent.endDate ? new Date(inactiveTabContent.endDate) : null;
+      const startOk = !start || isNaN(start.getTime()) || start <= now;
+      const endOk = !end || isNaN(end.getTime()) || end >= now;
+      if (!startOk || !endOk) {
+        inactiveTabContent = null;
+      }
+    }
+
     return res.status(200).json({ status: "SUCCESS", data: inactiveTabContent });
   } catch (error) {
     console.error("Error fetching inactiveTab:", error);

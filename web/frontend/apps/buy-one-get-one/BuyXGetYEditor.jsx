@@ -14,9 +14,10 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
@@ -118,11 +119,9 @@ export const BuyXGetYEditor = () => {
   const { id } = useParams();
   const { closeEditor } = useEditorNavigation();
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -286,7 +285,7 @@ export const BuyXGetYEditor = () => {
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -375,7 +374,7 @@ export const BuyXGetYEditor = () => {
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast("Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -457,31 +456,31 @@ export const BuyXGetYEditor = () => {
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
     if (selectedXProducts.length === 0) {
-      shopify?.toast?.show("Please select at least one product for 'Customer Buys (X)'", { duration: 3000 });
+      showToast("Please select at least one product for 'Customer Buys (X)'", { duration: 3000 });
       return;
     }
     if (selectedYProducts.length === 0) {
-      shopify?.toast?.show("Please select at least one product for 'Customer Gets (Y)'", { duration: 3000 });
+      showToast("Please select at least one product for 'Customer Gets (Y)'", { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (discountType !== 'Free Gift' && (!discountValue || parseFloat(discountValue) <= 0)) {
-      shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
+      showToast("Please enter a valid discount value", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      showToast("Percentage discount cannot exceed 100", { duration: 3000 });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
 
@@ -541,18 +540,19 @@ export const BuyXGetYEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -564,7 +564,7 @@ export const BuyXGetYEditor = () => {
       case 'customer-buys':
         return (
           <div className="config-section">
-            <ConfigFormGroup label="Customer Buys (X)" helpText="Products that customer must purchase">
+            <ConfigFormGroup label="Customer Buys (X)" helpText="Products that customer must purchase - select at least 1">
               <div style={{ marginBottom: '15px' }}>
                 <ConfigInput
                   placeholder="Search products..."
@@ -624,7 +624,7 @@ export const BuyXGetYEditor = () => {
       case 'customer-gets':
         return (
           <div className="config-section">
-            <ConfigFormGroup label="Customer Gets (Y)" helpText="Products customer receives at a discount">
+            <ConfigFormGroup label="Customer Gets (Y)" helpText="Products customer receives at a discount - select at least 1">
               <div style={{ marginBottom: '15px' }}>
                 <ConfigInput
                   placeholder="Search products..."
@@ -1251,6 +1251,7 @@ export const BuyXGetYEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
         <EditorSettingsPane 
           groups={currentSettings} 

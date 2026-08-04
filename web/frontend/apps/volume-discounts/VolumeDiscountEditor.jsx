@@ -13,9 +13,10 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
@@ -115,11 +116,9 @@ export const VolumeDiscountEditor = () => {
   const { id } = useParams();
   const { closeEditor } = useEditorNavigation();
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -227,7 +226,7 @@ export const VolumeDiscountEditor = () => {
           setBundleInternalName(bundle.internalName || '');
           setSecondaryMessage(bundle.secondaryMessage || '');
           setBundleEnabled(bundle.status ?? true);
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setSelectedProducts(bundle.products || []);
           setDiscountType(bundle.discountType || 'Percentage');
           setDiscountValue(bundle.discountValue?.toString() || '10');
@@ -273,7 +272,7 @@ export const VolumeDiscountEditor = () => {
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -364,11 +363,11 @@ export const VolumeDiscountEditor = () => {
     return storeProducts.filter(p => p.title.toLowerCase().includes(productSearchQuery.toLowerCase()));
   };
 
-  // Add product to bundle
+  // Add product to bundle - Volume Discount is tiered pricing on a single
+  // product, so a new pick replaces whatever was selected rather than
+  // appending to it.
   const handleAddProduct = (product) => {
-    if (!selectedProducts.find(p => p.productId === product.productId)) {
-      setSelectedProducts([...selectedProducts, product]);
-    }
+    setSelectedProducts([product]);
     setShowProductPicker(false);
     setProductSearchQuery('');
   };
@@ -444,31 +443,31 @@ export const VolumeDiscountEditor = () => {
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
-    if (selectedProducts.length < 1) {
-      shopify?.toast?.show("Please select at least 1 product", { duration: 3000 });
+    if (selectedProducts.length !== 1) {
+      showToast("Volume Discount supports exactly 1 product per offer.", { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (quantityBreaks.length < 1) {
-      shopify?.toast?.show("Please add at least one quantity break", { duration: 3000 });
+      showToast("Please add at least one quantity break", { duration: 3000 });
       return;
     }
     if (!discountValue || isNaN(discountValue) || parseFloat(discountValue) <= 0) {
-      shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
+      showToast("Please enter a valid discount value", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      showToast("Percentage discount cannot exceed 100", { duration: 3000 });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
 
@@ -526,18 +525,19 @@ export const VolumeDiscountEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -550,7 +550,7 @@ export const VolumeDiscountEditor = () => {
     switch (activeSettingId) {
       case 'select-products':
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your volume discount offer">
+          <EditorConfigPanel title="Select Products" description="Volume Discount applies tiered pricing to exactly 1 product - picking a new product replaces the current one.">
             {showProductPicker ? (
               <>
                 {/* Product Picker Header */}
@@ -614,12 +614,12 @@ export const VolumeDiscountEditor = () => {
                     marginBottom: '16px', fontSize: '14px', fontWeight: 500, color: 'rgba(255,255,255,0.8)'
                   }}
                 >
-                  + Add Products
+                  {selectedProducts.length > 0 ? '↻ Change Product' : '+ Add Product'}
                 </button>
 
                 <div style={{ marginTop: '8px' }}>
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Selected Products ({selectedProducts.length})
+                    Selected Product ({selectedProducts.length}/1)
                   </p>
                   {selectedProducts.map((product, index) => (
                     <div key={product.productId || index} style={{
@@ -734,10 +734,10 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Message Text" description="Customize the offer messages">
             <ConfigFormGroup label="Primary Message">
-              <ConfigInput value={bundleTitle} onChange={setBundleTitle} placeholder="Buy More & Save More!" />
+              <ConfigInput value={bundleTitle} onChange={(e) => setBundleTitle(e.target.value)} placeholder="Buy More & Save More!" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Message">
-              <ConfigInput value={secondaryMessage} onChange={setSecondaryMessage} placeholder="The more you buy, the more you save" />
+              <ConfigInput value={secondaryMessage} onChange={(e) => setSecondaryMessage(e.target.value)} placeholder="The more you buy, the more you save" />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -770,13 +770,13 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Add to Cart Button" description="Customize the add to cart button">
             <ConfigFormGroup label="Button Text">
-              <ConfigInput value={addToCartText} onChange={setAddToCartText} placeholder="Add to Cart" />
+              <ConfigInput value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add to Cart" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <ConfigInput type="color" value={addToCartBgColor} onChange={setAddToCartBgColor} />
+              <ConfigInput type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <ConfigInput type="color" value={addToCartTextColor} onChange={setAddToCartTextColor} />
+              <ConfigInput type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -788,13 +788,13 @@ export const VolumeDiscountEditor = () => {
             {showSkipButton && (
               <>
                 <ConfigFormGroup label="Button Text">
-                  <ConfigInput value={skipButtonText} onChange={setSkipButtonText} placeholder="Skip Offer" />
+                  <ConfigInput value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <ConfigInput type="color" value={skipButtonBgColor} onChange={setSkipButtonBgColor} />
+                  <ConfigInput type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput type="color" value={skipButtonTextColor} onChange={setSkipButtonTextColor} />
+                  <ConfigInput type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
                 </ConfigFormGroup>
               </>
             )}
@@ -853,7 +853,7 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Start Date" description="When should this offer start?">
             <ConfigFormGroup label="Start Date & Time">
-              <ConfigInput type="datetime-local" value={startDate} onChange={setStartDate} />
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -862,7 +862,7 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="End Date" description="When should this offer end?">
             <ConfigFormGroup label="End Date & Time">
-              <ConfigInput type="datetime-local" value={endDate} onChange={setEndDate} />
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -1115,6 +1115,7 @@ export const VolumeDiscountEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane
         tabs={TABS}
         activeTab={activeTab}
