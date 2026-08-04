@@ -35,6 +35,75 @@ function isSafeHttpUrl(value) {
   }
 }
 
+// The editor UI (AnnouncementBarEditor.jsx) sends flat field names that don't
+// match the Mongoose schema's nested sub-documents (colorSettings,
+// messageDesktopFontSettings, saveBoxSettings, shopNowButtonSettings, ...) or
+// the `type` enum's casing - so those fields were being silently stripped by
+// Mongoose's strict mode, or in the case of `type`, throwing a validation
+// error and blocking every save. This maps the editor's flat payload onto the
+// schema shape the storefront extension actually reads, without touching the
+// extension or the schema.
+const BAR_TYPE_TO_SCHEMA_TYPE = {
+  text: "Text",
+  countdown: "Countdown Timer",
+  freeshipping: "Free Shipping",
+  orders: "Orders Counter",
+  Email: "Email",
+};
+
+function mapEditorPayloadToSchema(body) {
+  const mapped = { ...body };
+
+  if (body.barType !== undefined) {
+    mapped.type = BAR_TYPE_TO_SCHEMA_TYPE[body.barType] || body.type;
+  }
+
+  if (body.backgroundColor !== undefined) {
+    mapped.colorSettings = { ...body.colorSettings, "Background Color": body.backgroundColor };
+    mapped.generalColorSettings = {
+      ...body.generalColorSettings,
+      "Background Color": body.backgroundColor,
+    };
+  }
+  if (body.textColor !== undefined) {
+    mapped.generalColorSettings = {
+      ...mapped.generalColorSettings,
+      "Message Font Color": body.textColor,
+    };
+  }
+
+  if (body.fontSize !== undefined || body.fontFamily !== undefined || body.fontWeight !== undefined) {
+    mapped.messageDesktopFontSettings = {
+      ...body.messageDesktopFontSettings,
+      ...(body.fontSize !== undefined && { fontSize: `${body.fontSize}px` }),
+      ...(body.fontFamily !== undefined && { fontFamily: body.fontFamily }),
+      ...(body.fontWeight !== undefined && { fontWeight: body.fontWeight }),
+    };
+  }
+
+  if (body.saveBoxBgColor !== undefined || body.saveBoxTextColor !== undefined) {
+    mapped.saveBoxSettings = {
+      ...body.saveBoxSettings,
+      ...(body.saveBoxBgColor !== undefined && { backgroundColor: body.saveBoxBgColor }),
+      ...(body.saveBoxTextColor !== undefined && { fontColor: body.saveBoxTextColor }),
+    };
+  }
+
+  if (body.shopNowButtonBgColor !== undefined || body.shopNowButtonColor !== undefined) {
+    mapped.shopNowButtonSettings = {
+      ...body.shopNowButtonSettings,
+      ...(body.shopNowButtonBgColor !== undefined && { backgroundColor: body.shopNowButtonBgColor }),
+      ...(body.shopNowButtonColor !== undefined && { fontColor: body.shopNowButtonColor }),
+    };
+  }
+
+  if (body.timerEndDate !== undefined) mapped.targetDate = body.timerEndDate;
+  if (body.timerEndTime !== undefined) mapped.targetTime = body.timerEndTime;
+  if (body.animationSpeed !== undefined) mapped.messageAnimationSpeed = body.animationSpeed;
+
+  return mapped;
+}
+
 function validateAnnouncementBarData(data) {
   const errors = [];
 
@@ -139,7 +208,7 @@ async function createAnnouncementBar(req, res) {
     }
 
     const announcementBarData = {
-      ...req.body,
+      ...mapEditorPayloadToSchema(req.body),
       shopId: shopData._id,
     };
 
@@ -295,15 +364,17 @@ async function updateAnnouncementBar(req, res) {
       });
     }
 
-    if (req.body.name && !req.body.internalName) {
-      req.body.internalName = req.body.name
+    const updatePayload = mapEditorPayloadToSchema(req.body);
+
+    if (updatePayload.name && !updatePayload.internalName) {
+      updatePayload.internalName = updatePayload.name
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
     }
 
-    if (req.body.status === "active" || req.body.isBundleActive === true) {
+    if (updatePayload.status === "active" || updatePayload.isBundleActive === true) {
       await AnnouncementBar.updateMany(
         { shopId: shopData._id, _id: { $ne: id }, $or: [{ status: "active" }, { isBundleActive: true }] },
         { status: "inactive", isBundleActive: false }
@@ -312,7 +383,7 @@ async function updateAnnouncementBar(req, res) {
 
     const announcementBar = await AnnouncementBar.findOneAndUpdate(
       { _id: id, shopId: shopData._id },
-      req.body,
+      updatePayload,
       { new: true, runValidators: true }
     );
 
@@ -937,4 +1008,5 @@ export {
   bulkDeleteAnnouncementBars,
   updateAnnouncementBarCountdown,
   validateAnnouncementBarData,
+  mapEditorPayloadToSchema,
 };
