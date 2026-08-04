@@ -624,18 +624,23 @@ export const VolumeDiscountEditor = () => {
                   </p>
                   {selectedProducts.map((product, index) => (
                     <div key={product.productId || index} style={{
-                      display: 'flex', alignItems: 'center', padding: '10px', backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px',
+                      border: '1px solid rgba(81, 105, 221, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '13px', fontWeight: 500, margin: 0, color: 'rgba(255,255,255,0.9)' }}>{product.title}</p>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>${product.price}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => handleRemoveProduct(product.productId)} 
-                        style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
-                      >✕</button>
+                      <button
+                        onClick={() => handleRemoveProduct(product.productId)}
+                        style={{
+                          background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px',
+                          color: '#ff3b30', padding: '4px 8px', cursor: 'pointer'
+                        }}>✕</button>
                     </div>
                   ))}
                 </div>

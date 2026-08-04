@@ -578,40 +578,45 @@ export const BuyXGetYEditor = () => {
               {selectedXProducts.length > 0 && (
                 <div style={{ marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '13px' }}>Selected ({selectedXProducts.length})</span>
-                    <button onClick={clearAllXProducts} style={{ color: '#C4290E', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>Selected ({selectedXProducts.length})</span>
+                    <button onClick={clearAllXProducts} style={{ color: '#ff3b30', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
                       Clear All
                     </button>
                   </div>
                   {selectedXProducts.map(product => (
                     <div key={product.productId || product.id} style={{
-                      display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
-                      background: '#f5f5f5', borderRadius: '8px', gap: '10px'
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', marginBottom: '8px',
+                      background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', border: '1px solid rgba(81, 105, 221, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
-                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
-                      <button onClick={() => removeProductFromX(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeProductFromX(product.productId || product.id)} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
               )}
-              
+
               {/* Available Products */}
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {productsLoading ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>Loading products...</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading products...</p>
                 ) : getFilteredProducts().length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666', fontSize: '13px' }}>No products available</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>No products available</p>
                 ) : (
                   getFilteredProducts().map(product => (
                     <div key={product.id} onClick={() => addProductToX(product)} style={{
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
-                      background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
+                      background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', gap: '10px'
                     }}>
                       <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
-                        <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
+                        <div style={{ fontWeight: 500, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>{product.title}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>${product.price}</div>
                       </div>
                       <span style={{ color: '#5169DD', fontSize: '20px' }}>+</span>
                     </div>
@@ -638,40 +643,45 @@ export const BuyXGetYEditor = () => {
               {selectedYProducts.length > 0 && (
                 <div style={{ marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '13px' }}>Selected ({selectedYProducts.length})</span>
-                    <button onClick={clearAllYProducts} style={{ color: '#C4290E', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>Selected ({selectedYProducts.length})</span>
+                    <button onClick={clearAllYProducts} style={{ color: '#ff3b30', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
                       Clear All
                     </button>
                   </div>
                   {selectedYProducts.map(product => (
                     <div key={product.productId || product.id} style={{
-                      display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
-                      background: '#E8F5E9', borderRadius: '8px', gap: '10px'
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', marginBottom: '8px',
+                      background: 'rgba(76, 175, 80, 0.1)', borderRadius: '8px', border: '1px solid rgba(76, 175, 80, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
-                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
-                      <button onClick={() => removeProductFromY(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeProductFromY(product.productId || product.id)} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
               )}
-              
+
               {/* Available Products */}
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {productsLoading ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>Loading products...</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading products...</p>
                 ) : getFilteredProducts().length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666', fontSize: '13px' }}>No products available</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>No products available</p>
                 ) : (
                   getFilteredProducts().map(product => (
                     <div key={product.id} onClick={() => addProductToY(product)} style={{
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
-                      background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
+                      background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', gap: '10px'
                     }}>
                       <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
-                        <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
+                        <div style={{ fontWeight: 500, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>{product.title}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>${product.price}</div>
                       </div>
                       <span style={{ color: '#4CAF50', fontSize: '20px' }}>+</span>
                     </div>
