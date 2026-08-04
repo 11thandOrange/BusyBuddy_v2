@@ -15,7 +15,9 @@ import {
   ProductPagePreview,
   EditorHeader,
   EditorRightContent,
-  EditorToast
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -207,6 +209,7 @@ export const StandardBundleEditor = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
   const [countdownLabel, setCountdownLabel] = useState('Ends in:');
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   
   // Call to Action Buttons
   const [addToCartText, setAddToCartText] = useState('Add To Cart');
@@ -267,6 +270,7 @@ export const StandardBundleEditor = () => {
           setEmojiPosition(bundle.emojiPosition || 'end');
           setShowCountdown(bundle.widgetAppearance?.isShowCountDownTimer || false);
           setCountdownLabel(bundle.countdownLabel || 'Ends in:');
+          setCountdownTheme(bundle.widgetAppearance?.offerTagTheme || 'classic');
           setAddToCartText(bundle.addToCartText || 'Add To Cart');
           setSkipOfferText(bundle.skipOfferText || 'Skip Offer');
           setShowSkipButton(bundle.showSkipButton ?? true);
@@ -491,6 +495,7 @@ export const StandardBundleEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -911,6 +916,14 @@ export const StandardBundleEditor = () => {
             />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Label" hint="Text shown before the countdown">
                   <ConfigInput
                     type="text"
@@ -1119,43 +1132,18 @@ export const StandardBundleEditor = () => {
 
   const renderCountdownTimer = () => {
     if (!showCountdown) return null;
-    
+
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '8px 12px',
-        background: colorSettings.countdownBgColor,
-        borderRadius: '8px',
-        marginBottom: '12px',
-      }}>
-        <span style={{ color: colorSettings.countdownTextColor, fontSize: '12px', fontWeight: '600' }}>
-          {countdownLabel}
-        </span>
-        {[
-          { value: timeLeft.hours, label: 'HRS' },
-          { value: timeLeft.minutes, label: 'MIN' },
-          { value: timeLeft.seconds, label: 'SEC' },
-        ].map((item, idx) => (
-          <React.Fragment key={idx}>
-            <div style={{
-              background: 'rgba(255,255,255,0.2)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: colorSettings.countdownTextColor }}>
-                {item.value}
-              </div>
-              <div style={{ fontSize: '8px', color: colorSettings.countdownTextColor, opacity: 0.8 }}>
-                {item.label}
-              </div>
-            </div>
-            {idx < 2 && <span style={{ color: colorSettings.countdownTextColor, fontWeight: 'bold' }}>:</span>}
-          </React.Fragment>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+        <CountdownTimerDisplay
+          theme={countdownTheme}
+          bgColor={colorSettings.countdownBgColor}
+          textColor={colorSettings.countdownTextColor}
+          hours={timeLeft.hours}
+          minutes={timeLeft.minutes}
+          seconds={timeLeft.seconds}
+          label={countdownLabel}
+        />
       </div>
     );
   };

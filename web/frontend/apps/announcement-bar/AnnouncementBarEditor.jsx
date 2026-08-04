@@ -13,7 +13,9 @@ import {
   EditorPreviewPanel,
   StorePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  CountdownThemePicker,
+  CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -103,6 +105,16 @@ const BAR_TYPE_OPTIONS = [
   { value: 'orders', label: 'Orders Counter' },
   { value: 'Email', label: 'Email Subscription' },
 ];
+
+// Reverse of the backend's BAR_TYPE_TO_SCHEMA_TYPE map (controller/announcementBars/index.js)
+// - the schema's `type` enum uses different casing/wording than barType.
+const SCHEMA_TYPE_TO_BAR_TYPE = {
+  'Text': 'text',
+  'Countdown Timer': 'countdown',
+  'Free Shipping': 'freeshipping',
+  'Orders Counter': 'orders',
+  'Email': 'Email',
+};
 
 const POSITION_OPTIONS = [
   { value: 'top', label: 'Top' },
@@ -199,6 +211,8 @@ export const AnnouncementBarEditor = () => {
   const [timerEndDate, setTimerEndDate] = useState('');
   const [timerEndTime, setTimerEndTime] = useState('');
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdownTheme, setCountdownTheme] = useState('classic');
+  const [timerBgColor, setTimerBgColor] = useState('#1a1a1a');
   
   // Shop Now Button
   const [showShopNowButton, setShowShopNowButton] = useState(false);
@@ -285,29 +299,43 @@ export const AnnouncementBarEditor = () => {
         
         if (bar) {
           setEditingBar(bar);
-          // Populate form state from fetched data
+          // Populate form state from fetched data. The backend stores most
+          // visual settings under nested sub-documents (colorSettings,
+          // messageDesktopFontSettings, saveBoxSettings, ...) that the
+          // storefront extension reads directly - this reads back from those
+          // same nested paths so a reopened bar shows what was actually saved
+          // instead of resetting to defaults.
           setBarEnabled(bar.status === 'active');
-          setBarType(bar.barType || 'text');
+          setBarType(SCHEMA_TYPE_TO_BAR_TYPE[bar.type] || 'text');
           setInternalName(bar.name || 'Summer Sale Banner');
           setTitle(bar.name || 'Summer Sale Banner');
           setMessage(bar.message || '🔥 Summer Sale - Up to 50% OFF!');
-          setBackgroundColor(bar.backgroundColor || '#667eea');
+          setBackgroundColor(bar.generalColorSettings?.['Background Color'] || bar.colorSettings?.['Background Color'] || '#667eea');
           setGradientEndColor(bar.gradientEndColor || '#764ba2');
           setBackgroundType(bar.backgroundType || 'gradient');
-          setTextColor(bar.textColor || '#ffffff');
-          setFontSize(bar.fontSize || '16');
-          setFontFamily(bar.fontFamily || 'Inter');
-          setFontWeight(bar.fontWeight || '600');
+          setTextColor(bar.generalColorSettings?.['Message Font Color'] || '#ffffff');
+          setFontSize(parseInt(bar.messageDesktopFontSettings?.fontSize) || 16);
+          setFontFamily(bar.messageDesktopFontSettings?.fontFamily || 'Inter');
+          setFontWeight(bar.messageDesktopFontSettings?.fontWeight || '600');
           setBarHeight(bar.barHeight || 50);
           setBarPadding(bar.barPadding || 12);
           setBarPosition(bar.barPosition || 'top');
           setShowTimer(bar.showTimer || false);
+          setTimerEndDate(bar.targetDate || '');
+          setTimerEndTime(bar.targetTime || '');
+          setCountdownTheme(bar.countdownTheme || 'classic');
+          setTimerBgColor(bar.timerColorSettings?.['Timer Block Background Color'] || '#1a1a1a');
+          setAnimationSpeed(bar.messageAnimationSpeed || 20);
           setShowShopNowButton(bar.showShopNowButton || false);
           setShopNowButtonText(bar.shopNowButtonText || 'Shop Now');
           setShopNowButtonUrl(bar.shopNowButtonUrl || '');
+          setShopNowButtonColor(bar.shopNowButtonSettings?.fontColor || '#ffffff');
+          setShopNowButtonBgColor(bar.shopNowButtonSettings?.backgroundColor || '#000000');
           setShowSaveBox(bar.showSaveBox || false);
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
-          
+          setSaveBoxBgColor(bar.saveBoxSettings?.backgroundColor || '#ff4444');
+          setSaveBoxTextColor(bar.saveBoxSettings?.fontColor || '#ffffff');
+
           // Load email form settings
           setShowEmailForm(bar.showEmailForm || false);
           if (bar.emailSettings) {
@@ -317,10 +345,6 @@ export const AnnouncementBarEditor = () => {
               inputStyles: { ...emailSettings.inputStyles, ...(bar.emailSettings.inputStyles || {}) },
               buttonStyles: { ...emailSettings.buttonStyles, ...(bar.emailSettings.buttonStyles || {}) },
             });
-          }
-          // Set bar type to Email if type is Email
-          if (bar.type === 'Email') {
-            setBarType('Email');
           }
         }
       } catch (err) {
@@ -393,6 +417,8 @@ export const AnnouncementBarEditor = () => {
       showTimer,
       timerEndDate,
       timerEndTime,
+      countdownTheme,
+      timerBgColor,
       showShopNowButton,
       shopNowButtonText,
       shopNowButtonUrl,
@@ -404,7 +430,6 @@ export const AnnouncementBarEditor = () => {
       saveBoxTextColor,
       startDate,
       endDate,
-      type: barType === 'Email' ? 'Email' : barType,
       showEmailForm,
       emailSettings: showEmailForm ? emailSettings : undefined,
     };
@@ -548,12 +573,29 @@ export const AnnouncementBarEditor = () => {
                     onChange={(e) => setTimerEndDate(e.target.value)}
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="End Time">
                   <ConfigInput
                     type="time"
                     value={timerEndTime}
                     onChange={(e) => setTimerEndTime(e.target.value)}
+                  />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={timerBgColor}
+                    textColor={textColor}
+                  />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Timer Background Color">
+                  <ConfigInput
+                    type="color"
+                    value={timerBgColor}
+                    onChange={(e) => setTimerBgColor(e.target.value)}
                   />
                 </ConfigFormGroup>
               </>
@@ -1000,36 +1042,19 @@ export const AnnouncementBarEditor = () => {
   // Render timer display
   const renderTimer = () => {
     if (!showTimer) return null;
-    
+
     return (
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        marginLeft: '12px',
-      }}>
-        {[
-          { value: countdown.days, label: 'D' },
-          { value: countdown.hours, label: 'H' },
-          { value: countdown.minutes, label: 'M' },
-          { value: countdown.seconds, label: 'S' },
-        ].map((item, idx) => (
-          <div key={idx} style={{
-            background: 'rgba(0,0,0,0.2)',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            textAlign: 'center',
-            minWidth: '36px',
-          }}>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: textColor }}>
-              {String(item.value).padStart(2, '0')}
-            </div>
-            <div style={{ fontSize: '9px', color: textColor, opacity: 0.8 }}>
-              {item.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      <CountdownTimerDisplay
+        theme={countdownTheme}
+        bgColor={timerBgColor}
+        textColor={textColor}
+        days={countdown.days}
+        hours={countdown.hours}
+        minutes={countdown.minutes}
+        seconds={countdown.seconds}
+        label=""
+        style={{ marginLeft: '12px' }}
+      />
     );
   };
 

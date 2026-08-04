@@ -9,6 +9,7 @@ const widgetAppearanceSchema = new mongoose.Schema({
   buttonColor: { type: String },
   offerTagBackgroundColor: { type: String },
   offerTagTextColor: { type: String },
+  offerTagTheme: { type: String, default: "classic" },
   isShowCountDownTimer: { type: Boolean, default: false },
   addEmoji: { type: Boolean, default: false },
   topMargin: { type: Number },

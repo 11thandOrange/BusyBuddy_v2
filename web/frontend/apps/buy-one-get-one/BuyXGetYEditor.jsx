@@ -15,7 +15,9 @@ import {
   ProductPagePreview,
   EditorHeader,
   EditorRightContent,
-  EditorToast
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -187,6 +189,7 @@ export const BuyXGetYEditor = () => {
   
   // Display settings
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
@@ -259,6 +262,7 @@ export const BuyXGetYEditor = () => {
               getYBannerTextColor: bundle.widgetAppearance.getYBannerTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
@@ -505,6 +509,7 @@ export const BuyXGetYEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         getYBannerColor: colorSettings.getYBannerColor,
         getYBannerTextColor: colorSettings.getYBannerTextColor,
         isShowCountDownTimer: showCountdown,
@@ -790,6 +795,14 @@ export const BuyXGetYEditor = () => {
             />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background">
                   <input
                     type="color"
@@ -1042,19 +1055,17 @@ export const BuyXGetYEditor = () => {
 
         {/* Countdown Timer */}
         {showCountdown && (
-          <div style={{
-            position: 'absolute',
-            top: '15px',
-            right: '15px',
-            background: colorSettings.countdownBgColor,
-            color: colorSettings.countdownTextColor,
-            padding: '6px 10px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 500,
-          }}>
-            {showEmoji && '🔥 '}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-          </div>
+          <CountdownTimerDisplay
+            theme={countdownTheme}
+            bgColor={colorSettings.countdownBgColor}
+            textColor={colorSettings.countdownTextColor}
+            hours={timeLeft.hours}
+            minutes={timeLeft.minutes}
+            seconds={timeLeft.seconds}
+            label="Ends In"
+            showEmoji={showEmoji}
+            style={{ position: 'absolute', top: '15px', right: '15px' }}
+          />
         )}
 
         {!hasProducts ? (

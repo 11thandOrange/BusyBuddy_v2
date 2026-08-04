@@ -14,7 +14,9 @@ import {
   ProductPagePreview,
   EditorHeader,
   EditorRightContent,
-  EditorToast
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -186,6 +188,7 @@ export const VolumeDiscountEditor = () => {
     countdownTextColor: '#FFFFFF',
   });
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
@@ -250,6 +253,7 @@ export const VolumeDiscountEditor = () => {
               countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
@@ -492,6 +496,7 @@ export const VolumeDiscountEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -768,6 +773,14 @@ export const VolumeDiscountEditor = () => {
             <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background Color">
                   <ConfigInput type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} />
                 </ConfigFormGroup>
@@ -905,16 +918,16 @@ export const VolumeDiscountEditor = () => {
             {bundleTitle}
           </h3>
           {showCountdown && (
-            <div style={{
-              backgroundColor: colorSettings.countdownBgColor,
-              color: colorSettings.countdownTextColor,
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '13px',
-              fontWeight: 600,
-            }}>
-              {showEmoji && '⏱️'} Ends in {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-            </div>
+            <CountdownTimerDisplay
+              theme={countdownTheme}
+              bgColor={colorSettings.countdownBgColor}
+              textColor={colorSettings.countdownTextColor}
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              label="Ends in"
+              showEmoji={showEmoji}
+            />
           )}
         </div>
 

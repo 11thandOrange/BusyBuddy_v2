@@ -101,6 +101,13 @@ function mapEditorPayloadToSchema(body) {
   if (body.timerEndTime !== undefined) mapped.targetTime = body.timerEndTime;
   if (body.animationSpeed !== undefined) mapped.messageAnimationSpeed = body.animationSpeed;
 
+  if (body.timerBgColor !== undefined) {
+    mapped.timerColorSettings = {
+      ...body.timerColorSettings,
+      "Timer Block Background Color": body.timerBgColor,
+    };
+  }
+
   return mapped;
 }
 
@@ -1009,4 +1016,5 @@ export {
   updateAnnouncementBarCountdown,
   validateAnnouncementBarData,
   mapEditorPayloadToSchema,
+  BAR_TYPE_TO_SCHEMA_TYPE,
 };

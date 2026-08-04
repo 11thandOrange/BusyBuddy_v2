@@ -14,7 +14,9 @@ import {
   ProductPagePreview,
   EditorHeader,
   EditorRightContent,
-  EditorToast
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -198,6 +200,7 @@ export const MixAndMatchEditor = () => {
 
   // Display settings
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
@@ -267,6 +270,7 @@ export const MixAndMatchEditor = () => {
               countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
@@ -462,6 +466,7 @@ export const MixAndMatchEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -679,6 +684,14 @@ export const MixAndMatchEditor = () => {
             <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background">
                   <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
                 </ConfigFormGroup>
@@ -830,24 +843,17 @@ export const MixAndMatchEditor = () => {
 
         {/* Countdown Timer - Production Style */}
         {showCountdown && (
-          <div style={{
-            position: 'absolute',
-            top: '0.5px',
-            right: '0px',
-            background: colorSettings.countdownBgColor,
-            color: colorSettings.countdownTextColor,
-            padding: '8px 10px',
-            borderRadius: '8px 18px 8px 8px',
-            fontSize: '12px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            border: `1px solid ${colorSettings.borderColor}`,
-            zIndex: 3,
-          }}>
-            {showEmoji && '🔥 '}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-          </div>
+          <CountdownTimerDisplay
+            theme={countdownTheme}
+            bgColor={colorSettings.countdownBgColor}
+            textColor={colorSettings.countdownTextColor}
+            hours={timeLeft.hours}
+            minutes={timeLeft.minutes}
+            seconds={timeLeft.seconds}
+            label="Ends In"
+            showEmoji={showEmoji}
+            style={{ position: 'absolute', top: '0.5px', right: '0px', zIndex: 3 }}
+          />
         )}
 
         {!hasProducts ? (

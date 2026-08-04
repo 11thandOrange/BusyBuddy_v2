@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import mongoose from 'mongoose';
 import AnnouncementBar from '../../models/announcementBar.model.js';
-import { mapEditorPayloadToSchema } from '../../controller/announcementBars/index.js';
+import { mapEditorPayloadToSchema, BAR_TYPE_TO_SCHEMA_TYPE } from '../../controller/announcementBars/index.js';
+
+// Mirrors AnnouncementBarEditor.jsx's SCHEMA_TYPE_TO_BAR_TYPE, which reverses
+// this same map to read a saved bar's `type` back into the `barType` state
+// on load. Kept in sync here so a change to one side without the other fails
+// this test instead of silently breaking the load path again.
+const EXPECTED_REVERSE_MAP = {
+  Text: 'text',
+  'Countdown Timer': 'countdown',
+  'Free Shipping': 'freeshipping',
+  'Orders Counter': 'orders',
+  Email: 'Email',
+};
 
 // AnnouncementBarEditor.jsx (the current editor UI) sends flat field names
 // like `barType`, `backgroundColor`, `fontSize` that don't match the Mongoose
@@ -101,6 +113,21 @@ describe('mapEditorPayloadToSchema', () => {
     expect(mapped.name).toBe('My Bar');
     expect(mapped.showMessage).toBe(true);
     expect(mapped.barHeight).toBe(60);
+  });
+
+  it('maps timerBgColor onto timerColorSettings["Timer Block Background Color"]', () => {
+    const mapped = mapEditorPayloadToSchema({ timerBgColor: '#1a1a1a' });
+    expect(mapped.timerColorSettings['Timer Block Background Color']).toBe('#1a1a1a');
+  });
+
+  it('BAR_TYPE_TO_SCHEMA_TYPE is exactly reversible by the frontend load path', () => {
+    // Every forward mapping must have a matching reverse entry, and vice versa.
+    for (const [barType, schemaType] of Object.entries(BAR_TYPE_TO_SCHEMA_TYPE)) {
+      expect(EXPECTED_REVERSE_MAP[schemaType]).toBe(barType);
+    }
+    expect(Object.keys(EXPECTED_REVERSE_MAP).sort()).toEqual(
+      Object.values(BAR_TYPE_TO_SCHEMA_TYPE).sort()
+    );
   });
 
   it('produces a fully schema-valid document for a realistic editor save payload', () => {

@@ -238,6 +238,7 @@ const announcementBarSchema = new mongoose.Schema(
     showTimer: { type: Boolean, default: true },
     showCountdown: { type: Boolean, default: false },
     isTimerActive: { type: Boolean, default: false },
+    countdownTheme: { type: String, default: "classic" },
     targetDate: { type: String, default: "" },
     targetTime: { type: String, default: "" },
     countdown: { type: countdownSettingsSchema, default: () => ({}) },
