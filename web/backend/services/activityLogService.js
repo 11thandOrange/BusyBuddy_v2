@@ -67,10 +67,12 @@ const activityLogService = {
 
   /**
    * Get quick stats for a shop (customer events today, active offers)
-   * @param {string} shopId - Shop identifier
+   * @param {string} shopDomain - Shop myshopify domain (ActivityLog.shopId is stored as this string)
+   * @param {string} [shopObjectId] - Shop's MongoDB _id (Bundle/AnnouncementBar store shopId as this ObjectId).
+   *   Defaults to shopDomain for callers that only have one id and don't need offer counts.
    * @returns {Promise<Object>} Stats object with activeOffers and usesToday
    */
-  async getQuickStats(shopId) {
+  async getQuickStats(shopDomain, shopObjectId = shopDomain) {
     try {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
@@ -79,7 +81,7 @@ const activityLogService = {
       const [usageStats] = await ActivityLog.aggregate([
         {
           $match: {
-            shopId,
+            shopId: shopDomain,
             createdAt: { $gte: startOfDay },
             type: { $in: ["view", "click", "purchase"] },
           },
@@ -94,7 +96,7 @@ const activityLogService = {
       ]);
 
       // Get counts of active offers by type
-      const { bundles, announcements } = await this.countActiveOffers(shopId);
+      const { bundles, announcements } = await this.countActiveOffers(shopObjectId);
 
       return {
         activeBundles: bundles,

@@ -77,9 +77,11 @@ describe('Activity Controller', () => {
 
       await getRecentActivity(req, res);
 
-      // Controller resolves shop domain → MongoDB _id via Shop.findOne, then passes _id to service
-      expect(activityLogService.getRecentActivities).toHaveBeenCalledWith(MOCK_SHOP_ID, 20);
-      expect(activityLogService.getQuickStats).toHaveBeenCalledWith(MOCK_SHOP_ID);
+      // ActivityLog documents are keyed by the shop domain string (how they're
+      // written in bundles/announcementBars/webhooks controllers), while
+      // Bundle/AnnouncementBar counts need the Mongo _id - both are passed through.
+      expect(activityLogService.getRecentActivities).toHaveBeenCalledWith('test-shop.myshopify.com', 20);
+      expect(activityLogService.getQuickStats).toHaveBeenCalledWith('test-shop.myshopify.com', MOCK_SHOP_ID);
     });
 
     it('should format activities with id, widget, title, meta, amount, time, iconClass', async () => {
@@ -164,7 +166,7 @@ describe('Activity Controller', () => {
 
       await getActivityStats(req, res);
 
-      expect(activityLogService.getQuickStats).toHaveBeenCalledWith(MOCK_SHOP_ID);
+      expect(activityLogService.getQuickStats).toHaveBeenCalledWith('test-shop.myshopify.com', MOCK_SHOP_ID);
       expect(res.json).toHaveBeenCalledWith({
         status: 'SUCCESS',
         data: {
