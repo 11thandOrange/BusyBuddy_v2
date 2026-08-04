@@ -128,7 +128,8 @@ export const VolumeDiscountEditor = () => {
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -723,10 +724,17 @@ export const VolumeDiscountEditor = () => {
               <ConfigInput
                 type="number"
                 value={bundlePriority}
-                onChange={(val) => setBundlePriority(parseInt(val) || 0)}
+                onChange={(e) => setBundlePriority(parseInt(e.target.value) || 0)}
                 placeholder="0"
+                min="0"
               />
             </ConfigFormGroup>
+            <div style={{ padding: '12px', background: 'rgba(255, 193, 7, 0.15)', borderRadius: '8px', marginTop: '15px' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                💡 <strong>What is Priority?</strong><br/>
+                When a product is part of multiple bundles, only the bundle with the highest priority is shown to customers.
+              </span>
+            </div>
           </EditorConfigPanel>
         );
 
@@ -1139,7 +1147,7 @@ export const VolumeDiscountEditor = () => {
           isLoading={isSaving}
         />
 
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
           <ProductPagePreview widgetLabel="Volume Discount">
             {renderVolumePreview()}
           </ProductPagePreview>

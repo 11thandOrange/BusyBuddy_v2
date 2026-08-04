@@ -246,7 +246,7 @@ export default function DiscountList({
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-center align-items-center"
+            className="d-flex justify-content-between align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -259,7 +259,7 @@ export default function DiscountList({
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}

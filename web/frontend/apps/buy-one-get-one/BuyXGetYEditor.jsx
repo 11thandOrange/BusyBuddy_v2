@@ -131,7 +131,8 @@ export const BuyXGetYEditor = () => {
   // Active states
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('customer-buys');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -1272,7 +1273,7 @@ export const BuyXGetYEditor = () => {
           onSave={handleSave}
           isLoading={isSaving}
         />
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
           <ProductPagePreview widgetLabel="BOGO Deal">
             {renderBXGYPreview()}
           </ProductPagePreview>

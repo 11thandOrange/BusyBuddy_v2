@@ -136,7 +136,8 @@ export const MixAndMatchEditor = () => {
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -1082,7 +1083,7 @@ export const MixAndMatchEditor = () => {
           onSave={handleSave}
           isLoading={isSaving}
         />
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
           <ProductPagePreview widgetLabel="Mix & Match Offer">
             {renderMixMatchPreview()}
           </ProductPagePreview>

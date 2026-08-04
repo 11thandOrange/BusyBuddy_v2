@@ -5,7 +5,7 @@ import { Form } from "react-bootstrap";
 import tshirt from "./tshirt.png";
 import "./announcementBarStyles.css";
 import Button from "../../components/Button";
-import { X, Trash } from "react-bootstrap-icons";
+import { X, Trash, Pencil } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
@@ -187,7 +187,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-center align-items-center"
+            className="d-flex justify-content-between align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -200,7 +200,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}
@@ -389,7 +389,7 @@ const AnnouncementBarItem = ({ bar, onEdit, onDelete, onToggle }) => {
           </span>
 
           <Button
-            text="Edit"
+            text={<Pencil size={16} />}
             onClick={() => onEdit(bar._id)}
             style={{
               backgroundColor: "rgba(81, 105, 221, 0.1)",

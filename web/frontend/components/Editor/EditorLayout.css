@@ -576,6 +576,12 @@
     display: flex;
     flex-direction: column;
     max-height: 100%;
+    /* Scopes any `position: absolute` preview content (e.g. the
+       Announcement Bar's "bottom" placement) to this box instead of it
+       falling through to .editor-wrapper, which is `position: fixed` and
+       spans the whole viewport - without this, "bottom" placement anchors
+       to the browser window instead of the live preview. */
+    position: relative;
 }
 
 .device-frame.desktop {
