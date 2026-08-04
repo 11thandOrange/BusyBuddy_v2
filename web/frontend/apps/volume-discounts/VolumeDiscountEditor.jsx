@@ -672,23 +672,23 @@ export const VolumeDiscountEditor = () => {
                     <ConfigInput
                       type="number"
                       value={qb.quantity}
-                      onChange={(val) => handleQuantityBreakChange(index, 'quantity', parseInt(val) || 1)}
+                      onChange={(e) => handleQuantityBreakChange(index, 'quantity', parseInt(e.target.value) || 1)}
                     />
                   </ConfigFormGroup>
                   <ConfigFormGroup label="Discount %">
                     <ConfigInput
                       type="number"
                       value={qb.discount}
-                      onChange={(val) => handleQuantityBreakChange(index, 'discount', parseInt(val) || 0)}
+                      onChange={(e) => handleQuantityBreakChange(index, 'discount', parseInt(e.target.value) || 0)}
                     />
                   </ConfigFormGroup>
                 </div>
-                
+
                 <ConfigFormGroup label="Display Name">
                   <ConfigInput
                     type="text"
                     value={qb.name}
-                    onChange={(val) => handleQuantityBreakChange(index, 'name', val)}
+                    onChange={(e) => handleQuantityBreakChange(index, 'name', e.target.value)}
                   />
                 </ConfigFormGroup>
 
@@ -696,15 +696,15 @@ export const VolumeDiscountEditor = () => {
                   <ConfigInput
                     type="text"
                     value={qb.banner}
-                    onChange={(val) => handleQuantityBreakChange(index, 'banner', val)}
+                    onChange={(e) => handleQuantityBreakChange(index, 'banner', e.target.value)}
                     placeholder="e.g., MOST POPULAR"
                   />
                 </ConfigFormGroup>
-                
-                <ConfigToggleRow 
-                  label="Set as default selection" 
-                  checked={qb.default} 
-                  onChange={(val) => handleQuantityBreakChange(index, 'default', val)} 
+
+                <ConfigToggleRow
+                  label="Set as default selection"
+                  checked={qb.default}
+                  onChange={(val) => handleQuantityBreakChange(index, 'default', val)}
                 />
               </div>
             ))}
@@ -769,10 +769,10 @@ export const VolumeDiscountEditor = () => {
             {showCountdown && (
               <>
                 <ConfigFormGroup label="Timer Background Color">
-                  <ConfigInput type="color" value={colorSettings.countdownBgColor} onChange={(val) => setColorSettings({ ...colorSettings, countdownBgColor: val })} />
+                  <ConfigInput type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Text Color">
-                  <ConfigInput type="color" value={colorSettings.countdownTextColor} onChange={(val) => setColorSettings({ ...colorSettings, countdownTextColor: val })} />
+                  <ConfigInput type="color" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} />
                 </ConfigFormGroup>
               </>
             )}
@@ -818,10 +818,10 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Primary Colors" description="Set primary colors">
             <ConfigFormGroup label="Primary Text Color">
-              <ConfigInput type="color" value={colorSettings.primaryTextColor} onChange={(val) => setColorSettings({ ...colorSettings, primaryTextColor: val })} />
+              <ConfigInput type="color" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background Color">
-              <ConfigInput type="color" value={colorSettings.primaryBackgroundColor} onChange={(val) => setColorSettings({ ...colorSettings, primaryBackgroundColor: val })} />
+              <ConfigInput type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -830,13 +830,13 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Secondary Colors" description="Set secondary colors">
             <ConfigFormGroup label="Secondary Text Color">
-              <ConfigInput type="color" value={colorSettings.secondaryTextColor} onChange={(val) => setColorSettings({ ...colorSettings, secondaryTextColor: val })} />
+              <ConfigInput type="color" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background Color">
-              <ConfigInput type="color" value={colorSettings.secondaryBackgroundColor} onChange={(val) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: val })} />
+              <ConfigInput type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <ConfigInput type="color" value={colorSettings.borderColor} onChange={(val) => setColorSettings({ ...colorSettings, borderColor: val })} />
+              <ConfigInput type="color" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -845,10 +845,10 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Margins" description="Set widget margins">
             <ConfigFormGroup label="Top Margin (px)">
-              <ConfigInput type="number" value={margins.top} onChange={(val) => setMargins({ ...margins, top: parseInt(val) || 0 })} />
+              <ConfigInput type="number" value={margins.top} onChange={(e) => setMargins({ ...margins, top: parseInt(e.target.value) || 0 })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Bottom Margin (px)">
-              <ConfigInput type="number" value={margins.bottom} onChange={(val) => setMargins({ ...margins, bottom: parseInt(val) || 0 })} />
+              <ConfigInput type="number" value={margins.bottom} onChange={(e) => setMargins({ ...margins, bottom: parseInt(e.target.value) || 0 })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -857,7 +857,7 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Card Settings" description="Configure card appearance">
             <ConfigFormGroup label="Corner Radius (px)">
-              <ConfigInput type="number" value={cornerRadius} onChange={(val) => setCornerRadius(parseInt(val) || 0)} />
+              <ConfigInput type="number" value={cornerRadius} onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
