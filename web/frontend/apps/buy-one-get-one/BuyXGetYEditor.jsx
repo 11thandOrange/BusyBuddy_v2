@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -22,6 +22,7 @@ import {
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch, safeParseJson } from '../../utils/editorAuth';
+import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
 import tshirt from "./tshirt.png";
 
 // Buy X Get Y specific settings configuration
@@ -217,16 +218,45 @@ export const BuyXGetYEditor = () => {
   // Product Info - persisted to the real bundle product's descriptionHtml
   const [productDescription, setProductDescription] = useState('');
   const [productSpecs, setProductSpecs] = useState([]);
+  // Tracks the last auto-generated description this effect itself wrote, so
+  // it can tell "still what we generated" (keep syncing) apart from "the
+  // merchant edited it" (stop touching it) without a separate dirty flag.
+  const lastAutoDescriptionRef = useRef('');
 
+  // Editing an existing pre-filled value "claims" that row so the sync
+  // below never quietly reverts what the merchant just typed.
   const handleSpecChange = (index, field, value) => {
-    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value, source: 'custom' } : s)));
   };
   const handleAddSpec = () => {
-    setProductSpecs((prev) => [...prev, { label: '', value: '' }]);
+    setProductSpecs((prev) => [...prev, { label: '', value: '', source: 'custom' }]);
   };
   const handleRemoveSpec = (index) => {
     setProductSpecs((prev) => prev.filter((_, i) => i !== index));
   };
+
+  // Pre-fills description/specs from the bundle's own selected products
+  // (X and Y combined) - re-runs every time either list changes. Specs
+  // pulled from a product's metafields are always kept in sync with the
+  // current product list; anything the merchant typed themselves
+  // (source: 'custom') is never touched. The description is a single
+  // freeform field, not a list, so it can only be auto-synced while it
+  // still matches what this effect itself last generated - the moment the
+  // merchant edits it, it's ignored.
+  useEffect(() => {
+    const allProducts = [...selectedXProducts, ...selectedYProducts];
+    const autoSpecs = allProducts.flatMap(metafieldsToSpecs);
+    setProductSpecs((prev) => [...prev.filter((s) => s.source !== 'product'), ...autoSpecs]);
+
+    const autoDescription = buildAutoDescription(allProducts);
+    setProductDescription((prev) => {
+      if (prev === '' || prev === lastAutoDescriptionRef.current) {
+        lastAutoDescriptionRef.current = autoDescription;
+        return autoDescription;
+      }
+      return prev;
+    });
+  }, [selectedXProducts, selectedYProducts]);
 
   // Product picker modals
   const [showXProductPicker, setShowXProductPicker] = useState(false);
@@ -260,12 +290,21 @@ export const BuyXGetYEditor = () => {
           setDiscountType(bundle.discountType || '');
           setDiscountValue(bundle.discountValue?.toString() || '');
           
-          // Set X and Y products
+          // Set X and Y products - then refresh both with live Shopify
+          // data (images, description, metafields) rather than relying on
+          // the stored snapshot, which may be stale or (for older bundles)
+          // never had images captured at all.
           if (bundle.productsX) {
             setSelectedXProducts(bundle.productsX);
+            if (bundle.productsX.length) {
+              enrichProductsWithLiveData(bundle.productsX).then(setSelectedXProducts);
+            }
           }
           if (bundle.productsY) {
             setSelectedYProducts(bundle.productsY);
+            if (bundle.productsY.length) {
+              enrichProductsWithLiveData(bundle.productsY).then(setSelectedYProducts);
+            }
           }
           
           // Set widget appearance
@@ -301,8 +340,12 @@ export const BuyXGetYEditor = () => {
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
           setProductDescription(bundle.description || '');
-          setProductSpecs(bundle.specs || []);
-          
+          // Specs saved before source-tagging existed, and any the
+          // merchant typed in themselves, are indistinguishable from here -
+          // treat them as custom so the live product-data sync below never
+          // silently overwrites them.
+          setProductSpecs((bundle.specs || []).map((s) => ({ ...s, source: s.source || 'custom' })));
+
           // Set dates
           if (bundle.startDate) {
             setStartDate(new Date(bundle.startDate).toISOString().split('T')[0]);
@@ -376,31 +419,7 @@ export const BuyXGetYEditor = () => {
       if (!response.ok) throw new Error(data?.message || "Failed to fetch products");
 
       const edges = data.data?.edges || [];
-
-      // Transform products to match production bundle format
-      const transformedProducts = edges.map(edge => {
-        const product = edge.node;
-        const optionSelections = product.options?.map(opt => ({
-          componentOptionId: opt.id,
-          name: opt.name,
-          uniqueName: `${product.title} ${opt.name}`,
-          values: opt.values
-        })) || [];
-        
-        const images = product.images?.edges?.map(e => e.node.url).filter(Boolean) || [];
-        return {
-          id: product.id,
-          productId: product.id,
-          title: product.title,
-          price: product.variants?.edges?.[0]?.node?.price || product.variants?.nodes?.[0]?.price || '0.00',
-          media: images[0] || product.featuredMedia?.image?.url || tshirt,
-          images: images.length ? images : (product.featuredMedia?.image?.url ? [product.featuredMedia.image.url] : []),
-          handle: product.handle,
-          quantity: 1,
-          variants: product.variants?.edges?.map(v => v.node) || product.variants?.nodes || [],
-          optionSelections: optionSelections
-        };
-      });
+      const transformedProducts = edges.map(edge => transformProductNode(edge.node));
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
