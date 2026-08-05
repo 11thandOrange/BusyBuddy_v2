@@ -1420,8 +1420,8 @@ export const BuyXGetYEditor = () => {
               widgetLabel="BOGO Deal"
               images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}
               title={bundleTitle}
-              price={calculateBXGYPricing().total}
-              compareAtPrice={calculateBXGYPricing().originalTotal}
+              price={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().total : undefined}
+              compareAtPrice={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().originalTotal : undefined}
               description={productDescription}
               specs={productSpecs}
             />

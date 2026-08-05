@@ -1192,8 +1192,8 @@ export const MixAndMatchEditor = () => {
               widgetLabel="Mix & Match Offer"
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
-              price={calculateMixMatchPricing().discountedTotal}
-              compareAtPrice={calculateMixMatchPricing().originalTotal}
+              price={selectedProducts.length ? calculateMixMatchPricing().discountedTotal : undefined}
+              compareAtPrice={selectedProducts.length ? calculateMixMatchPricing().originalTotal : undefined}
               description={productDescription}
               specs={productSpecs}
             />

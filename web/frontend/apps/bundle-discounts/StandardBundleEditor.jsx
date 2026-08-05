@@ -1347,76 +1347,78 @@ export const StandardBundleEditor = () => {
           </div>
         )}
 
-        {/* Total & Buttons */}
-        <div style={{ marginTop: '12px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px',
-            background: colorSettings.primaryBackgroundColor,
-            borderRadius: '12px',
-            border: `1px solid ${colorSettings.borderColor}`,
-          }}>
-            <div>
-              <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
-                Total
-              </div>
-              {pricing.discountPercentage > 0 && (
-                <div style={{ color: colorSettings.countdownBgColor, fontSize: '11px', marginTop: '4px' }}>
-                  Save {pricing.discountPercentage}% (${pricing.saved})
+        {/* Total & Buttons - nothing real to total or add to cart yet */}
+        {selectedProducts.length > 0 && (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px',
+              background: colorSettings.primaryBackgroundColor,
+              borderRadius: '12px',
+              border: `1px solid ${colorSettings.borderColor}`,
+            }}>
+              <div>
+                <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
+                  Total
                 </div>
-              )}
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
-                ${pricing.discountedPrice}
+                {pricing.discountPercentage > 0 && (
+                  <div style={{ color: colorSettings.countdownBgColor, fontSize: '11px', marginTop: '4px' }}>
+                    Save {pricing.discountPercentage}% (${pricing.saved})
+                  </div>
+                )}
               </div>
-              {pricing.discountPercentage > 0 && (
-                <div style={{ 
-                  color: colorSettings.secondaryTextColor, 
-                  fontSize: '11px', 
-                  textDecoration: 'line-through',
-                  marginTop: '4px'
-                }}>
-                  ${pricing.totalPrice}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
+                  ${pricing.discountedPrice}
                 </div>
-              )}
+                {pricing.discountPercentage > 0 && (
+                  <div style={{
+                    color: colorSettings.secondaryTextColor,
+                    fontSize: '11px',
+                    textDecoration: 'line-through',
+                    marginTop: '4px'
+                  }}>
+                    ${pricing.totalPrice}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <button style={{
-            width: '100%',
-            padding: '15px',
-            marginTop: '8px',
-            background: colorSettings.buttonColor,
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            fontSize: '15px',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}>
-            {addToCartText}
-          </button>
-
-          {showSkipButton && (
             <button style={{
               width: '100%',
               padding: '15px',
               marginTop: '8px',
-              background: colorSettings.secondaryBackgroundColor,
-              color: colorSettings.primaryTextColor,
-              border: `1px solid ${colorSettings.borderColor}`,
+              background: colorSettings.buttonColor,
+              color: 'white',
+              border: 'none',
               borderRadius: '12px',
               fontSize: '15px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
             }}>
-              {skipOfferText}
+              {addToCartText}
             </button>
-          )}
-        </div>
+
+            {showSkipButton && (
+              <button style={{
+                width: '100%',
+                padding: '15px',
+                marginTop: '8px',
+                background: colorSettings.secondaryBackgroundColor,
+                color: colorSettings.primaryTextColor,
+                border: `1px solid ${colorSettings.borderColor}`,
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: '500',
+                cursor: 'pointer',
+              }}>
+                {skipOfferText}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -1460,8 +1462,8 @@ export const StandardBundleEditor = () => {
               widgetLabel="Bundle Offer"
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
-              price={calculateBundlePricing().discountedPrice}
-              compareAtPrice={calculateBundlePricing().totalPrice}
+              price={selectedProducts.length ? calculateBundlePricing().discountedPrice : undefined}
+              compareAtPrice={selectedProducts.length ? calculateBundlePricing().totalPrice : undefined}
               description={productDescription}
               specs={productSpecs}
             />

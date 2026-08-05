@@ -116,4 +116,15 @@ describe('ProductPagePreview', () => {
     expect(screen.getByText('Add to Cart')).toBeInTheDocument();
     expect(screen.queryByText(/^\$/)).not.toBeInTheDocument();
   });
+
+  // Callers must pass undefined/null (not 0) to hide the price row - a
+  // caller that passes 0 when there's nothing real to price gets a
+  // misleading "$0.00" instead, which is exactly what happened when the
+  // editors' own pricing helpers returned 0 (not undefined) for an empty
+  // product list and passed that straight through.
+  it('renders $0.00 when price is explicitly 0 - callers must pass undefined to hide the row, not 0', () => {
+    render(<ProductPagePreview price={0} />);
+
+    expect(screen.getByText('$0.00')).toBeInTheDocument();
+  });
 });

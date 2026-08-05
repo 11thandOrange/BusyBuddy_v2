@@ -1288,8 +1288,8 @@ export const VolumeDiscountEditor = () => {
               widgetLabel="Volume Discount"
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
-              price={calculateVolumePricing().discountedPrice}
-              compareAtPrice={calculateVolumePricing().originalPrice}
+              price={selectedProducts.length ? calculateVolumePricing().discountedPrice : undefined}
+              compareAtPrice={selectedProducts.length ? calculateVolumePricing().originalPrice : undefined}
               description={productDescription}
               specs={productSpecs}
             />
