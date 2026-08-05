@@ -67,6 +67,12 @@ const BUNDLE_SETTINGS = {
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -217,6 +223,20 @@ export const StandardBundleEditor = () => {
   const [skipOfferText, setSkipOfferText] = useState('Skip Offer');
   const [showSkipButton, setShowSkipButton] = useState(true);
 
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // === LAYOUT SETTINGS ===
   const [margins, setMargins] = useState({
     top: 20,
@@ -275,6 +295,8 @@ export const StandardBundleEditor = () => {
           setAddToCartText(bundle.addToCartText || 'Add To Cart');
           setSkipOfferText(bundle.skipOfferText || 'Skip Offer');
           setShowSkipButton(bundle.showSkipButton ?? true);
+          setProductDescription(bundle.description || '');
+          setProductSpecs(bundle.specs || []);
           setMargins({
             top: bundle.widgetAppearance?.topMargin || 20,
             bottom: bundle.widgetAppearance?.bottomMargin || 20,
@@ -489,6 +511,8 @@ export const StandardBundleEditor = () => {
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Bundle Discount",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -1005,6 +1029,47 @@ export const StandardBundleEditor = () => {
           </EditorConfigPanel>
         );
 
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
       // === APPEARANCE TAB ===
       case 'margins':
         return (
@@ -1365,7 +1430,16 @@ export const StandardBundleEditor = () => {
           device={device}
           onDeviceChange={setDevice}
         >
-          <ProductPagePreview widgetLabel="Bundle Offer" images={selectedProducts.flatMap(p => p.images || [])}>
+          <ProductPagePreview
+            widgetLabel="Bundle Offer"
+            images={selectedProducts.flatMap(p => p.images || [])}
+            title={bundleTitle}
+            price={calculateBundlePricing().discountedPrice}
+            compareAtPrice={calculateBundlePricing().totalPrice}
+            addToCartText={addToCartText}
+            description={productDescription}
+            specs={productSpecs}
+          >
             {renderBundlePreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

@@ -9,6 +9,7 @@ import {
   ConfigFormGroup,
   ConfigInput,
   ConfigSelect,
+  ConfigTextarea,
   ConfigToggleRow,
   EditorPreviewPanel,
   ProductPagePreview,
@@ -65,6 +66,12 @@ const MIXMATCH_SETTINGS = {
       items: [
         { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
+      ],
+    },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
       ],
     },
   ],
@@ -219,6 +226,20 @@ export const MixAndMatchEditor = () => {
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
 
@@ -288,6 +309,8 @@ export const MixAndMatchEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
+          setProductDescription(bundle.description || '');
+          setProductSpecs(bundle.specs || []);
 
           // Set dates
           if (bundle.startDate) {
@@ -419,6 +442,16 @@ export const MixAndMatchEditor = () => {
     return price.toFixed(2);
   };
 
+  // Same math the widget preview's own "Total" row computes inline - pulled
+  // out so the live-preview product-page mockup (a sibling, not a child, of
+  // the widget preview) can show the same real numbers instead of a
+  // hardcoded price.
+  const calculateMixMatchPricing = () => {
+    const originalTotal = selectedProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const discountedTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
+    return { originalTotal, discountedTotal };
+  };
+
   // Save bundle to database
   const handleSave = async () => {
     // Validation
@@ -458,6 +491,8 @@ export const MixAndMatchEditor = () => {
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Mix and Match",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
       selectedTier: selectedTier,
       tierDiscounts: tierDiscounts,
       widgetAppearance: {
@@ -738,6 +773,47 @@ export const MixAndMatchEditor = () => {
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
@@ -1090,7 +1166,16 @@ export const MixAndMatchEditor = () => {
           isLoading={isSaving}
         />
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="Mix & Match Offer" images={selectedProducts.flatMap(p => p.images || [])}>
+          <ProductPagePreview
+            widgetLabel="Mix & Match Offer"
+            images={selectedProducts.flatMap(p => p.images || [])}
+            title={bundleTitle}
+            price={calculateMixMatchPricing().discountedTotal}
+            compareAtPrice={calculateMixMatchPricing().originalTotal}
+            addToCartText={addToCartText}
+            description={productDescription}
+            specs={productSpecs}
+          >
             {renderMixMatchPreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

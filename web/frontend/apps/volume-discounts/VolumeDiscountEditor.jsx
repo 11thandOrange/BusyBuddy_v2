@@ -9,6 +9,7 @@ import {
   ConfigFormGroup,
   ConfigInput,
   ConfigSelect,
+  ConfigTextarea,
   ConfigToggleRow,
   EditorPreviewPanel,
   ProductPagePreview,
@@ -64,6 +65,12 @@ const VOLUME_SETTINGS = {
       items: [
         { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
+      ],
+    },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
       ],
     },
   ],
@@ -207,6 +214,20 @@ export const VolumeDiscountEditor = () => {
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Timer display
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
 
@@ -271,6 +292,8 @@ export const VolumeDiscountEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
+          setProductDescription(bundle.description || '');
+          setProductSpecs(bundle.specs || []);
 
           // Schedule
           if (bundle.startDate) setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
@@ -449,6 +472,18 @@ export const VolumeDiscountEditor = () => {
     return quantityBreaks.find(b => b.default) || quantityBreaks[0];
   };
 
+  // Same math the widget preview's own "Total" row computes inline - pulled
+  // out so the live-preview product-page mockup (a sibling, not a child, of
+  // the widget preview) can show the same real numbers instead of a
+  // hardcoded price.
+  const calculateVolumePricing = () => {
+    const defaultBreak = getDefaultBreak();
+    const quantity = defaultBreak?.quantity || 1;
+    const originalPrice = parseFloat(selectedProducts[0]?.price || 0) * quantity;
+    const discountedPrice = parseFloat(calculateDiscountedPrice(selectedProducts[0]?.price, defaultBreak?.discount)) * quantity;
+    return { originalPrice, discountedPrice };
+  };
+
   // Save handler
   const handleSave = async () => {
     // Validation
@@ -481,15 +516,31 @@ export const VolumeDiscountEditor = () => {
       return;
     }
 
+    // The backend needs a short, unique identifier per tier to both name
+    // the Shopify quantity-option value and later match it back against a
+    // variant's title to apply that tier's discount
+    // (calculateVariantPricesUsingVolumeDiscount in
+    // web/backend/controller/bundles/index.js reads quantityBreaks[].uniqueName
+    // and does variantTitle.includes(qb.uniqueName)). quantityBreaks here
+    // only ever carried a human-readable `name` (e.g. "Buy 3, get 15% OFF"),
+    // so uniqueName was always undefined server-side - no tier ever matched
+    // and volume pricing silently never applied to the real product.
+    const quantityBreaksWithUniqueNames = quantityBreaks.map((qb) => ({
+      ...qb,
+      uniqueName: `Qty ${qb.quantity}`,
+    }));
+
     const bundleData = {
       title: bundleTitle,
       secondaryMessage: secondaryMessage,
       products: selectedProducts,
-      quantityBreaks: quantityBreaks,
+      quantityBreaks: quantityBreaksWithUniqueNames,
       discountType: discountType,
       discountValue: parseFloat(discountValue) || 0,
       status: bundleEnabled,
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
+      description: productDescription,
+      specs: productSpecs,
       type: "Volume Discount",
       bundlePriority: parseInt(bundlePriority) || 0,
       widgetAppearance: {
@@ -832,6 +883,47 @@ export const VolumeDiscountEditor = () => {
           </EditorConfigPanel>
         );
 
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
       case 'primary-colors':
         return (
           <EditorConfigPanel title="Primary Colors" description="Set primary colors">
@@ -1168,7 +1260,16 @@ export const VolumeDiscountEditor = () => {
         />
 
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="Volume Discount" images={selectedProducts.flatMap(p => p.images || [])}>
+          <ProductPagePreview
+            widgetLabel="Volume Discount"
+            images={selectedProducts.flatMap(p => p.images || [])}
+            title={bundleTitle}
+            price={calculateVolumePricing().discountedPrice}
+            compareAtPrice={calculateVolumePricing().originalPrice}
+            addToCartText={addToCartText}
+            description={productDescription}
+            specs={productSpecs}
+          >
             {renderVolumePreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

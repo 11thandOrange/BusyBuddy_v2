@@ -26,6 +26,8 @@ const bundleSchema = new mongoose.Schema(
     productsY: [{ type: Object }],
     quantityBreaks: [{ type: Object }],
     tierDiscounts: [{ type: Object }],
+    description: { type: String },
+    specs: [{ type: Object }],
     discountType: { type: String, required: true },
     discountValue: { type: Number },
     internalName: { type: String, required: true },

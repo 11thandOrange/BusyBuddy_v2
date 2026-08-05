@@ -68,6 +68,12 @@ const BXGY_SETTINGS = {
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -208,6 +214,20 @@ export const BuyXGetYEditor = () => {
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Product picker modals
   const [showXProductPicker, setShowXProductPicker] = useState(false);
   const [showYProductPicker, setShowYProductPicker] = useState(false);
@@ -280,6 +300,8 @@ export const BuyXGetYEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
+          setProductDescription(bundle.description || '');
+          setProductSpecs(bundle.specs || []);
           
           // Set dates
           if (bundle.startDate) {
@@ -460,6 +482,17 @@ export const BuyXGetYEditor = () => {
     return price.toFixed(2);
   };
 
+  // Same total/original-total math the widget preview's own "Total" row
+  // computes inline - pulled out so the live-preview product-page mockup
+  // (rendered as a sibling, not a child, of the widget preview) can show
+  // the same real numbers instead of a hardcoded price.
+  const calculateBXGYPricing = () => {
+    const xTotal = selectedXProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const yOriginal = selectedYProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const yDiscounted = selectedYProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
+    return { total: xTotal + yDiscounted, originalTotal: xTotal + yOriginal };
+  };
+
   // Save bundle to database
   const handleSave = async () => {
     // Validation
@@ -492,17 +525,33 @@ export const BuyXGetYEditor = () => {
       return;
     }
 
+    // The backend can only apply the BOGO discount if it knows each
+    // component's real per-variant price (calculateBogoVariantPrices in
+    // web/backend/controller/bundles/index.js) - without this, it silently
+    // falls back to saving the bundle at full price with no discount at
+    // all, even though this editor's own preview shows one applied.
+    const originalVariantPrices = [...selectedXProducts, ...selectedYProducts].flatMap((p) =>
+      (p.variants || []).map((v) => ({
+        productId: p.productId,
+        title: v.title,
+        price: parseFloat(v.price) || 0,
+      }))
+    );
+
     const bundleData = {
       title: bundleTitle,
       secondaryMessage: secondaryMessage,
       productsX: selectedXProducts,
       productsY: selectedYProducts,
+      originalVariantPrices,
       discountType: discountType,
       discountValue: discountType === 'Free Gift' ? 100 : parseFloat(discountValue) || 0,
       status: bundleEnabled,
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Buy One Get One",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -891,6 +940,47 @@ export const BuyXGetYEditor = () => {
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
@@ -1304,7 +1394,16 @@ export const BuyXGetYEditor = () => {
           isLoading={isSaving}
         />
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="BOGO Deal" images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}>
+          <ProductPagePreview
+            widgetLabel="BOGO Deal"
+            images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}
+            title={bundleTitle}
+            price={calculateBXGYPricing().total}
+            compareAtPrice={calculateBXGYPricing().originalTotal}
+            addToCartText={addToCartText}
+            description={productDescription}
+            specs={productSpecs}
+          >
             {renderBXGYPreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

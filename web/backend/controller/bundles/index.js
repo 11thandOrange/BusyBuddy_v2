@@ -16,6 +16,37 @@ import activityLogService from "../../services/activityLogService.js";
 
 const MAX_TITLE_LENGTH = 255;
 
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Builds the descriptionHtml written to the real Shopify bundle product
+ * from the merchant-edited "Product Info" fields (description + specs).
+ * @param {string} [description] - Free-text product description.
+ * @param {Array<{label: string, value: string}>} [specs] - Spec rows.
+ * @returns {string} HTML, or an empty string if there's nothing to write.
+ */
+function buildDescriptionHtml(description, specs) {
+  let html = "";
+  if (description && description.trim()) {
+    html += `<p>${escapeHtml(description.trim())}</p>`;
+  }
+  const validSpecs = (specs || []).filter((s) => s && s.label && s.value);
+  if (validSpecs.length > 0) {
+    const items = validSpecs
+      .map((s) => `<li>${escapeHtml(s.label)}: ${escapeHtml(s.value)}</li>`)
+      .join("");
+    html += `<ul>${items}</ul>`;
+  }
+  return html;
+}
+
 /**
  * Server-side validation for bundle create/update payloads. Client-side
  * checks exist too, but every one of these fields is directly reachable via
@@ -450,6 +481,8 @@ async function createProductBundleV2(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -542,6 +575,15 @@ async function createProductBundleV2(req, res) {
     // console.log("business tags ::::", cleanType);
     let tags = ["busybuddybundles", cleanType];
     const tagsUpdateResult = await updateProductTags(client, session, productId, tags);
+
+    // 4b. Write the merchant-edited description/specs to the real product,
+    // same as status/tags above - this is the one field this bundle type
+    // never had any real value for until "Product Info" existed to edit it.
+    const descriptionHtml = buildDescriptionHtml(description, specs);
+    if (descriptionHtml) {
+      await updateShopifyProduct(client, session, productId, { descriptionHtml });
+    }
+
     // 5. Get updated product data (optional, for response)
     const updatedProductData = await getUpdatedProductData(client, session, productId);
 
@@ -587,6 +629,8 @@ async function createProductBundleV2(req, res) {
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
       productsX: productsX,
       productsY: productsY,
+      description,
+      specs,
     });
     // fetch collection if dont exist  then insert
     const clients = new shopify.api.clients.Graphql({
@@ -703,6 +747,8 @@ async function createMixAndMatchBundle(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -711,7 +757,7 @@ async function createMixAndMatchBundle(req, res) {
     }
 
     /*
-        
+
         mutation mixMatchProductCreate {
     productCreate(
       input: {title: "mix and match", metafields: [
@@ -774,8 +820,10 @@ mutation setPriceForMixAndMatchProduct {
                     }
                 }
             }`;
+    const descriptionHtml = buildDescriptionHtml(description, specs);
     const bundleInput = {
       title,
+      ...(descriptionHtml ? { descriptionHtml } : {}),
       metafields: [
         {
           key: "bundle_discount_type",
@@ -906,6 +954,8 @@ mutation setPriceForMixAndMatchProduct {
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      description,
+      specs,
     });
 
     // Log activity for Mix and Match bundle creation
@@ -966,6 +1016,8 @@ async function updateMixAndMatchBundle(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -974,7 +1026,7 @@ async function updateMixAndMatchBundle(req, res) {
     }
 
     /*
-        
+
         mutation mixMatchProductCreate {
     productCreate(
       input: {title: "mix and match", metafields: [
@@ -1037,9 +1089,14 @@ mutation setPriceForMixAndMatchProduct {
                     }
                 }
             }`;
+    const mixMatchDescriptionHtml = buildDescriptionHtml(
+      description !== undefined ? description : existingBundle.description,
+      specs !== undefined ? specs : existingBundle.specs
+    );
     const bundleInput = {
       id: existingBundle.shopifyBundleId,
       title,
+      ...(mixMatchDescriptionHtml ? { descriptionHtml: mixMatchDescriptionHtml } : {}),
       metafields: [
         {
           key: "bundle_discount_type",
@@ -1184,6 +1241,8 @@ mutation setPriceForMixAndMatchProduct {
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      description: description !== undefined ? description : existingBundle.description,
+      specs: specs !== undefined ? specs : existingBundle.specs,
     });
     return res.status(201).json({
       status: true,
@@ -1749,7 +1808,9 @@ async function updateBundle(req, res) {
       productsX,
       productsY,
       originalVariantPrices,
-      priority
+      priority,
+      description,
+      specs,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1831,6 +1892,20 @@ async function updateBundle(req, res) {
       tagsUpdateResult = await updateProductTags(client, session, existingBundle.shopifyBundleId, tags);
     }
 
+    // 4b. Update description/specs on the real product if either changed.
+    const descriptionInfoChanged =
+      (description !== undefined && description !== existingBundle.description) ||
+      (specs !== undefined && JSON.stringify(specs) !== JSON.stringify(existingBundle.specs));
+    if (descriptionInfoChanged) {
+      const descriptionHtml = buildDescriptionHtml(
+        description !== undefined ? description : existingBundle.description,
+        specs !== undefined ? specs : existingBundle.specs
+      );
+      if (descriptionHtml) {
+        await updateShopifyProduct(client, session, existingBundle.shopifyBundleId, { descriptionHtml });
+      }
+    }
+
     // 5. Update bundle in database
     const updateFields = {};
 
@@ -1846,6 +1921,8 @@ async function updateBundle(req, res) {
     if (widgetAppearance) updateFields.widgetAppearance = widgetAppearance;
     if (startDate) updateFields.startDate = startDate;
     if (endDate) updateFields.endDate = endDate;
+    if (description !== undefined) updateFields.description = description;
+    if (specs !== undefined) updateFields.specs = specs;
 
     // Handle products update based on type
     if (type === "Buy One Get One" && productsX && productsY) {
@@ -1929,18 +2006,20 @@ async function updateBundle(req, res) {
 // Helper function to update Shopify product basic info
 async function updateShopifyProduct(client, session, productId, updateData) {
   try {
-    let inputFields = [];
-
+    // Only title/descriptionHtml are actually valid on Shopify's ProductInput
+    // type - build the input explicitly instead of spreading whatever keys
+    // the caller happened to pass, and check for that same set of keys when
+    // deciding whether there's anything to send.
+    const input = { id: productId };
     if (updateData.title) {
-      inputFields.push(`title: "${updateData.title.replace(/"/g, '\\"')}"`);
+      input.title = updateData.title;
+    }
+    if (updateData.descriptionHtml !== undefined) {
+      input.descriptionHtml = updateData.descriptionHtml;
     }
 
-    if (updateData.description) {
-      inputFields.push(`descriptionHtml: "${updateData.description.replace(/"/g, '\\"')}"`);
-    }
-
-    if (inputFields.length === 0) {
-      return null; // Nothing to update
+    if (Object.keys(input).length === 1) {
+      return null; // Nothing to update besides id
     }
 
     const mutation = `
@@ -1958,12 +2037,7 @@ async function updateShopifyProduct(client, session, productId, updateData) {
       }
     `;
 
-    const variables = {
-      input: {
-        id: productId,
-        ...updateData,
-      },
-    };
+    const variables = { input };
 
     const result = await client.request(mutation, { session, variables });
 
@@ -1990,4 +2064,6 @@ export {
   deleteBundle,
   updateMixAndMatchBundle,
   validateBundlePayload,
+  buildDescriptionHtml,
+  updateShopifyProduct,
 };
