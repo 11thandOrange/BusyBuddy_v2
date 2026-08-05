@@ -778,6 +778,8 @@ async function createMixAndMatchBundle(req, res) {
       secondaryMessage,
       selectedTier,
       timezone,
+      selectedEmoji,
+      emojiPosition,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -993,6 +995,8 @@ mutation setPriceForMixAndMatchProduct {
       secondaryMessage,
       selectedTier,
       timezone,
+      selectedEmoji,
+      emojiPosition,
     });
 
     // Log activity for Mix and Match bundle creation
@@ -1058,6 +1062,8 @@ async function updateMixAndMatchBundle(req, res) {
       secondaryMessage,
       selectedTier,
       timezone,
+      selectedEmoji,
+      emojiPosition,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1292,6 +1298,8 @@ mutation setPriceForMixAndMatchProduct {
       selectedTier: selectedTier !== undefined ? selectedTier : existingBundle.selectedTier,
       tierDiscounts: tierDiscounts !== undefined ? tierDiscounts : existingBundle.tierDiscounts,
       timezone: timezone !== undefined ? timezone : existingBundle.timezone,
+      selectedEmoji: selectedEmoji !== undefined ? selectedEmoji : existingBundle.selectedEmoji,
+      emojiPosition: emojiPosition !== undefined ? emojiPosition : existingBundle.emojiPosition,
     });
     return res.status(200).json({
       status: true,

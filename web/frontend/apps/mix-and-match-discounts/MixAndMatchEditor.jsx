@@ -23,6 +23,7 @@ import {
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch, safeParseJson } from '../../utils/editorAuth';
 import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
+import EmojiPicker from 'emoji-picker-react';
 import tshirt from "./tshirt.png";
 
 // Mix and Match settings configuration
@@ -218,6 +219,9 @@ export const MixAndMatchEditor = () => {
   const [showCountdown, setShowCountdown] = useState(false);
   const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
+  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
+  const [emojiPosition, setEmojiPosition] = useState('end');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
 
@@ -362,6 +366,8 @@ export const MixAndMatchEditor = () => {
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
             setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setSelectedEmoji(bundle.selectedEmoji || '🔥');
+            setEmojiPosition(bundle.emojiPosition || 'end');
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
               bottom: bundle.widgetAppearance.bottomMargin || 20,
@@ -549,6 +555,8 @@ export const MixAndMatchEditor = () => {
       specs: productSpecs,
       selectedTier: selectedTier,
       tierDiscounts: tierDiscounts,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -768,6 +776,53 @@ export const MixAndMatchEditor = () => {
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji display">
             <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
+            {showEmoji && (
+              <>
+                <ConfigFormGroup label="Emoji">
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{selectedEmoji}</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                    </button>
+                    {showEmojiPickerPopup && (
+                      <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) => {
+                            setSelectedEmoji(emojiData.emoji);
+                            setShowEmojiPickerPopup(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Emoji Position">
+                  <ConfigSelect
+                    value={emojiPosition}
+                    onChange={(e) => setEmojiPosition(e.target.value)}
+                    options={[
+                      { value: 'start', label: 'Left' },
+                      { value: 'end', label: 'Right' },
+                      { value: 'both', label: 'Both Sides' },
+                    ]}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
           </EditorConfigPanel>
         );
 
@@ -979,6 +1034,18 @@ export const MixAndMatchEditor = () => {
             <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
               💡 Leave empty for evergreen bundles that run indefinitely
             </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -1016,7 +1083,13 @@ export const MixAndMatchEditor = () => {
           marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
-          {showEmoji ? `${bundleTitle || 'Mix & Match - Save More!'} 🔥` : (bundleTitle || 'Mix & Match - Save More!')}
+          {(() => {
+            const titleText = bundleTitle || 'Mix & Match - Save More!';
+            if (!showEmoji) return titleText;
+            if (emojiPosition === 'start') return `${selectedEmoji} ${titleText}`;
+            if (emojiPosition === 'both') return `${selectedEmoji} ${titleText} ${selectedEmoji}`;
+            return `${titleText} ${selectedEmoji}`;
+          })()}
         </h3>
         {secondaryMessage && (
           <p style={{

@@ -20,6 +20,7 @@ import {
   getBackgroundThemeCss
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
+import EmojiPicker from 'emoji-picker-react';
 import { editorFetch } from '../../utils/editorAuth';
 
 // Announcement Bar specific settings configuration
@@ -225,8 +226,7 @@ export const AnnouncementBarEditor = () => {
   const [showMessage, setShowMessage] = useState(true);
   
   // Emoji
-  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
-  const [emojiPosition, setEmojiPosition] = useState('start');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   
   // Timer
   const [showTimer, setShowTimer] = useState(false);
@@ -565,24 +565,37 @@ export const AnnouncementBarEditor = () => {
             title="Emoji & Icons"
             description="Add emojis to your announcement"
           >
-            <ConfigFormGroup label="Quick Emojis">
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['🔥', '⭐', '🎉', '💥', '🚀', '💰', '🎁', '⚡', '❤️', '✨'].map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => { setMessage(prev => prev + emoji); markAsChanged(); }}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '20px',
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+            <ConfigFormGroup label="Emoji" hint="Choose any emoji to insert into your message">
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '22px' }}>😀</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                </button>
+                {showEmojiPickerPopup && (
+                  <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setMessage((prev) => prev + emojiData.emoji);
+                        markAsChanged();
+                        setShowEmojiPickerPopup(false);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
@@ -1066,6 +1079,18 @@ export const AnnouncementBarEditor = () => {
             <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
               💡 Leave empty for evergreen bars that run indefinitely
             </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
