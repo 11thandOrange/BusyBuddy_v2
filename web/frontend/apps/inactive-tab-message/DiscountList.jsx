@@ -546,7 +546,7 @@ export default function DiscountList({ onMakeBundleClick }) {
         )}
 
         {selectedTab === "Settings" && (
-          <div className="d-flex flex-column gap-3 p-4">
+          <div className="d-flex flex-column gap-4 p-4">
             {loading && (
               <div className="text-center">
                 <Spinner animation="border" role="status">
@@ -556,257 +556,195 @@ export default function DiscountList({ onMakeBundleClick }) {
             )}
 
             <Form onSubmit={handleSubmit}>
-              <Row className="g-0 linrrow">
-                <Card
-                  className="border-0 w-full"
-                  style={{ background: "rgb(241, 242, 244)" }}
-                >
-                  <Card.Body className="d-flex align-items-center justify-content-between">
-                    <div className="d-flex flex-column gap-3 w-100">
-                      <Form.Group>
-                        <Form.Label className="inputtitle">Message</Form.Label>
+              <div className="d-flex flex-column gap-3">
+                {/* Enable/Disable + Message */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <div className="d-flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                          🔖 Tab Message
+                        </h6>
+                        <p className="mb-0" style={{ fontSize: "13px", color: "#616161" }}>
+                          Shown in the browser tab's title when a visitor switches away from your store.
+                        </p>
+                      </div>
+                      <Form.Check
+                        type="switch"
+                        id="enable-switch"
+                        label="Enabled"
+                        checked={isEnabled}
+                        onChange={handleToggleEnabled}
+                        disabled={loading}
+                      />
+                    </div>
 
-                        <div
+                    <Form.Group>
+                      <Form.Label style={{ fontWeight: 600, fontSize: "13px" }}>Message</Form.Label>
+                      <div style={{ position: "relative" }}>
+                        <Form.Control
+                          type="text"
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          placeholder="Enter message to display when tab is inactive"
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
-                            position: "relative",
+                            paddingRight: "35px",
+                            borderRadius: "8px",
+                            background: "#fff",
+                            border: "1px solid rgba(34, 34, 34, 0.1)",
+                            padding: "12px 15px",
+                          }}
+                          disabled={loading}
+                        />
+                        <span
+                          onClick={() => setShowEmojiPicker((prev) => !prev)}
+                          style={{
+                            position: "absolute",
+                            right: "10px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            cursor: "pointer",
+                            color: "#6c757d",
+                            fontSize: "1.3rem",
                           }}
                         >
-                          <div style={{ position: "relative", flexGrow: 1 }}>
-                            <Form.Control
-                              className="inputbox"
-                              type="text"
-                              value={message}
-                              onChange={(e) => setMessage(e.target.value)}
-                              placeholder="Enter message to display when tab is inactive"
-                              style={{
-                                paddingRight: "35px",
-                                borderRadius: "8px",
-                              }}
-                              disabled={loading}
-                            />
-
-                            {/* Emoji Icon Inside Input */}
-                            <span
-                              onClick={() =>
-                                setShowEmojiPicker((prev) => !prev)
-                              }
-                              style={{
-                                position: "absolute",
-                                right: "10px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                cursor: "pointer",
-                                color: "#6c757d",
-                                fontSize: "1.5rem",
-                              }}
-                            >
-                              😀
-                            </span>
-
-                            {/* Emoji Picker */}
-                            {showEmojiPicker && (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: "50px",
-                                  right: "0",
-                                  zIndex: 100,
-                                }}
-                              >
-                                <EmojiPicker onEmojiClick={handleEmojiClick} />
-                              </div>
-                            )}
+                          😀
+                        </span>
+                        {showEmojiPicker && (
+                          <div style={{ position: "absolute", top: "45px", right: "0", zIndex: 100 }}>
+                            <EmojiPicker onEmojiClick={handleEmojiClick} />
                           </div>
-                        </div>
+                        )}
+                      </div>
+                      <Form.Text className="text-muted">
+                        Keep it short - long messages get cut off in the browser tab.
+                      </Form.Text>
+                    </Form.Group>
+                  </Card.Body>
+                </Card>
 
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                          className="mt-2"
-                        >
-                          The message that will show in the browser tab's title
-                          when the visitor changes to another tab.
-                        </p>
-                      </Form.Group>
+                {/* Favicon */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                      🖼️ Favicon
+                    </h6>
+                    <p className="mb-3" style={{ fontSize: "13px", color: "#616161" }}>
+                      Swaps the tab's icon alongside the message. Optional.
+                    </p>
 
-                      {/* Inactive Tab Message - Favicon  */}
-                      <Form.Group className="mt-3">
-                        <Form.Label className="inputtitle">Favicon</Form.Label>
-                        <div
+                    {image || imageUrl ? (
+                      <div style={{ position: "relative", display: "inline-block" }}>
+                        <img
+                          src={image ? URL.createObjectURL(image) : imageUrl}
+                          alt="Preview"
+                          width="100"
+                          height="80"
+                          style={{ borderRadius: "8px", border: "1px solid #ccc", objectFit: "cover" }}
+                        />
+                        <Button
+                          text={<X size={12} />}
+                          onClick={handleRemoveImage}
                           style={{
+                            position: "absolute",
+                            top: "-8px",
+                            right: "-8px",
+                            backgroundColor: "rgba(0,0,0,0.7)",
+                            color: "white",
+                            borderRadius: "50%",
+                            width: "24px",
+                            height: "24px",
+                            padding: "0",
                             display: "flex",
                             alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
-                            position: "relative",
+                            justifyContent: "center",
+                            zIndex: 10,
                           }}
-                        >
-                          {/* Image Preview - Updated to show both temporary and stored images */}
-                          {image || imageUrl ? (
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                position: "relative",
-                                display: "inline-block",
-                              }}
-                            >
-                              <img
-                                src={
-                                  image ? URL.createObjectURL(image) : imageUrl
-                                }
-                                alt="Preview"
-                                width="100"
-                                height="80"
-                                style={{
-                                  borderRadius: "6px",
-                                  border: "1px solid #ccc",
-                                  objectFit: "cover",
-                                }}
-                              />
-                              <Button
-                                text={<X size={12} />}
-                                onClick={handleRemoveImage}
-                                style={{
-                                  position: "absolute",
-                                  top: "-8px",
-                                  right: "-8px",
-                                  backgroundColor: "rgba(0,0,0,0.7)",
-                                  color: "white",
-                                  borderRadius: "50%",
-                                  width: "24px",
-                                  height: "24px",
-                                  padding: "0",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  zIndex: 10,
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="m-1">
-                              {/* Upload Icon Outside Input */}
-                              <span
-                                onClick={() => fileInputRef.current.click()}
-                                style={{
-                                  cursor: "pointer",
-                                  color: "#6c757d",
-                                  fontSize: "1.6rem",
-                                  display: "flex",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Upload />
-                              </span>
-                              {/* Hidden File Input */}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                style={{ display: "none" }}
-                                disabled={loading}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                          className="mt-2"
-                        >
-                          Uploaded Image will be used as your favicon.
-                        </p>
-                      </Form.Group>
-
-                      {/* Start & End Date */}
+                        />
+                      </div>
+                    ) : (
                       <div
+                        onClick={() => fileInputRef.current.click()}
+                        className="d-flex align-items-center gap-2"
                         style={{
-                          display: "flex",
-                          gap: "10px",
-                          marginTop: "15px",
+                          cursor: "pointer",
+                          background: "#fff",
+                          border: "1px dashed rgba(34, 34, 34, 0.25)",
+                          borderRadius: "8px",
+                          padding: "14px 16px",
+                          width: "fit-content",
+                          color: "#616161",
+                          fontSize: "13px",
                         }}
                       >
-                        <Form.Group controlId="startDate" style={{ flex: 1 }}>
-                          <Form.Label>Start Date</Form.Label>
+                        <Upload size={16} />
+                        Upload an image
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      style={{ display: "none" }}
+                      disabled={loading}
+                    />
+                  </Card.Body>
+                </Card>
+
+                {/* Schedule */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                      📅 Schedule
+                    </h6>
+                    <p className="mb-3" style={{ fontSize: "13px", color: "#616161" }}>
+                      Optionally limit the message to a date range. Leave both blank to run indefinitely.
+                    </p>
+                    <Row>
+                      <Col md={6}>
+                        <Form.Group controlId="startDate">
+                          <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>Start Date</Form.Label>
                           <Form.Control
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
                             disabled={loading}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px" }}
                           />
                         </Form.Group>
-                        <Form.Group controlId="endDate" style={{ flex: 1 }}>
-                          <Form.Label>End Date</Form.Label>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group controlId="endDate">
+                          <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>End Date</Form.Label>
                           <Form.Control
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             disabled={loading}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px" }}
                           />
                         </Form.Group>
-                      </div>
-                      <p
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "500",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "#616161",
-                        }}
-                      >
-                        Optionally schedule the Inactive Tab Message to show on
-                        specific dates.
-                      </p>
-
-                      {/* Enable/Disable Toggle */}
-                      <Form.Group className="mt-3">
-                        <Form.Check
-                          type="switch"
-                          id="enable-switch"
-                          label="Enable inactive tab messages"
-                          checked={isEnabled}
-                          onChange={handleToggleEnabled}
-                          disabled={loading}
-                        />
-                      </Form.Group>
-
-                      {/* Submit Button */}
-                      <div className="mt-4">
-                        <Button
-                          type="submit"
-                          text={loading ? "Saving..." : "Save Settings"}
-                          disabled={loading}
-                          style={{
-                            background: "black",
-                            borderRadius: "12px",
-                            padding: "12px 24px",
-                            color: "white",
-                            width: "200px",
-                          }}
-                        />
-                      </div>
-                    </div>
+                      </Col>
+                    </Row>
                   </Card.Body>
                 </Card>
-              </Row>
+
+                <div>
+                  <Button
+                    type="submit"
+                    text={loading ? "Saving..." : "Save Settings"}
+                    disabled={loading}
+                    style={{
+                      background: "black",
+                      borderRadius: "12px",
+                      padding: "12px 24px",
+                      color: "white",
+                      width: "200px",
+                    }}
+                  />
+                </div>
+              </div>
             </Form>
           </div>
         )}
