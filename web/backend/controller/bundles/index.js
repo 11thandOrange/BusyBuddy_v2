@@ -879,9 +879,14 @@ mutation setPriceForMixAndMatchProduct {
         },
       ],
       status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
-      productPublications: {
-        channelHandle: "online_store", // Assuming you want to publish to online store
-      },
+      // productPublications is [ProductPublicationInput!] - a list, not a
+      // single object. Passing a bare object here fails GraphQL input
+      // coercion, which was silently sinking every Mix & Match save.
+      productPublications: [
+        {
+          channelHandle: "online_store", // Assuming you want to publish to online store
+        },
+      ],
       tags: ["busybuddybundles", "mixAndMatch"],
     };
     const result = await client.request(bundleProductCreateMutation, {
@@ -1158,9 +1163,14 @@ mutation setPriceForMixAndMatchProduct {
         },
       ],
       status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
-      productPublications: {
-        channelHandle: "online_store", // Assuming you want to publish to online store
-      },
+      // productPublications is [ProductPublicationInput!] - a list, not a
+      // single object. Passing a bare object here fails GraphQL input
+      // coercion, which was silently sinking every Mix & Match save.
+      productPublications: [
+        {
+          channelHandle: "online_store", // Assuming you want to publish to online store
+        },
+      ],
       tags: ["busybuddybundles", "mixAndMatch"],
     };
     const result = await client.request(bundleProductUpdateMutation, {
