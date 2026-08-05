@@ -79,4 +79,41 @@ describe('ProductPagePreview', () => {
     expect(screen.getByText('BOGO Deal')).toBeInTheDocument();
     expect(screen.getByTestId('widget-content')).toBeInTheDocument();
   });
+
+  // The bundle's own real product page (rendered when the merchant is on
+  // Content > Product Info) has no upsell widget on it - there's nothing to
+  // embed a widget into. The widget section (including its label) should be
+  // omitted entirely rather than showing an empty dashed box with a label
+  // floating over nothing.
+  it('omits the widget section entirely when no children are passed', () => {
+    render(<ProductPagePreview widgetLabel="Bundle Offer" images={['a.jpg']} title="Summer Bundle" price={19.99} />);
+
+    expect(screen.queryByText('Bundle Offer')).not.toBeInTheDocument();
+  });
+
+  it('renders real title, price, description and specs when provided', () => {
+    render(
+      <ProductPagePreview
+        title="Summer Bundle"
+        price={19.99}
+        compareAtPrice={29.99}
+        description="A great bundle"
+        specs={[{ label: 'Material', value: 'Cotton' }]}
+      />
+    );
+
+    expect(screen.getByText('Summer Bundle')).toBeInTheDocument();
+    expect(screen.getByText('$19.99')).toBeInTheDocument();
+    expect(screen.getByText('$29.99')).toBeInTheDocument();
+    expect(screen.getByText('A great bundle')).toBeInTheDocument();
+    expect(screen.getByText('• Material: Cotton')).toBeInTheDocument();
+  });
+
+  it('falls back to a generic title/button and shows no price row when nothing real is available', () => {
+    render(<ProductPagePreview />);
+
+    expect(screen.getByText('New Bundle')).toBeInTheDocument();
+    expect(screen.getByText('Add to Cart')).toBeInTheDocument();
+    expect(screen.queryByText(/^\$/)).not.toBeInTheDocument();
+  });
 });

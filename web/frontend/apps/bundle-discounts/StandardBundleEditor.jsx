@@ -286,7 +286,7 @@ export const StandardBundleEditor = () => {
           });
           setPrimaryMessage(bundle.primaryMessage || 'Buy Together & Save More!');
           setSecondaryMessage(bundle.secondaryMessage || 'Get this bundle and save on your purchase');
-          setShowEmoji(bundle.showEmoji ?? true);
+          setShowEmoji(bundle.widgetAppearance?.addEmoji ?? true);
           setSelectedEmoji(bundle.selectedEmoji || '🔥');
           setEmojiPosition(bundle.emojiPosition || 'end');
           setShowCountdown(bundle.widgetAppearance?.isShowCountDownTimer || false);
@@ -513,6 +513,14 @@ export const StandardBundleEditor = () => {
       bundlePriority: parseInt(bundlePriority) || 0,
       description: productDescription,
       specs: productSpecs,
+      primaryMessage: primaryMessage,
+      secondaryMessage: secondaryMessage,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
+      countdownLabel: countdownLabel,
+      addToCartText: addToCartText,
+      skipOfferText: skipOfferText,
+      showSkipButton: showSkipButton,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -1064,7 +1072,7 @@ export const StandardBundleEditor = () => {
               ))}
               <button
                 onClick={handleAddSpec}
-                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
               >+ Add Spec</button>
             </ConfigFormGroup>
           </EditorConfigPanel>
@@ -1430,18 +1438,31 @@ export const StandardBundleEditor = () => {
           device={device}
           onDeviceChange={setDevice}
         >
-          <ProductPagePreview
-            widgetLabel="Bundle Offer"
-            images={selectedProducts.flatMap(p => p.images || [])}
-            title={bundleTitle}
-            price={calculateBundlePricing().discountedPrice}
-            compareAtPrice={calculateBundlePricing().totalPrice}
-            addToCartText={addToCartText}
-            description={productDescription}
-            specs={productSpecs}
-          >
-            {renderBundlePreview()}
-          </ProductPagePreview>
+          {activeTab === 'content' && activeSetting === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="Bundle Offer"
+              images={selectedProducts.flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={calculateBundlePricing().discountedPrice}
+              compareAtPrice={calculateBundlePricing().totalPrice}
+              description={productDescription}
+              specs={productSpecs}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="Bundle Offer"
+              images={selectedProducts[0]?.images || []}
+              title={selectedProducts[0]?.title}
+              price={selectedProducts[0]?.price}
+            >
+              {renderBundlePreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

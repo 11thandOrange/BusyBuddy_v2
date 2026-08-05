@@ -918,7 +918,7 @@ export const VolumeDiscountEditor = () => {
               ))}
               <button
                 onClick={handleAddSpec}
-                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px' }}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
               >+ Add Spec</button>
             </ConfigFormGroup>
           </EditorConfigPanel>
@@ -1260,18 +1260,31 @@ export const VolumeDiscountEditor = () => {
         />
 
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview
-            widgetLabel="Volume Discount"
-            images={selectedProducts.flatMap(p => p.images || [])}
-            title={bundleTitle}
-            price={calculateVolumePricing().discountedPrice}
-            compareAtPrice={calculateVolumePricing().originalPrice}
-            addToCartText={addToCartText}
-            description={productDescription}
-            specs={productSpecs}
-          >
-            {renderVolumePreview()}
-          </ProductPagePreview>
+          {activeTab === 'content' && activeSettingId === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="Volume Discount"
+              images={selectedProducts.flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={calculateVolumePricing().discountedPrice}
+              compareAtPrice={calculateVolumePricing().originalPrice}
+              description={productDescription}
+              specs={productSpecs}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="Volume Discount"
+              images={selectedProducts[0]?.images || []}
+              title={selectedProducts[0]?.title}
+              price={selectedProducts[0]?.price}
+            >
+              {renderVolumePreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

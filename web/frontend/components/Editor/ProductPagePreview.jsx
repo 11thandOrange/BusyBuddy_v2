@@ -177,27 +177,30 @@ export const ProductPagePreview = ({
             {addToCartText || 'Add to Cart'}
           </button>
 
-          {/* Widget Section */}
-          <div style={{ borderTop: '1px dashed #ddd', paddingTop: '12px', position: 'relative' }}>
-            {/* Widget Label */}
-            <div style={{
-              position: 'absolute', 
-              top: '-8px', 
-              left: '50%', 
-              transform: 'translateX(-50%)',
-              background: '#fff', 
-              padding: '0 8px', 
-              fontSize: '9px', 
-              color: '#999',
-              textTransform: 'uppercase', 
-              letterSpacing: '0.5px'
-            }}>
-              {widgetLabel}
+          {/* Widget Section - omitted entirely when there's no widget to show
+              (e.g. the bundle's own product page has no upsell widget on it) */}
+          {children && (
+            <div style={{ borderTop: '1px dashed #ddd', paddingTop: '12px', position: 'relative' }}>
+              {/* Widget Label */}
+              <div style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: '#fff',
+                padding: '0 8px',
+                fontSize: '9px',
+                color: '#999',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                {widgetLabel}
+              </div>
+
+              {/* App-specific widget content */}
+              {children}
             </div>
-            
-            {/* App-specific widget content */}
-            {children}
-          </div>
+          )}
         </div>
       </div>
     </div>

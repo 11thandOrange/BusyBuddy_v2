@@ -483,6 +483,14 @@ async function createProductBundleV2(req, res) {
       originalVariantPrices, // Array of {productId, title, price} from frontend
       description, // Merchant-edited "Product Info" description
       specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage, // Widget copy (BOGO/Volume Discount)
+      primaryMessage, // Widget copy (Bundle Discount)
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -631,6 +639,14 @@ async function createProductBundleV2(req, res) {
       productsY: productsY,
       description,
       specs,
+      secondaryMessage,
+      primaryMessage,
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
     });
     // fetch collection if dont exist  then insert
     const clients = new shopify.api.clients.Graphql({
@@ -749,6 +765,8 @@ async function createMixAndMatchBundle(req, res) {
       originalVariantPrices, // Array of {productId, title, price} from frontend
       description, // Merchant-edited "Product Info" description
       specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage,
+      selectedTier,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -956,6 +974,8 @@ mutation setPriceForMixAndMatchProduct {
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
       description,
       specs,
+      secondaryMessage,
+      selectedTier,
     });
 
     // Log activity for Mix and Match bundle creation
@@ -1018,6 +1038,8 @@ async function updateMixAndMatchBundle(req, res) {
       originalVariantPrices, // Array of {productId, title, price} from frontend
       description, // Merchant-edited "Product Info" description
       specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage,
+      selectedTier,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1243,10 +1265,13 @@ mutation setPriceForMixAndMatchProduct {
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
       description: description !== undefined ? description : existingBundle.description,
       specs: specs !== undefined ? specs : existingBundle.specs,
+      secondaryMessage: secondaryMessage !== undefined ? secondaryMessage : existingBundle.secondaryMessage,
+      selectedTier: selectedTier !== undefined ? selectedTier : existingBundle.selectedTier,
+      tierDiscounts: tierDiscounts !== undefined ? tierDiscounts : existingBundle.tierDiscounts,
     });
-    return res.status(201).json({
+    return res.status(200).json({
       status: true,
-      message: "Mix and Match Bundle created successfully.",
+      message: "Mix and Match Bundle updated successfully.",
       bundleId: productId, // Shopify's bundle product ID
     });
   } catch (error) {
@@ -1811,6 +1836,14 @@ async function updateBundle(req, res) {
       priority,
       description,
       specs,
+      secondaryMessage,
+      primaryMessage,
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1923,6 +1956,14 @@ async function updateBundle(req, res) {
     if (endDate) updateFields.endDate = endDate;
     if (description !== undefined) updateFields.description = description;
     if (specs !== undefined) updateFields.specs = specs;
+    if (secondaryMessage !== undefined) updateFields.secondaryMessage = secondaryMessage;
+    if (primaryMessage !== undefined) updateFields.primaryMessage = primaryMessage;
+    if (selectedEmoji !== undefined) updateFields.selectedEmoji = selectedEmoji;
+    if (emojiPosition !== undefined) updateFields.emojiPosition = emojiPosition;
+    if (countdownLabel !== undefined) updateFields.countdownLabel = countdownLabel;
+    if (addToCartText !== undefined) updateFields.addToCartText = addToCartText;
+    if (skipOfferText !== undefined) updateFields.skipOfferText = skipOfferText;
+    if (showSkipButton !== undefined) updateFields.showSkipButton = showSkipButton;
 
     // Handle products update based on type
     if (type === "Buy One Get One" && productsX && productsY) {
