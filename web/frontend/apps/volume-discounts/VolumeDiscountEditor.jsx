@@ -1292,6 +1292,7 @@ export const VolumeDiscountEditor = () => {
               compareAtPrice={selectedProducts.length ? calculateVolumePricing().originalPrice : undefined}
               description={productDescription}
               specs={productSpecs}
+              hasProduct={selectedProducts.length > 0}
             />
           ) : (
             // Every other tab: the widget as it actually appears in
@@ -1303,6 +1304,7 @@ export const VolumeDiscountEditor = () => {
               title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
               description={productDescription}
+              hasProduct={selectedProducts.length > 0}
             >
               {renderVolumePreview()}
             </ProductPagePreview>

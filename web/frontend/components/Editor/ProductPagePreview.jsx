@@ -28,6 +28,10 @@ import React, { useState, useEffect } from 'react';
  * @param {string} [description] - Merchant-entered product description (Content > Product Info).
  * @param {Array<{label: string, value: string}>} [specs] - Merchant-entered spec rows.
  * @param {string} [addToCartText] - Button text. Falls back to "Add to Cart".
+ * @param {boolean} [hasProduct] - Whether a real product is selected. When false (a brand
+ *   new bundle with nothing added yet), empty description/specs show a generic default.
+ *   When true, a real product with genuinely no description/specs just omits that section
+ *   instead of showing a made-up default next to otherwise-real data.
  * @param {React.ReactNode} children - The app-specific widget to render
  */
 export const ProductPagePreview = ({
@@ -39,6 +43,7 @@ export const ProductPagePreview = ({
   description,
   specs = [],
   addToCartText,
+  hasProduct = false,
   children
 }) => {
   const validImages = images.filter(Boolean);
@@ -164,23 +169,29 @@ export const ProductPagePreview = ({
           )}
 
           {/* Description - merchant-entered via Content > Product Info.
-              Falls back to a generic default paragraph (not an
-              instruction) when there's nothing real yet, same as the
-              title/image placeholders elsewhere in this component. */}
-          <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
-            {description || 'Save more when you buy this bundle together.'}
-          </p>
+              Only falls back to a generic default when there's no product
+              at all yet (a brand new bundle) - a real product with
+              genuinely no description just omits this paragraph instead of
+              padding it with made-up text. */}
+          {(description || !hasProduct) && (
+            <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+              {description || 'Save more when you buy this bundle together.'}
+            </p>
+          )}
 
           {/* Specifications - merchant-entered via Content > Product Info,
-              same generic-default approach as the description above. */}
+              same real-data-only rule as the description above. */}
           {(() => {
             const validSpecs = specs.filter((s) => s && s.label && s.value);
             const displaySpecs = validSpecs.length > 0
               ? validSpecs
-              : [
-                  { label: 'Bundle', value: 'Multiple items included' },
-                  { label: 'Savings', value: 'Discount applied at checkout' },
-                ];
+              : !hasProduct
+                ? [
+                    { label: 'Bundle', value: 'Multiple items included' },
+                    { label: 'Savings', value: 'Discount applied at checkout' },
+                  ]
+                : [];
+            if (displaySpecs.length === 0) return null;
             return (
               <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
                 <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>

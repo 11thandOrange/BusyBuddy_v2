@@ -1196,6 +1196,7 @@ export const MixAndMatchEditor = () => {
               compareAtPrice={selectedProducts.length ? calculateMixMatchPricing().originalTotal : undefined}
               description={productDescription}
               specs={productSpecs}
+              hasProduct={selectedProducts.length > 0}
             />
           ) : (
             // Every other tab: the widget as it actually appears in
@@ -1207,6 +1208,7 @@ export const MixAndMatchEditor = () => {
               title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
               description={productDescription}
+              hasProduct={selectedProducts.length > 0}
             >
               {renderMixMatchPreview()}
             </ProductPagePreview>

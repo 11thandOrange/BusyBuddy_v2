@@ -1424,6 +1424,7 @@ export const BuyXGetYEditor = () => {
               compareAtPrice={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().originalTotal : undefined}
               description={productDescription}
               specs={productSpecs}
+              hasProduct={selectedXProducts.length > 0 || selectedYProducts.length > 0}
             />
           ) : (
             // Every other tab: the widget as it actually appears in
@@ -1435,6 +1436,7 @@ export const BuyXGetYEditor = () => {
               title={(selectedXProducts[0] || selectedYProducts[0])?.title || bundleTitle}
               price={(selectedXProducts[0] || selectedYProducts[0])?.price}
               description={productDescription}
+              hasProduct={selectedXProducts.length > 0 || selectedYProducts.length > 0}
             >
               {renderBXGYPreview()}
             </ProductPagePreview>
