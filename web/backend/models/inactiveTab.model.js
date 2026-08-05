@@ -23,6 +23,14 @@ const InactiveTabSchema = mongoose.Schema(
       type: String,
       default: null,
     },
+    faviconEmoji: {
+      type: String,
+      default: null,
+    },
+    timezone: {
+      type: String,
+      default: "GMT",
+    },
     isEnabled: {
       type: Boolean,
       default: true,

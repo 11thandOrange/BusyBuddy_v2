@@ -17,7 +17,7 @@ function isSafeHttpUrl(value) {
 async function saveInactiveTabSettings(req, res) {
   try {
     const session = res.locals.shopify.session;
-    const { message, startDate, endDate, imageUrl, isEnabled } = req.body;
+    const { message, startDate, endDate, imageUrl, faviconEmoji, timezone, isEnabled } = req.body;
 
     // Validate required fields
     if (!message || typeof message !== "string" || message.trim().length === 0) {
@@ -53,6 +53,8 @@ async function saveInactiveTabSettings(req, res) {
         startDate: startDate || null,
         endDate: endDate || null,
         imageUrl: imageUrl || null,
+        faviconEmoji: faviconEmoji || null,
+        timezone: timezone || "GMT",
         isEnabled: isEnabled !== undefined ? isEnabled : true,
         updatedAt: new Date(),
       },
@@ -90,6 +92,8 @@ async function getInactiveTabSettings(req, res) {
           startDate: null,
           endDate: null,
           imageUrl: null,
+          faviconEmoji: null,
+          timezone: "GMT",
           isEnabled: false,
         },
       });
