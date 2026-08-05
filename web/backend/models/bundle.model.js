@@ -46,6 +46,7 @@ const bundleSchema = new mongoose.Schema(
     skipOfferText: { type: String },
     showSkipButton: { type: Boolean },
     selectedTier: { type: Number },
+    timezone: { type: String, default: "GMT" },
     discountType: { type: String, required: true },
     discountValue: { type: Number },
     internalName: { type: String, required: true },

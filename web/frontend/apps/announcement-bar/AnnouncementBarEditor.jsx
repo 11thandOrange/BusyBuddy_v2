@@ -146,6 +146,13 @@ const THEME_OPTIONS = [
   { value: 'abstract', label: 'Abstract' },
 ];
 
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
+];
+
 /**
  * AnnouncementBarEditor - Editor for Announcement Bar app
  * Uses reusable Editor components with app-specific configuration
@@ -282,6 +289,7 @@ export const AnnouncementBarEditor = () => {
   // === SCHEDULE SETTINGS ===
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
 
   // Fetch bar data if editing (id from URL params)
   useEffect(() => {
@@ -335,6 +343,9 @@ export const AnnouncementBarEditor = () => {
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
           setSaveBoxBgColor(bar.saveBoxSettings?.backgroundColor || '#ff4444');
           setSaveBoxTextColor(bar.saveBoxSettings?.fontColor || '#ffffff');
+          setStartDate(bar.startDate ? new Date(bar.startDate).toISOString().slice(0, 16) : '');
+          setEndDate(bar.endDate ? new Date(bar.endDate).toISOString().slice(0, 16) : '');
+          setTimezone(bar.timezone || 'GMT');
 
           // Load email form settings
           setShowEmailForm(bar.showEmailForm || false);
@@ -430,6 +441,7 @@ export const AnnouncementBarEditor = () => {
       saveBoxTextColor,
       startDate,
       endDate,
+      timezone,
       showEmailForm,
       emailSettings: showEmailForm ? emailSettings : undefined,
     };
@@ -945,40 +957,23 @@ export const AnnouncementBarEditor = () => {
       // === SCHEDULE TAB ===
       case 'start-date':
         return (
-          <EditorConfigPanel
-            title="Start Date"
-            description="When should the bar start showing?"
-          >
-            <ConfigFormGroup label="Date">
-              <ConfigInput
-                type="date"
-                value={startDate.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = startDate.split('T')[1] || '00:00';
-                  setStartDate(e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-              />
+          <EditorConfigPanel title="Start Date" description="When should the bar start showing?">
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
-            <ConfigFormGroup label="Time">
-              <ConfigInput
-                type="time"
-                value={startDate.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setStartDate(`${date}T${e.target.value}`);
-                }}
-              />
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
             </ConfigFormGroup>
             {startDate && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '10px', 
-                background: 'rgba(52, 199, 89, 0.1)', 
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
                 borderRadius: '8px',
                 color: 'rgba(255,255,255,0.8)',
                 fontSize: '13px'
               }}>
-                📅 Starts: {new Date(startDate).toLocaleString()}
+                🚀 Starts: {new Date(startDate).toLocaleString()}
               </div>
             )}
           </EditorConfigPanel>
@@ -986,42 +981,13 @@ export const AnnouncementBarEditor = () => {
 
       case 'end-date':
         return (
-          <EditorConfigPanel
-            title="End Date"
-            description="When should the bar stop showing?"
-          >
-            <ConfigFormGroup label="Date">
-              <ConfigInput
-                type="date"
-                value={endDate.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = endDate.split('T')[1] || '23:59';
-                  setEndDate(e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-              />
+          <EditorConfigPanel title="End Date" description="When should the bar stop showing?">
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
-            <ConfigFormGroup label="Time">
-              <ConfigInput
-                type="time"
-                value={endDate.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = endDate.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setEndDate(`${date}T${e.target.value}`);
-                }}
-              />
-            </ConfigFormGroup>
-            {endDate && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '10px', 
-                background: 'rgba(255, 59, 48, 0.1)', 
-                borderRadius: '8px',
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: '13px'
-              }}>
-                🏁 Ends: {new Date(endDate).toLocaleString()}
-              </div>
-            )}
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bars that run indefinitely
+            </div>
           </EditorConfigPanel>
         );
 

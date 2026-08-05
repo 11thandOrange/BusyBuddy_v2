@@ -116,6 +116,13 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Fixed Amount', label: 'Fixed Amount' },
 ];
 
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
+];
+
 const TIER_OPTIONS = [
   { value: 2, label: 'Buy 2' },
   { value: 3, label: 'Buy 3' },
@@ -217,6 +224,7 @@ export const MixAndMatchEditor = () => {
   // Schedule states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
 
   // Button settings
   const [addToCartText, setAddToCartText] = useState('Add Bundle to Cart');
@@ -352,11 +360,12 @@ export const MixAndMatchEditor = () => {
 
           // Set dates
           if (bundle.startDate) {
-            setStartDate(new Date(bundle.startDate).toISOString().split('T')[0]);
+            setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
           }
           if (bundle.endDate) {
-            setEndDate(new Date(bundle.endDate).toISOString().split('T')[0]);
+            setEndDate(new Date(bundle.endDate).toISOString().slice(0, 16));
           }
+          setTimezone(bundle.timezone || 'GMT');
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
@@ -540,6 +549,7 @@ export const MixAndMatchEditor = () => {
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: timezone,
     };
 
     setIsSaving(true);
@@ -887,18 +897,29 @@ export const MixAndMatchEditor = () => {
       case 'start-date':
         return (
           <EditorConfigPanel title="Start Date" description="When to start showing">
-            <ConfigFormGroup label="Date">
-              <ConfigInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
+            </ConfigFormGroup>
+            {startDate && (
+              <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>
+                🚀 Starts: {new Date(startDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
       case 'end-date':
         return (
           <EditorConfigPanel title="End Date" description="When to stop showing">
-            <ConfigFormGroup label="Date">
-              <ConfigInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bundles that run indefinitely
+            </div>
           </EditorConfigPanel>
         );
 

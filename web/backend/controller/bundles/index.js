@@ -491,6 +491,7 @@ async function createProductBundleV2(req, res) {
       addToCartText,
       skipOfferText,
       showSkipButton,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -646,6 +647,7 @@ async function createProductBundleV2(req, res) {
       addToCartText,
       skipOfferText,
       showSkipButton,
+      timezone,
     });
     // fetch collection if dont exist  then insert
     const clients = new shopify.api.clients.Graphql({
@@ -766,6 +768,7 @@ async function createMixAndMatchBundle(req, res) {
       specs, // [{label, value}] - Merchant-edited "Product Info" specs
       secondaryMessage,
       selectedTier,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -975,6 +978,7 @@ mutation setPriceForMixAndMatchProduct {
       specs,
       secondaryMessage,
       selectedTier,
+      timezone,
     });
 
     // Log activity for Mix and Match bundle creation
@@ -1039,6 +1043,7 @@ async function updateMixAndMatchBundle(req, res) {
       specs, // [{label, value}] - Merchant-edited "Product Info" specs
       secondaryMessage,
       selectedTier,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1267,6 +1272,7 @@ mutation setPriceForMixAndMatchProduct {
       secondaryMessage: secondaryMessage !== undefined ? secondaryMessage : existingBundle.secondaryMessage,
       selectedTier: selectedTier !== undefined ? selectedTier : existingBundle.selectedTier,
       tierDiscounts: tierDiscounts !== undefined ? tierDiscounts : existingBundle.tierDiscounts,
+      timezone: timezone !== undefined ? timezone : existingBundle.timezone,
     });
     return res.status(200).json({
       status: true,
@@ -1843,6 +1849,7 @@ async function updateBundle(req, res) {
       addToCartText,
       skipOfferText,
       showSkipButton,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1963,6 +1970,7 @@ async function updateBundle(req, res) {
     if (addToCartText !== undefined) updateFields.addToCartText = addToCartText;
     if (skipOfferText !== undefined) updateFields.skipOfferText = skipOfferText;
     if (showSkipButton !== undefined) updateFields.showSkipButton = showSkipButton;
+    if (timezone !== undefined) updateFields.timezone = timezone;
 
     // Handle products update based on type
     if (type === "Buy One Get One" && productsX && productsY) {
