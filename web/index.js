@@ -236,8 +236,21 @@ app.use("/*", async (_req, res, _next) => {
         const signature = generateSignature({ shop });
         return serveEditorHtml(_req, res, shop, signature);
       }
+
+      // No valid session for this shop (never installed, or the session
+      // expired/was revoked) - previously this fell through to _next(),
+      // which serve-static would answer with the raw editor.html straight
+      // off disk: %EDITOR_SHOP%/%EDITOR_SIGNATURE% never get substituted,
+      // so every /api/* call the editor makes is signed with the literal
+      // placeholder text and fails auth with a confusing 401 deep in a
+      // product/save request instead of a clear "please reinstall" signal.
+      // Send the merchant through OAuth instead, same as the embedded app
+      // would for an unauthenticated shop.
+      console.log(`Editor route requested for ${shop} with no valid session - redirecting to OAuth`);
+      return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
     } catch (error) {
       console.log("Editor session error:", error.message);
+      return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
     }
   }
 

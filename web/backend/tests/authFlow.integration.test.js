@@ -71,3 +71,24 @@ describe('GET /api/auth/callback (OAuth callback) - integration', () => {
     expect(location.pathname).toBe('/admin/oauth/authorize');
   });
 });
+
+describe('GET /editor.html (standalone editor) - integration', () => {
+  // This route's session lookup goes through mongoose against the fake,
+  // unreachable DB_CONNECTION set up above, so it takes the full
+  // serverSelectionTimeoutMS (mongoose's 30s default, not something this
+  // test configures) to give up before the redirect fires - hence the long
+  // timeout here, not a slow assertion.
+  it('redirects to OAuth instead of serving the raw, un-substituted editor.html when there is no session for the shop', async () => {
+    // Regression test: this route used to fall through to serve-static when
+    // no session was found, which answers with the built editor.html file
+    // exactly as it is on disk - still containing the literal
+    // %EDITOR_SHOP%/%EDITOR_SIGNATURE% placeholders, since the substitution
+    // in serveEditorHtml never ran. Every /api/* call the editor then made
+    // was signed with that literal placeholder text and failed auth with a
+    // confusing 401 far from the actual cause (no session for this shop).
+    const res = await request(app).get('/editor.html?shop=test-shop.myshopify.com');
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain('/api/auth?shop=test-shop.myshopify.com');
+  }, 35000);
+});
