@@ -55,8 +55,13 @@ export async function checkSubscriptionAccess(shopDomain, featureName) {
     // Check if feature is available in the plan
     const hasPlanAccess = planFeatures[planName]?.includes(featureName) || false;
     
-    // Check if the app is enabled for this shop
-    const isAppEnabled = enabledApps.find(app=> app.appName=== featureName) ? true : false;
+    // Check if the app is enabled for this shop - must check `.enabled`
+    // itself, not just that a record exists: once an app has been toggled
+    // on, its entry in enabledApps stays in the array forever (toggleApp
+    // updates enabled: false in place rather than removing it), so matching
+    // on presence alone made disabling an app after enabling it once have
+    // no effect on what the storefront shows.
+    const isAppEnabled = enabledApps.find(app => app.appName === featureName && app.enabled) ? true : false;
 
     // Return blank data if:
     // 1. No active subscription OR
