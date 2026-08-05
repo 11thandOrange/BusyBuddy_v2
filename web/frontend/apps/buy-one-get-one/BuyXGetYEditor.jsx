@@ -397,25 +397,31 @@ export const BuyXGetYEditor = () => {
     
     const calculateTimeLeft = () => {
       const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const difference = endOfDay - now;
-      
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / (1000 * 60)) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-      
+      // Counts down to the bundle's actual schedule end date, matching what
+      // the real storefront widget counts down to - not an arbitrary
+      // end-of-today target unrelated to the Schedule tab.
+      let target = endDate ? new Date(endDate) : null;
+      if (!target || isNaN(target.getTime())) {
+        target = new Date();
+        target.setHours(23, 59, 59, 999);
+      }
+      const difference = target - now;
+
+      const hours = Math.max(0, Math.floor((difference / (1000 * 60 * 60)) % 24));
+      const minutes = Math.max(0, Math.floor((difference / (1000 * 60)) % 60));
+      const seconds = Math.max(0, Math.floor((difference / 1000) % 60));
+
       return {
         hours: hours.toString().padStart(2, '0'),
         minutes: minutes.toString().padStart(2, '0'),
         seconds: seconds.toString().padStart(2, '0'),
       };
     };
-    
+
     setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   const fetchStoreProducts = async (search = '') => {
     setProductsLoading(true);

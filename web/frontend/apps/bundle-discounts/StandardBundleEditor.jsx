@@ -416,23 +416,29 @@ export const StandardBundleEditor = () => {
     
     const calculateTimeLeft = () => {
       const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      
-      const diff = endOfDay - now;
+      // Counts down to the bundle's actual schedule end date, matching what
+      // the real storefront widget counts down to - not an arbitrary
+      // end-of-today target unrelated to the Schedule tab.
+      let target = endDate ? new Date(endDate) : null;
+      if (!target || isNaN(target.getTime())) {
+        target = new Date();
+        target.setHours(23, 59, 59, 999);
+      }
+
+      const diff = target - now;
       if (diff <= 0) return { hours: '00', minutes: '00', seconds: '00' };
-      
+
       return {
         hours: String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0'),
         minutes: String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0'),
         seconds: String(Math.floor((diff / 1000) % 60)).padStart(2, '0'),
       };
     };
-    
+
     setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   // Get settings for current tab
   const currentSettings = BUNDLE_SETTINGS[activeTab] || [];

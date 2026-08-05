@@ -16,6 +16,15 @@ import activityLogService from "../../services/activityLogService.js";
 
 const MAX_TITLE_LENGTH = 255;
 
+// The storefront widget's countdown timer (script-preview.js) reads
+// widgetAppearance.countDownTimerEndsAt as its target time - it was never
+// set anywhere, so the timer never rendered on the real storefront for any
+// bundle type. The bundle's own schedule end date is the correct target.
+function withCountdownTarget(widgetAppearance, endDate) {
+  if (!endDate) return widgetAppearance;
+  return { ...(widgetAppearance || {}), countDownTimerEndsAt: endDate };
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -630,7 +639,7 @@ async function createProductBundleV2(req, res) {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
@@ -974,7 +983,7 @@ mutation setPriceForMixAndMatchProduct {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
@@ -1272,7 +1281,7 @@ mutation setPriceForMixAndMatchProduct {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate || existingBundle.endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
@@ -1967,7 +1976,12 @@ async function updateBundle(req, res) {
     if (internalName) updateFields.internalName = internalName;
     if (bundlePriority !== undefined) updateFields.priority = bundlePriority;
     if (priority !== undefined) updateFields.priority = priority;
-    if (widgetAppearance) updateFields.widgetAppearance = widgetAppearance;
+    if (widgetAppearance) {
+      updateFields.widgetAppearance = withCountdownTarget(
+        widgetAppearance,
+        endDate || existingBundle.endDate
+      );
+    }
     if (startDate) updateFields.startDate = startDate;
     if (endDate) updateFields.endDate = endDate;
     if (description !== undefined) updateFields.description = description;

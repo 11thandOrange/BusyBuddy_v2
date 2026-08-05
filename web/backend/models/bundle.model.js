@@ -11,6 +11,7 @@ const widgetAppearanceSchema = new mongoose.Schema({
   offerTagTextColor: { type: String },
   offerTagTheme: { type: String, default: "classic" },
   isShowCountDownTimer: { type: Boolean, default: false },
+  countDownTimerEndsAt: { type: Date },
   addEmoji: { type: Boolean, default: false },
   topMargin: { type: Number },
   bottomMargin: { type: Number },

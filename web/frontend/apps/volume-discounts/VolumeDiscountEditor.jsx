@@ -404,21 +404,28 @@ export const VolumeDiscountEditor = () => {
   // Countdown timer effect
   useEffect(() => {
     if (!showCountdown) return;
-    const timer = setInterval(() => {
-      const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const diff = endOfDay - now;
-      if (diff > 0) {
-        setTimeLeft({
-          hours: String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0'),
-          minutes: String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0'),
-          seconds: String(Math.floor((diff / 1000) % 60)).padStart(2, '0'),
-        });
-      }
-    }, 1000);
+    // Counts down to the bundle's actual schedule end date, matching what
+    // the real storefront widget counts down to - not an arbitrary
+    // end-of-today target unrelated to the Schedule tab.
+    const getTarget = () => {
+      const target = endDate ? new Date(endDate) : null;
+      if (target && !isNaN(target.getTime())) return target;
+      const fallback = new Date();
+      fallback.setHours(23, 59, 59, 999);
+      return fallback;
+    };
+    const tick = () => {
+      const diff = getTarget() - new Date();
+      setTimeLeft({
+        hours: String(Math.max(0, Math.floor((diff / (1000 * 60 * 60)) % 24))).padStart(2, '0'),
+        minutes: String(Math.max(0, Math.floor((diff / (1000 * 60)) % 60))).padStart(2, '0'),
+        seconds: String(Math.max(0, Math.floor((diff / 1000) % 60))).padStart(2, '0'),
+      });
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   // Filtered products for search
   const getFilteredProducts = () => {
