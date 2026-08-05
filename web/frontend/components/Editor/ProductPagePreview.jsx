@@ -138,79 +138,83 @@ export const ProductPagePreview = ({
 
         {/* Right Column - Product Info + Widget */}
         <div style={{ flex: '1', minWidth: 0 }}>
-          {/* Product Title */}
-          <h1 style={{
-            fontSize: '18px',
-            fontWeight: '600',
-            color: '#1a1a1a',
-            marginBottom: '6px',
-            lineHeight: '1.3'
-          }}>
-            {title || 'New Bundle'}
-          </h1>
-
-          {/* Price */}
-          {price !== undefined && price !== null && (
-            <div style={{ marginBottom: '12px' }}>
-              <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>
-                ${parseFloat(price).toFixed(2)}
-              </span>
-              {compareAtPrice !== undefined && compareAtPrice !== null && parseFloat(compareAtPrice) > parseFloat(price) && (
-                <span style={{
-                  fontSize: '12px',
-                  color: '#999',
-                  textDecoration: 'line-through',
-                  marginLeft: '8px'
-                }}>
-                  ${parseFloat(compareAtPrice).toFixed(2)}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Description - merchant-entered via Content > Product Info.
-              Only falls back to a generic default when there's no product
-              at all yet (a brand new bundle) - a real product with
-              genuinely no description just omits this paragraph instead of
-              padding it with made-up text. */}
-          {(description || !hasProduct) && (
-            <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
-              {description || 'Carefully selected items that work great together, at a better price than buying them separately. Each product in this bundle is chosen to complement the others, so you get more value out of every purchase.'}
-            </p>
-          )}
-
-          {/* Specifications - merchant-entered via Content > Product Info,
-              same real-data-only rule as the description above. */}
-          {(() => {
-            const validSpecs = specs.filter((s) => s && s.label && s.value);
-            const displaySpecs = validSpecs.length > 0
-              ? validSpecs
-              : !hasProduct
-                ? [
-                    { label: 'Bundle', value: 'Multiple items included' },
-                    { label: 'Savings', value: 'Discount applied at checkout' },
-                  ]
-                : [];
-            if (displaySpecs.length === 0) return null;
-            return (
+          {!hasProduct ? (
+            // No product selected yet - the exact legacy placeholder.
+            <>
+              <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px', lineHeight: '1.3' }}>
+                Premium Wireless Headphones Pro
+              </h1>
+              <div style={{ marginBottom: '8px', color: '#f5a623', fontSize: '13px' }}>
+                ★★★★★ <span style={{ color: '#666' }}>4.8 (2,847 reviews)</span>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>$1,299.00</span>
+                <span style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through', marginLeft: '8px' }}>$1,599.00</span>
+              </div>
+              <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+                Experience premium sound quality with active noise cancellation. 40-hour battery life, comfortable over-ear design.
+              </p>
               <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
                 <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>
                   Specifications
                 </div>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '4px',
-                  fontSize: '10px',
-                  color: '#666'
-                }}>
-                  {displaySpecs.map((s, i) => (
-                    <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
-                  ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px', color: '#666' }}>
+                  <div>• Battery: 40 hours</div>
+                  <div>• Bluetooth: 5.2</div>
+                  <div>• Weight: 250g</div>
+                  <div>• Driver: 40mm</div>
                 </div>
               </div>
-            );
-          })()}
+            </>
+          ) : (
+            // Real product selected - only real data, nothing made up.
+            <>
+              <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px', lineHeight: '1.3' }}>
+                {title || 'New Bundle'}
+              </h1>
+
+              {price !== undefined && price !== null && (
+                <div style={{ marginBottom: '12px' }}>
+                  <span style={{ fontSize: '22px', fontWeight: '700', color: '#1a1a1a' }}>
+                    ${parseFloat(price).toFixed(2)}
+                  </span>
+                  {compareAtPrice !== undefined && compareAtPrice !== null && parseFloat(compareAtPrice) > parseFloat(price) && (
+                    <span style={{
+                      fontSize: '12px',
+                      color: '#999',
+                      textDecoration: 'line-through',
+                      marginLeft: '8px'
+                    }}>
+                      ${parseFloat(compareAtPrice).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {description && (
+                <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+                  {description}
+                </p>
+              )}
+
+              {(() => {
+                const validSpecs = specs.filter((s) => s && s.label && s.value);
+                if (validSpecs.length === 0) return null;
+                return (
+                  <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>
+                      Specifications
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '10px', color: '#666' }}>
+                      {validSpecs.map((s, i) => (
+                        <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
+          )}
 
           {/* Add to Cart Button */}
           <button style={{
