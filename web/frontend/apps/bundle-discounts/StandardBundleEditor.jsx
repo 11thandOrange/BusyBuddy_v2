@@ -125,7 +125,7 @@ const TIMEZONE_OPTIONS = [
 export const StandardBundleEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('bundle-discount');
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
   // there's no host toast to show one on - useSimpleToast renders a real,
   // visible banner instead.

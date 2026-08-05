@@ -156,7 +156,7 @@ const THEME_OPTIONS = [
 export const AnnouncementBarEditor = () => {
   // Get bar ID from URL params (if editing existing bar)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('announcement-bar');
   
   // Loading state for fetching bar data
   const [isLoading, setIsLoading] = useState(!!id);
