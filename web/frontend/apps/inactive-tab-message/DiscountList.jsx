@@ -41,7 +41,10 @@ export default function DiscountList({ onMakeBundleClick }) {
   const [timezone, setTimezone] = useState("GMT");
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
+  const [hasChanges, setHasChanges] = useState(false);
   const fileInputRef = useRef(null);
+
+  const markChanged = () => setHasChanges(true);
 
   const handleCheckboxChange = (index) => {
     setCheckboxes((prev) =>
@@ -58,6 +61,7 @@ export default function DiscountList({ onMakeBundleClick }) {
   const handleFaviconEmojiClick = (emojiData) => {
     setFaviconEmoji(emojiData.emoji);
     setShowFaviconEmojiPicker(false);
+    markChanged();
   };
 
   const handleImageUpload = (event) => {
@@ -76,6 +80,7 @@ export default function DiscountList({ onMakeBundleClick }) {
       }
 
       setImage(file);
+      markChanged();
     }
   };
 
@@ -201,6 +206,7 @@ export default function DiscountList({ onMakeBundleClick }) {
           setImageUrl(uploadedImageUrl);
         }
         if (image) setImage(null); // Clear the temporary image file
+        setHasChanges(false);
       } else {
         throw new Error(settingsData.error || "Save failed");
       }
@@ -218,9 +224,11 @@ export default function DiscountList({ onMakeBundleClick }) {
   const handleRemoveImage = () => {
     setImage(null);
     setImageUrl(null);
+    markChanged();
   };
   const handleRemoveFaviconEmoji = () => {
     setFaviconEmoji(null);
+    markChanged();
   };
   if (showBundleAction) {
     return <AnnouncementBarActions />;
@@ -579,7 +587,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                       <Form.Control
                         type="text"
                         value={message}
-                        onChange={(e) => setMessage(e.target.value)}
+                        onChange={(e) => { setMessage(e.target.value); markChanged(); }}
                         placeholder="Enter message to display when tab is inactive"
                         style={{
                           borderRadius: "8px",
@@ -610,7 +618,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                         variant={faviconType === "image" ? "dark" : "outline-secondary"}
                         checked={faviconType === "image"}
                         value="image"
-                        onChange={() => setFaviconType("image")}
+                        onChange={() => { setFaviconType("image"); markChanged(); }}
                       >
                         Upload Image
                       </ToggleButton>
@@ -620,7 +628,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                         variant={faviconType === "emoji" ? "dark" : "outline-secondary"}
                         checked={faviconType === "emoji"}
                         value="emoji"
-                        onChange={() => setFaviconType("emoji")}
+                        onChange={() => { setFaviconType("emoji"); markChanged(); }}
                       >
                         Use Emoji
                       </ToggleButton>
@@ -769,9 +777,9 @@ export default function DiscountList({ onMakeBundleClick }) {
                           <Form.Control
                             type="datetime-local"
                             value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
+                            onChange={(e) => { setStartDate(e.target.value); markChanged(); }}
                             disabled={loading}
-                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px" }}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
                           />
                         </Form.Group>
                       </Col>
@@ -781,9 +789,9 @@ export default function DiscountList({ onMakeBundleClick }) {
                           <Form.Control
                             type="datetime-local"
                             value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
+                            onChange={(e) => { setEndDate(e.target.value); markChanged(); }}
                             disabled={loading}
-                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px" }}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
                           />
                         </Form.Group>
                       </Col>
@@ -792,9 +800,9 @@ export default function DiscountList({ onMakeBundleClick }) {
                           <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>Timezone</Form.Label>
                           <Form.Select
                             value={timezone}
-                            onChange={(e) => setTimezone(e.target.value)}
+                            onChange={(e) => { setTimezone(e.target.value); markChanged(); }}
                             disabled={loading}
-                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px" }}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
                           >
                             <option value="GMT">GMT</option>
                             <option value="EST">EST</option>
@@ -811,13 +819,15 @@ export default function DiscountList({ onMakeBundleClick }) {
                   <Button
                     type="submit"
                     text={loading ? "Saving..." : "Save Settings"}
-                    disabled={loading}
+                    disabled={loading || !hasChanges}
                     style={{
                       background: "black",
                       borderRadius: "12px",
                       padding: "12px 24px",
                       color: "white",
                       width: "200px",
+                      opacity: (loading || !hasChanges) ? 0.5 : 1,
+                      cursor: (loading || !hasChanges) ? "not-allowed" : "pointer",
                     }}
                   />
                 </div>
