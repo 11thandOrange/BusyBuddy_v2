@@ -10,6 +10,7 @@ import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
 import OverviewTab from "./OverviewTab";
 import { openEditorTab } from "../utils/openEditorTab";
+import { transformProductNode } from "../utils/productEnrichment";
 
 // Map discount types to editor routes
 const EDITOR_ROUTES = {
@@ -60,6 +61,7 @@ export default function DiscountList({
   const [discounts, setDiscounts] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
+  const [liveProductImages, setLiveProductImages] = useState({});
 
   // Get query string for preserving host and shop params
   const getQueryString = useCallback(() => {
@@ -91,6 +93,40 @@ export default function DiscountList({
       fetchDiscounts();
     }
   }, [refreshTrigger, selectedTab]);
+
+  // The saved bundle snapshot's product image can go stale (the image was
+  // still processing on Shopify's side when the product was added, or it
+  // was changed since) - refresh thumbnails with one batched live lookup
+  // instead of trusting whatever was frozen into the bundle at save time.
+  const refreshThumbnailImages = async (discountsList) => {
+    const bareIds = [];
+    const seen = new Set();
+    discountsList.forEach((discount) => {
+      const firstProduct = discount.products?.[0] || discount.productsX?.[0] || discount.productsY?.[0];
+      const productId = firstProduct?.productId || firstProduct?.id;
+      if (!productId) return;
+      const bareId = productId.replace('gid://shopify/Product/', '');
+      if (seen.has(bareId)) return;
+      seen.add(bareId);
+      bareIds.push(bareId);
+    });
+    if (bareIds.length === 0) return;
+
+    try {
+      const response = await fetch(`/api/products?ids=${bareIds.join(',')}`, { credentials: 'include' });
+      if (!response.ok) return;
+      const data = await response.json();
+      const edges = data?.data?.edges || [];
+      const imagesByProductId = {};
+      edges.forEach((edge) => {
+        const live = transformProductNode(edge.node);
+        if (live.media) imagesByProductId[edge.node.id] = live.media;
+      });
+      setLiveProductImages(imagesByProductId);
+    } catch (err) {
+      console.error("[BundelDiscountList] Error refreshing thumbnail images:", err);
+    }
+  };
 
   const fetchDiscounts = async () => {
     console.log("[DEBUG fetchDiscounts] Starting fetch...");
@@ -132,6 +168,7 @@ export default function DiscountList({
         .map((item) => ({ ...item, selected: false }));
 
       setDiscounts(filteredDiscounts);
+      refreshThumbnailImages(filteredDiscounts);
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
@@ -377,7 +414,9 @@ export default function DiscountList({
                       discount.products?.[0] ||
                       discount.productsX?.[0] ||
                       discount.productsY?.[0];
-                    const firstProductImage = firstProduct?.media || firstProduct?.images?.[0];
+                    const firstProductId = firstProduct?.productId || firstProduct?.id;
+                    const firstProductImage =
+                      liveProductImages[firstProductId] || firstProduct?.media || firstProduct?.images?.[0];
                     return (
                     <Row key={discount._id} className="g-0 linrrow mb-3">
                       <Col>
