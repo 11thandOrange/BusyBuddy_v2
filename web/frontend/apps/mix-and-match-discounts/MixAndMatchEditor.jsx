@@ -779,7 +779,7 @@ export const MixAndMatchEditor = () => {
             {showEmoji && (
               <>
                 <ConfigFormGroup label="Emoji">
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', width: '100%' }}>
                     <button
                       type="button"
                       onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
@@ -799,8 +799,9 @@ export const MixAndMatchEditor = () => {
                       <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
                     </button>
                     {showEmojiPickerPopup && (
-                      <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                      <div style={{ position: 'absolute', top: '48px', left: 0, width: '100%', zIndex: 100 }}>
                         <EmojiPicker
+                          width="100%"
                           onEmojiClick={(emojiData) => {
                             setSelectedEmoji(emojiData.emoji);
                             setShowEmojiPickerPopup(false);

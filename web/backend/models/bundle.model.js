@@ -35,7 +35,7 @@ const bundleSchema = new mongoose.Schema(
     productsX: [{ type: Object }],
     productsY: [{ type: Object }],
     quantityBreaks: [{ type: Object }],
-    tierDiscounts: [{ type: Object }],
+    tierDiscounts: { type: Object },
     description: { type: String },
     specs: [{ type: Object }],
     secondaryMessage: { type: String },
