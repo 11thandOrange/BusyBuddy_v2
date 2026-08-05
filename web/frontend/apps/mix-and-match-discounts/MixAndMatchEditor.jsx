@@ -331,9 +331,9 @@ export const MixAndMatchEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) throw new Error("Failed to fetch products");
-
       const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Failed to fetch products");
+
       const products = data.data?.edges || [];
 
       const formattedProducts = products.map((edge) => {
@@ -344,7 +344,7 @@ export const MixAndMatchEditor = () => {
           productId: product.id,
           title: product.title,
           price: variant?.price || "0.00",
-          media: product.images?.nodes?.[0]?.url || tshirt,
+          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
           quantity: 1,
           optionSelections: product.options?.map((opt) => ({
             name: opt.name,
@@ -356,7 +356,7 @@ export const MixAndMatchEditor = () => {
       setStoreProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      showToast("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }

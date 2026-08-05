@@ -319,10 +319,10 @@ export const StandardBundleEditor = () => {
           "Content-Type": "application/json",
         },
       });
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to fetch products");
+      }
       const edges = data.data?.edges || [];
       // Transform products to match production bundle format
       const transformedProducts = edges.map(edge => {
@@ -339,18 +339,18 @@ export const StandardBundleEditor = () => {
           id: product.id,
           productId: product.id,  // GID format: gid://shopify/Product/ID
           title: product.title,
-          price: product.variants?.edges?.[0]?.node?.price || '0.00',
+          price: product.variants?.edges?.[0]?.node?.price || product.variants?.nodes?.[0]?.price || '0.00',
           media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
           handle: product.handle,
           quantity: 1,  // Default quantity (required for storefront)
-          variants: product.variants?.edges?.map(v => v.node) || [],
+          variants: product.variants?.edges?.map(v => v.node) || product.variants?.nodes || [],
           optionSelections: optionSelections
         };
       });
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      showToast("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }

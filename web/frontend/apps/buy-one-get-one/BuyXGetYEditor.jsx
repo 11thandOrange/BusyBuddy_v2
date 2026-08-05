@@ -349,11 +349,11 @@ export const BuyXGetYEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) throw new Error("Failed to fetch products");
-      
       const data = await response.json();
+      if (!response.ok) throw new Error(data?.message || "Failed to fetch products");
+
       const edges = data.data?.edges || [];
-      
+
       // Transform products to match production bundle format
       const transformedProducts = edges.map(edge => {
         const product = edge.node;
@@ -379,7 +379,7 @@ export const BuyXGetYEditor = () => {
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      showToast("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }

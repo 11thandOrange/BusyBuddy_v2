@@ -5,7 +5,7 @@ async function getProducts(req, res) {
   const session = res.locals.shopify.session;
   const client = new shopify.api.clients.Graphql({
     session,
-    apiVersion: "2025-10",
+    apiVersion: "2025-07",
   });
 
   const { cursor, search } = req.query;
@@ -72,7 +72,7 @@ async function getCollections(_, res) {
   const session = res.locals.shopify.session;
   const client = new shopify.api.clients.Graphql({
     session: session,
-    apiVersion: "2025-10",
+    apiVersion: "2025-07",
   });
 
   const data = await client.request(GET_COLLECTIONS);
