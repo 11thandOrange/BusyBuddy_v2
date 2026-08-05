@@ -128,17 +128,20 @@ describe('ProductPagePreview', () => {
     expect(screen.getByText('$0.00')).toBeInTheDocument();
   });
 
-  it('shows placeholder prompts for description and specs when neither is provided, instead of nothing', () => {
+  it('shows a generic default description and specs when neither is provided, instead of nothing', () => {
     render(<ProductPagePreview />);
 
-    expect(screen.getByText('Describe this bundle to see it here.')).toBeInTheDocument();
-    expect(screen.getByText('Add specs to see them here.')).toBeInTheDocument();
+    expect(screen.getByText('Save more when you buy this bundle together.')).toBeInTheDocument();
+    expect(screen.getByText('• Bundle: Multiple items included')).toBeInTheDocument();
+    expect(screen.getByText('• Savings: Discount applied at checkout')).toBeInTheDocument();
   });
 
-  it('shows the real description/specs instead of the placeholder prompt once real content exists', () => {
+  it('shows the real description/specs instead of the generic default once real content exists', () => {
     render(<ProductPagePreview description="A great bundle" specs={[{ label: 'Material', value: 'Cotton' }]} />);
 
-    expect(screen.queryByText('Describe this bundle to see it here.')).not.toBeInTheDocument();
-    expect(screen.queryByText('Add specs to see them here.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Save more when you buy this bundle together.')).not.toBeInTheDocument();
+    expect(screen.queryByText('• Bundle: Multiple items included')).not.toBeInTheDocument();
+    expect(screen.getByText('A great bundle')).toBeInTheDocument();
+    expect(screen.getByText('• Material: Cotton')).toBeInTheDocument();
   });
 });

@@ -163,45 +163,40 @@ export const ProductPagePreview = ({
             </div>
           )}
 
-          {/* Description - merchant-entered via Content > Product Info. Not
-              fabricated: when there's nothing real yet, this shows the same
-              placeholder prompt the input itself uses, not a fake paragraph. */}
-          {description ? (
-            <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
-              {description}
-            </p>
-          ) : (
-            <p style={{ fontSize: '12px', color: '#aaa', fontStyle: 'italic', lineHeight: '1.5', marginBottom: '12px' }}>
-              Describe this bundle to see it here.
-            </p>
-          )}
+          {/* Description - merchant-entered via Content > Product Info.
+              Falls back to a generic default paragraph (not an
+              instruction) when there's nothing real yet, same as the
+              title/image placeholders elsewhere in this component. */}
+          <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
+            {description || 'Save more when you buy this bundle together.'}
+          </p>
 
           {/* Specifications - merchant-entered via Content > Product Info,
-              same placeholder-prompt approach as the description above. */}
+              same generic-default approach as the description above. */}
           {(() => {
             const validSpecs = specs.filter((s) => s && s.label && s.value);
+            const displaySpecs = validSpecs.length > 0
+              ? validSpecs
+              : [
+                  { label: 'Bundle', value: 'Multiple items included' },
+                  { label: 'Savings', value: 'Discount applied at checkout' },
+                ];
             return (
               <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
                 <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>
                   Specifications
                 </div>
-                {validSpecs.length > 0 ? (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '4px',
-                    fontSize: '10px',
-                    color: '#666'
-                  }}>
-                    {validSpecs.map((s, i) => (
-                      <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '10px', color: '#aaa', fontStyle: 'italic' }}>
-                    Add specs to see them here.
-                  </div>
-                )}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '4px',
+                  fontSize: '10px',
+                  color: '#666'
+                }}>
+                  {displaySpecs.map((s, i) => (
+                    <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
+                  ))}
+                </div>
               </div>
             );
           })()}
