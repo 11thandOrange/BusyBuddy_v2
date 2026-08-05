@@ -802,7 +802,7 @@ export default function DiscountList({ onMakeBundleClick }) {
                             value={timezone}
                             onChange={(e) => { setTimezone(e.target.value); markChanged(); }}
                             disabled={loading}
-                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
+                            style={{ background: "#fff", color: "#000", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
                           >
                             <option value="GMT">GMT</option>
                             <option value="EST">EST</option>
