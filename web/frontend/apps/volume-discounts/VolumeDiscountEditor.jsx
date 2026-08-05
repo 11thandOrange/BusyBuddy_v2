@@ -1300,8 +1300,9 @@ export const VolumeDiscountEditor = () => {
             <ProductPagePreview
               widgetLabel="Volume Discount"
               images={selectedProducts[0]?.images || []}
-              title={selectedProducts[0]?.title}
+              title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
+              description={productDescription}
             >
               {renderVolumePreview()}
             </ProductPagePreview>

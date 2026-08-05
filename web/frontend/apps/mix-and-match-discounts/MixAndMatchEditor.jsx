@@ -1204,8 +1204,9 @@ export const MixAndMatchEditor = () => {
             <ProductPagePreview
               widgetLabel="Mix & Match Offer"
               images={selectedProducts[0]?.images || []}
-              title={selectedProducts[0]?.title}
+              title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
+              description={productDescription}
             >
               {renderMixMatchPreview()}
             </ProductPagePreview>

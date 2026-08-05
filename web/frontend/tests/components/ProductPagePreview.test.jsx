@@ -2,16 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductPagePreview } from '../../components/Editor/ProductPagePreview';
 
-// The live preview's image slot used to be 100% hardcoded (a static gray
-// box + 4 fake thumbnail boxes, all just a 📦 emoji) regardless of which
-// products were actually selected in the bundle. It now renders the real
-// images from the bundle's selected products, matching what the "Selected
-// Products" tab's own carousel already shows for each product.
+// The live preview's image slot renders the real images from the bundle's
+// selected products, matching what the "Selected Products" tab's own
+// carousel already shows for each product. When there are no real images
+// yet, it shows placeholder thumbnail slots (main box + 4 faint 📦 boxes)
+// so the layout still reads as a gallery instead of a single bare box.
 describe('ProductPagePreview', () => {
-  it('shows the placeholder emoji when there are no real images', () => {
+  it('shows placeholder thumbnail slots (main box + 4) when there are no real images', () => {
     render(<ProductPagePreview widgetLabel="Bundle Offer">child content</ProductPagePreview>);
 
-    expect(screen.getByText('📦')).toBeInTheDocument();
+    expect(screen.getAllByText('📦')).toHaveLength(5);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
@@ -126,5 +126,19 @@ describe('ProductPagePreview', () => {
     render(<ProductPagePreview price={0} />);
 
     expect(screen.getByText('$0.00')).toBeInTheDocument();
+  });
+
+  it('shows placeholder prompts for description and specs when neither is provided, instead of nothing', () => {
+    render(<ProductPagePreview />);
+
+    expect(screen.getByText('Describe this bundle to see it here.')).toBeInTheDocument();
+    expect(screen.getByText('Add specs to see them here.')).toBeInTheDocument();
+  });
+
+  it('shows the real description/specs instead of the placeholder prompt once real content exists', () => {
+    render(<ProductPagePreview description="A great bundle" specs={[{ label: 'Material', value: 'Cotton' }]} />);
+
+    expect(screen.queryByText('Describe this bundle to see it here.')).not.toBeInTheDocument();
+    expect(screen.queryByText('Add specs to see them here.')).not.toBeInTheDocument();
   });
 });

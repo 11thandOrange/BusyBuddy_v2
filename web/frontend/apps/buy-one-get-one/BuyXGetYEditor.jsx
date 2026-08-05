@@ -1432,8 +1432,9 @@ export const BuyXGetYEditor = () => {
             <ProductPagePreview
               widgetLabel="BOGO Deal"
               images={(selectedXProducts[0] || selectedYProducts[0])?.images || []}
-              title={(selectedXProducts[0] || selectedYProducts[0])?.title}
+              title={(selectedXProducts[0] || selectedYProducts[0])?.title || bundleTitle}
               price={(selectedXProducts[0] || selectedYProducts[0])?.price}
+              description={productDescription}
             >
               {renderBXGYPreview()}
             </ProductPagePreview>

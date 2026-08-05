@@ -1474,8 +1474,9 @@ export const StandardBundleEditor = () => {
             <ProductPagePreview
               widgetLabel="Bundle Offer"
               images={selectedProducts[0]?.images || []}
-              title={selectedProducts[0]?.title}
+              title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
+              description={productDescription}
             >
               {renderBundlePreview()}
             </ProductPagePreview>

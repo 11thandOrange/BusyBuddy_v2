@@ -13,6 +13,11 @@ import React, { useState, useEffect } from 'react';
  * settings (description/specs). There's deliberately no rating/review count
  * - this app has no review system, so there's nothing real to show there.
  *
+ * Before any real data exists (no images/description/specs yet), each
+ * section shows a plain placeholder prompt instead of fabricated-looking
+ * content, and the image gallery shows placeholder thumbnail slots so the
+ * layout doesn't look broken next to a populated one.
+ *
  * @param {string} widgetLabel - Label shown above the widget (e.g., "Bundle Offer", "BOGO Deal")
  * @param {string[]} images - Real product image URLs (from the bundle's selected products) to
  *   show in the gallery, in place of the placeholder box. Falls back to the placeholder when empty.
@@ -100,6 +105,30 @@ export const ProductPagePreview = ({
               ))}
             </div>
           )}
+          {/* No real images yet - a bare single box reads as broken next to
+              a real gallery's thumbnail strip, so show placeholder
+              thumbnail slots in the same shape a real gallery would take. */}
+          {validImages.length === 0 && (
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: '50px',
+                    height: '50px',
+                    background: '#f8f8f8',
+                    borderRadius: '8px',
+                    border: '1px solid #eee',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span style={{ fontSize: '18px', opacity: 0.3 }}>📦</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Column - Product Info + Widget */}
@@ -134,32 +163,48 @@ export const ProductPagePreview = ({
             </div>
           )}
 
-          {/* Description - merchant-entered via Content > Product Info, no fabricated fallback */}
-          {description && (
+          {/* Description - merchant-entered via Content > Product Info. Not
+              fabricated: when there's nothing real yet, this shows the same
+              placeholder prompt the input itself uses, not a fake paragraph. */}
+          {description ? (
             <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
               {description}
             </p>
+          ) : (
+            <p style={{ fontSize: '12px', color: '#aaa', fontStyle: 'italic', lineHeight: '1.5', marginBottom: '12px' }}>
+              Describe this bundle to see it here.
+            </p>
           )}
 
-          {/* Specifications - merchant-entered via Content > Product Info, no fabricated fallback */}
-          {specs.filter((s) => s && s.label && s.value).length > 0 && (
-            <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
-              <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>
-                Specifications
+          {/* Specifications - merchant-entered via Content > Product Info,
+              same placeholder-prompt approach as the description above. */}
+          {(() => {
+            const validSpecs = specs.filter((s) => s && s.label && s.value);
+            return (
+              <div style={{ marginBottom: '12px', padding: '10px', background: '#f9f9f9', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '600', color: '#1a1a1a', marginBottom: '6px' }}>
+                  Specifications
+                </div>
+                {validSpecs.length > 0 ? (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '4px',
+                    fontSize: '10px',
+                    color: '#666'
+                  }}>
+                    {validSpecs.map((s, i) => (
+                      <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '10px', color: '#aaa', fontStyle: 'italic' }}>
+                    Add specs to see them here.
+                  </div>
+                )}
               </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '4px',
-                fontSize: '10px',
-                color: '#666'
-              }}>
-                {specs.filter((s) => s && s.label && s.value).map((s, i) => (
-                  <div key={`${s.label}-${i}`}>• {s.label}: {s.value}</div>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Add to Cart Button */}
           <button style={{
