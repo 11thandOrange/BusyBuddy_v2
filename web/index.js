@@ -15,7 +15,6 @@ import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
 import { verifySHA256, generateSignature, verifyShopSignature } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
-import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
 import logger, { reportError } from "./logger.js";
 dotenv.config();
@@ -202,7 +201,9 @@ app.use("/", async (_req, res, _next) => {
   // Shopify HMAC signature - otherwise an arbitrary caller could force a
   // resync for any shop=<value> they choose.
   if (_req.query.charge_id && _req.query.shop && verifySHA256(_req)) {
-    const session = await sessionModel.findOne({ shop: _req.query.shop });
+    const shop = _req.query.shop.toString();
+    const sessionId = await shopify.api.session.getOfflineId(shop);
+    const session = await shopify.config.sessionStorage.loadSession(sessionId);
     if (session) {
       subscriptionUpdate(session);
     }
@@ -257,8 +258,18 @@ app.use("/*", async (_req, res, _next) => {
 
   if (isEditorRoute && shop) {
     try {
-      // Use sessionModel directly (same approach as API validation)
-      const session = await sessionModel.findOne({ shop: shop });
+      // Look up the session through shopify.config.sessionStorage - the
+      // exact same store shopify.ensureInstalledOnShop() below (and the
+      // /api/* middleware above) already use successfully for the main
+      // embedded app. The old code queried a separate Mongoose model
+      // (sessionModel) pointed at mongoose.connect(DB_CONNECTION), while
+      // this storage is a raw mongodb client scoped to DB_NAME explicitly -
+      // two different connections that can silently diverge (e.g. no db
+      // name in DB_CONNECTION defaulting to a different database than
+      // DB_NAME), which is exactly what made this always report "no
+      // session" for shops the main app was otherwise working fine on.
+      const sessionId = await shopify.api.session.getOfflineId(shop);
+      const session = await shopify.config.sessionStorage.loadSession(sessionId);
 
       if (session && session.accessToken) {
         // Valid session exists - serve the editor HTML (no App Bridge)

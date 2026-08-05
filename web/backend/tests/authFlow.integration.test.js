@@ -73,10 +73,10 @@ describe('GET /api/auth/callback (OAuth callback) - integration', () => {
 });
 
 describe('GET /editor.html (standalone editor) - integration', () => {
-  // This route's session lookup goes through mongoose against the fake,
-  // unreachable DB_CONNECTION set up above, so it takes the full
-  // serverSelectionTimeoutMS (mongoose's 30s default, not something this
-  // test configures) to give up before the redirect fires - hence the long
+  // This route's session lookup goes through shopify.config.sessionStorage
+  // (the same raw mongodb-driver store the main embedded app uses) against
+  // the fake, unreachable DB_CONNECTION set up above, so it takes a while
+  // to give up on connecting before the redirect fires - hence the long
   // timeout here, not a slow assertion.
   it('redirects to OAuth instead of serving the raw, un-substituted editor.html when there is no session for the shop', async () => {
     // Regression test: this route used to fall through to serve-static when
