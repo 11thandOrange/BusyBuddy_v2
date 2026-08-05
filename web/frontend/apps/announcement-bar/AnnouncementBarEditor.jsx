@@ -172,6 +172,7 @@ export const AnnouncementBarEditor = () => {
   
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Warn user before closing tab with unsaved changes
   useEffect(() => {
@@ -427,6 +428,8 @@ export const AnnouncementBarEditor = () => {
 
   // Handle save
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     const data = {
       name: internalName,
       status: barEnabled ? 'active' : 'inactive',
@@ -478,13 +481,18 @@ export const AnnouncementBarEditor = () => {
       });
 
       if (!response.ok) throw new Error('Save failed');
-      
-      // Clear unsaved changes flag and close editor
+
+      // Clear unsaved changes flag and close editor - delayed slightly so
+      // the beforeunload listener has re-subscribed with the new
+      // hasUnsavedChanges value before window.close() fires (otherwise the
+      // still-attached stale listener sees the old "true" and Chrome shows
+      // a "leave site?" prompt on every save).
       setHasUnsavedChanges(false);
-      closeEditor();
+      setTimeout(() => closeEditor(), 600);
     } catch (err) {
       console.error('Save error:', err);
       alert('Failed to save announcement bar');
+      setIsSaving(false);
     }
   };
 
@@ -1305,6 +1313,7 @@ export const AnnouncementBarEditor = () => {
           enabled={barEnabled}
           onEnabledChange={(value) => { setBarEnabled(value); markAsChanged(); }}
           onSave={handleSave}
+          isLoading={isSaving}
         />
         
         <EditorPreviewPanel
