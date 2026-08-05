@@ -175,7 +175,7 @@ export const ProductPagePreview = ({
               padding it with made-up text. */}
           {(description || !hasProduct) && (
             <p style={{ fontSize: '12px', color: '#555', lineHeight: '1.5', marginBottom: '12px' }}>
-              {description || 'Save more when you buy this bundle together.'}
+              {description || 'Carefully selected items that work great together, at a better price than buying them separately. Each product in this bundle is chosen to complement the others, so you get more value out of every purchase.'}
             </p>
           )}
 
