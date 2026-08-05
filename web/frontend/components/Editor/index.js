@@ -28,3 +28,8 @@ export {
   CountdownThemePicker,
 } from './CountdownTimerThemes';
 export { ProductImageCarousel } from './ProductImageCarousel';
+export {
+  ANNOUNCEMENT_BAR_BACKGROUND_THEMES,
+  AnnouncementBarThemePicker,
+  getBackgroundThemeCss,
+} from './AnnouncementBarBackgroundThemes';

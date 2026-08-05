@@ -245,6 +245,9 @@ const announcementBarSchema = new mongoose.Schema(
     startDate: { type: Date, default: Date.now },
     endDate: { type: Date, default: Date.now },
     timezone: { type: String, default: "GMT" },
+    backgroundType: { type: String, enum: ["solid", "gradient", "theme"], default: "gradient" },
+    gradientEndColor: { type: String, default: "#764ba2" },
+    backgroundTheme: { type: String, default: "sunshine" },
     showTimerBlockBackground: { type: Boolean, default: false },
     showTimerBlockBorder: { type: Boolean, default: false },
     timerDesktopFontSettings: {

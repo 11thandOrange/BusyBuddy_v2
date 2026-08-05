@@ -15,7 +15,9 @@ import {
   EditorHeader,
   EditorRightContent,
   CountdownThemePicker,
-  CountdownTimerDisplay
+  CountdownTimerDisplay,
+  AnnouncementBarThemePicker,
+  getBackgroundThemeCss
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -138,12 +140,10 @@ const FONT_WEIGHT_OPTIONS = [
   { value: '700', label: 'Bold' },
 ];
 
-const THEME_OPTIONS = [
+const BACKGROUND_TYPE_OPTIONS = [
   { value: 'solid', label: 'Solid Color' },
   { value: 'gradient', label: 'Gradient' },
-  { value: 'sunshine', label: 'Sunshine' },
-  { value: 'watercolor', label: 'Watercolor' },
-  { value: 'abstract', label: 'Abstract' },
+  { value: 'theme', label: 'Theme' },
 ];
 
 const TIMEZONE_OPTIONS = [
@@ -265,6 +265,7 @@ export const AnnouncementBarEditor = () => {
   const [backgroundType, setBackgroundType] = useState('gradient');
   const [backgroundColor, setBackgroundColor] = useState('#667eea');
   const [gradientEndColor, setGradientEndColor] = useState('#764ba2');
+  const [backgroundTheme, setBackgroundTheme] = useState('sunshine');
   
   // Text Color
   const [textColor, setTextColor] = useState('#ffffff');
@@ -321,6 +322,7 @@ export const AnnouncementBarEditor = () => {
           setBackgroundColor(bar.generalColorSettings?.['Background Color'] || bar.colorSettings?.['Background Color'] || '#667eea');
           setGradientEndColor(bar.gradientEndColor || '#764ba2');
           setBackgroundType(bar.backgroundType || 'gradient');
+          setBackgroundTheme(bar.backgroundTheme || 'sunshine');
           setTextColor(bar.generalColorSettings?.['Message Font Color'] || '#ffffff');
           setFontSize(parseInt(bar.messageDesktopFontSettings?.fontSize) || 16);
           setFontFamily(bar.messageDesktopFontSettings?.fontFamily || 'Inter');
@@ -416,6 +418,7 @@ export const AnnouncementBarEditor = () => {
       backgroundColor,
       gradientEndColor,
       backgroundType,
+      backgroundTheme,
       textColor,
       fontSize,
       fontFamily,
@@ -471,6 +474,9 @@ export const AnnouncementBarEditor = () => {
   const getBackgroundStyle = () => {
     if (backgroundType === 'gradient') {
       return `linear-gradient(135deg, ${backgroundColor}, ${gradientEndColor})`;
+    }
+    if (backgroundType === 'theme') {
+      return getBackgroundThemeCss(backgroundTheme);
     }
     return backgroundColor;
   };
@@ -842,23 +848,39 @@ export const AnnouncementBarEditor = () => {
               <ConfigSelect
                 value={backgroundType}
                 onChange={(e) => setBackgroundType(e.target.value)}
-                options={THEME_OPTIONS}
+                options={BACKGROUND_TYPE_OPTIONS}
               />
             </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Primary Color">
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
-                <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
-              </div>
-            </ConfigFormGroup>
-            
-            {backgroundType === 'gradient' && (
-              <ConfigFormGroup label="Gradient End Color">
+
+            {backgroundType === 'solid' && (
+              <ConfigFormGroup label="Color">
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input type="color" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
-                <ConfigInput type="text" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} />
-              </div>
+                  <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                  <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+                </div>
+              </ConfigFormGroup>
+            )}
+
+            {backgroundType === 'gradient' && (
+              <>
+                <ConfigFormGroup label="Gradient Start Color">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                    <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Gradient End Color">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="color" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                    <ConfigInput type="text" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} />
+                  </div>
+                </ConfigFormGroup>
+              </>
+            )}
+
+            {backgroundType === 'theme' && (
+              <ConfigFormGroup label="Pick a Theme">
+                <AnnouncementBarThemePicker value={backgroundTheme} onChange={setBackgroundTheme} />
               </ConfigFormGroup>
             )}
           </EditorConfigPanel>
