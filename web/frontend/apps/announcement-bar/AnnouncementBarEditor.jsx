@@ -193,6 +193,21 @@ export const AnnouncementBarEditor = () => {
     }
   };
 
+  // Fetch the connected email provider's lists/templates so the Email tab
+  // can offer real list/template dropdowns instead of free-typed IDs.
+  useEffect(() => {
+    editorFetch('/api/email-provider')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.data) {
+          setEmailProviderConnected(data.data.isConnected || false);
+          setEmailProviderLists(data.data.lists || []);
+          setEmailProviderTemplates(data.data.templates || []);
+        }
+      })
+      .catch((err) => console.error('Error fetching email provider:', err));
+  }, []);
+
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
   const [activeSetting, setActiveSetting] = useState('message');
@@ -236,10 +251,13 @@ export const AnnouncementBarEditor = () => {
 
   // Email Subscription Settings
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailProviderConnected, setEmailProviderConnected] = useState(false);
+  const [emailProviderLists, setEmailProviderLists] = useState([]);
+  const [emailProviderTemplates, setEmailProviderTemplates] = useState([]);
   const [emailSettings, setEmailSettings] = useState({
     placeholderText: 'Enter your email',
     buttonText: 'Subscribe',
-    successMessage: 'Thank you for subscribing!',
+    emailSuccessMessage: 'Thank you for subscribing!',
     listId: '',
     templateId: '',
     inputStyles: {
@@ -721,8 +739,42 @@ export const AnnouncementBarEditor = () => {
               onChange={setShowEmailForm}
             />
 
+            {showEmailForm && !emailProviderConnected && (
+              <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)', borderRadius: '8px', color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>
+                ⚠️ No email provider connected. Connect Mailchimp or Klaviyo in the app's Settings tab so subscribers can actually be added to a list.
+              </div>
+            )}
+
             {showEmailForm && (
               <>
+                <ConfigFormGroup label="Email List" hint="Subscribers will be added to this list">
+                  <ConfigSelect
+                    value={emailSettings.listId}
+                    onChange={(e) => {
+                      const selected = emailProviderLists.find((l) => l.listId === e.target.value);
+                      setEmailSettings({ ...emailSettings, listId: e.target.value, listName: selected ? selected.listName : '' });
+                    }}
+                    options={[
+                      { value: '', label: emailProviderConnected ? 'Select an email list' : 'Connect a provider first' },
+                      ...emailProviderLists.map((list) => ({ value: list.listId, label: list.listName })),
+                    ]}
+                  />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Email Template (Optional)" hint="Sent by your provider's automation when a customer subscribes">
+                  <ConfigSelect
+                    value={emailSettings.templateId}
+                    onChange={(e) => {
+                      const selected = emailProviderTemplates.find((t) => t.templateId === e.target.value);
+                      setEmailSettings({ ...emailSettings, templateId: e.target.value, templateName: selected ? selected.templateName : '' });
+                    }}
+                    options={[
+                      { value: '', label: 'No automated email' },
+                      ...emailProviderTemplates.map((template) => ({ value: template.templateId, label: template.templateName })),
+                    ]}
+                  />
+                </ConfigFormGroup>
+
                 <ConfigFormGroup label="Input Placeholder">
                   <ConfigInput
                     value={emailSettings.placeholderText}
@@ -730,7 +782,7 @@ export const AnnouncementBarEditor = () => {
                     placeholder="Enter your email"
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="Button Text">
                   <ConfigInput
                     value={emailSettings.buttonText}
@@ -738,11 +790,11 @@ export const AnnouncementBarEditor = () => {
                     placeholder="Subscribe"
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="Success Message">
                   <ConfigInput
-                    value={emailSettings.successMessage}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, successMessage: e.target.value })}
+                    value={emailSettings.emailSuccessMessage}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, emailSuccessMessage: e.target.value })}
                     placeholder="Thank you for subscribing!"
                   />
                 </ConfigFormGroup>
