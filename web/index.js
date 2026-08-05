@@ -36,6 +36,22 @@ process.on("uncaughtException", (error) => {
 const STATIC_PATH =
   process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
 
+// Name+path only, no querystring parsing needed for this narrow use - avoids
+// adding cookie-parser as a dependency just to read one value back.
+const EDITOR_RETURN_TO_COOKIE = "bb_editor_return_to";
+const getCookie = (req, name) => {
+  const header = req.headers.cookie;
+  if (!header) return undefined;
+  const prefix = `${name}=`;
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(prefix)) {
+      return decodeURIComponent(trimmed.slice(prefix.length));
+    }
+  }
+  return undefined;
+};
+
 const app = express();
 // a route to test the server
 app.get("/api/test", (req, res) => {
@@ -96,7 +112,20 @@ app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
   shopData.shopData,
-    async (req, res, next) => {
+  // shopify.redirectToShopifyOrAppRoot() always lands the merchant on this
+  // app's embedded home, with no way to know a request came from the
+  // standalone editor tab instead of the normal embedded app. When the
+  // editor route below sends someone through this flow (no/expired session)
+  // it drops a short-lived cookie naming where they actually came from;
+  // honor it here instead of falling through to the default root redirect,
+  // so re-authenticating from the editor sends them back to the editor
+  // instead of bouncing them into the Shopify admin iframe.
+  (req, res, next) => {
+    const returnTo = getCookie(req, EDITOR_RETURN_TO_COOKIE);
+    if (returnTo && returnTo.startsWith("/editor.html")) {
+      res.clearCookie(EDITOR_RETURN_TO_COOKIE, { path: "/" });
+      return res.redirect(returnTo);
+    }
     next();
   },
   shopify.redirectToShopifyOrAppRoot()
@@ -245,11 +274,15 @@ app.use("/*", async (_req, res, _next) => {
       // placeholder text and fails auth with a confusing 401 deep in a
       // product/save request instead of a clear "please reinstall" signal.
       // Send the merchant through OAuth instead, same as the embedded app
-      // would for an unauthenticated shop.
+      // would for an unauthenticated shop. Remember this tab was on the
+      // editor (see EDITOR_RETURN_TO_COOKIE above) so the callback can send
+      // them back here instead of the app's embedded home.
       console.log(`Editor route requested for ${shop} with no valid session - redirecting to OAuth`);
+      res.cookie(EDITOR_RETURN_TO_COOKIE, fullPath, { maxAge: 5 * 60 * 1000, httpOnly: true, sameSite: "lax", path: "/" });
       return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
     } catch (error) {
       console.log("Editor session error:", error.message);
+      res.cookie(EDITOR_RETURN_TO_COOKIE, fullPath, { maxAge: 5 * 60 * 1000, httpOnly: true, sameSite: "lax", path: "/" });
       return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
     }
   }
