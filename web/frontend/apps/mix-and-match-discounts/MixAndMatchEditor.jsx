@@ -992,6 +992,16 @@ export const MixAndMatchEditor = () => {
         }}>
           {showEmoji ? `${bundleTitle || 'Mix & Match - Save More!'} 🔥` : (bundleTitle || 'Mix & Match - Save More!')}
         </h3>
+        {secondaryMessage && (
+          <p style={{
+            color: colorSettings.secondaryTextColor,
+            fontSize: '13px',
+            marginBottom: '15px',
+            paddingRight: showCountdown ? '150px' : '0',
+          }}>
+            {secondaryMessage}
+          </p>
+        )}
 
         {/* Countdown Timer - Production Style */}
         {showCountdown && (

@@ -1102,6 +1102,11 @@ export const VolumeDiscountEditor = () => {
             />
           )}
         </div>
+        {secondaryMessage && (
+          <p style={{ color: colorSettings.secondaryTextColor, fontSize: '13px', marginBottom: '15px' }}>
+            {secondaryMessage}
+          </p>
+        )}
 
         {!hasProducts ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
