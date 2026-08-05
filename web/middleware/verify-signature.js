@@ -23,7 +23,7 @@ const verifySHA256 = (req) => {
 // Server-side counterpart to verifySHA256, using the identical algorithm
 // (sorted "key=value" params, HMAC-SHA256 with SHOPIFY_API_SECRET) so a
 // signature generated here always verifies there. Used to mint a signed
-// shop param for the standalone editor (see web/index.js's serveEditorHtml),
+// shop param for the standalone editor (see web/backend/routes/editor/index.js),
 // which has no App Bridge session token available to authenticate its own
 // /api/* calls with.
 const generateSignature = (params) => {

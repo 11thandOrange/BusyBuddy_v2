@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 // web/index.js reads Shopify config + DB env vars at import time (shopify.js
 // throws synchronously if apiKey/apiSecretKey/hostName are missing), so
@@ -13,6 +15,19 @@ process.env.HOST = 'https://test-app.example.com';
 process.env.SCOPES = 'read_products,write_products';
 process.env.DB_CONNECTION = 'mongodb://127.0.0.1:1/unused-in-this-test';
 process.env.DB_NAME = 'test';
+
+// web/index.js derives STATIC_PATH from process.cwd() (there's no build
+// step under test, so it resolves to <cwd>/frontend/), matching how
+// `npm run serve` is actually launched - as an npm script, whose cwd is
+// always the package's own directory (web/), not wherever the shell
+// happened to be. CI's own backend-test job cwd is web/backend though
+// (see .github/workflows/ci.yml's `working-directory: web/backend`), so
+// without this the process never finds frontend/editor.html to serve.
+// process.chdir() itself isn't available in Vitest's worker threads, so
+// process.cwd() is stubbed instead - it's read once, at import time, by
+// web/index.js's STATIC_PATH constant.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+vi.spyOn(process, 'cwd').mockReturnValue(join(__dirname, '../..'));
 
 let app;
 
@@ -73,22 +88,34 @@ describe('GET /api/auth/callback (OAuth callback) - integration', () => {
 });
 
 describe('GET /editor.html (standalone editor) - integration', () => {
-  // This route's session lookup goes through shopify.config.sessionStorage
-  // (the same raw mongodb-driver store the main embedded app uses) against
-  // the fake, unreachable DB_CONNECTION set up above, so it takes a while
-  // to give up on connecting before the redirect fires - hence the long
-  // timeout here, not a slow assertion.
-  it('redirects to OAuth instead of serving the raw, un-substituted editor.html when there is no session for the shop', async () => {
-    // Regression test: this route used to fall through to serve-static when
-    // no session was found, which answers with the built editor.html file
-    // exactly as it is on disk - still containing the literal
-    // %EDITOR_SHOP%/%EDITOR_SIGNATURE% placeholders, since the substitution
-    // in serveEditorHtml never ran. Every /api/* call the editor then made
-    // was signed with that literal placeholder text and failed auth with a
-    // confusing 401 far from the actual cause (no session for this shop).
+  // editor.html used to be gated behind a server-side session lookup that
+  // substituted a signed shop/signature pair into the page - which only
+  // ever ran when Express itself served the file. In local dev
+  // (`npm run dev`), Vite's dev server serves editor.html directly and
+  // never goes near this Express app at all, so that gate silently never
+  // applied and the page always loaded with unsubstituted placeholders.
+  // editor.html is now a plain static file with no server-side gating: the
+  // signed shop/signature pair is fetched from GET /api/editor/signature
+  // and put directly in the URL before the tab is even opened (see
+  // web/frontend/utils/openEditorTab.js), so this route just needs to
+  // serve the file, identically in dev and production.
+  it('serves the file directly with no session check or redirect', async () => {
     const res = await request(app).get('/editor.html?shop=test-shop.myshopify.com');
 
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toContain('/api/auth?shop=test-shop.myshopify.com');
-  }, 35000);
+    expect(res.status).toBe(200);
+    expect(res.text).toContain('BusyBuddy Editor');
+  });
+});
+
+describe('GET /api/editor/signature - integration', () => {
+  // Called by the main embedded app right before it opens the standalone
+  // editor tab. It goes through the same /api/* auth middleware as every
+  // other authenticated endpoint, so with no session token in this request
+  // it correctly falls through to shopify.validateAuthenticatedSession()
+  // and gets rejected rather than ever minting a signature.
+  it('rejects a request with no valid App Bridge session', async () => {
+    const res = await request(app).get('/api/editor/signature');
+
+    expect(res.status).not.toBe(200);
+  });
 });

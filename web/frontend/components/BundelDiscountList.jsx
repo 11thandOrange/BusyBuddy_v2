@@ -9,6 +9,7 @@ import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
 import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
 import OverviewTab from "./OverviewTab";
+import { openEditorTab } from "../utils/openEditorTab";
 
 // Map discount types to editor routes
 const EDITOR_ROUTES = {
@@ -75,13 +76,9 @@ export default function DiscountList({
   const openEditor = useCallback((id = null) => {
     const appType = EDITOR_ROUTES[discountType];
     if (!appType) return;
-    
-    const params = new URLSearchParams(location.search);
-    const shop = params.get('shop');
-    const queryString = shop ? `?shop=${shop}` : '';
+
     const path = id ? `/${appType}/editor/${id}` : `/${appType}/editor`;
-    // Use editor.html with hash routing to open as standalone page
-    window.open(`/editor.html${queryString}#${path}`, '_blank');
+    openEditorTab(path, location.search);
   }, [discountType, location.search]);
 
   useEffect(() => {

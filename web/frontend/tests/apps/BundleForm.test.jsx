@@ -78,49 +78,51 @@ describe('BundleForm (App Homepage)', () => {
   });
 
   describe('Create Button', () => {
-    it('should open /editor.html#/bundle-discount/editor in new tab', () => {
-      const mockOpen = vi.fn();
-      global.open = mockOpen;
-      
+    // openEditorTab() (web/frontend/utils/openEditorTab.js) calls
+    // window.open('', '_blank') synchronously - required so browsers still
+    // attribute the popup to this click - then navigates that tab to the
+    // real editor.html URL once it has fetched a signature. So the URL
+    // isn't on the window.open() call itself; it lands on the opened
+    // window's .location.href a tick later.
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+    it('should open /editor.html#/bundle-discount/editor in new tab', async () => {
+      const fakeWindow = { location: { href: '' } };
+      global.open = vi.fn(() => fakeWindow);
+
       renderWithRouter(<BundleForm />);
-      
+
       const createButton = screen.getByText('Create New Bundle');
       fireEvent.click(createButton);
-      
-      expect(mockOpen).toHaveBeenCalledWith(
-        expect.stringContaining('/editor.html'),
-        '_blank'
-      );
-      expect(mockOpen).toHaveBeenCalledWith(
-        expect.stringContaining('#/bundle-discount/editor'),
-        '_blank'
-      );
+      await flush();
+
+      expect(global.open).toHaveBeenCalledWith('', '_blank');
+      expect(fakeWindow.location.href).toContain('/editor.html');
+      expect(fakeWindow.location.href).toContain('#/bundle-discount/editor');
     });
 
-    it('should include shop parameter in URL', () => {
-      const mockOpen = vi.fn();
-      global.open = mockOpen;
-      
+    it('should include shop parameter in URL', async () => {
+      const fakeWindow = { location: { href: '' } };
+      global.open = vi.fn(() => fakeWindow);
+
       renderWithRouter(<BundleForm />);
-      
+
       const createButton = screen.getByText('Create New Bundle');
       fireEvent.click(createButton);
-      
-      expect(mockOpen).toHaveBeenCalledWith(
-        expect.stringContaining('shop='),
-        '_blank'
-      );
+      await flush();
+
+      expect(fakeWindow.location.href).toContain('shop=');
     });
 
     it('should call window.open with "_blank" target', () => {
       const mockOpen = vi.fn();
       global.open = mockOpen;
-      
+
       renderWithRouter(<BundleForm />);
-      
+
       const createButton = screen.getByText('Create New Bundle');
       fireEvent.click(createButton);
-      
+
       expect(mockOpen).toHaveBeenCalledWith(
         expect.any(String),
         '_blank'

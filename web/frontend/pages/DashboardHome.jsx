@@ -16,6 +16,7 @@ import {
   Lock,
 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+import { openEditorTab } from "../utils/openEditorTab";
 import "./DashboardHome.css";
 
 // Widget configuration: routes, plus the visual identity (icon/colors) and
@@ -397,10 +398,7 @@ export default function DashboardHome() {
     if (widget.settingsRoute) {
       navigate(widget.settingsRoute + (location.search ? "&" + location.search.slice(1) : ""));
     } else {
-      const params = new URLSearchParams(location.search);
-      const shop = params.get("shop");
-      const queryString = shop ? `?shop=${shop}` : "";
-      window.open(`/editor.html${queryString}#${widget.editorRoute}`, "_blank");
+      openEditorTab(widget.editorRoute, location.search);
     }
   };
 

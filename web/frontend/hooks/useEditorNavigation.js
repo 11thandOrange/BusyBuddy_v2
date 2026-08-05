@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useCallback } from 'react';
+import { openEditorTab } from '../utils/openEditorTab';
 
 /**
  * Hook for navigating to/from the editor.
@@ -18,15 +19,14 @@ export const useEditorNavigation = (appType = 'announcement-bar') => {
   }, [location.search]);
 
   const openEditor = useCallback((id = null) => {
-    const queryString = getQueryString();
     const path = id
       ? `/${appType}/editor/${id}`
       : `/${appType}/editor`;
 
     // Open editor in a new browser tab as standalone page (using editor.html with hash routing)
     // This loads the editor outside of Shopify App Bridge shell
-    window.open(`/editor.html${queryString}#${path}`, '_blank');
-  }, [appType, getQueryString]);
+    openEditorTab(path, location.search);
+  }, [appType, location.search]);
 
   const closeEditor = useCallback(() => {
     // Close the current tab/window

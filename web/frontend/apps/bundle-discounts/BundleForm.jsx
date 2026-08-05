@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import { openEditorTab } from "../../utils/openEditorTab";
 
 export default function BundleForm() {
   const navigate = useNavigate();
@@ -16,10 +17,7 @@ export default function BundleForm() {
 
   const handleCreateNew = () => {
     // Open editor in new fullscreen tab without App Bridge
-    const params = new URLSearchParams(location.search);
-    const shop = params.get("shop");
-    const queryString = shop ? `?shop=${shop}` : "";
-    window.open(`/editor.html${queryString}#/bundle-discount/editor`, "_blank");
+    openEditorTab("/bundle-discount/editor", location.search);
   };
 
   const handleDiscard = () => {

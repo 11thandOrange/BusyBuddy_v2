@@ -1,91 +1,95 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Regression test for a real production incident: editorAuth.js's
-// unsubstituted-placeholder guard used to run unconditionally at module
-// import time. StandardBundleEditor/BuyXGetYEditor/VolumeDiscountEditor/
-// MixAndMatchEditor/AnnouncementBarEditor all import this module, and
-// Routes.jsx (used by the *main* embedded app's App.jsx, not just the
-// standalone editor) statically imports all of them - so this file's
-// top-level code runs on every load of the main embedded app too, where
-// the editor-shop/editor-signature meta tags legitimately don't exist
-// (they're only in editor.html). That gave an empty string indistinguishable
-// from an unsubstituted placeholder, and the guard tried to redirect
-// window.location to /api/auth from inside Shopify's admin iframe - a
-// redirect that gets blocked once it lands on accounts.shopify.com,
-// breaking the entire embedded app, not just the editor.
+// editorAuth.js reads shop/signature from the page's URL query string, put
+// there by web/frontend/utils/openEditorTab.js before the tab was opened
+// (via GET /api/editor/signature). This replaced an older design where a
+// signed shop/signature pair was substituted into editor.html's <meta>
+// tags server-side - that substitution only ran when Express itself served
+// the file, which never happened in local dev (`npm run dev` serves
+// editor.html straight off Vite's dev server), so the editor was always
+// broken outside of a production build. Reading from the URL works
+// identically regardless of which server (if any) served the HTML.
 //
 // Note: tests/setup.js globally stubs window.location as a plain mutable
-// object (vi.stubGlobal('location', {...})), not a real jsdom Location, so
-// history.pushState has no effect on it here - pathname is set directly.
-describe('editorAuth.js placeholder guard', () => {
+// object (vi.stubGlobal('location', {...})) with a default
+// search of '?shop=test-shop.myshopify.com' - each test overrides it.
+describe('editorAuth.js', () => {
   let consoleErrorSpy;
-  const originalPathname = window.location.pathname;
+  const originalSearch = window.location.search;
 
   beforeEach(() => {
     vi.resetModules();
-    document.head.querySelectorAll('meta[name="editor-shop"], meta[name="editor-signature"]').forEach((el) => el.remove());
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
-    window.location.pathname = originalPathname;
+    window.location.search = originalSearch;
   });
 
-  const setMeta = (name, content) => {
-    const meta = document.createElement('meta');
-    meta.setAttribute('name', name);
-    meta.setAttribute('content', content);
-    document.head.appendChild(meta);
-  };
+  it('reads shop and signature from the URL query string', async () => {
+    window.location.search = '?shop=test-shop.myshopify.com&signature=real-signature-value';
 
-  it('does nothing on a non-editor page even with no meta tags present (the main embedded app)', async () => {
-    window.location.pathname = '/';
+    const mod = await import('../../utils/editorAuth.js?case=substituted');
 
-    await import('../../utils/editorAuth.js?case=main-app-no-meta');
-
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-  it('does nothing on a non-editor page even if stray editor meta tags exist', async () => {
-    window.location.pathname = '/some-app-route';
-    setMeta('editor-shop', '%EDITOR_SHOP%');
-    setMeta('editor-signature', '%EDITOR_SIGNATURE%');
-
-    await import('../../utils/editorAuth.js?case=main-app-stray-meta');
-
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
-
-  it('flags an unsubstituted placeholder on the actual standalone editor page', async () => {
-    window.location.pathname = '/editor.html';
-    setMeta('editor-shop', '%EDITOR_SHOP%');
-    setMeta('editor-signature', '%EDITOR_SIGNATURE%');
-
-    await import('../../utils/editorAuth.js?case=editor-placeholder');
-
-    expect(consoleErrorSpy).toHaveBeenCalled();
-  });
-
-  it('flags missing meta tags entirely on the standalone editor page (raw un-substituted file served)', async () => {
-    window.location.pathname = '/editor.html';
-    // No meta tags at all - same signal as serve-static answering with the
-    // raw file before serveEditorHtml's substitution ever ran.
-
-    await import('../../utils/editorAuth.js?case=editor-no-meta');
-
-    expect(consoleErrorSpy).toHaveBeenCalled();
-  });
-
-  it('does nothing on the standalone editor page when the meta tags were properly substituted', async () => {
-    window.location.pathname = '/editor.html';
-    setMeta('editor-shop', 'test-shop.myshopify.com');
-    setMeta('editor-signature', 'real-signature-value');
-
-    const mod = await import('../../utils/editorAuth.js?case=editor-substituted');
-
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(mod.EDITOR_SHOP).toBe('test-shop.myshopify.com');
     expect(mod.EDITOR_SIGNATURE).toBe('real-signature-value');
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('logs (but does not redirect) when a shop is present with no signature', async () => {
+    window.location.search = '?shop=test-shop.myshopify.com';
+
+    const mod = await import('../../utils/editorAuth.js?case=no-signature');
+
+    expect(mod.EDITOR_SHOP).toBe('test-shop.myshopify.com');
+    expect(mod.EDITOR_SIGNATURE).toBe('');
+    expect(consoleErrorSpy).toHaveBeenCalled();
+  });
+
+  it('does nothing when there is no shop at all (e.g. this module loaded outside the editor)', async () => {
+    window.location.search = '';
+
+    const mod = await import('../../utils/editorAuth.js?case=empty');
+
+    expect(mod.EDITOR_SHOP).toBe('');
+    expect(mod.EDITOR_SIGNATURE).toBe('');
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
+  it('editorFetch appends shop and signature to the request URL', async () => {
+    window.location.search = '?shop=test-shop.myshopify.com&signature=abc123';
+    const mod = await import('../../utils/editorAuth.js?case=fetch-append');
+
+    global.fetch.mockResolvedValueOnce(new Response('{}'));
+    await mod.editorFetch('/api/products?search=x');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/products?search=x&shop=test-shop.myshopify.com&signature=abc123',
+      undefined
+    );
+  });
+
+  describe('safeParseJson', () => {
+    it('parses a valid JSON body', async () => {
+      const mod = await import('../../utils/editorAuth.js?case=safe-json-valid');
+      const response = new Response(JSON.stringify({ message: 'ok' }));
+
+      await expect(mod.safeParseJson(response)).resolves.toEqual({ message: 'ok' });
+    });
+
+    it('wraps a non-JSON body instead of throwing (the original crash: plain-text 401 bodies)', async () => {
+      const mod = await import('../../utils/editorAuth.js?case=safe-json-invalid');
+      const response = new Response('Unauthorized');
+
+      await expect(mod.safeParseJson(response)).resolves.toEqual({ message: 'Unauthorized' });
+    });
+
+    it('returns null for an empty body', async () => {
+      const mod = await import('../../utils/editorAuth.js?case=safe-json-empty');
+      const response = new Response('');
+
+      await expect(mod.safeParseJson(response)).resolves.toBeNull();
+    });
   });
 });

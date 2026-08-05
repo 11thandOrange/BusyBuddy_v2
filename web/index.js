@@ -13,7 +13,7 @@ import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
-import { verifySHA256, generateSignature, verifyShopSignature } from "./middleware/verify-signature.js";
+import { verifySHA256, verifyShopSignature } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
 import { subscriptionUpdate } from "./backend/services/subscription.js"
 import logger, { reportError } from "./logger.js";
@@ -34,22 +34,6 @@ process.on("uncaughtException", (error) => {
 
 const STATIC_PATH =
   process.env.NODE_ENV === "production" ? `${process.cwd()}/frontend/dist` : `${process.cwd()}/frontend/`;
-
-// Name+path only, no querystring parsing needed for this narrow use - avoids
-// adding cookie-parser as a dependency just to read one value back.
-const EDITOR_RETURN_TO_COOKIE = "bb_editor_return_to";
-const getCookie = (req, name) => {
-  const header = req.headers.cookie;
-  if (!header) return undefined;
-  const prefix = `${name}=`;
-  for (const part of header.split(";")) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(prefix)) {
-      return decodeURIComponent(trimmed.slice(prefix.length));
-    }
-  }
-  return undefined;
-};
 
 const app = express();
 // a route to test the server
@@ -111,22 +95,6 @@ app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
   shopData.shopData,
-  // shopify.redirectToShopifyOrAppRoot() always lands the merchant on this
-  // app's embedded home, with no way to know a request came from the
-  // standalone editor tab instead of the normal embedded app. When the
-  // editor route below sends someone through this flow (no/expired session)
-  // it drops a short-lived cookie naming where they actually came from;
-  // honor it here instead of falling through to the default root redirect,
-  // so re-authenticating from the editor sends them back to the editor
-  // instead of bouncing them into the Shopify admin iframe.
-  (req, res, next) => {
-    const returnTo = getCookie(req, EDITOR_RETURN_TO_COOKIE);
-    if (returnTo && returnTo.startsWith("/editor.html")) {
-      res.clearCookie(EDITOR_RETURN_TO_COOKIE, { path: "/" });
-      return res.redirect(returnTo);
-    }
-    next();
-  },
   shopify.redirectToShopifyOrAppRoot()
 );
 
@@ -228,84 +196,16 @@ const serveFrontendHtml = (_req, res) => {
     );
 };
 
-// Helper function to serve the editor HTML (without App Bridge)
-// Injects a shop+signature pair (see verify-signature.js's generateSignature)
-// so the editor's own /api/* calls - which have no App Bridge session token
-// to authenticate with - can use the shop+signature path that web/index.js's
-// /api/* middleware already supports but nothing was previously feeding.
-const serveEditorHtml = (_req, res, shop, signature) => {
-  return res
-    .status(200)
-    .set("Content-Type", "text/html")
-    .send(
-      readFileSync(join(STATIC_PATH, "editor.html"))
-        .toString()
-        .replace("%EDITOR_SHOP%", shop || "")
-        .replace("%EDITOR_SIGNATURE%", signature || "")
-    );
-};
-
-// Editor routes opened in new tab - validate shop session from DB.
-// This allows editor to work in standalone tab without Shopify embedded
-// context. MUST run before the static file server below: the Vite build
-// outputs a real editor.html onto disk, so serve-static would otherwise
-// serve that raw file directly (skipping session validation *and* the
-// %EDITOR_SHOP%/%EDITOR_SIGNATURE% substitution below) for any request
-// that reaches it first - which prior to this comment is exactly what was
-// happening, silently, regardless of what this block below did.
-app.use("/*", async (_req, res, _next) => {
-  const fullPath = _req.originalUrl || _req.url;
-  // Exact match (not a substring check) so this never accidentally catches
-  // a built asset whose filename happens to contain "editor" (e.g. Vite's
-  // /assets/editor-<hash>.js chunk for this same entry point).
-  const isEditorRoute = fullPath === '/editor.html' || fullPath.startsWith('/editor.html?');
-  const shop = _req.query.shop;
-
-  if (isEditorRoute && shop) {
-    try {
-      // Look up the session through shopify.config.sessionStorage - the
-      // exact same store shopify.ensureInstalledOnShop() below (and the
-      // /api/* middleware above) already use successfully for the main
-      // embedded app. The old code queried a separate Mongoose model
-      // (sessionModel) pointed at mongoose.connect(DB_CONNECTION), while
-      // this storage is a raw mongodb client scoped to DB_NAME explicitly -
-      // two different connections that can silently diverge (e.g. no db
-      // name in DB_CONNECTION defaulting to a different database than
-      // DB_NAME), which is exactly what made this always report "no
-      // session" for shops the main app was otherwise working fine on.
-      const sessionId = await shopify.api.session.getOfflineId(shop);
-      const session = await shopify.config.sessionStorage.loadSession(sessionId);
-
-      if (session && session.accessToken) {
-        // Valid session exists - serve the editor HTML (no App Bridge)
-        const signature = generateSignature({ shop });
-        return serveEditorHtml(_req, res, shop, signature);
-      }
-
-      // No valid session for this shop (never installed, or the session
-      // expired/was revoked) - previously this fell through to _next(),
-      // which serve-static would answer with the raw editor.html straight
-      // off disk: %EDITOR_SHOP%/%EDITOR_SIGNATURE% never get substituted,
-      // so every /api/* call the editor makes is signed with the literal
-      // placeholder text and fails auth with a confusing 401 deep in a
-      // product/save request instead of a clear "please reinstall" signal.
-      // Send the merchant through OAuth instead, same as the embedded app
-      // would for an unauthenticated shop. Remember this tab was on the
-      // editor (see EDITOR_RETURN_TO_COOKIE above) so the callback can send
-      // them back here instead of the app's embedded home.
-      console.log(`Editor route requested for ${shop} with no valid session - redirecting to OAuth`);
-      res.cookie(EDITOR_RETURN_TO_COOKIE, fullPath, { maxAge: 5 * 60 * 1000, httpOnly: true, sameSite: "lax", path: "/" });
-      return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
-    } catch (error) {
-      console.log("Editor session error:", error.message);
-      res.cookie(EDITOR_RETURN_TO_COOKIE, fullPath, { maxAge: 5 * 60 * 1000, httpOnly: true, sameSite: "lax", path: "/" });
-      return res.redirect(`${shopify.config.auth.path}?shop=${encodeURIComponent(shop)}`);
-    }
-  }
-
-  _next();
-});
-
+// /editor.html is served as a plain static file, same as any other built
+// asset - no server-side templating or session gating. It gets a signed
+// shop+signature pair directly in its URL query string, minted by
+// GET /api/editor/signature and attached before the tab is even opened
+// (see web/frontend/utils/openEditorTab.js). This used to be done by
+// substituting %EDITOR_SHOP%/%EDITOR_SIGNATURE% placeholders into the file
+// here, gated on a server-side session lookup - but that substitution only
+// ran when Express itself served the file, which never happens in local
+// dev (`npm run dev` serves editor.html straight off Vite's dev server),
+// so the editor was always broken outside of a production build.
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);

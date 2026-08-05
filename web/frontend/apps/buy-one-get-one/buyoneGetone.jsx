@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import { openEditorTab } from "../../utils/openEditorTab";
 
 export default function BuyonegetoneForm() {
   const navigate = useNavigate();
@@ -16,10 +17,7 @@ export default function BuyonegetoneForm() {
 
   const handleCreateNew = () => {
     // Open editor in new fullscreen tab without App Bridge
-    const params = new URLSearchParams(location.search);
-    const shop = params.get("shop");
-    const queryString = shop ? `?shop=${shop}` : "";
-    window.open(`/editor.html${queryString}#/buy-one-get-one/editor`, "_blank");
+    openEditorTab("/buy-one-get-one/editor", location.search);
   };
   const handleDiscard = () => {
     setFromDiscountPage(false);
