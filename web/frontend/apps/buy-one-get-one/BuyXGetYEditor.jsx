@@ -163,7 +163,7 @@ export const BuyXGetYEditor = () => {
   };
   
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More! 🎁');
+  const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('Get this bundle and save on your purchase');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -1144,7 +1144,8 @@ export const BuyXGetYEditor = () => {
         marginTop: `${margins.top}px`,
         marginBottom: `${margins.bottom}px`,
       }}>
-        {/* Title */}
+        {/* Title - the emoji toggle affects this widget heading only, not
+            the real product title saved for the bundle. */}
         <h3 style={{
           color: colorSettings.primaryTextColor,
           fontSize: '16px',
@@ -1152,7 +1153,7 @@ export const BuyXGetYEditor = () => {
           marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
-          {bundleTitle || 'Buy X Get Y - Save More! 🎁'}
+          {showEmoji ? `${bundleTitle || 'Buy X Get Y - Save More!'} 🎁` : (bundleTitle || 'Buy X Get Y - Save More!')}
         </h3>
         {secondaryMessage && (
           <p style={{
@@ -1175,7 +1176,6 @@ export const BuyXGetYEditor = () => {
             minutes={timeLeft.minutes}
             seconds={timeLeft.seconds}
             label="Ends In"
-            showEmoji={showEmoji}
             style={{ position: 'absolute', top: '15px', right: '15px' }}
           />
         )}

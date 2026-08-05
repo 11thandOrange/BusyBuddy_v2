@@ -169,7 +169,7 @@ export const MixAndMatchEditor = () => {
   };
 
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Mix & Match - Save More! 🔥');
+  const [bundleTitle, setBundleTitle] = useState('Mix & Match - Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('Select any items and save on your purchase');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -731,7 +731,7 @@ export const MixAndMatchEditor = () => {
       case 'emoji-icons':
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji display">
-            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={setShowEmoji} />
+            <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
           </EditorConfigPanel>
         );
 
@@ -936,7 +936,7 @@ export const MixAndMatchEditor = () => {
           marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
-          {bundleTitle || 'Mix & Match - Save More! 🔥'}
+          {showEmoji ? `${bundleTitle || 'Mix & Match - Save More!'} 🔥` : (bundleTitle || 'Mix & Match - Save More!')}
         </h3>
 
         {/* Countdown Timer - Production Style */}
@@ -949,7 +949,6 @@ export const MixAndMatchEditor = () => {
             minutes={timeLeft.minutes}
             seconds={timeLeft.seconds}
             label="Ends In"
-            showEmoji={showEmoji}
             style={{ position: 'absolute', top: '0.5px', right: '0px', zIndex: 3 }}
           />
         )}

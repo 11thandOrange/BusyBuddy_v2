@@ -161,7 +161,7 @@ export const VolumeDiscountEditor = () => {
   };
 
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Buy More & Save More! 🔥');
+  const [bundleTitle, setBundleTitle] = useState('Buy More & Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('The more you buy, the more you save');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -840,7 +840,7 @@ export const VolumeDiscountEditor = () => {
       case 'emoji-icons':
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji and icon display">
-            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={setShowEmoji} />
+            <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
           </EditorConfigPanel>
         );
 
@@ -1030,10 +1030,11 @@ export const VolumeDiscountEditor = () => {
         marginBottom: `${margins.bottom}px`,
         maxWidth: '100%',
       }}>
-        {/* Header */}
+        {/* Header - the emoji toggle affects this widget heading only, not
+            the real product title saved for the bundle. */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h3 style={{ color: colorSettings.primaryTextColor, fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
-            {bundleTitle}
+            {showEmoji ? `${bundleTitle} 🔥` : bundleTitle}
           </h3>
           {showCountdown && (
             <CountdownTimerDisplay
@@ -1044,7 +1045,6 @@ export const VolumeDiscountEditor = () => {
               minutes={timeLeft.minutes}
               seconds={timeLeft.seconds}
               label="Ends in"
-              showEmoji={showEmoji}
             />
           )}
         </div>

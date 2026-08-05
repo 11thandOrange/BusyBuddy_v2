@@ -368,7 +368,17 @@ export default function DiscountList({
                     </p>
                   </div>
                 ) : (
-                  discounts.map((discount, index) => (
+                  discounts.map((discount, index) => {
+                    // Buy One Get One bundles store their products under
+                    // productsX/productsY, not products - discount.products
+                    // is always undefined for them, so this always rendered
+                    // a broken <img> for every BOGO row.
+                    const firstProduct =
+                      discount.products?.[0] ||
+                      discount.productsX?.[0] ||
+                      discount.productsY?.[0];
+                    const firstProductImage = firstProduct?.media || firstProduct?.images?.[0];
+                    return (
                     <Row key={discount._id} className="g-0 linrrow mb-3">
                       <Col>
                         <Card
@@ -378,14 +388,23 @@ export default function DiscountList({
                           <Card.Body className="d-flex flex-wrap justify-content-between align-items-center gap-3">
                             {/* Left Side: Image + Details */}
                             <div className="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
-                              <img
-                                src={discount.products[0]?.media}
-                                alt={discount.products[0]?.title || "Discount Product"}
-                                width={80}
-                                height={80}
-                                className="flex-shrink-0"
-                                style={{ objectFit: "cover", borderRadius: "8px" }}
-                              />
+                              {firstProductImage ? (
+                                <img
+                                  src={firstProductImage}
+                                  alt={firstProduct?.title || "Discount Product"}
+                                  width={80}
+                                  height={80}
+                                  className="flex-shrink-0"
+                                  style={{ objectFit: "cover", borderRadius: "8px" }}
+                                />
+                              ) : (
+                                <div
+                                  className="flex-shrink-0 d-flex align-items-center justify-content-center"
+                                  style={{ width: 80, height: 80, background: "#e5e7eb", borderRadius: "8px", fontSize: "28px" }}
+                                >
+                                  📦
+                                </div>
+                              )}
 
                               <div className="bundlebox text-truncate" style={{ minWidth: 0 }}>
                                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -409,9 +428,15 @@ export default function DiscountList({
                                       : "Bundle and Save!")}
                                 </p>
 
-                                {/* Wrap product titles */}
+                                {/* Wrap product titles - BOGO bundles keep
+                                    their products under productsX/productsY,
+                                    not products, so combine all three. */}
                                 <div className="d-flex flex-wrap gap-2 small text-truncate">
-                                  {discount.products.map((product, idx) => (
+                                  {[
+                                    ...(Array.isArray(discount.products) ? discount.products : []),
+                                    ...(discount.productsX || []),
+                                    ...(discount.productsY || []),
+                                  ].map((product, idx) => (
                                     <span
                                       key={`${discount._id}-product-${product.productId || idx}`}
                                       className="badge bg-light text-dark text-truncate"
@@ -495,7 +520,8 @@ export default function DiscountList({
                         </Card>
                       </Col>
                     </Row>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}

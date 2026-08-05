@@ -604,13 +604,12 @@ async function createProductBundleV2(req, res) {
       // return res.status(404).json({ status: false, error: "Shop not found in local database." });
     }
 
-    // Structure products for DB storage based on type
-    let productsToStoreInDb;
-    if (type === "Buy One Get One") {
-      productsToStoreInDb = { x: productsX, y: productsY };
-    } else {
-      productsToStoreInDb = products; // Store the general products array for other types
-    }
+    // Structure products for DB storage based on type. BOGO's products
+    // live in productsX/productsY (saved separately below) - products is
+    // an array-of-objects schema field, so previously storing {x, y} here
+    // (an object, not an array) got silently cast away to [] by Mongoose,
+    // and anything reading discount.products for a BOGO bundle got nothing.
+    const productsToStoreInDb = type === "Buy One Get One" ? undefined : products;
     console.log("productsToStoreInDb:", JSON.stringify(productsToStoreInDb, null, 2));
     // 🧩 When type is "Volume Discount", attach variant IDs to quantityBreaks
     if (type === "Volume Discount" && Array.isArray(quantityBreaks)) {
