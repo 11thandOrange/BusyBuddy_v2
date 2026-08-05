@@ -117,7 +117,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
 
       setAnnouncementBars(
         announcementBars.map((b) =>
-          b._id === id ? { ...b, status: newStatus } : { ...b, status: false }
+          b._id === id ? { ...b, status: newStatus } : { ...b, status: newStatus === "active" ? "inactive" : b.status }
         )
       );
     } catch (err) {
@@ -261,6 +261,22 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
       {/* Announcement Bars Tab */}
       {selectedTab === "Announcement Bars" && (
         <div className="d-flex flex-column gap-3">
+          {announcementBars.length > 0 && (
+            <div
+              className="mt-3"
+              style={{
+                background: "rgba(81, 105, 221, 0.08)",
+                border: "1px solid rgba(81, 105, 221, 0.2)",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                fontSize: "13px",
+                color: "#4A4A4A",
+              }}
+            >
+              <strong>Note:</strong> Only one announcement bar can be active at a time. Turning a bar on
+              automatically turns off any other active bar.
+            </div>
+          )}
           {loading ? (
             <div className="text-center py-4">Loading announcement bars...</div>
           ) : error ? (
