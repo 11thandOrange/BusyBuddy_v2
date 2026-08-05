@@ -16,7 +16,8 @@ import {
   EditorRightContent,
   EditorToast,
   CountdownThemePicker,
-  CountdownTimerDisplay
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch, safeParseJson } from '../../utils/editorAuth';
@@ -1023,17 +1024,14 @@ export const VolumeDiscountEditor = () => {
               marginBottom: '15px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img
-                  src={selectedProducts[0]?.media || tshirt}
+                <ProductImageCarousel
+                  images={selectedProducts[0]?.images}
+                  fallback={selectedProducts[0]?.media || tshirt}
                   alt={selectedProducts[0]?.title}
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '10px',
-                    marginRight: '15px',
-                    objectFit: 'cover',
-                    border: `1px solid ${colorSettings.borderColor}`,
-                  }}
+                  width={80}
+                  height={80}
+                  borderRadius="10px"
+                  style={{ marginRight: '15px', border: `1px solid ${colorSettings.borderColor}` }}
                 />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
@@ -1170,7 +1168,7 @@ export const VolumeDiscountEditor = () => {
         />
 
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="Volume Discount">
+          <ProductPagePreview widgetLabel="Volume Discount" images={selectedProducts.flatMap(p => p.images || [])}>
             {renderVolumePreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

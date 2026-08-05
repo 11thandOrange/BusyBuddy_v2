@@ -1365,7 +1365,7 @@ export const StandardBundleEditor = () => {
           device={device}
           onDeviceChange={setDevice}
         >
-          <ProductPagePreview widgetLabel="Bundle Offer">
+          <ProductPagePreview widgetLabel="Bundle Offer" images={selectedProducts.flatMap(p => p.images || [])}>
             {renderBundlePreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

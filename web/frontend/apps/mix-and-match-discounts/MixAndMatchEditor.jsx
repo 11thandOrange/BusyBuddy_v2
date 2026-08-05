@@ -1090,7 +1090,7 @@ export const MixAndMatchEditor = () => {
           isLoading={isSaving}
         />
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="Mix & Match Offer">
+          <ProductPagePreview widgetLabel="Mix & Match Offer" images={selectedProducts.flatMap(p => p.images || [])}>
             {renderMixMatchPreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>

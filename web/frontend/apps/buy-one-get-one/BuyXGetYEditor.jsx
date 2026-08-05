@@ -1304,7 +1304,7 @@ export const BuyXGetYEditor = () => {
           isLoading={isSaving}
         />
         <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
-          <ProductPagePreview widgetLabel="BOGO Deal">
+          <ProductPagePreview widgetLabel="BOGO Deal" images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}>
             {renderBXGYPreview()}
           </ProductPagePreview>
         </EditorPreviewPanel>
