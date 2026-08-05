@@ -604,11 +604,10 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
 
                 <ConfigFormGroup label="Timer Background Color">
-                  <ConfigInput
-                    type="color"
-                    value={timerBgColor}
-                    onChange={(e) => setTimerBgColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={timerBgColor} onChange={(e) => setTimerBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={timerBgColor} onChange={(e) => setTimerBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -647,19 +646,17 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
 
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={shopNowButtonColor}
-                    onChange={(e) => setShopNowButtonColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={shopNowButtonColor} onChange={(e) => setShopNowButtonColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={shopNowButtonColor} onChange={(e) => setShopNowButtonColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Background Color">
-                  <ConfigInput
-                    type="color"
-                    value={shopNowButtonBgColor}
-                    onChange={(e) => setShopNowButtonBgColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={shopNowButtonBgColor} onChange={(e) => setShopNowButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={shopNowButtonBgColor} onChange={(e) => setShopNowButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -689,19 +686,17 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Badge Color">
-                  <ConfigInput
-                    type="color"
-                    value={saveBoxBgColor}
-                    onChange={(e) => setSaveBoxBgColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={saveBoxBgColor} onChange={(e) => setSaveBoxBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={saveBoxBgColor} onChange={(e) => setSaveBoxBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={saveBoxTextColor}
-                    onChange={(e) => setSaveBoxTextColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={saveBoxTextColor} onChange={(e) => setSaveBoxTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={saveBoxTextColor} onChange={(e) => setSaveBoxTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -751,36 +746,42 @@ export const AnnouncementBarEditor = () => {
                 </div>
                 
                 <ConfigFormGroup label="Input Background">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.backgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Input Border Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.borderColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.borderColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.borderColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Input Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.fontColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.fontColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.fontColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
 
                 <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -788,36 +789,42 @@ export const AnnouncementBarEditor = () => {
                 </div>
                 
                 <ConfigFormGroup label="Button Background">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.backgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Button Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.fontColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.fontColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.fontColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Button Hover Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.hoverBackgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.hoverBackgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.hoverBackgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -840,20 +847,18 @@ export const AnnouncementBarEditor = () => {
             </ConfigFormGroup>
             
             <ConfigFormGroup label="Primary Color">
-              <ConfigInput
-                type="color"
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
             
             {backgroundType === 'gradient' && (
               <ConfigFormGroup label="Gradient End Color">
-                <ConfigInput
-                  type="color"
-                  value={gradientEndColor}
-                  onChange={(e) => setGradientEndColor(e.target.value)}
-                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} />
+              </div>
               </ConfigFormGroup>
             )}
           </EditorConfigPanel>
@@ -866,11 +871,10 @@ export const AnnouncementBarEditor = () => {
             description="Customize the text color"
           >
             <ConfigFormGroup label="Message Text Color">
-              <ConfigInput
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );

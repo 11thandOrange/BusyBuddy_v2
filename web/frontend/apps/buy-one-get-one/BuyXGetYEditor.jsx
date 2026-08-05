@@ -885,20 +885,16 @@ export const BuyXGetYEditor = () => {
                   />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background">
-                  <input
-                    type="color"
-                    value={colorSettings.countdownBgColor}
-                    onChange={(e) => handleColorChange('countdownBgColor', e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Text Color">
-                  <input
-                    type="color"
-                    value={colorSettings.countdownTextColor}
-                    onChange={(e) => handleColorChange('countdownTextColor', e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -916,20 +912,16 @@ export const BuyXGetYEditor = () => {
               />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <input
-                type="color"
-                value={addToCartBgColor}
-                onChange={(e) => setAddToCartBgColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <input
-                type="color"
-                value={addToCartTextColor}
-                onChange={(e) => setAddToCartTextColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -952,20 +944,16 @@ export const BuyXGetYEditor = () => {
                   />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <input
-                    type="color"
-                    value={skipButtonBgColor}
-                    onChange={(e) => setSkipButtonBgColor(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <input
-                    type="color"
-                    value={skipButtonTextColor}
-                    onChange={(e) => setSkipButtonTextColor(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -1017,28 +1005,22 @@ export const BuyXGetYEditor = () => {
         return (
           <div className="config-section">
             <ConfigFormGroup label="Primary Text Color">
-              <input
-                type="color"
-                value={colorSettings.primaryTextColor}
-                onChange={(e) => handleColorChange('primaryTextColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background">
-              <input
-                type="color"
-                value={colorSettings.primaryBackgroundColor}
-                onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Get Y Banner Color">
-              <input
-                type="color"
-                value={colorSettings.getYBannerColor}
-                onChange={(e) => handleColorChange('getYBannerColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.getYBannerColor} onChange={(e) => handleColorChange('getYBannerColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.getYBannerColor} onChange={(e) => handleColorChange('getYBannerColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </div>
         );
@@ -1047,28 +1029,22 @@ export const BuyXGetYEditor = () => {
         return (
           <div className="config-section">
             <ConfigFormGroup label="Secondary Text Color">
-              <input
-                type="color"
-                value={colorSettings.secondaryTextColor}
-                onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background">
-              <input
-                type="color"
-                value={colorSettings.secondaryBackgroundColor}
-                onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <input
-                type="color"
-                value={colorSettings.borderColor}
-                onChange={(e) => handleColorChange('borderColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </div>
         );
