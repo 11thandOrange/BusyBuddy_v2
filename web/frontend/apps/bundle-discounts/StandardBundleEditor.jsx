@@ -1460,6 +1460,7 @@ export const StandardBundleEditor = () => {
             // after landing on the newly created bundle product directly.
             <ProductPagePreview
               widgetLabel="Bundle Offer"
+              device={device}
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
               price={selectedProducts.length ? calculateBundlePricing().discountedPrice : undefined}
@@ -1474,6 +1475,7 @@ export const StandardBundleEditor = () => {
             // real page, not the bundle's.
             <ProductPagePreview
               widgetLabel="Bundle Offer"
+              device={device}
               images={selectedProducts[0]?.images || []}
               title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}

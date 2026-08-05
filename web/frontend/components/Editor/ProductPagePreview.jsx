@@ -44,10 +44,12 @@ export const ProductPagePreview = ({
   specs = [],
   addToCartText,
   hasProduct = false,
+  device = 'desktop',
   children
 }) => {
   const validImages = images.filter(Boolean);
   const [activeIndex, setActiveIndex] = useState(0);
+  const isMobile = device === 'mobile';
 
   // Whichever products are selected can change (a different product added,
   // one removed, a different bundle opened) - reset to the first image
@@ -61,9 +63,13 @@ export const ProductPagePreview = ({
 
   return (
     <div className="product-page-preview" style={{ padding: '24px', background: '#fff', minHeight: '100%' }}>
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+      {/* A real Shopify mobile storefront stacks image above info in one
+          column - it never keeps the desktop side-by-side layout at phone
+          width, which just squeezes everything into a narrow half-width
+          strip with dead space next to it. */}
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', alignItems: isMobile ? 'stretch' : 'flex-start' }}>
         {/* Left Column - Product Image */}
-        <div style={{ flex: '0 0 45%', maxWidth: '45%' }}>
+        <div style={isMobile ? { width: '100%' } : { flex: '0 0 45%', maxWidth: '45%' }}>
           <div style={{
             width: '100%',
             aspectRatio: '1',

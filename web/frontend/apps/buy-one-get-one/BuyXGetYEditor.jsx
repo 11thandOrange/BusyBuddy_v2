@@ -1418,6 +1418,7 @@ export const BuyXGetYEditor = () => {
             // after landing on the newly created bundle product directly.
             <ProductPagePreview
               widgetLabel="BOGO Deal"
+              device={device}
               images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}
               title={bundleTitle}
               price={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().total : undefined}
@@ -1432,6 +1433,7 @@ export const BuyXGetYEditor = () => {
             // real page, not the bundle's.
             <ProductPagePreview
               widgetLabel="BOGO Deal"
+              device={device}
               images={(selectedXProducts[0] || selectedYProducts[0])?.images || []}
               title={(selectedXProducts[0] || selectedYProducts[0])?.title || bundleTitle}
               price={(selectedXProducts[0] || selectedYProducts[0])?.price}

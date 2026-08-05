@@ -1190,6 +1190,7 @@ export const MixAndMatchEditor = () => {
             // after landing on the newly created bundle product directly.
             <ProductPagePreview
               widgetLabel="Mix & Match Offer"
+              device={device}
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
               price={selectedProducts.length ? calculateMixMatchPricing().discountedTotal : undefined}
@@ -1204,6 +1205,7 @@ export const MixAndMatchEditor = () => {
             // real page, not the bundle's.
             <ProductPagePreview
               widgetLabel="Mix & Match Offer"
+              device={device}
               images={selectedProducts[0]?.images || []}
               title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}

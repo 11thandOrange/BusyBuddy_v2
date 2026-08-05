@@ -1286,6 +1286,7 @@ export const VolumeDiscountEditor = () => {
             // after landing on the newly created bundle product directly.
             <ProductPagePreview
               widgetLabel="Volume Discount"
+              device={device}
               images={selectedProducts.flatMap(p => p.images || [])}
               title={bundleTitle}
               price={selectedProducts.length ? calculateVolumePricing().discountedPrice : undefined}
@@ -1300,6 +1301,7 @@ export const VolumeDiscountEditor = () => {
             // real page, not the bundle's.
             <ProductPagePreview
               widgetLabel="Volume Discount"
+              device={device}
               images={selectedProducts[0]?.images || []}
               title={selectedProducts[0]?.title || bundleTitle}
               price={selectedProducts[0]?.price}
