@@ -156,12 +156,17 @@ app.use(
       var shop = _req.query.shop.toString();
       const isValid = verifyShopSignature(shop, _req.query.signature);
       if (!isValid) {
-        return res.status(401).send("Unauthorized");
+        // JSON, not plain text: the editor's fetch callers all do
+        // `await response.json()` unconditionally, and a plain-text 401 body
+        // used to blow up as "Unexpected token 'U', 'Unauthorized' is not
+        // valid JSON" instead of surfacing what actually went wrong.
+        return res.status(401).json({ message: "Invalid editor signature - the shop/signature pair on this page is stale or was tampered with." });
       }
       const sessionId = await shopify.api.session.getOfflineId(shop);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
       if (!session) {
-        return res.status(401).send("Unauthorized");
+        console.log(`No offline session found in sessionStorage for ${shop} (sessionId=${sessionId})`);
+        return res.status(401).json({ message: "No active session found for this shop - it may need to be reinstalled." });
       }
       res.locals.shopify = {
         session,

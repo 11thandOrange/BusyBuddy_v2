@@ -19,7 +19,7 @@ import {
   CountdownTimerDisplay
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
 // Volume Discount settings configuration
@@ -294,7 +294,7 @@ export const VolumeDiscountEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      const data = await response.json();
+      const data = await safeParseJson(response);
       if (!response.ok) {
         throw new Error(data?.message || "Failed to fetch products");
       }

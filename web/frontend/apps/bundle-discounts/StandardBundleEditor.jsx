@@ -21,7 +21,7 @@ import {
   ProductImageCarousel
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
 import tshirt from "./tshirt.png";
 
 // Bundle Discounts specific settings configuration
@@ -320,7 +320,7 @@ export const StandardBundleEditor = () => {
           "Content-Type": "application/json",
         },
       });
-      const data = await response.json();
+      const data = await safeParseJson(response);
       if (!response.ok) {
         throw new Error(data?.message || "Failed to fetch products");
       }

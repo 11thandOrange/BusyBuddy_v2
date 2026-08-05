@@ -57,3 +57,20 @@ export function editorFetch(url, options) {
   const authedUrl = `${url}${separator}shop=${encodeURIComponent(EDITOR_SHOP)}&signature=${encodeURIComponent(EDITOR_SIGNATURE)}`;
   return fetch(authedUrl, options);
 }
+
+/**
+ * Parses a fetch Response body as JSON without throwing when it isn't JSON
+ * (a proxy error page, a plain-text 401, an empty body, ...). Every editor's
+ * fetchStoreProducts called response.json() unconditionally, so a non-JSON
+ * error body crashed with a raw "Unexpected token '...' is not valid JSON"
+ * instead of surfacing what the server actually said.
+ */
+export async function safeParseJson(response) {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text.slice(0, 200) };
+  }
+}
