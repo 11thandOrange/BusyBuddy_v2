@@ -27,3 +27,4 @@ export {
   CountdownTimerDisplay,
   CountdownThemePicker,
 } from './CountdownTimerThemes';
+export { ProductImageCarousel } from './ProductImageCarousel';

@@ -311,11 +311,13 @@ export const VolumeDiscountEditor = () => {
           values: opt.values,
         })) || [];
 
+        const images = product.images?.edges?.map(e => e.node.url).filter(Boolean) || [];
         return {
           productId: product.id,
           title: product.title,
           price: product.variants?.nodes?.[0]?.price || '0',
-          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
+          media: images[0] || product.featuredMedia?.image?.url || tshirt,
+          images: images.length ? images : (product.featuredMedia?.image?.url ? [product.featuredMedia.image.url] : []),
           variants: product.variants?.nodes || [],
           optionSelections,
         };

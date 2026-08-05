@@ -17,7 +17,8 @@ import {
   EditorRightContent,
   EditorToast,
   CountdownThemePicker,
-  CountdownTimerDisplay
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -335,12 +336,14 @@ export const StandardBundleEditor = () => {
           values: opt.values
         })) || [];
         
+        const images = product.images?.edges?.map(e => e.node.url).filter(Boolean) || [];
         return {
           id: product.id,
           productId: product.id,  // GID format: gid://shopify/Product/ID
           title: product.title,
           price: product.variants?.edges?.[0]?.node?.price || product.variants?.nodes?.[0]?.price || '0.00',
-          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
+          media: images[0] || product.featuredMedia?.image?.url || tshirt,
+          images: images.length ? images : (product.featuredMedia?.image?.url ? [product.featuredMedia.image.url] : []),
           handle: product.handle,
           quantity: 1,  // Default quantity (required for storefront)
           variants: product.variants?.edges?.map(v => v.node) || product.variants?.nodes || [],
@@ -1203,10 +1206,13 @@ export const StandardBundleEditor = () => {
                   borderRadius: '12px',
                   border: `1px solid ${colorSettings.borderColor}`,
                 }}>
-                  <img
-                    src={product.media || tshirt}
+                  <ProductImageCarousel
+                    images={product.images}
+                    fallback={product.media || tshirt}
                     alt={product.title}
-                    style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }}
+                    width={50}
+                    height={50}
+                    borderRadius="8px"
                   />
                   <div style={{ flex: 1 }}>
                     <div style={{ color: colorSettings.primaryTextColor, fontSize: '13px', fontWeight: '500' }}>

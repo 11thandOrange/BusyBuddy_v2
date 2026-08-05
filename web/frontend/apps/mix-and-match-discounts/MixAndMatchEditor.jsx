@@ -16,7 +16,8 @@ import {
   EditorRightContent,
   EditorToast,
   CountdownThemePicker,
-  CountdownTimerDisplay
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
 import { useEditorNavigation, useSimpleToast } from '../../hooks';
 import { editorFetch } from '../../utils/editorAuth';
@@ -339,12 +340,14 @@ export const MixAndMatchEditor = () => {
       const formattedProducts = products.map((edge) => {
         const product = edge.node;
         const variant = product.variants?.nodes?.[0];
+        const images = product.images?.edges?.map(e => e.node.url).filter(Boolean) || [];
         return {
           id: product.id,
           productId: product.id,
           title: product.title,
           price: variant?.price || "0.00",
-          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
+          media: images[0] || product.featuredMedia?.image?.url || tshirt,
+          images: images.length ? images : (product.featuredMedia?.image?.url ? [product.featuredMedia.image.url] : []),
           quantity: 1,
           optionSelections: product.options?.map((opt) => ({
             name: opt.name,
@@ -942,17 +945,14 @@ export const MixAndMatchEditor = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <img
-                    src={product.media || tshirt}
+                  <ProductImageCarousel
+                    images={product.images}
+                    fallback={product.media || tshirt}
                     alt={product.title}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '10px',
-                      marginRight: '15px',
-                      objectFit: 'cover',
-                      border: `1px solid ${colorSettings.borderColor}`,
-                    }}
+                    width={80}
+                    height={80}
+                    borderRadius="10px"
+                    style={{ marginRight: '15px', border: `1px solid ${colorSettings.borderColor}` }}
                   />
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>

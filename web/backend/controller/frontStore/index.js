@@ -191,14 +191,16 @@ async function getActiveBundle(req, res) {
     products.forEach((product) => {
       // Extract numeric ID from GID format (gid://shopify/Product/12345 -> 12345)
       const numericId = product.id.split('/').pop();
+      const images = product.images?.edges?.map((e) => e.node.url).filter(Boolean) || [];
       productMap[numericId] = {
         id: product.id,
         title: product.title,
         price: product.variants?.nodes?.[0]?.price,
         compare_at_price: product.variants?.nodes?.[0]?.compare_at_price,
         // Fix: Use featuredMedia.image.url instead of product.images[0].src
-        image: product.featuredMedia?.image?.url || null,
-        media: product.featuredMedia?.image?.url || null,
+        image: product.featuredMedia?.image?.url || images[0] || null,
+        media: product.featuredMedia?.image?.url || images[0] || null,
+        images,
         variant_id: product.variants?.nodes?.[0]?.id,
         available: true, // Default to available, actual inventory check requires additional query
         handle: product.handle,

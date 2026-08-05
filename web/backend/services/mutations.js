@@ -13,6 +13,13 @@ export const GET_PRODUCTS = `
             }
           }
         }
+        images(first: 10) {
+          edges {
+            node {
+              url
+            }
+          }
+        }
         options(first: 100) {
           id
           name
@@ -30,7 +37,7 @@ export const GET_PRODUCTS = `
       hasNextPage
       hasPreviousPage
       endCursor
-      startCursor 
+      startCursor
     }
   }
 }`;
@@ -50,6 +57,13 @@ export const GET_PRODUCT_BY_IDS = (ids) => {
           ... on MediaImage {
             id
             image {
+              url
+            }
+          }
+        }
+        images(first: 10) {
+          edges {
+            node {
               url
             }
           }

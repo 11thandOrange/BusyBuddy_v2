@@ -23,6 +23,11 @@ async function getProducts(req, res) {
                 image { url }
               }
             }
+            images(first: 10) {
+              edges {
+                node { url }
+              }
+            }
             options(first: 100) {
               id
               name
