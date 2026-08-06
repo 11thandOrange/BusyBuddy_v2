@@ -57,8 +57,9 @@ Active/Inactive switch (`components/ToggelSwitch.jsx`, via the shared
 that switch lives on the app's own "Manage" page, separate from any
 per-item Active/Inactive status covered later in the same suite.
 `inactive-tab-message-e2e/` has no popup editor at all (see its own
-Settings form), so its 3 files instead cover settings configuration,
-live storefront `visibilitychange` behavior, and tab navigation.
+Settings form), so its 2 files instead cover settings configuration and
+tab navigation. (A third file covering the storefront `visibilitychange`
+behavior was removed - see git history if reviving it.)
 
 ## Prerequisites
 
@@ -148,7 +149,6 @@ npx playwright test scripts/bundle-discounts-e2e/01-create-and-customize.spec.js
   run — re-run just the failing spec file with `npx playwright test <path>`.
 - The storefront-only journeys (`*-storefront-live.spec.js`) don't need
   `auth.json` or `admin_url` — they hit the public storefront directly.
-  Same for `inactive-tab-message-e2e/02-storefront-behavior.spec.js`.
 - The `*-e2e/` suites are hand-written against the real components (not
   copied from the `scripts/<app>/` demo journeys, which were built for
   video recording and have different assumptions) - do not merge or dedupe
