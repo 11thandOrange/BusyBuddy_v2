@@ -404,7 +404,12 @@ async function getThemeEditorUrl(req, res) {
   }
 
   try {
-    const uid = process.env.EXTENSION_APP_ID;
+    // Shopify's theme-editor deep-link scheme identifies the app by its
+    // Client ID, not by the extension's own `uid` from shopify.extension.toml
+    // (that uid is for the CLI's config-sync/registry, unrelated to this) -
+    // SHOPIFY_API_KEY is that Client ID, already relied on elsewhere (e.g.
+    // web/index.js for App Bridge init) so it's guaranteed to be set.
+    const uid = process.env.SHOPIFY_API_KEY;
     let themeEditorUrl;
 
     if (config.target === "body") {

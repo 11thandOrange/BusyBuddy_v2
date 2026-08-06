@@ -168,15 +168,15 @@ describe('getExtensionStatus - per-block theme detection', () => {
 });
 
 describe('getThemeEditorUrl - per-app deep link generation', () => {
-  const originalEnv = process.env.EXTENSION_APP_ID;
+  const originalEnv = process.env.SHOPIFY_API_KEY;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.EXTENSION_APP_ID = 'test-uid-123';
+    process.env.SHOPIFY_API_KEY = 'test-uid-123';
   });
 
   afterAll(() => {
-    process.env.EXTENSION_APP_ID = originalEnv;
+    process.env.SHOPIFY_API_KEY = originalEnv;
   });
 
   it('builds an activateAppId (app-embed) link for inactive_tab', async () => {
