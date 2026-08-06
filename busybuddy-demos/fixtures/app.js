@@ -310,12 +310,18 @@ export async function fillColorInput(popup, groupLabel, hexValue) {
     .fill(hexValue);
 }
 
-/** Clicks the checkbox inside a ConfigToggleRow (EditorConfigPanel.jsx) by its visible label, e.g. "Show Countdown Timer". */
+/**
+ * Clicks the switch inside a ConfigToggleRow (EditorConfigPanel.jsx) by its
+ * visible label, e.g. "Show Countdown Timer". Targets `.toggle-slider`, not
+ * the checkbox itself - `.toggle-switch input` is `width: 0; height: 0;
+ * opacity: 0` (EditorLayout.css), a zero-size element Playwright's
+ * actionability check will never consider clickable/visible.
+ */
 export async function toggleConfigRow(popup, label) {
   await popup
     .locator('.toggle-row')
     .filter({ has: popup.locator('.toggle-label', { hasText: label }) })
-    .locator('input[type="checkbox"]')
+    .locator('.toggle-slider')
     .click();
 }
 
@@ -326,9 +332,15 @@ export async function setEditorTitle(popup, title) {
   await titleInput.fill(title);
 }
 
-/** Clicks the enable/disable switch in the editor header (EditorHeader.jsx's label.header-toggle). */
+/**
+ * Clicks the enable/disable switch in the editor header (EditorHeader.jsx's
+ * label.header-toggle). Targets `.toggle-slider`, not the checkbox itself -
+ * `.header-toggle input` is `width: 0; height: 0; opacity: 0`
+ * (EditorLayout.css), a zero-size element Playwright's actionability check
+ * will never consider clickable/visible.
+ */
 export async function toggleEditorEnabled(popup) {
-  await popup.locator('label.header-toggle input[type="checkbox"]').click();
+  await popup.locator('label.header-toggle .toggle-slider').click();
 }
 
 /** Switches the live preview panel between Desktop and Mobile (EditorPreviewPanel.jsx's .device-btn buttons). */
