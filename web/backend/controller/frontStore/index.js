@@ -7,6 +7,7 @@ import Shop from "../../models/shop.model.js";
 import EmailProvider from "../../models/emailProvider.model.js";
 import EmailService, { EmailServiceError } from "../../services/emailService.js";
 import { checkSubscriptionAccess, getFeatureNameFromEndpoint, getFeatureNameFromBundleType } from "../../configs/subscriptionUtils.js";
+import { getOrCreateShop } from "../../services/shopService.js";
 // async function getActiveBundle(req, res) {
 //   // In your backend route handler
 //   try {
@@ -119,24 +120,39 @@ async function getActiveBundle(req, res) {
       session: session,
       apiVersion: "2024-10", // Ensure this is a valid and supported API version
     });
-    const shopDomain = res.locals.shopify.session.shop;
-    let shopData = await Shop.findOne({ myshopify_domain: shopDomain });
+    // getOrCreateShop self-heals the case where this shop's Shop document
+    // was never created (e.g. the one-time OAuth-install-callback creation
+    // step errored) - a bare Shop.findOne here previously meant a fully
+    // installed, working shop could permanently get shopId: null below,
+    // which can never match any real bundle (they always have a real
+    // shopId), silently hiding every bundle for that shop regardless of
+    // status/schedule/product match.
+    let shopData = await getOrCreateShop(session);
     // Query your database for bundles containing this product
     // startDate/endDate are required fields on Bundle (unlike Announcement
     // Bar's optional schedule), so a direct query filter is safe here - no
     // need for the "null means unrestricted" leniency getAnnouncementBar uses.
     const now = new Date();
-    const bundles = await Bundle.find({
+    const bundleQuery = {
       $or: [
         { "products.productId": `gid://shopify/Product/${productId}` },
         { "productsX.productId": `gid://shopify/Product/${productId}` },
         { "productsY.productId": `gid://shopify/Product/${productId}` },
       ],
       status: true,
-      shopId: shopData ? shopData._id : null,
       startDate: { $lte: now },
       endDate: { $gte: now },
-    })
+    };
+    // Only scope by shopId when we actually have a Shop doc - real bundles
+    // always have a real shopId, so filtering by shopId: null (the old
+    // behavior when shopData was missing) could never match anything. The
+    // product-id match above is already effectively shop-scoped since
+    // Shopify product IDs are globally unique, so omitting this filter here
+    // doesn't risk leaking another shop's bundle.
+    if (shopData) {
+      bundleQuery.shopId = shopData._id;
+    }
+    const bundles = await Bundle.find(bundleQuery)
       .sort({ priority: -1 }) // sort first
       .limit(1)
       .lean();
