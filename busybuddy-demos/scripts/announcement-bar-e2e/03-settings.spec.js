@@ -20,5 +20,7 @@ test('Announcement Bar: toggle close button, then check Analytics', async ({ pag
   await demoPause(app);
 
   await gotoTab(app, 'Analytics');
-  await expect(app.getByText(/total views/i)).toBeVisible({ timeout: 15_000 });
+  // .first(): "Total Views" appears both as a stat-card heading and again
+  // as a row label in a breakdown table further down the page.
+  await expect(app.getByText(/total views/i).first()).toBeVisible({ timeout: 15_000 });
 });
