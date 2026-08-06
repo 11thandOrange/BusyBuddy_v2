@@ -274,12 +274,32 @@ export async function addProductToPoolBySearch(popup, searchTerm, productTitleTo
  * addProductViaPicker's button locator can never match here.
  */
 export async function addProductViaPickerRow(popup, productName) {
-  const addProductsButton = popup.getByRole('button', { name: '+ Add Products' });
+  // Regex substring match, not exact: VolumeDiscountEditor.jsx's own toggle
+  // button reads "+ Add Product" (singular) once nothing is selected, or
+  // "↻ Change Product" once something is - neither is the plural
+  // "+ Add Products" this previously matched literally, which never found
+  // the button and silently skipped opening the picker at all.
+  const addProductsButton = popup.getByRole('button', { name: /Add Product|Change Product/i });
   if (await addProductsButton.isVisible().catch(() => false)) {
     await addProductsButton.click();
   }
   await popup.getByPlaceholder('Search by product name...').fill(productName);
   await popup.getByText(productName, { exact: false }).first().click();
+}
+
+/**
+ * Same picker as addProductViaPickerRow, but for a partial search term that
+ * matches more than one product - searches one term, clicks the row
+ * identified by its full title rather than assuming the search result is
+ * unambiguous.
+ */
+export async function addProductViaPickerRowBySearch(popup, searchTerm, productTitleToAdd) {
+  const addProductsButton = popup.getByRole('button', { name: /Add Product|Change Product/i });
+  if (await addProductsButton.isVisible().catch(() => false)) {
+    await addProductsButton.click();
+  }
+  await popup.getByPlaceholder('Search by product name...').fill(searchTerm);
+  await popup.getByText(productTitleToAdd, { exact: false }).first().click();
 }
 
 /**
