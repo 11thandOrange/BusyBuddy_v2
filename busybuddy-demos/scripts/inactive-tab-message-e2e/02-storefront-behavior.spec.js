@@ -18,8 +18,20 @@ test('Inactive Tab Message: swaps and restores the browser tab title on visibili
   await expect(toggle).toBeVisible({ timeout: 15_000 });
   const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
   if (!wasActive) {
-    await toggle.click();
-    await expect(toggle.getByText('Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+    // ToggelSwitch.jsx fetches /api/subscription/getUserSubscription once
+    // on mount; until that resolves, checkCanEnable() no-ops every enable
+    // click (see fixtures/app.js's toggleAppWideSwitchAndRestore, which
+    // hit this same race) - retry rather than assuming the first click
+    // lands after that fetch has settled.
+    let flipped = false;
+    for (let attempt = 0; attempt < 8 && !flipped; attempt++) {
+      await toggle.click();
+      flipped = await expect(toggle.getByText('Active', { exact: true }))
+        .toBeVisible({ timeout: 3_000 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    if (!flipped) throw new Error('App-wide toggle never flipped to Active after 8 attempts.');
   }
 
   // A separate tab (rather than navigating the admin `page` itself away to
