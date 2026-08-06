@@ -29,7 +29,12 @@ test('Bundle Discount: preview, edit-in-new-tab, and activate from the Discounts
 
   await clickPreviewOnRow(row);
   await expect(app.getByRole('dialog')).toBeVisible();
-  await expect(app.getByRole('dialog').getByText(BUNDLE_TEST_TITLE)).toBeVisible();
+  // .first(): DiscountPreviewModal.jsx shows the title twice - once in the
+  // Modal.Title header, again in an "Internal Name: <title>" body line
+  // (internalName defaults to the same string when not set separately) -
+  // a bare getByText match hits both and trips Playwright's strict mode.
+  // The header instance renders first in DOM order.
+  await expect(app.getByRole('dialog').getByText(BUNDLE_TEST_TITLE).first()).toBeVisible();
   await demoPause(app);
 
   // The modal overlay sits on top of the row, so its Edit pencil can't be
