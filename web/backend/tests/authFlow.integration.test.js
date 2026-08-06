@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import * as crypto from 'crypto';
 
 // web/index.js reads Shopify config + DB env vars at import time (shopify.js
 // throws synchronously if apiKey/apiSecretKey/hostName are missing), so
@@ -30,9 +31,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 vi.spyOn(process, 'cwd').mockReturnValue(join(__dirname, '../..'));
 
 let app;
+let shopify;
 
 beforeAll(async () => {
   ({ default: app } = await import('../../index.js'));
+  ({ default: shopify } = await import('../../shopify.js'));
 });
 
 describe('GET /api/auth (OAuth begin) - integration', () => {
@@ -117,5 +120,50 @@ describe('GET /api/editor/signature - integration', () => {
     const res = await request(app).get('/api/editor/signature');
 
     expect(res.status).not.toBe(200);
+  });
+});
+
+// Real Shopify App Proxy requests (getActiveBundle/getInactiveTab/
+// getAnnouncementBar, hit directly by storefront visitors) sign every query
+// param, not just `shop` - the /api/* middleware used to only check the
+// shop-only signature the standalone editor mints for itself, so a real
+// proxy request's signature could never match and always 401'd.
+function signAllParams(params) {
+  const parts = Object.entries(params).map(([key, value]) => `${key}=${value}`);
+  return crypto.createHmac('sha256', 'test-api-secret').update(parts.sort().join('')).digest('hex');
+}
+
+describe('GET /api/frontStore/* (App Proxy) - integration', () => {
+  it('accepts a request signed the way Shopify actually signs App Proxy calls (all params, not just shop)', async () => {
+    // loadSession would otherwise try to actually reach this test's
+    // deliberately-unreachable DB_CONNECTION host and hang - stubbed here
+    // purely so the test can observe the signature check's own outcome
+    // without waiting on a real Mongo connection attempt.
+    const loadSessionSpy = vi.spyOn(shopify.config.sessionStorage, 'loadSession').mockResolvedValue(null);
+
+    const params = { shop: 'test-shop.myshopify.com', product_id: '123', timestamp: '1700000000' };
+    const signature = signAllParams(params);
+
+    const res = await request(app).get(
+      `/api/frontStore/getActiveBundle?shop=${params.shop}&product_id=${params.product_id}&timestamp=${params.timestamp}&signature=${signature}`
+    );
+
+    // The signature itself must be accepted (not the old "Invalid request
+    // signature" 401) - it still 401s past that point since no offline
+    // session exists in this test's empty session storage, which is a
+    // separate, correctly-behaving check.
+    expect(res.body?.message).not.toMatch(/invalid request signature/i);
+    expect(res.body?.message).toMatch(/no active session found/i);
+
+    loadSessionSpy.mockRestore();
+  });
+
+  it('still rejects a request with a wrong/forged signature', async () => {
+    const res = await request(app).get(
+      '/api/frontStore/getActiveBundle?shop=test-shop.myshopify.com&product_id=123&signature=not-a-real-signature'
+    );
+
+    expect(res.status).toBe(401);
+    expect(res.body?.message).toMatch(/invalid request signature/i);
   });
 });
