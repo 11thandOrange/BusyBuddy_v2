@@ -23,16 +23,16 @@ const EDITOR_ROUTES = {
 // Overview items per discount type
 const OVERVIEW_ITEMS = {
   "Bundle Discount": [
-    { id: "intro", title: "Introduction to Bundles", description: "Learn bundle basics", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "create", title: "Creating a Bundle", description: "Step-by-step guide", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "pricing", title: "Bundle Pricing", description: "Set up discounts", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/bundle_discount.mp4" },
+    { id: "create", title: "Create A Standard Bundle Discount", description: "Build a bundle from scratch, choosing the products and discount that go into it.", youtubeId: "dyQgfV0r5Dw" },
+    { id: "customize", title: "Customize A Standard Bundle", description: "Style your bundle widget's look and feel to match your storefront.", youtubeId: "pGVKHWj-OHY" },
+    { id: "settings", title: "Edit Settings", description: "Configure display, scheduling, and pricing settings for an existing bundle.", youtubeId: "Pov8ltc6mYY" },
+    { id: "view-all", title: "View All Standard Bundle Discounts", description: "See how to review, manage, and track all of your active bundle discounts.", youtubeId: "QCxXjydAxio" },
   ],
   "Buy One Get One": [
-    { id: "intro", title: "Introduction to BOGO", description: "Learn BOGO basics", videoSrc: "/assets/bogo.mp4" },
-    { id: "create", title: "Creating BOGO Offers", description: "Step-by-step guide", videoSrc: "/assets/bogo.mp4" },
-    { id: "rules", title: "BOGO Rules", description: "Configure conditions", videoSrc: "/assets/bogo.mp4" },
-    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/bogo.mp4" },
+    { id: "customize", title: "Customize BOGO Discounts", description: "Adjust the appearance of your BOGO offer to fit your brand.", youtubeId: "g3HcWXCmhjw" },
+    { id: "create", title: "Create A BOGO Discount", description: "Set up a buy-one-get-one offer, including the buy and get product groups.", youtubeId: "09FBY3BIPhE" },
+    { id: "settings", title: "Edit BOGO Settings", description: "Fine-tune the rules and display settings on an existing BOGO discount.", youtubeId: "oveHhTT4tLE" },
+    { id: "view-all", title: "View Your BOGO Discounts", description: "See how to review and manage all of your BOGO discounts in one place.", youtubeId: "iABu5dfKzPw" },
   ],
   "Volume Discount": [
     { id: "intro", title: "Introduction to Volume Discounts", description: "Learn the basics", videoSrc: "/assets/volume_discount.mp4" },
@@ -41,10 +41,8 @@ const OVERVIEW_ITEMS = {
     { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/volume_discount.mp4" },
   ],
   "Mix and Match": [
-    { id: "intro", title: "Introduction to Mix & Match", description: "Learn the basics", videoSrc: "/assets/mix_match.mp4" },
-    { id: "create", title: "Creating Mix & Match", description: "Step-by-step guide", videoSrc: "/assets/mix_match.mp4" },
-    { id: "products", title: "Adding Products", description: "Select eligible items", videoSrc: "/assets/mix_match.mp4" },
-    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/mix_match.mp4" },
+    { id: "create", title: "Create A Mix & Match Discount", description: "Build a Mix & Match offer by choosing eligible products and setting your quantity tiers.", youtubeId: "p_pNA7W-ha8" },
+    { id: "view-all", title: "View Your Mix & Match Discounts", description: "See how to review and manage all of your Mix & Match discounts in one place.", youtubeId: "umtq5bh6ZsQ" },
   ],
 };
 

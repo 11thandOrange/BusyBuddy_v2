@@ -7,7 +7,8 @@ import { Play } from "react-bootstrap-icons";
  * Left column: Video player
  * Right column: Simple list of 3 clickable items that change the video
  * 
- * @param {Array} items - Array of {id, title, description, videoSrc, posterSrc}
+ * @param {Array} items - Array of {id, title, description, videoSrc, posterSrc} or
+ *   {id, title, description, youtubeId} for YouTube-hosted videos
  */
 export default function OverviewTab({ items = [] }) {
   const [selectedItem, setSelectedItem] = useState(items[0] || null);
@@ -31,7 +32,21 @@ export default function OverviewTab({ items = [] }) {
               className="video-container position-relative w-100 d-flex align-items-center justify-content-center"
               style={{ backgroundColor: "#000", borderRadius: "16px" }}
             >
-              {currentItem?.videoSrc ? (
+              {currentItem?.youtubeId ? (
+                <iframe
+                  key={currentItem.id}
+                  src={`https://www.youtube.com/embed/${currentItem.youtubeId}`}
+                  title={currentItem.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    border: "none",
+                    borderRadius: "16px",
+                  }}
+                />
+              ) : currentItem?.videoSrc ? (
                 <video
                   key={currentItem.id}
                   controls
