@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { test, expect, demoPause, dashboardTile, appWideToggle, toggleAppWideSwitchAndRestore } from '../../fixtures/app.js';
+import { test, expect, demoPause, dashboardTile, toggleAppWideSwitchAndRestore } from '../../fixtures/app.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // The app's own placeholder image (imported by DiscountList.jsx itself for
@@ -45,20 +45,16 @@ test('Inactive Tab Message: configure settings end to end', async ({ page, app }
   // (appId="inactive_tab") that the other 5 apps' tickets test, confirmed
   // via InactiveTabMessageForm.jsx - not a separate custom control, despite
   // this app having no per-item list to otherwise distinguish it from.
+  // Restores whatever state it found, same as the other 5 apps' suites -
+  // this app's own Suite 2 (storefront behavior) needs the app enabled to
+  // observe the real effect, but it handles that itself (enable, test,
+  // restore) rather than this suite leaving the switch permanently changed,
+  // which would silently eat into the store's plan-limited enabled-app
+  // count for every other suite's own toggle step (confirmed the hard way -
+  // leaving it Active here previously broke all 5 other apps' "confirm it
+  // flips" step once their own attempt to enable hit that same limit).
   await toggleAppWideSwitchAndRestore(app);
   await demoPause(app);
-
-  // Unlike the other 5 apps' suites, this app's own Suite 2 (storefront
-  // behavior) needs the real extension (extensions/bogo-shopify-app/assets/
-  // inactiveTab.js) actually enabled to run its visibilitychange listener
-  // at all - restoring to whatever pre-test state toggleAppWideSwitchAndRestore
-  // left it in isn't enough if that was Inactive, so explicitly finish
-  // Active here regardless of where it started.
-  const toggle = appWideToggle(app);
-  if ((await toggle.getAttribute('title')) === 'Click to enable') {
-    await toggle.click();
-    await expect(toggle.getByText('Active', { exact: true })).toBeVisible({ timeout: 15_000 });
-  }
 
   // --- Message card ---
   const messageInput = app.getByPlaceholder('Enter message to display when tab is inactive');
@@ -68,11 +64,21 @@ test('Inactive Tab Message: configure settings end to end', async ({ page, app }
   // --- Favicon card ---
   await app.getByText('Use Emoji', { exact: true }).click();
   await demoPause(app);
+  // A prior run (or earlier manual testing) may have already saved a
+  // faviconEmoji for this store - loadSettings() restores it on mount, so
+  // switching to "Use Emoji" then renders the already-picked glyph plus a
+  // "Change" button instead of the empty "Choose an emoji" prompt. Handle
+  // whichever one is actually there rather than assuming a fresh state.
+  const chooseEmojiPrompt = app.getByText('Choose an emoji', { exact: false });
+  if (await chooseEmojiPrompt.isVisible().catch(() => false)) {
+    await chooseEmojiPrompt.click();
+  } else {
+    await app.getByRole('button', { name: 'Change' }).click();
+  }
   // Third-party emoji-picker-react widget - located via its own documented
   // search input (aria-label "Type to search for an emoji") rather than
   // guessing at an unlabeled grid position, so the exact emoji picked is
   // deterministic instead of whatever happens to render first.
-  await app.getByText('Choose an emoji', { exact: false }).click();
   const emojiSearch = app.getByRole('textbox', { name: 'Type to search for an emoji' });
   await expect(emojiSearch).toBeVisible({ timeout: 10_000 });
   await emojiSearch.fill('grinning');

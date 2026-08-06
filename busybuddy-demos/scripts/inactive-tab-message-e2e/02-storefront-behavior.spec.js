@@ -1,28 +1,52 @@
-import { test, expect, gotoStorefrontHome } from '../../fixtures/app.js';
+import { test, expect, dashboardTile, appWideToggle, STORE_DOMAIN } from '../../fixtures/app.js';
 
 // Ticket: Inactive Tab Message App - Comprehensive Playwright E2E Test Suite
 // (https://github.com/11thandOrange/BusyBuddy_v2/issues/311)
 //
 // Suite 2 - Storefront Behavior. This app's real effect is entirely on the
 // storefront (extensions/bogo-shopify-app/assets/inactiveTab.js listens for
-// visibilitychange and swaps document.title), which is testable directly by
-// forcing that event rather than needing an actual OS-level tab switch.
-test('Inactive Tab Message: swaps and restores the browser tab title on visibilitychange', async ({ page }) => {
-  await gotoStorefrontHome(page);
-  const originalTitle = await page.title();
+// visibilitychange and swaps document.title), which only runs at all once
+// the app-wide switch (ToggelSwitch.jsx) is enabled. This suite ensures
+// that itself (rather than depending on 01-configure-settings.spec.js
+// having left it that way) and restores whatever it found afterward -
+// forcing it Active and leaving it there previously ate into the store's
+// plan-limited enabled-app count and broke every other app's own toggle
+// step once their own attempt to enable hit that same limit.
+test('Inactive Tab Message: swaps and restores the browser tab title on visibilitychange', async ({ page, app }) => {
+  await dashboardTile(app, 'Inactive Tab Message').getByRole('button', { name: 'Manage', exact: true }).click();
+  const toggle = appWideToggle(app);
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
+  if (!wasActive) {
+    await toggle.click();
+    await expect(toggle.getByText('Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+  }
+
+  // A separate tab (rather than navigating the admin `page` itself away to
+  // the storefront) keeps the toggle above alive and reachable, so it can
+  // be restored below without re-resolving the embedded admin iframe.
+  const storefrontPage = await page.context().newPage();
+  await storefrontPage.goto(`https://${STORE_DOMAIN}`);
+  const originalTitle = await storefrontPage.title();
 
   // document.hidden is a read-only getter on the real Document prototype -
   // overriding it here is what lets a single-page headless browser context
   // simulate "tab switched away" without a second real tab.
-  await page.evaluate(() => {
+  await storefrontPage.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect.poll(() => page.title(), { timeout: 10_000 }).not.toBe(originalTitle);
+  await expect.poll(() => storefrontPage.title(), { timeout: 10_000 }).not.toBe(originalTitle);
 
-  await page.evaluate(() => {
+  await storefrontPage.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
     document.dispatchEvent(new Event('visibilitychange'));
   });
-  await expect.poll(() => page.title(), { timeout: 10_000 }).toBe(originalTitle);
+  await expect.poll(() => storefrontPage.title(), { timeout: 10_000 }).toBe(originalTitle);
+  await storefrontPage.close();
+
+  if (!wasActive) {
+    await toggle.click();
+    await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
+  }
 });
