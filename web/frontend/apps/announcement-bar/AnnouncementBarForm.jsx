@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import ThemeExtensionBanner from "../../components/ThemeExtensionBanner";
 import { useEditorNavigation } from "../../hooks";
 
 export default function AnnouncementBarForm() {
@@ -28,6 +29,7 @@ export default function AnnouncementBarForm() {
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
+        <ThemeExtensionBanner appId="announcement_bar" />
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
             <div

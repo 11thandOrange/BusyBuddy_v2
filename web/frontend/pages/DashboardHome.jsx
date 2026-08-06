@@ -9,7 +9,6 @@ import {
   Plus,
   Settings,
   DollarSign,
-  ExternalLink,
   Zap,
   TrendingUp,
   TrendingDown,
@@ -208,10 +207,7 @@ export default function DashboardHome() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
-  const [extensionEnabled, setExtensionEnabled] = useState(null); // null = loading
-  const [showExtensionBanner, setShowExtensionBanner] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
-  const [extensionBannerFlashing, setExtensionBannerFlashing] = useState(false);
   const [upgradeBannerFlashing, setUpgradeBannerFlashing] = useState(false);
   const [range, setRange] = useState("7d");
   const [summary, setSummary] = useState(null);
@@ -220,7 +216,6 @@ export default function DashboardHome() {
   useEffect(() => {
     fetchUserSubscription();
     fetchActivityData();
-    checkExtensionStatus();
 
     // Live activity rail: refresh periodically so "Streaming" is a real claim.
     const activityInterval = setInterval(fetchActivityData, ACTIVITY_REFRESH_MS);
@@ -239,23 +234,6 @@ export default function DashboardHome() {
   useEffect(() => {
     fetchDashboardSummary(range);
   }, [range]);
-
-  // Handle extension banner visibility with flash animation
-  useEffect(() => {
-    if (extensionEnabled === null) return; // Still loading
-
-    if (extensionEnabled === false) {
-      setShowExtensionBanner(true);
-    } else if (showExtensionBanner) {
-      // Flash before hiding
-      setExtensionBannerFlashing(true);
-      const timer = setTimeout(() => {
-        setShowExtensionBanner(false);
-        setExtensionBannerFlashing(false);
-      }, 600);
-      return () => clearTimeout(timer);
-    }
-  }, [extensionEnabled]);
 
   // Handle upgrade banner visibility with flash animation
   useEffect(() => {
@@ -339,33 +317,6 @@ export default function DashboardHome() {
     }
   };
 
-  const checkExtensionStatus = async () => {
-    try {
-      const response = await fetch("/api/subscription/checkBusyBuddyEnabled");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.status === "SUCCESS") {
-          setExtensionEnabled(data.data.enabled !== false);
-        } else {
-          setExtensionEnabled(true); // Default to enabled if check fails
-        }
-      } else {
-        setExtensionEnabled(true);
-      }
-    } catch (err) {
-      setExtensionEnabled(true); // Default to enabled if check fails
-    }
-  };
-
-  const getThemeExtensionUrl = () => {
-    const params = new URLSearchParams(location.search);
-    const shop = params.get("shop");
-    if (shop) {
-      return `https://${shop}/admin/themes/current/editor`;
-    }
-    return "#";
-  };
-
   // Real plan-access + enabled/paused state, sourced from
   // /api/subscription/getUserSubscription (subscriptionConfig.allowedApps +
   // enabledApps) rather than a hardcoded, possibly-stale plan/feature map.
@@ -431,33 +382,19 @@ export default function DashboardHome() {
   return (
     <div className="dashboard-home">
       <div className="dashboard-inner">
-        {/* Notification Banners - shown first so the setup/upgrade prompts
-            are the first thing a merchant sees on the page. */}
-        {(showExtensionBanner || showUpgradeBanner) && (
+        {/* Notification Banner - shown first so the upgrade prompt is the
+            first thing a merchant sees on the page. The per-app "enable in
+            theme editor" prompt lives on each app's own homepage instead,
+            since only that app knows which specific block/embed to link to. */}
+        {showUpgradeBanner && (
           <div className="notification-card">
-            {showExtensionBanner && (
-              <a
-                href={getThemeExtensionUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
-              >
-                <ExternalLink size={16} className="notification-icon" />
-                <span>
-                  Enable BusyBuddy: open the theme editor, then{" "}
-                  <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong>
-                </span>
-              </a>
-            )}
-            {showUpgradeBanner && (
-              <div
-                className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
-                onClick={() => navigate("/plan" + location.search)}
-              >
-                <Zap size={16} className="notification-icon" />
-                <span>Upgrade your plan for more features!</span>
-              </div>
-            )}
+            <div
+              className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
+              onClick={() => navigate("/plan" + location.search)}
+            >
+              <Zap size={16} className="notification-icon" />
+              <span>Upgrade your plan for more features!</span>
+            </div>
           </div>
         )}
 

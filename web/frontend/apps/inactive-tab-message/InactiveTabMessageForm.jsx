@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "./DiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import ThemeExtensionBanner from "../../components/ThemeExtensionBanner";
 
 export default function InactiveTabMessageForm() {
   const navigate = useNavigate();
@@ -21,19 +22,10 @@ export default function InactiveTabMessageForm() {
     navigate('/' + location.search);
   };
 
-  // inactive_tab.liquid targets "body", so it's a real app embed and
-  // ?context=apps correctly opens the "App embeds" panel where merchants
-  // toggle it on (unlike the Announcement Bar's section block, which needs
-  // "Add block" instead).
-  const getThemeEmbedUrl = () => {
-    const params = new URLSearchParams(location.search);
-    const shop = params.get("shop");
-    return shop ? `https://${shop}/admin/themes/current/editor?context=apps` : "#";
-  };
-
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
+        <ThemeExtensionBanner appId="inactive_tab" />
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
             {fromDiscountPage ? (
@@ -77,14 +69,6 @@ export default function InactiveTabMessageForm() {
               alert in the title of their browser tab, so they’ll remember their
               cart, discounts, or promotions!
             </p>
-            <a
-              href={getThemeEmbedUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ fontSize: "13px", fontWeight: 500 }}
-            >
-              Enable BusyBuddy Inactive Tab in Shopify Theme Extensions →
-            </a>
           </Col>
 
           {fromDiscountPage ? (

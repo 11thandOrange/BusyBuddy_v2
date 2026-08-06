@@ -73,3 +73,35 @@ export const appMapping = {
   },
 };
 
+// Maps each appId to the physical theme-extension block/embed that renders it
+// on the storefront, so the theme-editor deep link and the "is it enabled in
+// the theme" check can be generated generically instead of hardcoded to one
+// app. The 4 discount-type apps all share a single block (bundles_and_discounts,
+// née star_rating.liquid) since the backend's getActiveBundle already resolves
+// one winning bundle across all 4 types on a shared product.
+const BUNDLE_BLOCK = {
+  handle: "bundles_and_discounts",
+  target: "section",
+  editorTemplate: "product",
+  editorSectionTarget: "newAppsSection",
+  scanAssets: ["templates/product.json"],
+};
+
+export const themeBlockConfig = {
+  announcement_bar: {
+    handle: "announcement_bar",
+    target: "section",
+    editorTemplate: "index",
+    editorSectionTarget: "sectionGroup:header",
+    scanAssets: ["sections/header-group.json", "templates/index.json"],
+  },
+  inactive_tab: {
+    handle: "inactive_tab",
+    target: "body",
+  },
+  bundle_discount: BUNDLE_BLOCK,
+  buy_one_get_one: BUNDLE_BLOCK,
+  volume_discounts: BUNDLE_BLOCK,
+  mix_match: BUNDLE_BLOCK,
+};
+

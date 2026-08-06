@@ -122,13 +122,23 @@ app.use(
     async (_req, res, next) => {
       // @ts-ignore
       var shop = _req.query.shop.toString();
-      const isValid = verifyShopSignature(shop, _req.query.signature);
+      // Two distinct signers both land in this branch (anything with a
+      // `shop` query param): real Shopify App Proxy requests (getActiveBundle/
+      // getInactiveTab/getAnnouncementBar, hit by storefront visitors, not
+      // signed-in merchants) sign ALL query params, which verifySHA256
+      // checks; the standalone editor's own links sign only `{shop}` via
+      // generateSignature, which verifyShopSignature checks - verifySHA256
+      // naturally fails those (extra unsigned business params like search/
+      // cursor break its all-params digest), so this falls through to
+      // verifyShopSignature for them. Was previously verifyShopSignature-only,
+      // which meant no real App Proxy request could ever pass this check.
+      const isValid = verifySHA256(_req) || verifyShopSignature(shop, _req.query.signature);
       if (!isValid) {
         // JSON, not plain text: the editor's fetch callers all do
         // `await response.json()` unconditionally, and a plain-text 401 body
         // used to blow up as "Unexpected token 'U', 'Unauthorized' is not
         // valid JSON" instead of surfacing what actually went wrong.
-        return res.status(401).json({ message: "Invalid editor signature - the shop/signature pair on this page is stale or was tampered with." });
+        return res.status(401).json({ message: "Invalid request signature - the shop/signature pair on this request is stale, missing a param, or was tampered with." });
       }
       const sessionId = await shopify.api.session.getOfflineId(shop);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
