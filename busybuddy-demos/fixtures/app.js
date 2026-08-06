@@ -254,6 +254,18 @@ export async function addProductToPool(popup, productName) {
 }
 
 /**
+ * Same pool as addProductToPool, but for a partial search term that
+ * matches more than one product (e.g. "cam" matching both "Polaroid
+ * Instant Camera" and "MiniDV Camcorder") - searches one term, clicks the
+ * row identified by its full title rather than blindly taking the first
+ * text match, which could otherwise land on the wrong product's row.
+ */
+export async function addProductToPoolBySearch(popup, searchTerm, productTitleToAdd) {
+  await popup.getByPlaceholder('Search products...').fill(searchTerm);
+  await popup.getByText(productTitleToAdd, { exact: false }).first().click();
+}
+
+/**
  * VolumeDiscountEditor.jsx renders its "+ Add Products" toggle and search
  * field like Bundle/BOGO/Mix and Match, but each product row itself is a
  * directly clickable <div onClick={() => handleAddProduct(product)}> (the
