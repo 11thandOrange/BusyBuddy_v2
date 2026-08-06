@@ -20,6 +20,7 @@ import {
   appendToDescription,
   selectDeviceView,
   refreshAndVerifyInList,
+  toggleAppWideSwitchAndRestore,
 } from '../../fixtures/app.js';
 
 const VOLUME_TEST_TITLE = 'Create a new Volume Discount-test';
@@ -38,8 +39,17 @@ function toDateTimeLocal(date) {
 // editor session Suite 1 opens, ending in a single Save.
 test('Volume Discount: create + customize full editor workflow', async ({ page, app }) => {
   // --- Suite 1: Create Volume Discount Bundle ---
+  // Step 2 (added once ticket #309 was updated to require this): the
+  // app-wide Active/Inactive switch (ToggelSwitch.jsx, appId="volume_discounts")
+  // only renders on this app's own page, reached via "Manage" - not on the
+  // dashboard tile itself - so this now opens the editor via that page's
+  // own "Create New Volume Discount" button instead of the dashboard
+  // tile's "Create" button used previously.
+  await dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /manage/i }).click();
+  await toggleAppWideSwitchAndRestore(app);
+
   const popup = await openEditorPopup(page, () =>
-    dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /create/i }).click()
+    app.getByRole('button', { name: 'Create New Volume Discount' }).click()
   );
   await expect(popup.locator('input.editable-title')).toBeVisible({ timeout: 15_000 });
 
@@ -150,6 +160,5 @@ test('Volume Discount: create + customize full editor workflow', async ({ page, 
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
-  await dashboardTile(app, 'Volume Discounts').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', new RegExp(VOLUME_TEST_TITLE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
 });

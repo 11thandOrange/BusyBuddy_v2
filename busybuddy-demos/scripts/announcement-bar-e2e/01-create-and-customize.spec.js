@@ -16,6 +16,7 @@ import {
   selectThemeByPosition,
   selectDeviceView,
   refreshAndVerifyInList,
+  toggleAppWideSwitchAndRestore,
 } from '../../fixtures/app.js';
 
 // Ticket: Announcement Bar App - Comprehensive Playwright E2E Test Suite
@@ -37,8 +38,17 @@ function toDateTimeLocal(date) {
 // session Suite 1 opens, ending in a single Save.
 test('Announcement Bar: create + customize full editor workflow', async ({ page, app }) => {
   // --- Suite 1: Create Announcement Bar ---
+  // Step 2 (added once ticket #310 was updated to require this): the
+  // app-wide Active/Inactive switch (ToggelSwitch.jsx, appId="announcement_bar")
+  // only renders on this app's own page, reached via "Manage" - not on the
+  // dashboard tile itself - so this now opens the editor via that page's
+  // own "Create Announcement Bar" button instead of the dashboard tile's
+  // "Create" button used previously.
+  await dashboardTile(app, 'Announcement Bar').getByRole('button', { name: /manage/i }).click();
+  await toggleAppWideSwitchAndRestore(app);
+
   const popup = await openEditorPopup(page, () =>
-    dashboardTile(app, 'Announcement Bar').getByRole('button', { name: /create/i }).click()
+    app.getByRole('button', { name: 'Create Announcement Bar' }).click()
   );
   // Editor opens directly on Content > Message Text (activeTab/activeSetting
   // both default there in AnnouncementBarEditor.jsx) - no header title input
@@ -151,6 +161,5 @@ test('Announcement Bar: create + customize full editor workflow', async ({ page,
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
-  await dashboardTile(app, 'Announcement Bar').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Announcement Bars', TEST_MESSAGE);
 });

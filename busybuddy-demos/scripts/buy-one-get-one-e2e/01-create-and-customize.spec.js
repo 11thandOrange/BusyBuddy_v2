@@ -21,6 +21,7 @@ import {
   appendToDescription,
   selectDeviceView,
   refreshAndVerifyInList,
+  toggleAppWideSwitchAndRestore,
 } from '../../fixtures/app.js';
 
 const BOGO_TEST_TITLE = 'Create a new BOGO Bundle-test';
@@ -39,9 +40,16 @@ function toDateTimeLocal(date) {
 // session Suite 1 opens, ending in a single Save.
 test('BOGO: create + customize full editor workflow', async ({ page, app }) => {
   // --- Suite 1: Create BOGO Bundle ---
-  const popup = await openEditorPopup(page, () =>
-    dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /create/i }).click()
-  );
+  // Step 2 (added once ticket #307 was updated to require this): the
+  // app-wide Active/Inactive switch (ToggelSwitch.jsx, appId="buy_one_get_one")
+  // only renders on this app's own page, reached via "Manage" - not on the
+  // dashboard tile itself - so this now opens the editor via that page's
+  // own "Create New BOGO" button instead of the dashboard tile's "Create"
+  // button used previously.
+  await dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /manage/i }).click();
+  await toggleAppWideSwitchAndRestore(app);
+
+  const popup = await openEditorPopup(page, () => app.getByRole('button', { name: 'Create New BOGO' }).click());
   await expect(popup.locator('input.editable-title')).toBeVisible({ timeout: 15_000 });
 
   await setEditorTitle(popup, BOGO_TEST_TITLE);
@@ -146,6 +154,5 @@ test('BOGO: create + customize full editor workflow', async ({ page, app }) => {
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
-  await dashboardTile(app, 'Buy One Get One').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', new RegExp(BOGO_TEST_TITLE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
 });

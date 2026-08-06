@@ -503,3 +503,38 @@ export function announcementBarRowByMessage(app, message) {
 export async function editAnnouncementBarRow(page, row) {
   return openEditorPopup(page, () => row.getByRole('button').first().click());
 }
+
+/**
+ * Locates the app-wide Active/Inactive switch (components/ToggelSwitch.jsx),
+ * rendered once per app on that app's own page (reached via the dashboard
+ * tile's "Manage" button) next to that page's own "Create New ..." button -
+ * a completely different control from any per-item Active/Inactive status
+ * inside BundelDiscountList.jsx/DiscountList.jsx's list rows, which also use
+ * the words "Active"/"Inactive". The outer div's `title` attribute ("Click
+ * to disable"/"Click to enable") is unique to this component across every
+ * app's page, so it's used to scope the locator instead of that shared
+ * text.
+ */
+export function appWideToggle(app) {
+  return app.locator('[title^="Click to "]').first();
+}
+
+/**
+ * Clicks the app-wide switch, confirms the visible "Active"/"Inactive"
+ * label actually flips, then clicks it again to restore the original
+ * state. Unlike a per-item Active/Inactive status, this switch controls
+ * whether the app's real storefront behavior runs at all
+ * (POST /api/subscription/toggle-app) - leaving it flipped would affect
+ * every other test using the same live store, not just this assertion.
+ */
+export async function toggleAppWideSwitchAndRestore(app) {
+  const toggle = appWideToggle(app);
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
+
+  await toggle.click();
+  await expect(toggle.getByText(wasActive ? 'Inactive' : 'Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+
+  await toggle.click();
+  await expect(toggle.getByText(wasActive ? 'Active' : 'Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
+}

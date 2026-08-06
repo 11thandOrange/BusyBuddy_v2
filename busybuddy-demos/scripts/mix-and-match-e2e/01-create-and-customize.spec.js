@@ -21,6 +21,7 @@ import {
   appendToDescription,
   selectDeviceView,
   refreshAndVerifyInList,
+  toggleAppWideSwitchAndRestore,
 } from '../../fixtures/app.js';
 
 // MixAndMatchEditor.jsx wires the header's editable title to
@@ -46,9 +47,16 @@ function toDateTimeLocal(date) {
 // same editor session Suite 1 opens, ending in a single Save.
 test('Mix & Match: create + customize full editor workflow', async ({ page, app }) => {
   // --- Suite 1: Create Mix & Match Discount Bundle ---
-  const popup = await openEditorPopup(page, () =>
-    dashboardTile(app, 'Mix & Match').getByRole('button', { name: /create/i }).click()
-  );
+  // Step 2 (added once ticket #308 was updated to require this): the
+  // app-wide Active/Inactive switch (ToggelSwitch.jsx, appId="mix_match")
+  // only renders on this app's own page, reached via "Manage" - not on the
+  // dashboard tile itself - so this now opens the editor via that page's
+  // own "Create New Mix & Match" button instead of the dashboard tile's
+  // "Create" button used previously.
+  await dashboardTile(app, 'Mix & Match').getByRole('button', { name: /manage/i }).click();
+  await toggleAppWideSwitchAndRestore(app);
+
+  const popup = await openEditorPopup(page, () => app.getByRole('button', { name: 'Create New Mix & Match' }).click());
   await expect(popup.locator('input.editable-title')).toBeVisible({ timeout: 15_000 });
 
   await setEditorTitle(popup, HEADER_TITLE);
@@ -166,6 +174,5 @@ test('Mix & Match: create + customize full editor workflow', async ({ page, app 
   await saveEditor(popup);
   await waitForSaveAndClose(popup);
 
-  await dashboardTile(app, 'Mix & Match').getByRole('button', { name: /manage/i }).click();
   await refreshAndVerifyInList(app, 'Discounts', new RegExp(PRIMARY_MESSAGE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
 });
