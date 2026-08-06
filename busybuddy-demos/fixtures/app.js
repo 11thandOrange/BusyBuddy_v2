@@ -551,7 +551,15 @@ export async function toggleAppWideSwitchAndRestore(app) {
   let flipped = false;
   for (let attempt = 0; attempt < 8 && !flipped; attempt++) {
     await toggle.click();
-    flipped = await toggle.getByText('Active', { exact: true }).isVisible({ timeout: 3_000 }).catch(() => false);
+    // locator.isVisible({timeout}) does NOT poll/wait despite the option
+    // name - it returns the current state almost immediately, which
+    // silently turned this into 8 back-to-back clicks with no real delay
+    // between them at all. expect(...).toBeVisible({timeout}) is the one
+    // that actually retries until the timeout elapses.
+    flipped = await expect(toggle.getByText('Active', { exact: true }))
+      .toBeVisible({ timeout: 3_000 })
+      .then(() => true)
+      .catch(() => false);
   }
   if (!flipped) {
     throw new Error(
