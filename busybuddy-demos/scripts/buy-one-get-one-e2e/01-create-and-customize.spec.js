@@ -114,7 +114,7 @@ test('BOGO: create + customize full editor workflow', async ({ page, app }) => {
   await demoPause(popup);
 
   await clickSidepaneItem(popup, 'Secondary Colors');
-  await fillColorInput(popup, 'Secondary Background Color', '#D3D3D3');
+  await fillColorInput(popup, 'Secondary Background', '#D3D3D3');
   await demoPause(popup);
 
   await clickSidepaneItem(popup, 'Margins');
