@@ -462,3 +462,40 @@ export async function editRowInNewTab(page, row) {
 export async function toggleRowActive(row) {
   await row.locator('input[type="checkbox"]').click();
 }
+
+/**
+ * Picks a theme by its 1-based position in a visual button grid rendered
+ * inside a named ConfigFormGroup (CountdownTimerThemes.jsx's
+ * CountdownThemePicker and AnnouncementBarBackgroundThemes.jsx's
+ * AnnouncementBarThemePicker both render each theme as an unlabeled
+ * <button> in DOM order with no other identifying text).
+ */
+export async function selectThemeByPosition(popup, groupLabel, position) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
+    .locator('button')
+    .nth(position - 1)
+    .click();
+}
+
+/**
+ * Announcement Bar's list (apps/announcement-bar/DiscountList.jsx) renders
+ * each row as its own react-bootstrap <Card>, not the shared .bundlebox
+ * markup the other 4 apps' BundelDiscountList.jsx uses - so it needs its
+ * own row/edit/activate helpers rather than discountRowByTitle/
+ * editRowInNewTab/toggleRowActive above. Rows show bar.message (not
+ * bar.title), so that's what identifies a row here.
+ */
+export function announcementBarRowByMessage(app, message) {
+  return app.locator('.card').filter({ hasText: message }).first();
+}
+
+/**
+ * The Edit (pencil) button is the first of two real <button>s in the row
+ * (Edit then Delete, in that DOM order) - no walk-up needed, unlike the
+ * bundle-type apps' row, since Edit/Delete are direct children here.
+ */
+export async function editAnnouncementBarRow(page, row) {
+  return openEditorPopup(page, () => row.getByRole('button').first().click());
+}
