@@ -919,7 +919,7 @@
         "description": "Handled by getProducts() in web/backend/controller/products/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "41d2fb004fd38f68ed199ec33430e7c2c0f2672a",
+        "_sourceHash": "4137b0fe81b81d5cf12a041984f304b94628686f",
         "params": [
           {
             "name": "cursor",
@@ -930,6 +930,13 @@
           },
           {
             "name": "search",
+            "type": "string",
+            "required": false,
+            "description": "",
+            "in": "query"
+          },
+          {
+            "name": "ids",
             "type": "string",
             "required": false,
             "description": "",
@@ -948,7 +955,7 @@
         "description": "Handled by getCollections() in web/backend/controller/products/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "865899acd3892e5d706131f5db5cd9aa116980cc",
+        "_sourceHash": "c60cf196c36fbc918c279150564db9f000c5eeb5",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -1373,7 +1380,7 @@
         "description": "Handled by createProductBundleV2() in web/backend/controller/bundles/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "be4bee0bb75ea88309cc8a27e5d476ba0f01a5a2",
+        "_sourceHash": "6733c188e4524fc4a9eb5e0fce2b394dacd1fca4",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -1415,7 +1422,7 @@
         "description": "Handled by createMixAndMatchBundle() in web/backend/controller/bundles/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "908bc52ec9ff504d71070f2abecc2d46dd5864f5",
+        "_sourceHash": "0982aa5e3aa22f6d48b04c7356dc896a2a9a85ae",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -1429,7 +1436,7 @@
         "description": "Handled by updateMixAndMatchBundle() in web/backend/controller/bundles/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "da78e2bc7c6f7d973124460836daa03b6957d432",
+        "_sourceHash": "c8cfd004a5baa3115045c1d0a987196ce3872bd6",
         "params": [
           {
             "name": "id",
@@ -1473,7 +1480,7 @@
         "description": "Handled by updateBundle() in web/backend/controller/bundles/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "66e819517f0fb56e2d6e00d541220a31ebef116c",
+        "_sourceHash": "bfdc202bc73380212d38966f0089e3a6b1b2f4c6",
         "params": [
           {
             "name": "id",
@@ -1593,6 +1600,105 @@
             "required": true,
             "description": "",
             "in": "body"
+          },
+          {
+            "name": "description",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "specs",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "secondaryMessage",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "primaryMessage",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "selectedEmoji",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "emojiPosition",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "countdownLabel",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "addToCartText",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "skipOfferText",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "showSkipButton",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          },
+          {
+            "name": "timezone",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "body"
+          }
+        ],
+        "responseExample": "{ }",
+        "liveTestable": false,
+        "sourceFile": "web/backend/routes/bundles/index.js"
+      },
+      {
+        "slug": "get-id",
+        "method": "GET",
+        "path": "/api/bundles/:id",
+        "title": "BundleById",
+        "description": "Handled by getBundleById() in web/backend/controller/bundles/index.js.",
+        "auth": "session",
+        "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
+        "_sourceHash": "58145d6f11b7458c82831c9576e05e2841ae4241",
+        "params": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true,
+            "description": "",
+            "in": "path"
           }
         ],
         "responseExample": "{ }",
@@ -1614,7 +1720,7 @@
         "description": "Handled by createAnnouncementBar() in web/backend/controller/announcementBars/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "91357891de1c06cc49a61b42d529ffc353435cbd",
+        "_sourceHash": "600de268613e77cd822e8300fefde08c13d04723",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -1743,7 +1849,7 @@
         "description": "Handled by updateAnnouncementBar() in web/backend/controller/announcementBars/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "8f4138b77cd281bca87654a5c22b25d55301eef4",
+        "_sourceHash": "c6cb940795ccebb9eb26c032a51548f20b1e03fc",
         "params": [
           {
             "name": "id",
