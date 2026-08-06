@@ -182,14 +182,21 @@ export async function gotoStorefrontProduct(page, handle) {
 }
 
 /**
- * Editor sidepane items (components/Editor/EditorSidepane.jsx) open a
- * config panel by label. The same label text can also appear in the
- * config panel's own heading once selected, so .first() (the sidepane nav
- * item, which renders above the panel) disambiguates the strict-mode
- * violation rather than picking an arbitrary match.
+ * Editor sidepane items (components/Editor/EditorSettingsPane.jsx) open a
+ * config panel by label. Scoped to the actual clickable `.settings-item`
+ * row rather than a bare text match: EditorSettingsPane renders each
+ * group's `.settings-group-title` (plain text, no onClick) immediately
+ * before its `.settings-item`s, and for groups whose title matches their
+ * single item's label verbatim (e.g. "Product Info"), a bare
+ * `getByText(label, {exact:true}).first()` picks that inert title div
+ * instead - a silent no-op click that leaves the panel on whatever was
+ * previously active. The config panel's own heading can also repeat the
+ * label once selected, but scoping to `.settings-item` avoids that
+ * collision too, since headings render in `.config-header`, not as a
+ * `.settings-item`.
  */
 export async function clickSidepaneItem(popup, label) {
-  await popup.getByText(label, { exact: true }).first().click();
+  await popup.locator('.settings-item').filter({ hasText: label }).first().click();
 }
 
 /** Fills the first visible text input/textarea in the current config panel. */
