@@ -13,9 +13,8 @@ import conditional from "express-conditional-middleware";
 import mongoose from "mongoose";
 import * as dotenv from "dotenv";
 import shopData from "./middleware/shopData.js";
-import { verifySHA256, generateSignature, verifyShopSignature } from "./middleware/verify-signature.js";
+import { verifySHA256, verifyShopSignature } from "./middleware/verify-signature.js";
 import { verifyShopifyWebhook } from "./middleware/verifyWebhook.js";
-import sessionModel from "./backend/models/shopify_sessions.model.js"
 import { subscriptionUpdate } from "./backend/services/subscription.js"
 import logger, { reportError } from "./logger.js";
 dotenv.config();
@@ -96,9 +95,6 @@ app.get(
   shopify.config.auth.callbackPath,
   shopify.auth.callback(),
   shopData.shopData,
-    async (req, res, next) => {
-    next();
-  },
   shopify.redirectToShopifyOrAppRoot()
 );
 
@@ -128,12 +124,17 @@ app.use(
       var shop = _req.query.shop.toString();
       const isValid = verifyShopSignature(shop, _req.query.signature);
       if (!isValid) {
-        return res.status(401).send("Unauthorized");
+        // JSON, not plain text: the editor's fetch callers all do
+        // `await response.json()` unconditionally, and a plain-text 401 body
+        // used to blow up as "Unexpected token 'U', 'Unauthorized' is not
+        // valid JSON" instead of surfacing what actually went wrong.
+        return res.status(401).json({ message: "Invalid editor signature - the shop/signature pair on this page is stale or was tampered with." });
       }
       const sessionId = await shopify.api.session.getOfflineId(shop);
       const session = await shopify.config.sessionStorage.loadSession(sessionId);
       if (!session) {
-        return res.status(401).send("Unauthorized");
+        console.log(`No offline session found in sessionStorage for ${shop} (sessionId=${sessionId})`);
+        return res.status(401).json({ message: "No active session found for this shop - it may need to be reinstalled." });
       }
       res.locals.shopify = {
         session,
@@ -173,7 +174,9 @@ app.use("/", async (_req, res, _next) => {
   // Shopify HMAC signature - otherwise an arbitrary caller could force a
   // resync for any shop=<value> they choose.
   if (_req.query.charge_id && _req.query.shop && verifySHA256(_req)) {
-    const session = await sessionModel.findOne({ shop: _req.query.shop });
+    const shop = _req.query.shop.toString();
+    const sessionId = await shopify.api.session.getOfflineId(shop);
+    const session = await shopify.config.sessionStorage.loadSession(sessionId);
     if (session) {
       subscriptionUpdate(session);
     }
@@ -193,57 +196,16 @@ const serveFrontendHtml = (_req, res) => {
     );
 };
 
-// Helper function to serve the editor HTML (without App Bridge)
-// Injects a shop+signature pair (see verify-signature.js's generateSignature)
-// so the editor's own /api/* calls - which have no App Bridge session token
-// to authenticate with - can use the shop+signature path that web/index.js's
-// /api/* middleware already supports but nothing was previously feeding.
-const serveEditorHtml = (_req, res, shop, signature) => {
-  return res
-    .status(200)
-    .set("Content-Type", "text/html")
-    .send(
-      readFileSync(join(STATIC_PATH, "editor.html"))
-        .toString()
-        .replace("%EDITOR_SHOP%", shop || "")
-        .replace("%EDITOR_SIGNATURE%", signature || "")
-    );
-};
-
-// Editor routes opened in new tab - validate shop session from DB.
-// This allows editor to work in standalone tab without Shopify embedded
-// context. MUST run before the static file server below: the Vite build
-// outputs a real editor.html onto disk, so serve-static would otherwise
-// serve that raw file directly (skipping session validation *and* the
-// %EDITOR_SHOP%/%EDITOR_SIGNATURE% substitution below) for any request
-// that reaches it first - which prior to this comment is exactly what was
-// happening, silently, regardless of what this block below did.
-app.use("/*", async (_req, res, _next) => {
-  const fullPath = _req.originalUrl || _req.url;
-  // Exact match (not a substring check) so this never accidentally catches
-  // a built asset whose filename happens to contain "editor" (e.g. Vite's
-  // /assets/editor-<hash>.js chunk for this same entry point).
-  const isEditorRoute = fullPath === '/editor.html' || fullPath.startsWith('/editor.html?');
-  const shop = _req.query.shop;
-
-  if (isEditorRoute && shop) {
-    try {
-      // Use sessionModel directly (same approach as API validation)
-      const session = await sessionModel.findOne({ shop: shop });
-
-      if (session && session.accessToken) {
-        // Valid session exists - serve the editor HTML (no App Bridge)
-        const signature = generateSignature({ shop });
-        return serveEditorHtml(_req, res, shop, signature);
-      }
-    } catch (error) {
-      console.log("Editor session error:", error.message);
-    }
-  }
-
-  _next();
-});
-
+// /editor.html is served as a plain static file, same as any other built
+// asset - no server-side templating or session gating. It gets a signed
+// shop+signature pair directly in its URL query string, minted by
+// GET /api/editor/signature and attached before the tab is even opened
+// (see web/frontend/utils/openEditorTab.js). This used to be done by
+// substituting %EDITOR_SHOP%/%EDITOR_SIGNATURE% placeholders into the file
+// here, gated on a server-side session lookup - but that substitution only
+// ran when Express itself served the file, which never happens in local
+// dev (`npm run dev` serves editor.html straight off Vite's dev server),
+// so the editor was always broken outside of a production build.
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);

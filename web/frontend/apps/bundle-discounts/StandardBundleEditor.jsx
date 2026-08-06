@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -14,10 +14,16 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
+import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
+import EmojiPicker from 'emoji-picker-react';
 import tshirt from "./tshirt.png";
 
 // Bundle Discounts specific settings configuration
@@ -61,6 +67,12 @@ const BUNDLE_SETTINGS = {
       items: [
         { id: 'add-to-cart-button', icon: '🛒', label: 'Add to Cart Button', iconClass: 'icon-cart' },
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
+      ],
+    },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
       ],
     },
   ],
@@ -121,13 +133,11 @@ const TIMEZONE_OPTIONS = [
 export const StandardBundleEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('bundle-discount');
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -203,16 +213,59 @@ export const StandardBundleEditor = () => {
   const [showEmoji, setShowEmoji] = useState(true);
   const [selectedEmoji, setSelectedEmoji] = useState('🔥');
   const [emojiPosition, setEmojiPosition] = useState('end');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   
   // Countdown Timer
   const [showCountdown, setShowCountdown] = useState(false);
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
   const [countdownLabel, setCountdownLabel] = useState('Ends in:');
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   
   // Call to Action Buttons
   const [addToCartText, setAddToCartText] = useState('Add To Cart');
   const [skipOfferText, setSkipOfferText] = useState('Skip Offer');
   const [showSkipButton, setShowSkipButton] = useState(true);
+
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+  // Tracks the last auto-generated description this effect itself wrote, so
+  // it can tell "still what we generated" (keep syncing) apart from "the
+  // merchant edited it" (stop touching it) without a separate dirty flag.
+  const lastAutoDescriptionRef = useRef('');
+
+  // Editing an existing pre-filled value "claims" that row so the sync
+  // below never quietly reverts what the merchant just typed.
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value, source: 'custom' } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '', source: 'custom' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Pre-fills description/specs from the bundle's own selected products -
+  // re-runs every time that list changes. Specs pulled from a product's
+  // metafields are always kept in sync with the current product list;
+  // anything the merchant typed themselves (source: 'custom') is never
+  // touched. The description is a single freeform field, not a list, so it
+  // can only be auto-synced while it still matches what this effect itself
+  // last generated - the moment the merchant edits it, it's ignored.
+  useEffect(() => {
+    const autoSpecs = selectedProducts.flatMap(metafieldsToSpecs);
+    setProductSpecs((prev) => [...prev.filter((s) => s.source !== 'product'), ...autoSpecs]);
+
+    const autoDescription = buildAutoDescription(selectedProducts);
+    setProductDescription((prev) => {
+      if (prev === '' || prev === lastAutoDescriptionRef.current) {
+        lastAutoDescriptionRef.current = autoDescription;
+        return autoDescription;
+      }
+      return prev;
+    });
+  }, [selectedProducts]);
 
   // === LAYOUT SETTINGS ===
   const [margins, setMargins] = useState({
@@ -246,11 +299,18 @@ export const StandardBundleEditor = () => {
           // Populate form state from fetched data
           setBundleEnabled(bundle.status ?? true);
           setSelectedProducts(bundle.products || []);
+          // The stored snapshot may be stale (older bundles never had
+          // images captured at all) or just outdated - refresh every
+          // already-selected product with live Shopify data instead of
+          // waiting for the merchant to re-add something.
+          if (bundle.products?.length) {
+            enrichProductsWithLiveData(bundle.products).then(setSelectedProducts);
+          }
           setDiscountType(bundle.discountType || '');
           setDiscountValue(bundle.discountValue || '');
           setBundleTitle(bundle.title || 'Buy Together & Save More!🔥');
           setBundleInternalName(bundle.internalName || '');
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setColorSettings({
             primaryTextColor: bundle.widgetAppearance?.primaryTextColor || '#303030',
             secondaryTextColor: bundle.widgetAppearance?.secondaryTextColor || '#000000',
@@ -263,25 +323,33 @@ export const StandardBundleEditor = () => {
           });
           setPrimaryMessage(bundle.primaryMessage || 'Buy Together & Save More!');
           setSecondaryMessage(bundle.secondaryMessage || 'Get this bundle and save on your purchase');
-          setShowEmoji(bundle.showEmoji ?? true);
+          setShowEmoji(bundle.widgetAppearance?.addEmoji ?? true);
           setSelectedEmoji(bundle.selectedEmoji || '🔥');
           setEmojiPosition(bundle.emojiPosition || 'end');
           setShowCountdown(bundle.widgetAppearance?.isShowCountDownTimer || false);
           setCountdownLabel(bundle.countdownLabel || 'Ends in:');
+          setCountdownTheme(bundle.widgetAppearance?.offerTagTheme || 'classic');
           setAddToCartText(bundle.addToCartText || 'Add To Cart');
           setSkipOfferText(bundle.skipOfferText || 'Skip Offer');
           setShowSkipButton(bundle.showSkipButton ?? true);
+          setProductDescription(bundle.description || '');
+          // Specs saved before source-tagging existed, and any the
+          // merchant typed in themselves, are indistinguishable from here -
+          // treat them as custom so the live product-data sync below never
+          // silently overwrites them.
+          setProductSpecs((bundle.specs || []).map((s) => ({ ...s, source: s.source || 'custom' })));
           setMargins({
             top: bundle.widgetAppearance?.topMargin || 20,
             bottom: bundle.widgetAppearance?.bottomMargin || 20,
           });
           setCornerRadius(bundle.widgetAppearance?.cardCornerRadius || '20');
-          setStartDate(bundle.startDate || '');
-          setEndDate(bundle.endDate || '');
+          setStartDate(bundle.startDate ? new Date(bundle.startDate).toISOString().slice(0, 16) : '');
+          setEndDate(bundle.endDate ? new Date(bundle.endDate).toISOString().slice(0, 16) : '');
+          setTimezone(bundle.timezone || 'GMT');
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -316,38 +384,16 @@ export const StandardBundleEditor = () => {
           "Content-Type": "application/json",
         },
       });
+      const data = await safeParseJson(response);
       if (!response.ok) {
-        throw new Error("Failed to fetch products");
+        throw new Error(data?.message || "Failed to fetch products");
       }
-      const data = await response.json();
       const edges = data.data?.edges || [];
-      // Transform products to match production bundle format
-      const transformedProducts = edges.map(edge => {
-        const product = edge.node;
-        // Build optionSelections in the same format as production editor
-        const optionSelections = product.options?.map(opt => ({
-          componentOptionId: opt.id,
-          name: opt.name,
-          uniqueName: `${product.title} ${opt.name}`,
-          values: opt.values
-        })) || [];
-        
-        return {
-          id: product.id,
-          productId: product.id,  // GID format: gid://shopify/Product/ID
-          title: product.title,
-          price: product.variants?.edges?.[0]?.node?.price || '0.00',
-          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
-          handle: product.handle,
-          quantity: 1,  // Default quantity (required for storefront)
-          variants: product.variants?.edges?.map(v => v.node) || [],
-          optionSelections: optionSelections
-        };
-      });
+      const transformedProducts = edges.map(edge => transformProductNode(edge.node));
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -372,23 +418,29 @@ export const StandardBundleEditor = () => {
     
     const calculateTimeLeft = () => {
       const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      
-      const diff = endOfDay - now;
+      // Counts down to the bundle's actual schedule end date, matching what
+      // the real storefront widget counts down to - not an arbitrary
+      // end-of-today target unrelated to the Schedule tab.
+      let target = endDate ? new Date(endDate) : null;
+      if (!target || isNaN(target.getTime())) {
+        target = new Date();
+        target.setHours(23, 59, 59, 999);
+      }
+
+      const diff = target - now;
       if (diff <= 0) return { hours: '00', minutes: '00', seconds: '00' };
-      
+
       return {
         hours: String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0'),
         minutes: String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0'),
         seconds: String(Math.floor((diff / 1000) % 60)).padStart(2, '0'),
       };
     };
-    
+
     setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   // Get settings for current tab
   const currentSettings = BUNDLE_SETTINGS[activeTab] || [];
@@ -438,37 +490,37 @@ export const StandardBundleEditor = () => {
   const handleSave = async () => {
     // Validation
     if (selectedProducts.length < 2) {
-      shopify?.toast?.show("Please select at least 2 products for the bundle.", {
+      showToast("Please select at least 2 products for the bundle.", {
         duration: 4000,
       });
       return;
     }
     if (!bundleTitle || bundleTitle.trim() === "") {
-      shopify?.toast?.show("Please enter a bundle title.", {
+      showToast("Please enter a bundle title.", {
         duration: 4000,
       });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type.", {
+      showToast("Please select a discount type.", {
         duration: 4000,
       });
       return;
     }
     if (!discountValue || isNaN(discountValue) || discountValue <= 0) {
-      shopify?.toast?.show("Please enter a valid discount value.", {
+      showToast("Please enter a valid discount value.", {
         duration: 4000,
       });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100.", {
+      showToast("Percentage discount cannot exceed 100.", {
         duration: 4000,
       });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date.", {
+      showToast("End date must be after start date.", {
         duration: 4000,
       });
       return;
@@ -483,6 +535,16 @@ export const StandardBundleEditor = () => {
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Bundle Discount",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
+      primaryMessage: primaryMessage,
+      secondaryMessage: secondaryMessage,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
+      countdownLabel: countdownLabel,
+      addToCartText: addToCartText,
+      skipOfferText: skipOfferText,
+      showSkipButton: showSkipButton,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -492,6 +554,7 @@ export const StandardBundleEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -500,6 +563,7 @@ export const StandardBundleEditor = () => {
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: timezone,
     };
 
     setIsSaving(true);
@@ -520,22 +584,25 @@ export const StandardBundleEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, {
           duration: 5000,
+          tone: "success",
         });
-        // Clear unsaved changes flag and close editor
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
+        const errorData = await response.json().catch(() => null);
         console.error("Error " + (isEditing ? "updating" : "creating") + " bundle");
-        shopify?.toast?.show(
-          `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
+        showToast(
+          errorData?.error || `Oops! Something went wrong while ${isEditing ? "updating" : "creating"} the bundle.`,
           { duration: 5000 }
         );
       }
     } catch (error) {
       console.error("Save error:", error);
-      shopify?.toast?.show("Failed to save bundle. Please try again.", {
+      showToast("Failed to save bundle. Please try again.", {
         duration: 5000,
       });
     } finally {
@@ -552,7 +619,7 @@ export const StandardBundleEditor = () => {
         const availableProducts = getFilteredProducts();
 
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your bundle">
+          <EditorConfigPanel title="Select Products" description="Add at least 2 products to your bundle - a single product can't be bundled with itself.">
             {showProductPicker ? (
               <>
                 {/* Product Picker Header */}
@@ -859,25 +926,36 @@ export const StandardBundleEditor = () => {
             />
             {showEmoji && (
               <>
-                <ConfigFormGroup label="Select Emoji">
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    {['🔥', '⭐', '💎', '🎁', '💰', '🏷️', '✨', '🛒', '❤️', '👍'].map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setSelectedEmoji(emoji)}
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          fontSize: '20px',
-                          border: selectedEmoji === emoji ? '2px solid #5169DD' : '1px solid rgba(255,255,255,0.2)',
-                          borderRadius: '8px',
-                          background: selectedEmoji === emoji ? 'rgba(81, 105, 221, 0.2)' : 'rgba(255,255,255,0.05)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
+                <ConfigFormGroup label="Emoji">
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{selectedEmoji}</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                    </button>
+                    {showEmojiPickerPopup && (
+                      <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) => {
+                            setSelectedEmoji(emojiData.emoji);
+                            setShowEmojiPickerPopup(false);
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Emoji Position">
@@ -885,9 +963,9 @@ export const StandardBundleEditor = () => {
                     value={emojiPosition}
                     onChange={(e) => setEmojiPosition(e.target.value)}
                     options={[
-                      { value: 'start', label: 'Before text' },
-                      { value: 'end', label: 'After text' },
-                      { value: 'both', label: 'Both sides' },
+                      { value: 'start', label: 'Left' },
+                      { value: 'end', label: 'Right' },
+                      { value: 'both', label: 'Both Sides' },
                     ]}
                   />
                 </ConfigFormGroup>
@@ -909,6 +987,14 @@ export const StandardBundleEditor = () => {
             />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Label" hint="Text shown before the countdown">
                   <ConfigInput
                     type="text"
@@ -987,6 +1073,47 @@ export const StandardBundleEditor = () => {
           </EditorConfigPanel>
         );
 
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
+          </EditorConfigPanel>
+        );
+
       // === APPEARANCE TAB ===
       case 'margins':
         return (
@@ -1037,25 +1164,8 @@ export const StandardBundleEditor = () => {
             title="Start Date"
             description="When should the bundle start showing?"
           >
-            <ConfigFormGroup label="Date">
-              <ConfigInput
-                type="date"
-                value={startDate.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = startDate.split('T')[1] || '00:00';
-                  setStartDate(e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-              />
-            </ConfigFormGroup>
-            <ConfigFormGroup label="Time">
-              <ConfigInput
-                type="time"
-                value={startDate.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setStartDate(`${date}T${e.target.value}`);
-                }}
-              />
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Timezone">
               <ConfigSelect
@@ -1065,10 +1175,10 @@ export const StandardBundleEditor = () => {
               />
             </ConfigFormGroup>
             {startDate && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '10px', 
-                background: 'rgba(52, 199, 89, 0.1)', 
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
                 borderRadius: '8px',
                 color: 'rgba(255,255,255,0.8)',
                 fontSize: '13px'
@@ -1082,12 +1192,24 @@ export const StandardBundleEditor = () => {
       case 'end-date':
         return (
           <EditorConfigPanel title="End Date" description="When to stop showing">
-            <ConfigFormGroup label="Date">
-              <ConfigInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
             <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
               💡 Leave empty for evergreen bundles that run indefinitely
             </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -1117,43 +1239,18 @@ export const StandardBundleEditor = () => {
 
   const renderCountdownTimer = () => {
     if (!showCountdown) return null;
-    
+
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '6px',
-        padding: '8px 12px',
-        background: colorSettings.countdownBgColor,
-        borderRadius: '8px',
-        marginBottom: '12px',
-      }}>
-        <span style={{ color: colorSettings.countdownTextColor, fontSize: '12px', fontWeight: '600' }}>
-          {countdownLabel}
-        </span>
-        {[
-          { value: timeLeft.hours, label: 'HRS' },
-          { value: timeLeft.minutes, label: 'MIN' },
-          { value: timeLeft.seconds, label: 'SEC' },
-        ].map((item, idx) => (
-          <React.Fragment key={idx}>
-            <div style={{
-              background: 'rgba(255,255,255,0.2)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              textAlign: 'center',
-            }}>
-              <div style={{ fontSize: '14px', fontWeight: '700', color: colorSettings.countdownTextColor }}>
-                {item.value}
-              </div>
-              <div style={{ fontSize: '8px', color: colorSettings.countdownTextColor, opacity: 0.8 }}>
-                {item.label}
-              </div>
-            </div>
-            {idx < 2 && <span style={{ color: colorSettings.countdownTextColor, fontWeight: 'bold' }}>:</span>}
-          </React.Fragment>
-        ))}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+        <CountdownTimerDisplay
+          theme={countdownTheme}
+          bgColor={colorSettings.countdownBgColor}
+          textColor={colorSettings.countdownTextColor}
+          hours={timeLeft.hours}
+          minutes={timeLeft.minutes}
+          seconds={timeLeft.seconds}
+          label={countdownLabel}
+        />
       </div>
     );
   };
@@ -1213,10 +1310,13 @@ export const StandardBundleEditor = () => {
                   borderRadius: '12px',
                   border: `1px solid ${colorSettings.borderColor}`,
                 }}>
-                  <img
-                    src={product.media || tshirt}
+                  <ProductImageCarousel
+                    images={product.images}
+                    fallback={product.media || tshirt}
                     alt={product.title}
-                    style={{ width: '50px', height: '50px', borderRadius: '8px', objectFit: 'cover' }}
+                    width={50}
+                    height={50}
+                    borderRadius="8px"
                   />
                   <div style={{ flex: 1 }}>
                     <div style={{ color: colorSettings.primaryTextColor, fontSize: '13px', fontWeight: '500' }}>
@@ -1263,82 +1363,85 @@ export const StandardBundleEditor = () => {
           </div>
         )}
 
-        {/* Total & Buttons */}
-        <div style={{ marginTop: '12px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: '16px',
-            background: colorSettings.primaryBackgroundColor,
-            borderRadius: '12px',
-            border: `1px solid ${colorSettings.borderColor}`,
-          }}>
-            <div>
-              <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
-                Total
-              </div>
-              {pricing.discountPercentage > 0 && (
-                <div style={{ color: colorSettings.countdownBgColor, fontSize: '11px', marginTop: '4px' }}>
-                  Save {pricing.discountPercentage}% (${pricing.saved})
+        {/* Total & Buttons - nothing real to total or add to cart yet */}
+        {selectedProducts.length > 0 && (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px',
+              background: colorSettings.primaryBackgroundColor,
+              borderRadius: '12px',
+              border: `1px solid ${colorSettings.borderColor}`,
+            }}>
+              <div>
+                <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
+                  Total
                 </div>
-              )}
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
-                ${pricing.discountedPrice}
+                {pricing.discountPercentage > 0 && (
+                  <div style={{ color: colorSettings.countdownBgColor, fontSize: '11px', marginTop: '4px' }}>
+                    Save {pricing.discountPercentage}% (${pricing.saved})
+                  </div>
+                )}
               </div>
-              {pricing.discountPercentage > 0 && (
-                <div style={{ 
-                  color: colorSettings.secondaryTextColor, 
-                  fontSize: '11px', 
-                  textDecoration: 'line-through',
-                  marginTop: '4px'
-                }}>
-                  ${pricing.totalPrice}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ color: colorSettings.primaryTextColor, fontSize: '15px', fontWeight: '600' }}>
+                  ${pricing.discountedPrice}
                 </div>
-              )}
+                {pricing.discountPercentage > 0 && (
+                  <div style={{
+                    color: colorSettings.secondaryTextColor,
+                    fontSize: '11px',
+                    textDecoration: 'line-through',
+                    marginTop: '4px'
+                  }}>
+                    ${pricing.totalPrice}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <button style={{
-            width: '100%',
-            padding: '15px',
-            marginTop: '8px',
-            background: colorSettings.buttonColor,
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            fontSize: '15px',
-            fontWeight: '600',
-            cursor: 'pointer',
-          }}>
-            {addToCartText}
-          </button>
-
-          {showSkipButton && (
             <button style={{
               width: '100%',
               padding: '15px',
               marginTop: '8px',
-              background: colorSettings.secondaryBackgroundColor,
-              color: colorSettings.primaryTextColor,
-              border: `1px solid ${colorSettings.borderColor}`,
+              background: colorSettings.buttonColor,
+              color: 'white',
+              border: 'none',
               borderRadius: '12px',
               fontSize: '15px',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer',
             }}>
-              {skipOfferText}
+              {addToCartText}
             </button>
-          )}
-        </div>
+
+            {showSkipButton && (
+              <button style={{
+                width: '100%',
+                padding: '15px',
+                marginTop: '8px',
+                background: colorSettings.secondaryBackgroundColor,
+                color: colorSettings.primaryTextColor,
+                border: `1px solid ${colorSettings.borderColor}`,
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: '500',
+                cursor: 'pointer',
+              }}>
+                {skipOfferText}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       {/* Left Sidepane */}
       <EditorSidepane
         tabs={TABS}
@@ -1368,9 +1471,36 @@ export const StandardBundleEditor = () => {
           device={device}
           onDeviceChange={setDevice}
         >
-          <ProductPagePreview widgetLabel="Bundle Offer">
-            {renderBundlePreview()}
-          </ProductPagePreview>
+          {activeTab === 'content' && activeSetting === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="Bundle Offer"
+              device={device}
+              images={selectedProducts.flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={selectedProducts.length ? calculateBundlePricing().discountedPrice : undefined}
+              compareAtPrice={selectedProducts.length ? calculateBundlePricing().totalPrice : undefined}
+              description={productDescription}
+              specs={productSpecs}
+              hasProduct={selectedProducts.length > 0}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="Bundle Offer"
+              device={device}
+              images={selectedProducts[0]?.images || []}
+              title={selectedProducts[0]?.title || bundleTitle}
+              price={selectedProducts[0]?.price}
+              description={productDescription}
+              hasProduct={selectedProducts.length > 0}
+            >
+              {renderBundlePreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

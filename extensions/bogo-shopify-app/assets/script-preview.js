@@ -19,6 +19,43 @@ function sanitizeCssColor(value, fallback) {
   return safePattern.test(trimmed) ? trimmed : fallback;
 }
 
+// Renders a bundled product's photo as a swipeable, scroll-snapped strip when
+// more than one image is available, falling back to a single plain <img>
+// (identical markup to the old single-image behavior) when it isn't - so
+// bundles saved before this shipped keep rendering exactly as they did.
+function renderProductImageStrip(images, fallbackImage, altText, size, borderRadius, marginRight, borderStyle) {
+  const safeAlt = `${escapeHtml(altText)} Image`;
+  const list = Array.isArray(images) ? images.filter((src) => typeof src === "string" && src) : [];
+  const marginStyle = marginRight ? `margin-right: ${marginRight}px;` : "";
+  const border = borderStyle ? `border: ${borderStyle};` : "";
+
+  if (list.length <= 1) {
+    const src = escapeHtml(list[0] || fallbackImage || "");
+    return `<img src="${src}" width="${size}" height="${size}" alt="${safeAlt}" style="border-radius: ${borderRadius}px; ${marginStyle} ${border} object-fit: cover; flex-shrink: 0;" />`;
+  }
+
+  const slides = list
+    .map(
+      (src) =>
+        `<img src="${escapeHtml(src)}" alt="${safeAlt}" style="width: ${size}px; height: ${size}px; object-fit: cover; flex-shrink: 0; scroll-snap-align: start;" />`
+    )
+    .join("");
+  const dots = list
+    .map((_, i) => `<span style="width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,${i === 0 ? 0.95 : 0.5});"></span>`)
+    .join("");
+
+  return `
+    <div style="position: relative; width: ${size}px; height: ${size}px; ${marginStyle} ${border} flex-shrink: 0; border-radius: ${borderRadius}px; overflow: hidden;">
+      <div style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; width: 100%; height: 100%; scrollbar-width: none;">
+        ${slides}
+      </div>
+      <div style="position: absolute; bottom: 3px; left: 0; right: 0; display: flex; justify-content: center; gap: 3px; pointer-events: none;">
+        ${dots}
+      </div>
+    </div>
+  `;
+}
+
 class BOGOBundle {
   constructor() {
     this.currentProduct = null;
@@ -502,6 +539,7 @@ class BOGOBundle {
         instanceId: instanceId,
         title: bundleProductItem.title || productData.title,
         image: bundleProductItem.media || productData.images[0]?.src || "",
+        images: bundleProductItem.images || [],
         variants: variants,
         defaultQuantity: quantity,
         options: productData.options,
@@ -681,6 +719,7 @@ class BOGOBundle {
           instanceId: instanceId,
           title: bundleProductItem.title || productData.title,
           image: bundleProductItem.media || productData.images[0]?.src || "",
+          images: bundleProductItem.images || [],
           variants: variants,
           defaultQuantity: quantity,
           options: productData.options,
@@ -882,6 +921,7 @@ class BOGOBundle {
           instanceId: instanceId,
           title: bundleProductItem.title || productData.title,
           image: bundleProductItem.media || productData.images[0]?.src || "",
+          images: bundleProductItem.images || [],
           variants: variants,
           defaultQuantity: quantity,
           options: productData.options,
@@ -1036,6 +1076,7 @@ class BOGOBundle {
         instanceId: instanceId,
         title: bundleProductItem.title || productData.title,
         image: bundleProductItem.media || productData.images[0]?.src || "",
+        images: bundleProductItem.images || [],
         variants: variants,
         defaultQuantity: quantity,
         options: productData.options,
@@ -1510,9 +1551,7 @@ class BOGOBundle {
     max-width: 100%;
     -webkit-overflow-scrolling: touch; ">
         <div style="display:flex; align-items:center; min-width: 445px;">
-          <img src="${
-            product.image || product.images
-          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
+          ${renderProductImageStrip(product.images, product.image, product.title, 100, 10, 15, `1px solid ${borderColor}`)}
           <div style="flex:1;">
             <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${primaryText};">${safeTitle}</p>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1560,9 +1599,7 @@ class BOGOBundle {
         parseInt(appearance?.cardCornerRadius ?? 20, 10) - 5
       )}px; margin-bottom: 15px; background-color: ${primaryBg}; border: 1px solid ${borderColor};">
         <div style="display:flex; align-items:center;">
-          <img src="${
-            product.image || product.images
-          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
+          ${renderProductImageStrip(product.images, product.image, product.title, 100, 10, 15, `1px solid ${borderColor}`)}
           <div style="flex:1;">
             <p style="font-weight:600; font-size:14px; margin:0 0 5px 0; color:${primaryText};">${safeTitle}</p>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -1709,9 +1746,7 @@ class BOGOBundle {
         border: 1px solid ${borderColor};
       ">
         <div style="display: flex; align-items: center;">
-          <img src="${
-            product.image || product.images
-          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px; border: 1px solid ${borderColor};" />
+          ${renderProductImageStrip(product.images, product.image, product.title, 100, 10, 15, `1px solid ${borderColor}`)}
           <div style="flex-grow: 1;">
             <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: ${primaryText};">
               ${safeTitle}
@@ -1860,9 +1895,7 @@ class BOGOBundle {
         ${isCurrentProduct ? "border: 2px solid #3B82F6;" : ""}">
         ${bundleIndicator}
         <div style="display: flex; align-items: center;">
-          <img src="${
-            product.image || product.images
-          }" width="100" height="100" alt="${safeTitle} Image" style="border-radius: 10px; margin-right: 15px;" />
+          ${renderProductImageStrip(product.images, product.image, product.title, 100, 10, 15)}
           <div style="flex-grow: 1;">
             <p style="font-weight: 600; font-size: 14px; margin-bottom: 5px;">
               ${safeTitle}

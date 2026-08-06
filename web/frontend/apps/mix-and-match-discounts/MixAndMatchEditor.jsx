@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -9,14 +9,21 @@ import {
   ConfigFormGroup,
   ConfigInput,
   ConfigSelect,
+  ConfigTextarea,
   ConfigToggleRow,
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
+import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
+import EmojiPicker from 'emoji-picker-react';
 import tshirt from "./tshirt.png";
 
 // Mix and Match settings configuration
@@ -63,6 +70,12 @@ const MIXMATCH_SETTINGS = {
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -104,6 +117,13 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Fixed Amount', label: 'Fixed Amount' },
 ];
 
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
+];
+
 const TIER_OPTIONS = [
   { value: 2, label: 'Buy 2' },
   { value: 3, label: 'Buy 3' },
@@ -121,13 +141,11 @@ const TIER_OPTIONS = [
 export const MixAndMatchEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('mix-and-match');
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -137,7 +155,8 @@ export const MixAndMatchEditor = () => {
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -158,7 +177,7 @@ export const MixAndMatchEditor = () => {
   };
 
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Mix & Match - Save More! 🔥');
+  const [bundleTitle, setBundleTitle] = useState('Mix & Match - Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('Select any items and save on your purchase');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -198,13 +217,18 @@ export const MixAndMatchEditor = () => {
 
   // Display settings
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
+  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
+  const [emojiPosition, setEmojiPosition] = useState('end');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
 
   // Schedule states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
 
   // Button settings
   const [addToCartText, setAddToCartText] = useState('Add Bundle to Cart');
@@ -215,8 +239,75 @@ export const MixAndMatchEditor = () => {
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
 
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+  // Tracks the last auto-generated description this effect itself wrote, so
+  // it can tell "still what we generated" (keep syncing) apart from "the
+  // merchant edited it" (stop touching it) without a separate dirty flag.
+  const lastAutoDescriptionRef = useRef('');
+
+  // Editing an existing pre-filled value "claims" that row so the sync
+  // below never quietly reverts what the merchant just typed.
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value, source: 'custom' } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '', source: 'custom' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Pre-fills description/specs from the bundle's own selected products -
+  // re-runs every time that list changes. Specs pulled from a product's
+  // metafields are always kept in sync with the current product list;
+  // anything the merchant typed themselves (source: 'custom') is never
+  // touched. The description is a single freeform field, not a list, so it
+  // can only be auto-synced while it still matches what this effect itself
+  // last generated - the moment the merchant edits it, it's ignored.
+  useEffect(() => {
+    const autoSpecs = selectedProducts.flatMap(metafieldsToSpecs);
+    setProductSpecs((prev) => [...prev.filter((s) => s.source !== 'product'), ...autoSpecs]);
+
+    const autoDescription = buildAutoDescription(selectedProducts);
+    setProductDescription((prev) => {
+      if (prev === '' || prev === lastAutoDescriptionRef.current) {
+        lastAutoDescriptionRef.current = autoDescription;
+        return autoDescription;
+      }
+      return prev;
+    });
+  }, [selectedProducts]);
+
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
+
+  // Countdown timer effect - counts down to the bundle's actual schedule end
+  // date, matching what the real storefront widget counts down to. This was
+  // previously never wired up at all, so the preview timer was frozen at
+  // 23:59:59 forever.
+  useEffect(() => {
+    if (!showCountdown) return;
+    const getTarget = () => {
+      const target = endDate ? new Date(endDate) : null;
+      if (target && !isNaN(target.getTime())) return target;
+      const fallback = new Date();
+      fallback.setHours(23, 59, 59, 999);
+      return fallback;
+    };
+    const tick = () => {
+      const diff = getTarget() - new Date();
+      setTimeLeft({
+        hours: String(Math.max(0, Math.floor((diff / (1000 * 60 * 60)) % 24))).padStart(2, '0'),
+        minutes: String(Math.max(0, Math.floor((diff / (1000 * 60)) % 60))).padStart(2, '0'),
+        seconds: String(Math.max(0, Math.floor((diff / 1000) % 60))).padStart(2, '0'),
+      });
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [showCountdown, endDate]);
 
   // Fetch bundle data if editing (id from URL params)
   useEffect(() => {
@@ -239,7 +330,7 @@ export const MixAndMatchEditor = () => {
           setBundleInternalName(bundle.internalName || '');
           setSecondaryMessage(bundle.secondaryMessage || 'Select any items and save on your purchase');
           setBundleEnabled(bundle.status ?? true);
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setDiscountType(bundle.discountType || 'Percentage');
           setDiscountValue(bundle.discountValue?.toString() || '15');
 
@@ -249,9 +340,15 @@ export const MixAndMatchEditor = () => {
             setTierDiscounts(bundle.tierDiscounts);
           }
 
-          // Set products
+          // Set products - then refresh with live Shopify data (images,
+          // description, metafields) rather than relying on the stored
+          // snapshot, which may be stale or (for older bundles) never had
+          // images captured at all.
           if (bundle.products) {
             setSelectedProducts(bundle.products);
+            if (bundle.products.length) {
+              enrichProductsWithLiveData(bundle.products).then(setSelectedProducts);
+            }
           }
 
           // Set widget appearance
@@ -267,7 +364,10 @@ export const MixAndMatchEditor = () => {
               countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setSelectedEmoji(bundle.selectedEmoji || '🔥');
+            setEmojiPosition(bundle.emojiPosition || 'end');
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
               bottom: bundle.widgetAppearance.bottomMargin || 20,
@@ -283,18 +383,25 @@ export const MixAndMatchEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
+          setProductDescription(bundle.description || '');
+          // Specs saved before source-tagging existed, and any the
+          // merchant typed in themselves, are indistinguishable from here -
+          // treat them as custom so the live product-data sync below never
+          // silently overwrites them.
+          setProductSpecs((bundle.specs || []).map((s) => ({ ...s, source: s.source || 'custom' })));
 
           // Set dates
           if (bundle.startDate) {
-            setStartDate(new Date(bundle.startDate).toISOString().split('T')[0]);
+            setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
           }
           if (bundle.endDate) {
-            setEndDate(new Date(bundle.endDate).toISOString().split('T')[0]);
+            setEndDate(new Date(bundle.endDate).toISOString().slice(0, 16));
           }
+          setTimezone(bundle.timezone || 'GMT');
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -327,32 +434,15 @@ export const MixAndMatchEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await safeParseJson(response);
+      if (!response.ok) throw new Error(data?.message || "Failed to fetch products");
 
-      const data = await response.json();
       const products = data.data?.edges || [];
-
-      const formattedProducts = products.map((edge) => {
-        const product = edge.node;
-        const variant = product.variants?.nodes?.[0];
-        return {
-          id: product.id,
-          productId: product.id,
-          title: product.title,
-          price: variant?.price || "0.00",
-          media: product.images?.nodes?.[0]?.url || tshirt,
-          quantity: 1,
-          optionSelections: product.options?.map((opt) => ({
-            name: opt.name,
-            values: opt.values,
-          })) || [],
-        };
-      });
-
+      const formattedProducts = products.map((edge) => transformProductNode(edge.node));
       setStoreProducts(formattedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -412,19 +502,29 @@ export const MixAndMatchEditor = () => {
     return price.toFixed(2);
   };
 
+  // Same math the widget preview's own "Total" row computes inline - pulled
+  // out so the live-preview product-page mockup (a sibling, not a child, of
+  // the widget preview) can show the same real numbers instead of a
+  // hardcoded price.
+  const calculateMixMatchPricing = () => {
+    const originalTotal = selectedProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const discountedTotal = selectedProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
+    return { originalTotal, discountedTotal };
+  };
+
   // Save bundle to database
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
     if (selectedProducts.length < selectedTier) {
-      shopify?.toast?.show(`Please select at least ${selectedTier} products for this tier`, { duration: 3000 });
+      showToast(`Please select at least ${selectedTier} products for this tier`, { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage') {
@@ -432,12 +532,12 @@ export const MixAndMatchEditor = () => {
         ([, value]) => value === '' || value === null || isNaN(value) || parseFloat(value) < 0 || parseFloat(value) > 100
       );
       if (invalidTier) {
-        shopify?.toast?.show("Each tier discount must be a percentage between 0 and 100", { duration: 3000 });
+        showToast("Each tier discount must be a percentage between 0 and 100", { duration: 3000 });
         return;
       }
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
 
@@ -451,8 +551,12 @@ export const MixAndMatchEditor = () => {
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Mix and Match",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
       selectedTier: selectedTier,
       tierDiscounts: tierDiscounts,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -462,6 +566,7 @@ export const MixAndMatchEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -478,6 +583,7 @@ export const MixAndMatchEditor = () => {
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: timezone,
     };
 
     setIsSaving(true);
@@ -496,18 +602,19 @@ export const MixAndMatchEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -520,7 +627,7 @@ export const MixAndMatchEditor = () => {
     switch (activeSettingId) {
       case 'select-products':
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your mix & match bundle">
+          <EditorConfigPanel title="Select Products" description={`Add at least ${selectedTier} products - customers need that many to choose from to mix & match for this tier's discount.`}>
             {showProductPicker ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -668,21 +775,83 @@ export const MixAndMatchEditor = () => {
       case 'emoji-icons':
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji display">
-            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={(e) => setShowEmoji(e.target.checked)} />
+            <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
+            {showEmoji && (
+              <>
+                <ConfigFormGroup label="Emoji">
+                  <div style={{ position: 'relative', width: '100%' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{selectedEmoji}</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                    </button>
+                    {showEmojiPickerPopup && (
+                      <div style={{ position: 'absolute', top: '48px', left: 0, width: '100%', zIndex: 100 }}>
+                        <EmojiPicker
+                          width="100%"
+                          onEmojiClick={(emojiData) => {
+                            setSelectedEmoji(emojiData.emoji);
+                            setShowEmojiPickerPopup(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Emoji Position">
+                  <ConfigSelect
+                    value={emojiPosition}
+                    onChange={(e) => setEmojiPosition(e.target.value)}
+                    options={[
+                      { value: 'start', label: 'Left' },
+                      { value: 'end', label: 'Right' },
+                      { value: 'both', label: 'Both Sides' },
+                    ]}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
           </EditorConfigPanel>
         );
 
       case 'countdown-timer':
         return (
           <EditorConfigPanel title="Countdown Timer" description="Urgency timer settings">
-            <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={(e) => setShowCountdown(e.target.checked)} />
+            <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background">
-                  <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Text Color">
-                  <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -696,10 +865,16 @@ export const MixAndMatchEditor = () => {
               <ConfigInput value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add Bundle to Cart" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -707,20 +882,67 @@ export const MixAndMatchEditor = () => {
       case 'skip-offer-button':
         return (
           <EditorConfigPanel title="Skip Offer Button" description="Optional button to dismiss the offer">
-            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={(e) => setShowSkipButton(e.target.checked)} />
+            <ConfigToggleRow label="Show Skip Button" checked={showSkipButton} onChange={setShowSkipButton} />
             {showSkipButton && (
               <>
                 <ConfigFormGroup label="Button Text">
                   <ConfigInput value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
@@ -728,10 +950,16 @@ export const MixAndMatchEditor = () => {
         return (
           <EditorConfigPanel title="Primary Colors" description="Main color scheme">
             <ConfigFormGroup label="Primary Text">
-              <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background">
-              <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -740,13 +968,22 @@ export const MixAndMatchEditor = () => {
         return (
           <EditorConfigPanel title="Secondary Colors" description="Accent colors">
             <ConfigFormGroup label="Secondary Text">
-              <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background">
-              <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <input type="color" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -775,18 +1012,41 @@ export const MixAndMatchEditor = () => {
       case 'start-date':
         return (
           <EditorConfigPanel title="Start Date" description="When to start showing">
-            <ConfigFormGroup label="Date">
-              <ConfigInput type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
+            </ConfigFormGroup>
+            {startDate && (
+              <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>
+                🚀 Starts: {new Date(startDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
       case 'end-date':
         return (
           <EditorConfigPanel title="End Date" description="When to stop showing">
-            <ConfigFormGroup label="Date">
-              <ConfigInput type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bundles that run indefinitely
+            </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -824,29 +1084,37 @@ export const MixAndMatchEditor = () => {
           marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
-          {bundleTitle || 'Mix & Match - Save More! 🔥'}
+          {(() => {
+            const titleText = bundleTitle || 'Mix & Match - Save More!';
+            if (!showEmoji) return titleText;
+            if (emojiPosition === 'start') return `${selectedEmoji} ${titleText}`;
+            if (emojiPosition === 'both') return `${selectedEmoji} ${titleText} ${selectedEmoji}`;
+            return `${titleText} ${selectedEmoji}`;
+          })()}
         </h3>
+        {secondaryMessage && (
+          <p style={{
+            color: colorSettings.secondaryTextColor,
+            fontSize: '13px',
+            marginBottom: '15px',
+            paddingRight: showCountdown ? '150px' : '0',
+          }}>
+            {secondaryMessage}
+          </p>
+        )}
 
         {/* Countdown Timer - Production Style */}
         {showCountdown && (
-          <div style={{
-            position: 'absolute',
-            top: '0.5px',
-            right: '0px',
-            background: colorSettings.countdownBgColor,
-            color: colorSettings.countdownTextColor,
-            padding: '8px 10px',
-            borderRadius: '8px 18px 8px 8px',
-            fontSize: '12px',
-            fontWeight: 500,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
-            border: `1px solid ${colorSettings.borderColor}`,
-            zIndex: 3,
-          }}>
-            {showEmoji && '🔥 '}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-          </div>
+          <CountdownTimerDisplay
+            theme={countdownTheme}
+            bgColor={colorSettings.countdownBgColor}
+            textColor={colorSettings.countdownTextColor}
+            hours={timeLeft.hours}
+            minutes={timeLeft.minutes}
+            seconds={timeLeft.seconds}
+            label="Ends In"
+            style={{ position: 'absolute', top: '0.5px', right: '0px', zIndex: 3 }}
+          />
         )}
 
         {!hasProducts ? (
@@ -935,17 +1203,14 @@ export const MixAndMatchEditor = () => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <img
-                    src={product.media || tshirt}
+                  <ProductImageCarousel
+                    images={product.images}
+                    fallback={product.media || tshirt}
                     alt={product.title}
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      borderRadius: '10px',
-                      marginRight: '15px',
-                      objectFit: 'cover',
-                      border: `1px solid ${colorSettings.borderColor}`,
-                    }}
+                    width={80}
+                    height={80}
+                    borderRadius="10px"
+                    style={{ marginRight: '15px', border: `1px solid ${colorSettings.borderColor}` }}
                   />
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
@@ -1061,6 +1326,7 @@ export const MixAndMatchEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
         <EditorSettingsPane
           groups={currentSettings}
@@ -1081,10 +1347,37 @@ export const MixAndMatchEditor = () => {
           onSave={handleSave}
           isLoading={isSaving}
         />
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
-          <ProductPagePreview widgetLabel="Mix & Match Offer">
-            {renderMixMatchPreview()}
-          </ProductPagePreview>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
+          {activeTab === 'content' && activeSettingId === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="Mix & Match Offer"
+              device={device}
+              images={selectedProducts.flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={selectedProducts.length ? calculateMixMatchPricing().discountedTotal : undefined}
+              compareAtPrice={selectedProducts.length ? calculateMixMatchPricing().originalTotal : undefined}
+              description={productDescription}
+              specs={productSpecs}
+              hasProduct={selectedProducts.length > 0}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="Mix & Match Offer"
+              device={device}
+              images={selectedProducts[0]?.images || []}
+              title={selectedProducts[0]?.title || bundleTitle}
+              price={selectedProducts[0]?.price}
+              description={productDescription}
+              hasProduct={selectedProducts.length > 0}
+            >
+              {renderMixMatchPreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

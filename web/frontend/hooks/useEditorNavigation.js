@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { useCallback } from 'react';
+import { openEditorTab } from '../utils/openEditorTab';
 
 /**
  * Hook for navigating to/from the editor.
@@ -18,22 +19,43 @@ export const useEditorNavigation = (appType = 'announcement-bar') => {
   }, [location.search]);
 
   const openEditor = useCallback((id = null) => {
-    const queryString = getQueryString();
     const path = id
       ? `/${appType}/editor/${id}`
       : `/${appType}/editor`;
 
     // Open editor in a new browser tab as standalone page (using editor.html with hash routing)
     // This loads the editor outside of Shopify App Bridge shell
-    window.open(`/editor.html${queryString}#${path}`, '_blank');
-  }, [appType, getQueryString]);
+    openEditorTab(path, location.search);
+  }, [appType, location.search]);
 
   const closeEditor = useCallback(() => {
-    // Close the current tab/window
-    window.close();
+    // The editor tab is deliberately opened without `host` (see
+    // getQueryString above - standalone, outside the App Bridge shell), so
+    // if window.close() is ever blocked and this tab falls back to loading
+    // the main app itself, it does so without the embedded context Shopify
+    // expects and doesn't land where a merchant would expect (the results
+    // list) - it lands on the app's default/home route instead.
+    //
+    // window.opener is the original tab this editor was opened from - it
+    // already has a real `host` in its own URL, so send IT to the results
+    // page (same origin, safe to read/set .location directly) and only
+    // then close this tab, instead of ever rendering the main app here.
+    if (window.opener && !window.opener.closed) {
+      try {
+        window.opener.location.href = `/${appType}${window.opener.location.search}`;
+        window.opener.focus();
+      } catch {
+        // Opener navigated away or otherwise inaccessible - fall through
+        // to closing this tab; the fallback below still covers that case.
+      }
+      window.close();
+      return;
+    }
 
-    // Fallback: if window.close() is blocked (not opened via JS),
-    // redirect to the list page
+    // No opener (e.g. this tab's URL was opened directly, not via
+    // window.open) - nothing to hand off to, so just close/redirect this
+    // tab itself.
+    window.close();
     const queryString = getQueryString();
     window.location.href = `/${appType}` + queryString;
   }, [appType, getQueryString]);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -9,14 +9,21 @@ import {
   ConfigFormGroup,
   ConfigInput,
   ConfigSelect,
+  ConfigTextarea,
   ConfigToggleRow,
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
+import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
+import EmojiPicker from 'emoji-picker-react';
 import tshirt from "./tshirt.png";
 
 // Volume Discount settings configuration
@@ -62,6 +69,12 @@ const VOLUME_SETTINGS = {
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -103,6 +116,13 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Fixed Amount', label: 'Fixed Amount' },
 ];
 
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
+];
+
 /**
  * VolumeDiscountEditor - Editor for Volume Discount app
  * Uses reusable Editor components with app-specific configuration
@@ -113,13 +133,11 @@ const DISCOUNT_TYPE_OPTIONS = [
 export const VolumeDiscountEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('volume-discounts');
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -129,7 +147,8 @@ export const VolumeDiscountEditor = () => {
   // Tab and setting state
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('select-products');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -150,7 +169,7 @@ export const VolumeDiscountEditor = () => {
   };
 
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Buy More & Save More! 🔥');
+  const [bundleTitle, setBundleTitle] = useState('Buy More & Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('The more you buy, the more you save');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -186,13 +205,18 @@ export const VolumeDiscountEditor = () => {
     countdownTextColor: '#FFFFFF',
   });
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
+  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
+  const [emojiPosition, setEmojiPosition] = useState('end');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
 
   // Schedule states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
 
   // Button settings
   const [addToCartText, setAddToCartText] = useState('Add to Cart');
@@ -202,6 +226,47 @@ export const VolumeDiscountEditor = () => {
   const [skipButtonText, setSkipButtonText] = useState('Skip Offer');
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
+
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+  // Tracks the last auto-generated description this effect itself wrote, so
+  // it can tell "still what we generated" (keep syncing) apart from "the
+  // merchant edited it" (stop touching it) without a separate dirty flag.
+  const lastAutoDescriptionRef = useRef('');
+
+  // Editing an existing pre-filled value "claims" that row so the sync
+  // below never quietly reverts what the merchant just typed.
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value, source: 'custom' } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '', source: 'custom' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Pre-fills description/specs from the bundle's own selected product(s) -
+  // re-runs every time that list changes. Specs pulled from a product's
+  // metafields are always kept in sync with the current product list;
+  // anything the merchant typed themselves (source: 'custom') is never
+  // touched. The description is a single freeform field, not a list, so it
+  // can only be auto-synced while it still matches what this effect itself
+  // last generated - the moment the merchant edits it, it's ignored.
+  useEffect(() => {
+    const autoSpecs = selectedProducts.flatMap(metafieldsToSpecs);
+    setProductSpecs((prev) => [...prev.filter((s) => s.source !== 'product'), ...autoSpecs]);
+
+    const autoDescription = buildAutoDescription(selectedProducts);
+    setProductDescription((prev) => {
+      if (prev === '' || prev === lastAutoDescriptionRef.current) {
+        lastAutoDescriptionRef.current = autoDescription;
+        return autoDescription;
+      }
+      return prev;
+    });
+  }, [selectedProducts]);
 
   // Timer display
   const [timeLeft, setTimeLeft] = useState({ hours: '23', minutes: '59', seconds: '59' });
@@ -227,8 +292,15 @@ export const VolumeDiscountEditor = () => {
           setBundleInternalName(bundle.internalName || '');
           setSecondaryMessage(bundle.secondaryMessage || '');
           setBundleEnabled(bundle.status ?? true);
-          setBundlePriority(bundle.bundlePriority || 0);
+          setBundlePriority(bundle.bundlePriority || bundle.priority || 0);
           setSelectedProducts(bundle.products || []);
+          // The stored snapshot may be stale (older bundles never had
+          // images captured at all) or just outdated - refresh the
+          // already-selected product with live Shopify data instead of
+          // waiting for the merchant to re-add it.
+          if (bundle.products?.length) {
+            enrichProductsWithLiveData(bundle.products).then(setSelectedProducts);
+          }
           setDiscountType(bundle.discountType || 'Percentage');
           setDiscountValue(bundle.discountValue?.toString() || '10');
           
@@ -250,7 +322,10 @@ export const VolumeDiscountEditor = () => {
               countdownTextColor: bundle.widgetAppearance.offerTagTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setSelectedEmoji(bundle.selectedEmoji || '🔥');
+            setEmojiPosition(bundle.emojiPosition || 'end');
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
               bottom: bundle.widgetAppearance.bottomMargin || 20,
@@ -266,14 +341,21 @@ export const VolumeDiscountEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
+          setProductDescription(bundle.description || '');
+          // Specs saved before source-tagging existed, and any the
+          // merchant typed in themselves, are indistinguishable from here -
+          // treat them as custom so the live product-data sync below never
+          // silently overwrites them.
+          setProductSpecs((bundle.specs || []).map((s) => ({ ...s, source: s.source || 'custom' })));
 
           // Schedule
           if (bundle.startDate) setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
           if (bundle.endDate) setEndDate(new Date(bundle.endDate).toISOString().slice(0, 16));
+          setTimezone(bundle.timezone || 'GMT');
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -290,34 +372,20 @@ export const VolumeDiscountEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      if (response.ok) {
-        const data = await response.json();
-        const products = data.data?.edges?.map(edge => {
-          const product = edge.node;
-          // Required by formatComponentsStringForVolumeDiscount (backend) -
-          // Shopify's Bundles API rejects the mutation with "Missing or
-          // invalid options" if a component's optionSelections don't map
-          // every option of the underlying product.
-          const optionSelections = product.options?.map(opt => ({
-            componentOptionId: opt.id,
-            name: opt.name,
-            uniqueName: `${product.title} ${opt.name}`,
-            values: opt.values,
-          })) || [];
-
-          return {
-            productId: product.id,
-            title: product.title,
-            price: product.variants?.nodes?.[0]?.price || '0',
-            media: product.images?.edges?.[0]?.node?.url || tshirt,
-            variants: product.variants?.nodes || [],
-            optionSelections,
-          };
-        }) || [];
-        setStoreProducts(products);
+      const data = await safeParseJson(response);
+      if (!response.ok) {
+        throw new Error(data?.message || "Failed to fetch products");
       }
+      // Required by formatComponentsStringForVolumeDiscount (backend) -
+      // Shopify's Bundles API rejects the mutation with "Missing or
+      // invalid options" if a component's optionSelections don't map every
+      // option of the underlying product. transformProductNode builds that
+      // same shape.
+      const products = data.data?.edges?.map(edge => transformProductNode(edge.node)) || [];
+      setStoreProducts(products);
     } catch (error) {
       console.error("Error fetching products:", error);
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -342,21 +410,28 @@ export const VolumeDiscountEditor = () => {
   // Countdown timer effect
   useEffect(() => {
     if (!showCountdown) return;
-    const timer = setInterval(() => {
-      const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const diff = endOfDay - now;
-      if (diff > 0) {
-        setTimeLeft({
-          hours: String(Math.floor((diff / (1000 * 60 * 60)) % 24)).padStart(2, '0'),
-          minutes: String(Math.floor((diff / (1000 * 60)) % 60)).padStart(2, '0'),
-          seconds: String(Math.floor((diff / 1000) % 60)).padStart(2, '0'),
-        });
-      }
-    }, 1000);
+    // Counts down to the bundle's actual schedule end date, matching what
+    // the real storefront widget counts down to - not an arbitrary
+    // end-of-today target unrelated to the Schedule tab.
+    const getTarget = () => {
+      const target = endDate ? new Date(endDate) : null;
+      if (target && !isNaN(target.getTime())) return target;
+      const fallback = new Date();
+      fallback.setHours(23, 59, 59, 999);
+      return fallback;
+    };
+    const tick = () => {
+      const diff = getTarget() - new Date();
+      setTimeLeft({
+        hours: String(Math.max(0, Math.floor((diff / (1000 * 60 * 60)) % 24))).padStart(2, '0'),
+        minutes: String(Math.max(0, Math.floor((diff / (1000 * 60)) % 60))).padStart(2, '0'),
+        seconds: String(Math.max(0, Math.floor((diff / 1000) % 60))).padStart(2, '0'),
+      });
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   // Filtered products for search
   const getFilteredProducts = () => {
@@ -364,11 +439,11 @@ export const VolumeDiscountEditor = () => {
     return storeProducts.filter(p => p.title.toLowerCase().includes(productSearchQuery.toLowerCase()));
   };
 
-  // Add product to bundle
+  // Add product to bundle - Volume Discount is tiered pricing on a single
+  // product, so a new pick replaces whatever was selected rather than
+  // appending to it.
   const handleAddProduct = (product) => {
-    if (!selectedProducts.find(p => p.productId === product.productId)) {
-      setSelectedProducts([...selectedProducts, product]);
-    }
+    setSelectedProducts([product]);
     setShowProductPicker(false);
     setProductSearchQuery('');
   };
@@ -440,49 +515,79 @@ export const VolumeDiscountEditor = () => {
     return quantityBreaks.find(b => b.default) || quantityBreaks[0];
   };
 
+  // Same math the widget preview's own "Total" row computes inline - pulled
+  // out so the live-preview product-page mockup (a sibling, not a child, of
+  // the widget preview) can show the same real numbers instead of a
+  // hardcoded price.
+  const calculateVolumePricing = () => {
+    const defaultBreak = getDefaultBreak();
+    const quantity = defaultBreak?.quantity || 1;
+    const originalPrice = parseFloat(selectedProducts[0]?.price || 0) * quantity;
+    const discountedPrice = parseFloat(calculateDiscountedPrice(selectedProducts[0]?.price, defaultBreak?.discount)) * quantity;
+    return { originalPrice, discountedPrice };
+  };
+
   // Save handler
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
-    if (selectedProducts.length < 1) {
-      shopify?.toast?.show("Please select at least 1 product", { duration: 3000 });
+    if (selectedProducts.length !== 1) {
+      showToast("Volume Discount supports exactly 1 product per offer.", { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (quantityBreaks.length < 1) {
-      shopify?.toast?.show("Please add at least one quantity break", { duration: 3000 });
+      showToast("Please add at least one quantity break", { duration: 3000 });
       return;
     }
     if (!discountValue || isNaN(discountValue) || parseFloat(discountValue) <= 0) {
-      shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
+      showToast("Please enter a valid discount value", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      showToast("Percentage discount cannot exceed 100", { duration: 3000 });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
+
+    // The backend needs a short, unique identifier per tier to both name
+    // the Shopify quantity-option value and later match it back against a
+    // variant's title to apply that tier's discount
+    // (calculateVariantPricesUsingVolumeDiscount in
+    // web/backend/controller/bundles/index.js reads quantityBreaks[].uniqueName
+    // and does variantTitle.includes(qb.uniqueName)). quantityBreaks here
+    // only ever carried a human-readable `name` (e.g. "Buy 3, get 15% OFF"),
+    // so uniqueName was always undefined server-side - no tier ever matched
+    // and volume pricing silently never applied to the real product.
+    const quantityBreaksWithUniqueNames = quantityBreaks.map((qb) => ({
+      ...qb,
+      uniqueName: `Qty ${qb.quantity}`,
+    }));
 
     const bundleData = {
       title: bundleTitle,
       secondaryMessage: secondaryMessage,
       products: selectedProducts,
-      quantityBreaks: quantityBreaks,
+      quantityBreaks: quantityBreaksWithUniqueNames,
       discountType: discountType,
       discountValue: parseFloat(discountValue) || 0,
       status: bundleEnabled,
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
+      description: productDescription,
+      specs: productSpecs,
       type: "Volume Discount",
       bundlePriority: parseInt(bundlePriority) || 0,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -492,6 +597,7 @@ export const VolumeDiscountEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         isShowCountDownTimer: showCountdown,
         addEmoji: showEmoji,
         topMargin: margins.top,
@@ -508,6 +614,7 @@ export const VolumeDiscountEditor = () => {
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: timezone,
     };
 
     setIsSaving(true);
@@ -526,18 +633,19 @@ export const VolumeDiscountEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -550,7 +658,7 @@ export const VolumeDiscountEditor = () => {
     switch (activeSettingId) {
       case 'select-products':
         return (
-          <EditorConfigPanel title="Select Products" description="Add products to your volume discount offer">
+          <EditorConfigPanel title="Select Products" description="Volume Discount applies tiered pricing to exactly 1 product - picking a new product replaces the current one.">
             {showProductPicker ? (
               <>
                 {/* Product Picker Header */}
@@ -614,27 +722,32 @@ export const VolumeDiscountEditor = () => {
                     marginBottom: '16px', fontSize: '14px', fontWeight: 500, color: 'rgba(255,255,255,0.8)'
                   }}
                 >
-                  + Add Products
+                  {selectedProducts.length > 0 ? '↻ Change Product' : '+ Add Product'}
                 </button>
 
                 <div style={{ marginTop: '8px' }}>
                   <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Selected Products ({selectedProducts.length})
+                    Selected Product ({selectedProducts.length}/1)
                   </p>
                   {selectedProducts.map((product, index) => (
                     <div key={product.productId || index} style={{
-                      display: 'flex', alignItems: 'center', padding: '10px', backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderRadius: '8px', marginBottom: '8px', border: '1px solid rgba(255,255,255,0.1)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '10px', background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', marginBottom: '8px',
+                      border: '1px solid rgba(81, 105, 221, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', marginRight: '10px', objectFit: 'cover' }} />
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '13px', fontWeight: 500, margin: 0, color: 'rgba(255,255,255,0.9)' }}>{product.title}</p>
-                        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>${product.price}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => handleRemoveProduct(product.productId)} 
-                        style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '16px', padding: '4px' }}
-                      >✕</button>
+                      <button
+                        onClick={() => handleRemoveProduct(product.productId)}
+                        style={{
+                          background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px',
+                          color: '#ff3b30', padding: '4px 8px', cursor: 'pointer'
+                        }}>✕</button>
                     </div>
                   ))}
                 </div>
@@ -666,23 +779,23 @@ export const VolumeDiscountEditor = () => {
                     <ConfigInput
                       type="number"
                       value={qb.quantity}
-                      onChange={(val) => handleQuantityBreakChange(index, 'quantity', parseInt(val) || 1)}
+                      onChange={(e) => handleQuantityBreakChange(index, 'quantity', parseInt(e.target.value) || 1)}
                     />
                   </ConfigFormGroup>
                   <ConfigFormGroup label="Discount %">
                     <ConfigInput
                       type="number"
                       value={qb.discount}
-                      onChange={(val) => handleQuantityBreakChange(index, 'discount', parseInt(val) || 0)}
+                      onChange={(e) => handleQuantityBreakChange(index, 'discount', parseInt(e.target.value) || 0)}
                     />
                   </ConfigFormGroup>
                 </div>
-                
+
                 <ConfigFormGroup label="Display Name">
                   <ConfigInput
                     type="text"
                     value={qb.name}
-                    onChange={(val) => handleQuantityBreakChange(index, 'name', val)}
+                    onChange={(e) => handleQuantityBreakChange(index, 'name', e.target.value)}
                   />
                 </ConfigFormGroup>
 
@@ -690,15 +803,15 @@ export const VolumeDiscountEditor = () => {
                   <ConfigInput
                     type="text"
                     value={qb.banner}
-                    onChange={(val) => handleQuantityBreakChange(index, 'banner', val)}
+                    onChange={(e) => handleQuantityBreakChange(index, 'banner', e.target.value)}
                     placeholder="e.g., MOST POPULAR"
                   />
                 </ConfigFormGroup>
-                
-                <ConfigToggleRow 
-                  label="Set as default selection" 
-                  checked={qb.default} 
-                  onChange={(val) => handleQuantityBreakChange(index, 'default', val)} 
+
+                <ConfigToggleRow
+                  label="Set as default selection"
+                  checked={qb.default}
+                  onChange={(val) => handleQuantityBreakChange(index, 'default', val)}
                 />
               </div>
             ))}
@@ -723,10 +836,17 @@ export const VolumeDiscountEditor = () => {
               <ConfigInput
                 type="number"
                 value={bundlePriority}
-                onChange={(val) => setBundlePriority(parseInt(val) || 0)}
+                onChange={(e) => setBundlePriority(parseInt(e.target.value) || 0)}
                 placeholder="0"
+                min="0"
               />
             </ConfigFormGroup>
+            <div style={{ padding: '12px', background: 'rgba(255, 193, 7, 0.15)', borderRadius: '8px', marginTop: '15px' }}>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
+                💡 <strong>What is Priority?</strong><br/>
+                When a product is part of multiple bundles, only the bundle with the highest priority is shown to customers.
+              </span>
+            </div>
           </EditorConfigPanel>
         );
 
@@ -734,10 +854,10 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Message Text" description="Customize the offer messages">
             <ConfigFormGroup label="Primary Message">
-              <ConfigInput value={bundleTitle} onChange={setBundleTitle} placeholder="Buy More & Save More!" />
+              <ConfigInput value={bundleTitle} onChange={(e) => setBundleTitle(e.target.value)} placeholder="Buy More & Save More!" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Message">
-              <ConfigInput value={secondaryMessage} onChange={setSecondaryMessage} placeholder="The more you buy, the more you save" />
+              <ConfigInput value={secondaryMessage} onChange={(e) => setSecondaryMessage(e.target.value)} placeholder="The more you buy, the more you save" />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -745,7 +865,54 @@ export const VolumeDiscountEditor = () => {
       case 'emoji-icons':
         return (
           <EditorConfigPanel title="Emoji & Icons" description="Toggle emoji and icon display">
-            <ConfigToggleRow label="Show Emoji in Timer" checked={showEmoji} onChange={setShowEmoji} />
+            <ConfigToggleRow label="Show Emoji in Title" checked={showEmoji} onChange={setShowEmoji} />
+            {showEmoji && (
+              <>
+                <ConfigFormGroup label="Emoji">
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{selectedEmoji}</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                    </button>
+                    {showEmojiPickerPopup && (
+                      <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) => {
+                            setSelectedEmoji(emojiData.emoji);
+                            setShowEmojiPickerPopup(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Emoji Position">
+                  <ConfigSelect
+                    value={emojiPosition}
+                    onChange={(e) => setEmojiPosition(e.target.value)}
+                    options={[
+                      { value: 'start', label: 'Left' },
+                      { value: 'end', label: 'Right' },
+                      { value: 'both', label: 'Both Sides' },
+                    ]}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
           </EditorConfigPanel>
         );
 
@@ -755,11 +922,25 @@ export const VolumeDiscountEditor = () => {
             <ConfigToggleRow label="Show Countdown Timer" checked={showCountdown} onChange={setShowCountdown} />
             {showCountdown && (
               <>
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
+                  />
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Background Color">
-                  <ConfigInput type="color" value={colorSettings.countdownBgColor} onChange={(val) => setColorSettings({ ...colorSettings, countdownBgColor: val })} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownBgColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownBgColor: e.target.value })} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Text Color">
-                  <ConfigInput type="color" value={colorSettings.countdownTextColor} onChange={(val) => setColorSettings({ ...colorSettings, countdownTextColor: val })} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownTextColor} onChange={(e) => setColorSettings({ ...colorSettings, countdownTextColor: e.target.value })} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -770,13 +951,19 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Add to Cart Button" description="Customize the add to cart button">
             <ConfigFormGroup label="Button Text">
-              <ConfigInput value={addToCartText} onChange={setAddToCartText} placeholder="Add to Cart" />
+              <ConfigInput value={addToCartText} onChange={(e) => setAddToCartText(e.target.value)} placeholder="Add to Cart" />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <ConfigInput type="color" value={addToCartBgColor} onChange={setAddToCartBgColor} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <ConfigInput type="color" value={addToCartTextColor} onChange={setAddToCartTextColor} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -788,16 +975,63 @@ export const VolumeDiscountEditor = () => {
             {showSkipButton && (
               <>
                 <ConfigFormGroup label="Button Text">
-                  <ConfigInput value={skipButtonText} onChange={setSkipButtonText} placeholder="Skip Offer" />
+                  <ConfigInput value={skipButtonText} onChange={(e) => setSkipButtonText(e.target.value)} placeholder="Skip Offer" />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <ConfigInput type="color" value={skipButtonBgColor} onChange={setSkipButtonBgColor} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput type="color" value={skipButtonTextColor} onChange={setSkipButtonTextColor} />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
@@ -805,10 +1039,16 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Primary Colors" description="Set primary colors">
             <ConfigFormGroup label="Primary Text Color">
-              <ConfigInput type="color" value={colorSettings.primaryTextColor} onChange={(val) => setColorSettings({ ...colorSettings, primaryTextColor: val })} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryTextColor: e.target.value })} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background Color">
-              <ConfigInput type="color" value={colorSettings.primaryBackgroundColor} onChange={(val) => setColorSettings({ ...colorSettings, primaryBackgroundColor: val })} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, primaryBackgroundColor: e.target.value })} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -817,13 +1057,22 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Secondary Colors" description="Set secondary colors">
             <ConfigFormGroup label="Secondary Text Color">
-              <ConfigInput type="color" value={colorSettings.secondaryTextColor} onChange={(val) => setColorSettings({ ...colorSettings, secondaryTextColor: val })} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryTextColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryTextColor: e.target.value })} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background Color">
-              <ConfigInput type="color" value={colorSettings.secondaryBackgroundColor} onChange={(val) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: val })} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryBackgroundColor} onChange={(e) => setColorSettings({ ...colorSettings, secondaryBackgroundColor: e.target.value })} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <ConfigInput type="color" value={colorSettings.borderColor} onChange={(val) => setColorSettings({ ...colorSettings, borderColor: val })} />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.borderColor} onChange={(e) => setColorSettings({ ...colorSettings, borderColor: e.target.value })} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -832,10 +1081,10 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Margins" description="Set widget margins">
             <ConfigFormGroup label="Top Margin (px)">
-              <ConfigInput type="number" value={margins.top} onChange={(val) => setMargins({ ...margins, top: parseInt(val) || 0 })} />
+              <ConfigInput type="number" value={margins.top} onChange={(e) => setMargins({ ...margins, top: parseInt(e.target.value) || 0 })} />
             </ConfigFormGroup>
             <ConfigFormGroup label="Bottom Margin (px)">
-              <ConfigInput type="number" value={margins.bottom} onChange={(val) => setMargins({ ...margins, bottom: parseInt(val) || 0 })} />
+              <ConfigInput type="number" value={margins.bottom} onChange={(e) => setMargins({ ...margins, bottom: parseInt(e.target.value) || 0 })} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -844,7 +1093,7 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Card Settings" description="Configure card appearance">
             <ConfigFormGroup label="Corner Radius (px)">
-              <ConfigInput type="number" value={cornerRadius} onChange={(val) => setCornerRadius(parseInt(val) || 0)} />
+              <ConfigInput type="number" value={cornerRadius} onChange={(e) => setCornerRadius(parseInt(e.target.value) || 0)} />
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -853,17 +1102,40 @@ export const VolumeDiscountEditor = () => {
         return (
           <EditorConfigPanel title="Start Date" description="When should this offer start?">
             <ConfigFormGroup label="Start Date & Time">
-              <ConfigInput type="datetime-local" value={startDate} onChange={setStartDate} />
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
+            </ConfigFormGroup>
+            {startDate && (
+              <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>
+                🚀 Starts: {new Date(startDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
       case 'end-date':
         return (
-          <EditorConfigPanel title="End Date" description="When should this offer end?">
+          <EditorConfigPanel title="End Date" description="When to stop showing">
             <ConfigFormGroup label="End Date & Time">
-              <ConfigInput type="datetime-local" value={endDate} onChange={setEndDate} />
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bundles that run indefinitely
+            </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
           </EditorConfigPanel>
         );
 
@@ -886,28 +1158,37 @@ export const VolumeDiscountEditor = () => {
         marginBottom: `${margins.bottom}px`,
         maxWidth: '100%',
       }}>
-        {/* Header */}
+        {/* Header - the emoji toggle affects this widget heading only, not
+            the real product title saved for the bundle. */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <h3 style={{ color: colorSettings.primaryTextColor, fontSize: '18px', fontWeight: 'bold', margin: 0 }}>
-            {bundleTitle}
+            {(() => {
+              if (!showEmoji) return bundleTitle;
+              if (emojiPosition === 'start') return `${selectedEmoji} ${bundleTitle}`;
+              if (emojiPosition === 'both') return `${selectedEmoji} ${bundleTitle} ${selectedEmoji}`;
+              return `${bundleTitle} ${selectedEmoji}`;
+            })()}
           </h3>
           {showCountdown && (
-            <div style={{
-              backgroundColor: colorSettings.countdownBgColor,
-              color: colorSettings.countdownTextColor,
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '13px',
-              fontWeight: 600,
-            }}>
-              {showEmoji && '⏱️'} Ends in {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-            </div>
+            <CountdownTimerDisplay
+              theme={countdownTheme}
+              bgColor={colorSettings.countdownBgColor}
+              textColor={colorSettings.countdownTextColor}
+              hours={timeLeft.hours}
+              minutes={timeLeft.minutes}
+              seconds={timeLeft.seconds}
+              label="Ends in"
+            />
           )}
         </div>
+        {secondaryMessage && (
+          <p style={{ color: colorSettings.secondaryTextColor, fontSize: '13px', marginBottom: '15px' }}>
+            {secondaryMessage}
+          </p>
+        )}
 
         {!hasProducts ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📦</div>
             <p>Add products to see preview</p>
           </div>
         ) : (
@@ -993,17 +1274,14 @@ export const VolumeDiscountEditor = () => {
               marginBottom: '15px',
             }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <img
-                  src={selectedProducts[0]?.media || tshirt}
+                <ProductImageCarousel
+                  images={selectedProducts[0]?.images}
+                  fallback={selectedProducts[0]?.media || tshirt}
                   alt={selectedProducts[0]?.title}
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '10px',
-                    marginRight: '15px',
-                    objectFit: 'cover',
-                    border: `1px solid ${colorSettings.borderColor}`,
-                  }}
+                  width={80}
+                  height={80}
+                  borderRadius="10px"
+                  style={{ marginRight: '15px', border: `1px solid ${colorSettings.borderColor}` }}
                 />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '5px', color: colorSettings.primaryTextColor }}>
@@ -1115,6 +1393,7 @@ export const VolumeDiscountEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane
         tabs={TABS}
         activeTab={activeTab}
@@ -1138,10 +1417,37 @@ export const VolumeDiscountEditor = () => {
           isLoading={isSaving}
         />
 
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
-          <ProductPagePreview widgetLabel="Volume Discount">
-            {renderVolumePreview()}
-          </ProductPagePreview>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
+          {activeTab === 'content' && activeSettingId === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="Volume Discount"
+              device={device}
+              images={selectedProducts.flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={selectedProducts.length ? calculateVolumePricing().discountedPrice : undefined}
+              compareAtPrice={selectedProducts.length ? calculateVolumePricing().originalPrice : undefined}
+              description={productDescription}
+              specs={productSpecs}
+              hasProduct={selectedProducts.length > 0}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="Volume Discount"
+              device={device}
+              images={selectedProducts[0]?.images || []}
+              title={selectedProducts[0]?.title || bundleTitle}
+              price={selectedProducts[0]?.price}
+              description={productDescription}
+              hasProduct={selectedProducts.length > 0}
+            >
+              {renderVolumePreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

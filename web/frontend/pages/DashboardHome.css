@@ -429,12 +429,13 @@
   text-align: center;
 }
 
-/* Notification banners - real app alerts, sit below the main content */
+/* Notification banners - real app alerts, shown above the hero band so
+   setup/upgrade prompts are the first thing a merchant sees. */
 .notification-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 16px;
+  margin-bottom: 16px;
 }
 
 .notification-banner {

@@ -31,15 +31,20 @@ export default function DiscountList({ onMakeBundleClick }) {
   const [toggles, setToggles] = useState([true, true, true, true]);
   const [showEmojiPickerMessage, setShowEmojiPickerMessage] = useState(false);
   const [message, setMessage] = useState("");
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState(null); // Add this state for stored image URL
+  const [faviconType, setFaviconType] = useState("image"); // "image" | "emoji"
+  const [faviconEmoji, setFaviconEmoji] = useState(null);
+  const [showFaviconEmojiPicker, setShowFaviconEmojiPicker] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [isEnabled, setIsEnabled] = useState(true);
+  const [timezone, setTimezone] = useState("GMT");
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: "", type: "" });
+  const [hasChanges, setHasChanges] = useState(false);
   const fileInputRef = useRef(null);
+
+  const markChanged = () => setHasChanges(true);
 
   const handleCheckboxChange = (index) => {
     setCheckboxes((prev) =>
@@ -53,9 +58,10 @@ export default function DiscountList({ onMakeBundleClick }) {
     );
   };
 
-  const handleEmojiClick = (emojiData) => {
-    setMessage((prev) => prev + emojiData.emoji);
-    setShowEmojiPicker(false);
+  const handleFaviconEmojiClick = (emojiData) => {
+    setFaviconEmoji(emojiData.emoji);
+    setShowFaviconEmojiPicker(false);
+    markChanged();
   };
 
   const handleImageUpload = (event) => {
@@ -74,6 +80,7 @@ export default function DiscountList({ onMakeBundleClick }) {
       }
 
       setImage(file);
+      markChanged();
     }
   };
 
@@ -102,16 +109,19 @@ export default function DiscountList({ onMakeBundleClick }) {
         if (data.status === "SUCCESS") {
           setMessage(data.data.message || "");
           setStartDate(
-            data.data.startDate ? data.data.startDate.split("T")[0] : ""
+            data.data.startDate ? new Date(data.data.startDate).toISOString().slice(0, 16) : ""
           );
-          setEndDate(data.data.endDate ? data.data.endDate.split("T")[0] : "");
-          setIsEnabled(
-            data.data.isEnabled !== undefined ? data.data.isEnabled : true
+          setEndDate(
+            data.data.endDate ? new Date(data.data.endDate).toISOString().slice(0, 16) : ""
           );
+          setTimezone(data.data.timezone || "GMT");
 
-          // Store the image URL from Shopify
-          if (data.data.imageUrl) {
+          if (data.data.faviconEmoji) {
+            setFaviconEmoji(data.data.faviconEmoji);
+            setFaviconType("emoji");
+          } else if (data.data.imageUrl) {
             setImageUrl(data.data.imageUrl);
+            setFaviconType("image");
           }
         }
       } catch (error) {
@@ -136,30 +146,34 @@ export default function DiscountList({ onMakeBundleClick }) {
     try {
       setLoading(true);
 
-      // First upload image if exists
-      let uploadedImageUrl = imageUrl; // Use existing image URL by default
-      let fileId = null;
+      // Favicon is either an uploaded image or an emoji - mutually exclusive.
+      let uploadedImageUrl = imageUrl;
+      let savedFaviconEmoji = faviconEmoji;
 
-      if (image) {
-        const formData = new FormData();
-        formData.append("image", image);
+      if (faviconType === "emoji") {
+        uploadedImageUrl = null;
+      } else {
+        savedFaviconEmoji = null;
+        if (image) {
+          const formData = new FormData();
+          formData.append("image", image);
 
-        const uploadResponse = await fetch("/api/inactive-tab/upload-image", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
+          const uploadResponse = await fetch("/api/inactive-tab/upload-image", {
+            method: "POST",
+            body: formData,
+            credentials: "include",
+          });
 
-        if (!uploadResponse.ok) {
-          throw new Error("Failed to upload image");
-        }
+          if (!uploadResponse.ok) {
+            throw new Error("Failed to upload image");
+          }
 
-        const uploadData = await uploadResponse.json();
-        if (uploadData.status === "SUCCESS") {
-          uploadedImageUrl = uploadData.data.imageUrl;
-          fileId = uploadData.data.fileId;
-        } else {
-          throw new Error(uploadData.error || "Image upload failed");
+          const uploadData = await uploadResponse.json();
+          if (uploadData.status === "SUCCESS") {
+            uploadedImageUrl = uploadData.data.imageUrl;
+          } else {
+            throw new Error(uploadData.error || "Image upload failed");
+          }
         }
       }
 
@@ -173,8 +187,9 @@ export default function DiscountList({ onMakeBundleClick }) {
           message,
           startDate: startDate || null,
           endDate: endDate || null,
-          imageUrl: uploadedImageUrl, // Use the uploaded or existing image URL
-          isEnabled,
+          imageUrl: uploadedImageUrl,
+          faviconEmoji: savedFaviconEmoji,
+          timezone,
         }),
         credentials: "include",
       });
@@ -187,11 +202,11 @@ export default function DiscountList({ onMakeBundleClick }) {
 
       if (settingsData.status === "SUCCESS") {
         showAlert("Settings saved successfully!");
-        // Update the image URL state with the new URL
-        if (uploadedImageUrl) {
+        if (faviconType === "image" && uploadedImageUrl) {
           setImageUrl(uploadedImageUrl);
         }
         if (image) setImage(null); // Clear the temporary image file
+        setHasChanges(false);
       } else {
         throw new Error(settingsData.error || "Save failed");
       }
@@ -206,12 +221,14 @@ export default function DiscountList({ onMakeBundleClick }) {
     }
   };
 
-  const handleToggleEnabled = () => {
-    setIsEnabled(!isEnabled);
-  };
   const handleRemoveImage = () => {
     setImage(null);
     setImageUrl(null);
+    markChanged();
+  };
+  const handleRemoveFaviconEmoji = () => {
+    setFaviconEmoji(null);
+    markChanged();
   };
   if (showBundleAction) {
     return <AnnouncementBarActions />;
@@ -546,7 +563,7 @@ export default function DiscountList({ onMakeBundleClick }) {
         )}
 
         {selectedTab === "Settings" && (
-          <div className="d-flex flex-column gap-3 p-4">
+          <div className="d-flex flex-column gap-4 p-4">
             {loading && (
               <div className="text-center">
                 <Spinner animation="border" role="status">
@@ -556,257 +573,265 @@ export default function DiscountList({ onMakeBundleClick }) {
             )}
 
             <Form onSubmit={handleSubmit}>
-              <Row className="g-0 linrrow">
-                <Card
-                  className="border-0 w-full"
-                  style={{ background: "rgb(241, 242, 244)" }}
-                >
-                  <Card.Body className="d-flex align-items-center justify-content-between">
-                    <div className="d-flex flex-column gap-3 w-100">
-                      <Form.Group>
-                        <Form.Label className="inputtitle">Message</Form.Label>
-
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
-                            position: "relative",
-                          }}
-                        >
-                          <div style={{ position: "relative", flexGrow: 1 }}>
-                            <Form.Control
-                              className="inputbox"
-                              type="text"
-                              value={message}
-                              onChange={(e) => setMessage(e.target.value)}
-                              placeholder="Enter message to display when tab is inactive"
-                              style={{
-                                paddingRight: "35px",
-                                borderRadius: "8px",
-                              }}
-                              disabled={loading}
-                            />
-
-                            {/* Emoji Icon Inside Input */}
-                            <span
-                              onClick={() =>
-                                setShowEmojiPicker((prev) => !prev)
-                              }
-                              style={{
-                                position: "absolute",
-                                right: "10px",
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                cursor: "pointer",
-                                color: "#6c757d",
-                                fontSize: "1.5rem",
-                              }}
-                            >
-                              😀
-                            </span>
-
-                            {/* Emoji Picker */}
-                            {showEmojiPicker && (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: "50px",
-                                  right: "0",
-                                  zIndex: 100,
-                                }}
-                              >
-                                <EmojiPicker onEmojiClick={handleEmojiClick} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                          className="mt-2"
-                        >
-                          The message that will show in the browser tab's title
-                          when the visitor changes to another tab.
-                        </p>
-                      </Form.Group>
-
-                      {/* Inactive Tab Message - Favicon  */}
-                      <Form.Group className="mt-3">
-                        <Form.Label className="inputtitle">Favicon</Form.Label>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            width: "100%",
-                            position: "relative",
-                          }}
-                        >
-                          {/* Image Preview - Updated to show both temporary and stored images */}
-                          {image || imageUrl ? (
-                            <div
-                              style={{
-                                marginTop: "8px",
-                                position: "relative",
-                                display: "inline-block",
-                              }}
-                            >
-                              <img
-                                src={
-                                  image ? URL.createObjectURL(image) : imageUrl
-                                }
-                                alt="Preview"
-                                width="100"
-                                height="80"
-                                style={{
-                                  borderRadius: "6px",
-                                  border: "1px solid #ccc",
-                                  objectFit: "cover",
-                                }}
-                              />
-                              <Button
-                                text={<X size={12} />}
-                                onClick={handleRemoveImage}
-                                style={{
-                                  position: "absolute",
-                                  top: "-8px",
-                                  right: "-8px",
-                                  backgroundColor: "rgba(0,0,0,0.7)",
-                                  color: "white",
-                                  borderRadius: "50%",
-                                  width: "24px",
-                                  height: "24px",
-                                  padding: "0",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  zIndex: 10,
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div className="m-1">
-                              {/* Upload Icon Outside Input */}
-                              <span
-                                onClick={() => fileInputRef.current.click()}
-                                style={{
-                                  cursor: "pointer",
-                                  color: "#6c757d",
-                                  fontSize: "1.6rem",
-                                  display: "flex",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Upload />
-                              </span>
-                              {/* Hidden File Input */}
-                              <input
-                                type="file"
-                                accept="image/*"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                style={{ display: "none" }}
-                                disabled={loading}
-                              />
-                            </div>
-                          )}
-                        </div>
-                        <p
-                          style={{
-                            fontFamily: "Inter",
-                            fontStyle: "normal",
-                            fontWeight: "500",
-                            fontSize: "13px",
-                            lineHeight: "100%",
-                            color: "#616161",
-                          }}
-                          className="mt-2"
-                        >
-                          Uploaded Image will be used as your favicon.
-                        </p>
-                      </Form.Group>
-
-                      {/* Start & End Date */}
-                      <div
+              <div className="d-flex flex-column gap-3">
+                {/* 1. Message */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                      🔖 Message
+                    </h6>
+                    <p className="mb-3" style={{ fontSize: "13px", color: "#616161" }}>
+                      Shown in the browser tab's title when a visitor switches away from your store.
+                    </p>
+                    <Form.Group>
+                      <Form.Control
+                        type="text"
+                        value={message}
+                        onChange={(e) => { setMessage(e.target.value); markChanged(); }}
+                        placeholder="Enter message to display when tab is inactive"
                         style={{
-                          display: "flex",
-                          gap: "10px",
-                          marginTop: "15px",
+                          borderRadius: "8px",
+                          background: "#fff",
+                          border: "1px solid rgba(34, 34, 34, 0.1)",
+                          padding: "12px 15px",
                         }}
-                      >
-                        <Form.Group controlId="startDate" style={{ flex: 1 }}>
-                          <Form.Label>Start Date</Form.Label>
-                          <Form.Control
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            disabled={loading}
-                          />
-                        </Form.Group>
-                        <Form.Group controlId="endDate" style={{ flex: 1 }}>
-                          <Form.Label>End Date</Form.Label>
-                          <Form.Control
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            disabled={loading}
-                          />
-                        </Form.Group>
-                      </div>
-                      <p
-                        style={{
-                          fontFamily: "Inter",
-                          fontStyle: "normal",
-                          fontWeight: "500",
-                          fontSize: "13px",
-                          lineHeight: "100%",
-                          color: "#616161",
-                        }}
-                      >
-                        Optionally schedule the Inactive Tab Message to show on
-                        specific dates.
-                      </p>
-
-                      {/* Enable/Disable Toggle */}
-                      <Form.Group className="mt-3">
-                        <Form.Check
-                          type="switch"
-                          id="enable-switch"
-                          label="Enable inactive tab messages"
-                          checked={isEnabled}
-                          onChange={handleToggleEnabled}
-                          disabled={loading}
-                        />
-                      </Form.Group>
-
-                      {/* Submit Button */}
-                      <div className="mt-4">
-                        <Button
-                          type="submit"
-                          text={loading ? "Saving..." : "Save Settings"}
-                          disabled={loading}
-                          style={{
-                            background: "black",
-                            borderRadius: "12px",
-                            padding: "12px 24px",
-                            color: "white",
-                            width: "200px",
-                          }}
-                        />
-                      </div>
-                    </div>
+                        disabled={loading}
+                      />
+                    </Form.Group>
                   </Card.Body>
                 </Card>
-              </Row>
+
+                {/* 2. Favicon */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                      🖼️ Favicon
+                    </h6>
+                    <p className="mb-3" style={{ fontSize: "13px", color: "#616161" }}>
+                      Swaps the tab's icon alongside the message. Choose an uploaded image or an emoji.
+                    </p>
+
+                    <ButtonGroup className="mb-3">
+                      <ToggleButton
+                        id="favicon-type-image"
+                        type="radio"
+                        variant={faviconType === "image" ? "dark" : "outline-secondary"}
+                        checked={faviconType === "image"}
+                        value="image"
+                        onChange={() => { setFaviconType("image"); markChanged(); }}
+                      >
+                        Upload Image
+                      </ToggleButton>
+                      <ToggleButton
+                        id="favicon-type-emoji"
+                        type="radio"
+                        variant={faviconType === "emoji" ? "dark" : "outline-secondary"}
+                        checked={faviconType === "emoji"}
+                        value="emoji"
+                        onChange={() => { setFaviconType("emoji"); markChanged(); }}
+                      >
+                        Use Emoji
+                      </ToggleButton>
+                    </ButtonGroup>
+
+                    {faviconType === "image" ? (
+                      <>
+                        {image || imageUrl ? (
+                          <div style={{ position: "relative", display: "inline-block" }}>
+                            <img
+                              src={image ? URL.createObjectURL(image) : imageUrl}
+                              alt="Preview"
+                              width="100"
+                              height="80"
+                              style={{ borderRadius: "8px", border: "1px solid #ccc", objectFit: "cover" }}
+                            />
+                            <Button
+                              text={<X size={12} />}
+                              onClick={handleRemoveImage}
+                              style={{
+                                position: "absolute",
+                                top: "-8px",
+                                right: "-8px",
+                                backgroundColor: "rgba(0,0,0,0.7)",
+                                color: "white",
+                                borderRadius: "50%",
+                                width: "24px",
+                                height: "24px",
+                                padding: "0",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 10,
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => fileInputRef.current.click()}
+                            className="d-flex align-items-center gap-2"
+                            style={{
+                              cursor: "pointer",
+                              background: "#fff",
+                              border: "1px dashed rgba(34, 34, 34, 0.25)",
+                              borderRadius: "8px",
+                              padding: "14px 16px",
+                              width: "fit-content",
+                              color: "#616161",
+                              fontSize: "13px",
+                            }}
+                          >
+                            <Upload size={16} />
+                            Upload an image
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          ref={fileInputRef}
+                          onChange={handleImageUpload}
+                          style={{ display: "none" }}
+                          disabled={loading}
+                        />
+                      </>
+                    ) : (
+                      <div style={{ position: "relative" }}>
+                        {faviconEmoji ? (
+                          <div className="d-flex align-items-center gap-2">
+                            <div
+                              style={{
+                                fontSize: "2rem",
+                                background: "#fff",
+                                border: "1px solid #ccc",
+                                borderRadius: "8px",
+                                width: "60px",
+                                height: "60px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              {faviconEmoji}
+                            </div>
+                            <Button
+                              text="Change"
+                              onClick={() => setShowFaviconEmojiPicker((prev) => !prev)}
+                              style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", padding: "8px 14px" }}
+                            />
+                            <Button
+                              text={<X size={14} />}
+                              onClick={handleRemoveFaviconEmoji}
+                              style={{
+                                backgroundColor: "rgba(0,0,0,0.7)",
+                                color: "white",
+                                borderRadius: "50%",
+                                width: "28px",
+                                height: "28px",
+                                padding: "0",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => setShowFaviconEmojiPicker((prev) => !prev)}
+                            className="d-flex align-items-center gap-2"
+                            style={{
+                              cursor: "pointer",
+                              background: "#fff",
+                              border: "1px dashed rgba(34, 34, 34, 0.25)",
+                              borderRadius: "8px",
+                              padding: "14px 16px",
+                              width: "fit-content",
+                              color: "#616161",
+                              fontSize: "13px",
+                            }}
+                          >
+                            😀 Choose an emoji
+                          </div>
+                        )}
+                        {showFaviconEmojiPicker && (
+                          <div style={{ position: "absolute", top: "70px", left: "0", zIndex: 100 }}>
+                            <EmojiPicker onEmojiClick={handleFaviconEmojiClick} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
+
+                {/* 3. Schedule */}
+                <Card className="border-0" style={{ background: "#F1F2F4", borderRadius: "10px" }}>
+                  <Card.Body>
+                    <h6 style={{ fontWeight: 600, marginBottom: "5px" }}>
+                      📅 Schedule
+                    </h6>
+                    <p className="mb-3" style={{ fontSize: "13px", color: "#616161" }}>
+                      Optionally limit the message to a date range. Leave both blank to run indefinitely.
+                    </p>
+                    <Row>
+                      <Col md={5}>
+                        <Form.Group controlId="startDate">
+                          <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>Start Date & Time</Form.Label>
+                          <Form.Control
+                            type="datetime-local"
+                            value={startDate}
+                            onChange={(e) => { setStartDate(e.target.value); markChanged(); }}
+                            disabled={loading}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={5}>
+                        <Form.Group controlId="endDate">
+                          <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>End Date & Time</Form.Label>
+                          <Form.Control
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => { setEndDate(e.target.value); markChanged(); }}
+                            disabled={loading}
+                            style={{ background: "#fff", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
+                          />
+                        </Form.Group>
+                      </Col>
+                      <Col md={2}>
+                        <Form.Group controlId="timezone">
+                          <Form.Label style={{ fontWeight: 500, fontSize: "13px" }}>Timezone</Form.Label>
+                          <Form.Select
+                            value={timezone}
+                            onChange={(e) => { setTimezone(e.target.value); markChanged(); }}
+                            disabled={loading}
+                            style={{ background: "#fff", color: "#000", border: "1px solid rgba(34, 34, 34, 0.1)", borderRadius: "8px", height: "48px" }}
+                          >
+                            <option value="GMT">GMT</option>
+                            <option value="EST">EST</option>
+                            <option value="PST">PST</option>
+                            <option value="UTC">UTC</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                    </Row>
+                  </Card.Body>
+                </Card>
+
+                <div>
+                  <Button
+                    type="submit"
+                    text={loading ? "Saving..." : "Save Settings"}
+                    disabled={loading || !hasChanges}
+                    style={{
+                      background: "black",
+                      borderRadius: "12px",
+                      padding: "12px 24px",
+                      color: "white",
+                      width: "200px",
+                      opacity: (loading || !hasChanges) ? 0.5 : 1,
+                      cursor: (loading || !hasChanges) ? "not-allowed" : "pointer",
+                    }}
+                  />
+                </div>
+              </div>
             </Form>
           </div>
         )}

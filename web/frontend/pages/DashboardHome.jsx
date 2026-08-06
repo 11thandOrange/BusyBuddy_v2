@@ -16,6 +16,7 @@ import {
   Lock,
 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
+import { openEditorTab } from "../utils/openEditorTab";
 import "./DashboardHome.css";
 
 // Widget configuration: routes, plus the visual identity (icon/colors) and
@@ -397,10 +398,7 @@ export default function DashboardHome() {
     if (widget.settingsRoute) {
       navigate(widget.settingsRoute + (location.search ? "&" + location.search.slice(1) : ""));
     } else {
-      const params = new URLSearchParams(location.search);
-      const shop = params.get("shop");
-      const queryString = shop ? `?shop=${shop}` : "";
-      window.open(`/editor.html${queryString}#${widget.editorRoute}`, "_blank");
+      openEditorTab(widget.editorRoute, location.search);
     }
   };
 
@@ -433,6 +431,36 @@ export default function DashboardHome() {
   return (
     <div className="dashboard-home">
       <div className="dashboard-inner">
+        {/* Notification Banners - shown first so the setup/upgrade prompts
+            are the first thing a merchant sees on the page. */}
+        {(showExtensionBanner || showUpgradeBanner) && (
+          <div className="notification-card">
+            {showExtensionBanner && (
+              <a
+                href={getThemeExtensionUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
+              >
+                <ExternalLink size={16} className="notification-icon" />
+                <span>
+                  Enable BusyBuddy: open the theme editor, then{" "}
+                  <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong>
+                </span>
+              </a>
+            )}
+            {showUpgradeBanner && (
+              <div
+                className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
+                onClick={() => navigate("/plan" + location.search)}
+              >
+                <Zap size={16} className="notification-icon" />
+                <span>Upgrade your plan for more features!</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Hero band: this is the only "header" our component renders - the
             Shopify page header above it already shows the app name/logo. */}
         <div className="hero-band">
@@ -642,35 +670,6 @@ export default function DashboardHome() {
             </div>
           </div>
         </div>
-
-        {/* Notification Banners */}
-        {(showExtensionBanner || showUpgradeBanner) && (
-          <div className="notification-card">
-            {showExtensionBanner && (
-              <a
-                href={getThemeExtensionUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`notification-banner enable-extension ${extensionBannerFlashing ? "flashing" : ""}`}
-              >
-                <ExternalLink size={16} className="notification-icon" />
-                <span>
-                  Enable BusyBuddy: open the theme editor, then{" "}
-                  <strong>Add block &gt; Apps &gt; BusyBuddy Announcement</strong>
-                </span>
-              </a>
-            )}
-            {showUpgradeBanner && (
-              <div
-                className={`notification-banner upgrade-plan ${upgradeBannerFlashing ? "flashing" : ""}`}
-                onClick={() => navigate("/plan" + location.search)}
-              >
-                <Zap size={16} className="notification-icon" />
-                <span>Upgrade your plan for more features!</span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

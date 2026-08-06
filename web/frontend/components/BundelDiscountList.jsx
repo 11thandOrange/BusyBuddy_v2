@@ -9,6 +9,8 @@ import DiscountPreviewModal from "./Modals/DiscountPreviewModal";
 import Settings from "./Settings";
 import Analytics from "./Analytics/BundleAnalytics";
 import OverviewTab from "./OverviewTab";
+import { openEditorTab } from "../utils/openEditorTab";
+import { transformProductNode } from "../utils/productEnrichment";
 
 // Map discount types to editor routes
 const EDITOR_ROUTES = {
@@ -21,16 +23,16 @@ const EDITOR_ROUTES = {
 // Overview items per discount type
 const OVERVIEW_ITEMS = {
   "Bundle Discount": [
-    { id: "intro", title: "Introduction to Bundles", description: "Learn bundle basics", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "create", title: "Creating a Bundle", description: "Step-by-step guide", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "pricing", title: "Bundle Pricing", description: "Set up discounts", videoSrc: "/assets/bundle_discount.mp4" },
-    { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/bundle_discount.mp4" },
+    { id: "create", title: "Create A Standard Bundle Discount", description: "Build a bundle from scratch, choosing the products and discount that go into it.", youtubeId: "dyQgfV0r5Dw" },
+    { id: "customize", title: "Customize A Standard Bundle", description: "Style your bundle widget's look and feel to match your storefront.", youtubeId: "pGVKHWj-OHY" },
+    { id: "settings", title: "Edit Settings", description: "Configure display, scheduling, and pricing settings for an existing bundle.", youtubeId: "Pov8ltc6mYY" },
+    { id: "view-all", title: "View All Standard Bundle Discounts", description: "See how to review, manage, and track all of your active bundle discounts.", youtubeId: "QCxXjydAxio" },
   ],
   "Buy One Get One": [
-    { id: "intro", title: "Introduction to BOGO", description: "Learn BOGO basics", videoSrc: "/assets/bogo.mp4" },
-    { id: "create", title: "Creating BOGO Offers", description: "Step-by-step guide", videoSrc: "/assets/bogo.mp4" },
-    { id: "rules", title: "BOGO Rules", description: "Configure conditions", videoSrc: "/assets/bogo.mp4" },
-    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/bogo.mp4" },
+    { id: "customize", title: "Customize BOGO Discounts", description: "Adjust the appearance of your BOGO offer to fit your brand.", youtubeId: "g3HcWXCmhjw" },
+    { id: "create", title: "Create A BOGO Discount", description: "Set up a buy-one-get-one offer, including the buy and get product groups.", youtubeId: "09FBY3BIPhE" },
+    { id: "settings", title: "Edit BOGO Settings", description: "Fine-tune the rules and display settings on an existing BOGO discount.", youtubeId: "oveHhTT4tLE" },
+    { id: "view-all", title: "View Your BOGO Discounts", description: "See how to review and manage all of your BOGO discounts in one place.", youtubeId: "iABu5dfKzPw" },
   ],
   "Volume Discount": [
     { id: "intro", title: "Introduction to Volume Discounts", description: "Learn the basics", videoSrc: "/assets/volume_discount.mp4" },
@@ -39,10 +41,8 @@ const OVERVIEW_ITEMS = {
     { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/volume_discount.mp4" },
   ],
   "Mix and Match": [
-    { id: "intro", title: "Introduction to Mix & Match", description: "Learn the basics", videoSrc: "/assets/mix_match.mp4" },
-    { id: "create", title: "Creating Mix & Match", description: "Step-by-step guide", videoSrc: "/assets/mix_match.mp4" },
-    { id: "products", title: "Adding Products", description: "Select eligible items", videoSrc: "/assets/mix_match.mp4" },
-    { id: "display", title: "Display Settings", description: "Customize appearance", videoSrc: "/assets/mix_match.mp4" },
+    { id: "create", title: "Create A Mix & Match Discount", description: "Build a Mix & Match offer by choosing eligible products and setting your quantity tiers.", youtubeId: "p_pNA7W-ha8" },
+    { id: "view-all", title: "View Your Mix & Match Discounts", description: "See how to review and manage all of your Mix & Match discounts in one place.", youtubeId: "umtq5bh6ZsQ" },
   ],
 };
 
@@ -59,6 +59,7 @@ export default function DiscountList({
   const [discounts, setDiscounts] = useState([]);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState(null);
+  const [liveProductImages, setLiveProductImages] = useState({});
 
   // Get query string for preserving host and shop params
   const getQueryString = useCallback(() => {
@@ -75,13 +76,9 @@ export default function DiscountList({
   const openEditor = useCallback((id = null) => {
     const appType = EDITOR_ROUTES[discountType];
     if (!appType) return;
-    
-    const params = new URLSearchParams(location.search);
-    const shop = params.get('shop');
-    const queryString = shop ? `?shop=${shop}` : '';
+
     const path = id ? `/${appType}/editor/${id}` : `/${appType}/editor`;
-    // Use editor.html with hash routing to open as standalone page
-    window.open(`/editor.html${queryString}#${path}`, '_blank');
+    openEditorTab(path, location.search);
   }, [discountType, location.search]);
 
   useEffect(() => {
@@ -94,6 +91,40 @@ export default function DiscountList({
       fetchDiscounts();
     }
   }, [refreshTrigger, selectedTab]);
+
+  // The saved bundle snapshot's product image can go stale (the image was
+  // still processing on Shopify's side when the product was added, or it
+  // was changed since) - refresh thumbnails with one batched live lookup
+  // instead of trusting whatever was frozen into the bundle at save time.
+  const refreshThumbnailImages = async (discountsList) => {
+    const bareIds = [];
+    const seen = new Set();
+    discountsList.forEach((discount) => {
+      const firstProduct = discount.products?.[0] || discount.productsX?.[0] || discount.productsY?.[0];
+      const productId = firstProduct?.productId || firstProduct?.id;
+      if (!productId) return;
+      const bareId = productId.replace('gid://shopify/Product/', '');
+      if (seen.has(bareId)) return;
+      seen.add(bareId);
+      bareIds.push(bareId);
+    });
+    if (bareIds.length === 0) return;
+
+    try {
+      const response = await fetch(`/api/products?ids=${bareIds.join(',')}`, { credentials: 'include' });
+      if (!response.ok) return;
+      const data = await response.json();
+      const edges = data?.data?.edges || [];
+      const imagesByProductId = {};
+      edges.forEach((edge) => {
+        const live = transformProductNode(edge.node);
+        if (live.media) imagesByProductId[edge.node.id] = live.media;
+      });
+      setLiveProductImages(imagesByProductId);
+    } catch (err) {
+      console.error("[BundelDiscountList] Error refreshing thumbnail images:", err);
+    }
+  };
 
   const fetchDiscounts = async () => {
     console.log("[DEBUG fetchDiscounts] Starting fetch...");
@@ -135,6 +166,7 @@ export default function DiscountList({
         .map((item) => ({ ...item, selected: false }));
 
       setDiscounts(filteredDiscounts);
+      refreshThumbnailImages(filteredDiscounts);
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
@@ -246,7 +278,7 @@ export default function DiscountList({
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-center align-items-center"
+            className="d-flex justify-content-between align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -259,7 +291,7 @@ export default function DiscountList({
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}
@@ -371,7 +403,19 @@ export default function DiscountList({
                     </p>
                   </div>
                 ) : (
-                  discounts.map((discount, index) => (
+                  discounts.map((discount, index) => {
+                    // Buy One Get One bundles store their products under
+                    // productsX/productsY, not products - discount.products
+                    // is always undefined for them, so this always rendered
+                    // a broken <img> for every BOGO row.
+                    const firstProduct =
+                      discount.products?.[0] ||
+                      discount.productsX?.[0] ||
+                      discount.productsY?.[0];
+                    const firstProductId = firstProduct?.productId || firstProduct?.id;
+                    const firstProductImage =
+                      liveProductImages[firstProductId] || firstProduct?.media || firstProduct?.images?.[0];
+                    return (
                     <Row key={discount._id} className="g-0 linrrow mb-3">
                       <Col>
                         <Card
@@ -381,14 +425,23 @@ export default function DiscountList({
                           <Card.Body className="d-flex flex-wrap justify-content-between align-items-center gap-3">
                             {/* Left Side: Image + Details */}
                             <div className="d-flex align-items-start gap-3 flex-grow-1 min-w-0">
-                              <img
-                                src={discount.products[0]?.media}
-                                alt={discount.products[0]?.title || "Discount Product"}
-                                width={80}
-                                height={80}
-                                className="flex-shrink-0"
-                                style={{ objectFit: "cover", borderRadius: "8px" }}
-                              />
+                              {firstProductImage ? (
+                                <img
+                                  src={firstProductImage}
+                                  alt={firstProduct?.title || "Discount Product"}
+                                  width={80}
+                                  height={80}
+                                  className="flex-shrink-0"
+                                  style={{ objectFit: "cover", borderRadius: "8px" }}
+                                />
+                              ) : (
+                                <div
+                                  className="flex-shrink-0 d-flex align-items-center justify-content-center"
+                                  style={{ width: 80, height: 80, background: "#e5e7eb", borderRadius: "8px", fontSize: "28px" }}
+                                >
+                                  📦
+                                </div>
+                              )}
 
                               <div className="bundlebox text-truncate" style={{ minWidth: 0 }}>
                                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -412,9 +465,15 @@ export default function DiscountList({
                                       : "Bundle and Save!")}
                                 </p>
 
-                                {/* Wrap product titles */}
+                                {/* Wrap product titles - BOGO bundles keep
+                                    their products under productsX/productsY,
+                                    not products, so combine all three. */}
                                 <div className="d-flex flex-wrap gap-2 small text-truncate">
-                                  {discount.products.map((product, idx) => (
+                                  {[
+                                    ...(Array.isArray(discount.products) ? discount.products : []),
+                                    ...(discount.productsX || []),
+                                    ...(discount.productsY || []),
+                                  ].map((product, idx) => (
                                     <span
                                       key={`${discount._id}-product-${product.productId || idx}`}
                                       className="badge bg-light text-dark text-truncate"
@@ -498,7 +557,8 @@ export default function DiscountList({
                         </Card>
                       </Col>
                     </Row>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}

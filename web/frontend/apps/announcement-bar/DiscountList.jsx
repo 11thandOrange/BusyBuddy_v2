@@ -5,7 +5,7 @@ import { Form } from "react-bootstrap";
 import tshirt from "./tshirt.png";
 import "./announcementBarStyles.css";
 import Button from "../../components/Button";
-import { X, Trash } from "react-bootstrap-icons";
+import { X, Trash, Pencil } from "react-bootstrap-icons";
 import view from "../../assets/view.png";
 import videoimg from "../../assets/videoimg.png";
 import dropdown from "../../assets/Vector.png";
@@ -19,38 +19,27 @@ import OverviewTab from "../../components/OverviewTab";
 const announcementBarOverviewItems = [
   {
     id: "intro",
-    title: "Introduction to Announcement Bars",
-    description: "Learn the basics of announcement bars",
-    videoSrc: "/assets/announcement_bar.mp4",
-    posterSrc: null,
+    title: "Announcement Bars",
+    description: "A quick tour of what announcement bars are and how they can promote sales, shipping deals, and more.",
+    youtubeId: "DXudRxdzmV8",
   },
   {
-    id: "create",
-    title: "Creating Your First Bar",
-    description: "Step-by-step guide to create a bar",
-    videoSrc: "/assets/announcement_bar.mp4",
-    posterSrc: null,
+    id: "settings",
+    title: "Edit Settings",
+    description: "Walk through the settings panel to configure messaging, timing, and behavior for your bar.",
+    youtubeId: "5lMAw0hg__c",
   },
   {
     id: "customize",
-    title: "Customization Options",
-    description: "Colors, fonts, and animations",
-    videoSrc: "/assets/announcement_bar.mp4",
-    posterSrc: null,
+    title: "Customize Announcement Bars",
+    description: "Style your bar with colors, fonts, and layout options to match your store's branding.",
+    youtubeId: "5I7_B5DRYEo",
   },
   {
-    id: "schedule",
-    title: "Scheduling & Targeting",
-    description: "Show bars at the right time",
-    videoSrc: "/assets/announcement_bar.mp4",
-    posterSrc: null,
-  },
-  {
-    id: "analytics",
-    title: "Tracking Performance",
-    description: "Measure engagement and clicks",
-    videoSrc: "/assets/announcement_bar.mp4",
-    posterSrc: null,
+    id: "create",
+    title: "Create An Announcement Bar",
+    description: "Follow along to build and publish your first announcement bar from start to finish.",
+    youtubeId: "TAIGoC_jDHI",
   },
 ];
 
@@ -117,7 +106,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
 
       setAnnouncementBars(
         announcementBars.map((b) =>
-          b._id === id ? { ...b, status: newStatus } : { ...b, status: false }
+          b._id === id ? { ...b, status: newStatus } : { ...b, status: newStatus === "active" ? "inactive" : b.status }
         )
       );
     } catch (err) {
@@ -187,7 +176,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
       <Row>
         <div className="d-flex gap-1">
           <div
-            className="d-flex justify-content-center align-items-center"
+            className="d-flex justify-content-between align-items-center"
             style={{
               marginLeft: "0",
               marginRight: "0",
@@ -200,7 +189,7 @@ export default function DiscountList({ refreshTrigger, onSaveSuccess }) {
               width: "100%",
             }}
           >
-            <ButtonGroup className="d-flex justify-content-center gap-2" style={{ padding: "10px !important" }}>
+            <ButtonGroup className="d-flex gap-2" style={{ padding: "10px !important" }}>
               {tabs.map((tab, idx) => (
                 <ToggleButton
                   key={idx}
@@ -389,7 +378,7 @@ const AnnouncementBarItem = ({ bar, onEdit, onDelete, onToggle }) => {
           </span>
 
           <Button
-            text="Edit"
+            text={<Pencil size={16} />}
             onClick={() => onEdit(bar._id)}
             style={{
               backgroundColor: "rgba(81, 105, 221, 0.1)",

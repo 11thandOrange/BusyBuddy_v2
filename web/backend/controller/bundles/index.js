@@ -16,6 +16,46 @@ import activityLogService from "../../services/activityLogService.js";
 
 const MAX_TITLE_LENGTH = 255;
 
+// The storefront widget's countdown timer (script-preview.js) reads
+// widgetAppearance.countDownTimerEndsAt as its target time - it was never
+// set anywhere, so the timer never rendered on the real storefront for any
+// bundle type. The bundle's own schedule end date is the correct target.
+function withCountdownTarget(widgetAppearance, endDate) {
+  if (!endDate) return widgetAppearance;
+  return { ...(widgetAppearance || {}), countDownTimerEndsAt: endDate };
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Builds the descriptionHtml written to the real Shopify bundle product
+ * from the merchant-edited "Product Info" fields (description + specs).
+ * @param {string} [description] - Free-text product description.
+ * @param {Array<{label: string, value: string}>} [specs] - Spec rows.
+ * @returns {string} HTML, or an empty string if there's nothing to write.
+ */
+function buildDescriptionHtml(description, specs) {
+  let html = "";
+  if (description && description.trim()) {
+    html += `<p>${escapeHtml(description.trim())}</p>`;
+  }
+  const validSpecs = (specs || []).filter((s) => s && s.label && s.value);
+  if (validSpecs.length > 0) {
+    const items = validSpecs
+      .map((s) => `<li>${escapeHtml(s.label)}: ${escapeHtml(s.value)}</li>`)
+      .join("");
+    html += `<ul>${items}</ul>`;
+  }
+  return html;
+}
+
 /**
  * Server-side validation for bundle create/update payloads. Client-side
  * checks exist too, but every one of these fields is directly reachable via
@@ -30,7 +70,7 @@ const MAX_TITLE_LENGTH = 255;
  * @returns {string|null} An error message, or null if the payload is valid.
  */
 function validateBundlePayload(body, { requireProducts = true, requireTitle = true } = {}) {
-  const { title, products, productsX, productsY, discountType, discountValue, startDate, endDate, quantityBreaks, tierDiscounts } = body;
+  const { title, products, productsX, productsY, discountType, discountValue, startDate, endDate, quantityBreaks, tierDiscounts, type } = body;
 
   if (title !== undefined) {
     if (typeof title !== "string" || title.trim().length === 0) {
@@ -58,6 +98,18 @@ function validateBundlePayload(body, { requireProducts = true, requireTitle = tr
     // field, it can't be used to wipe the bundle down to zero products.
     if (!hasGeneralProducts && !hasBogoProducts) {
       return "At least one product is required.";
+    }
+  }
+
+  // Per-type product count rules. Only checked when the "products" field is
+  // actually present on this request (create always sends it; update may
+  // legitimately omit it to only touch other fields).
+  if ("products" in body && Array.isArray(products)) {
+    if (type === "Bundle Discount" && products.length < 2) {
+      return "A bundle needs at least 2 products - you can't bundle a single product.";
+    }
+    if (type === "Volume Discount" && products.length > 1) {
+      return "Volume Discount supports exactly 1 product per offer.";
     }
   }
 
@@ -438,6 +490,17 @@ async function createProductBundleV2(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage, // Widget copy (BOGO/Volume Discount)
+      primaryMessage, // Widget copy (Bundle Discount)
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -530,6 +593,15 @@ async function createProductBundleV2(req, res) {
     // console.log("business tags ::::", cleanType);
     let tags = ["busybuddybundles", cleanType];
     const tagsUpdateResult = await updateProductTags(client, session, productId, tags);
+
+    // 4b. Write the merchant-edited description/specs to the real product,
+    // same as status/tags above - this is the one field this bundle type
+    // never had any real value for until "Product Info" existed to edit it.
+    const descriptionHtml = buildDescriptionHtml(description, specs);
+    if (descriptionHtml) {
+      await updateShopifyProduct(client, session, productId, { descriptionHtml });
+    }
+
     // 5. Get updated product data (optional, for response)
     const updatedProductData = await getUpdatedProductData(client, session, productId);
 
@@ -542,13 +614,12 @@ async function createProductBundleV2(req, res) {
       // return res.status(404).json({ status: false, error: "Shop not found in local database." });
     }
 
-    // Structure products for DB storage based on type
-    let productsToStoreInDb;
-    if (type === "Buy One Get One") {
-      productsToStoreInDb = { x: productsX, y: productsY };
-    } else {
-      productsToStoreInDb = products; // Store the general products array for other types
-    }
+    // Structure products for DB storage based on type. BOGO's products
+    // live in productsX/productsY (saved separately below) - products is
+    // an array-of-objects schema field, so previously storing {x, y} here
+    // (an object, not an array) got silently cast away to [] by Mongoose,
+    // and anything reading discount.products for a BOGO bundle got nothing.
+    const productsToStoreInDb = type === "Buy One Get One" ? undefined : products;
     console.log("productsToStoreInDb:", JSON.stringify(productsToStoreInDb, null, 2));
     // 🧩 When type is "Volume Discount", attach variant IDs to quantityBreaks
     if (type === "Volume Discount" && Array.isArray(quantityBreaks)) {
@@ -568,13 +639,24 @@ async function createProductBundleV2(req, res) {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
       productsX: productsX,
       productsY: productsY,
+      description,
+      specs,
+      secondaryMessage,
+      primaryMessage,
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
+      timezone,
     });
     // fetch collection if dont exist  then insert
     const clients = new shopify.api.clients.Graphql({
@@ -691,6 +773,13 @@ async function createMixAndMatchBundle(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage,
+      selectedTier,
+      timezone,
+      selectedEmoji,
+      emojiPosition,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body);
@@ -699,7 +788,7 @@ async function createMixAndMatchBundle(req, res) {
     }
 
     /*
-        
+
         mutation mixMatchProductCreate {
     productCreate(
       input: {title: "mix and match", metafields: [
@@ -762,8 +851,10 @@ mutation setPriceForMixAndMatchProduct {
                     }
                 }
             }`;
+    const descriptionHtml = buildDescriptionHtml(description, specs);
     const bundleInput = {
       title,
+      ...(descriptionHtml ? { descriptionHtml } : {}),
       metafields: [
         {
           key: "bundle_discount_type",
@@ -799,9 +890,14 @@ mutation setPriceForMixAndMatchProduct {
         },
       ],
       status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
-      productPublications: {
-        channelHandle: "online_store", // Assuming you want to publish to online store
-      },
+      // productPublications is [ProductPublicationInput!] - a list, not a
+      // single object. Passing a bare object here fails GraphQL input
+      // coercion, which was silently sinking every Mix & Match save.
+      productPublications: [
+        {
+          channelHandle: "online_store", // Assuming you want to publish to online store
+        },
+      ],
       tags: ["busybuddybundles", "mixAndMatch"],
     };
     const result = await client.request(bundleProductCreateMutation, {
@@ -889,11 +985,18 @@ mutation setPriceForMixAndMatchProduct {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      description,
+      specs,
+      secondaryMessage,
+      selectedTier,
+      timezone,
+      selectedEmoji,
+      emojiPosition,
     });
 
     // Log activity for Mix and Match bundle creation
@@ -954,6 +1057,13 @@ async function updateMixAndMatchBundle(req, res) {
       productsX, // [{ productId, title, quantity, optionSelections:[{componentOptionId, name, uniqueName, values}] }]
       productsY, // same structure as productsX
       originalVariantPrices, // Array of {productId, title, price} from frontend
+      description, // Merchant-edited "Product Info" description
+      specs, // [{label, value}] - Merchant-edited "Product Info" specs
+      secondaryMessage,
+      selectedTier,
+      timezone,
+      selectedEmoji,
+      emojiPosition,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -962,7 +1072,7 @@ async function updateMixAndMatchBundle(req, res) {
     }
 
     /*
-        
+
         mutation mixMatchProductCreate {
     productCreate(
       input: {title: "mix and match", metafields: [
@@ -1025,9 +1135,14 @@ mutation setPriceForMixAndMatchProduct {
                     }
                 }
             }`;
+    const mixMatchDescriptionHtml = buildDescriptionHtml(
+      description !== undefined ? description : existingBundle.description,
+      specs !== undefined ? specs : existingBundle.specs
+    );
     const bundleInput = {
       id: existingBundle.shopifyBundleId,
       title,
+      ...(mixMatchDescriptionHtml ? { descriptionHtml: mixMatchDescriptionHtml } : {}),
       metafields: [
         {
           key: "bundle_discount_type",
@@ -1063,9 +1178,14 @@ mutation setPriceForMixAndMatchProduct {
         },
       ],
       status: status ? "ACTIVE" : "DRAFT", // Convert boolean to string
-      productPublications: {
-        channelHandle: "online_store", // Assuming you want to publish to online store
-      },
+      // productPublications is [ProductPublicationInput!] - a list, not a
+      // single object. Passing a bare object here fails GraphQL input
+      // coercion, which was silently sinking every Mix & Match save.
+      productPublications: [
+        {
+          channelHandle: "online_store", // Assuming you want to publish to online store
+        },
+      ],
       tags: ["busybuddybundles", "mixAndMatch"],
     };
     const result = await client.request(bundleProductUpdateMutation, {
@@ -1167,15 +1287,23 @@ mutation setPriceForMixAndMatchProduct {
       internalName,
       priority: bundlePriority,
       status, // Store the string status
-      widgetAppearance,
+      widgetAppearance: withCountdownTarget(widgetAppearance, endDate || existingBundle.endDate),
       startDate,
       endDate,
       shopId: shopData ? shopData._id : null, // Handle if shopData is null
       shopifyBundleId: productId, // Store the Shopify product ID of the bundle
+      description: description !== undefined ? description : existingBundle.description,
+      specs: specs !== undefined ? specs : existingBundle.specs,
+      secondaryMessage: secondaryMessage !== undefined ? secondaryMessage : existingBundle.secondaryMessage,
+      selectedTier: selectedTier !== undefined ? selectedTier : existingBundle.selectedTier,
+      tierDiscounts: tierDiscounts !== undefined ? tierDiscounts : existingBundle.tierDiscounts,
+      timezone: timezone !== undefined ? timezone : existingBundle.timezone,
+      selectedEmoji: selectedEmoji !== undefined ? selectedEmoji : existingBundle.selectedEmoji,
+      emojiPosition: emojiPosition !== undefined ? emojiPosition : existingBundle.emojiPosition,
     });
-    return res.status(201).json({
+    return res.status(200).json({
       status: true,
-      message: "Mix and Match Bundle created successfully.",
+      message: "Mix and Match Bundle updated successfully.",
       bundleId: productId, // Shopify's bundle product ID
     });
   } catch (error) {
@@ -1595,6 +1723,30 @@ async function getActiveBundles(req, res) {
     return res.status(500).json({ status: false, message: error.message });
   }
 }
+// GET /api/bundles/:id - fetch a single bundle for the editor's edit flow.
+// Without this, every "Edit" open 404s, the editor silently falls back to
+// blank state, and Save then overwrites the real record with defaults.
+async function getBundleById(req, res) {
+  try {
+    const { id } = req.params;
+    const shopDomain = res.locals.shopify.session.shop;
+    const shopData = await Shop.findOne({ myshopify_domain: shopDomain });
+    if (!shopData) {
+      return res.status(404).json({ status: false, message: "Shop not found" });
+    }
+
+    const bundle = await Bundle.findOne({ _id: id, shopId: shopData._id }).lean();
+    if (!bundle) {
+      return res.status(404).json({ status: false, message: "Bundle not found" });
+    }
+
+    return res.status(200).json({ status: true, data: bundle });
+  } catch (error) {
+    console.error("Error getting bundle by id:", error);
+    return res.status(500).json({ status: false, message: error.message });
+  }
+}
+
 async function getShopBundles(req, res) {
   try {
     const shopDomain = res.locals.shopify.session.shop;
@@ -1713,7 +1865,18 @@ async function updateBundle(req, res) {
       productsX,
       productsY,
       originalVariantPrices,
-      priority
+      priority,
+      description,
+      specs,
+      secondaryMessage,
+      primaryMessage,
+      selectedEmoji,
+      emojiPosition,
+      countdownLabel,
+      addToCartText,
+      skipOfferText,
+      showSkipButton,
+      timezone,
     } = req.body;
 
     const validationError = validateBundlePayload(req.body, { requireProducts: false, requireTitle: false });
@@ -1795,6 +1958,20 @@ async function updateBundle(req, res) {
       tagsUpdateResult = await updateProductTags(client, session, existingBundle.shopifyBundleId, tags);
     }
 
+    // 4b. Update description/specs on the real product if either changed.
+    const descriptionInfoChanged =
+      (description !== undefined && description !== existingBundle.description) ||
+      (specs !== undefined && JSON.stringify(specs) !== JSON.stringify(existingBundle.specs));
+    if (descriptionInfoChanged) {
+      const descriptionHtml = buildDescriptionHtml(
+        description !== undefined ? description : existingBundle.description,
+        specs !== undefined ? specs : existingBundle.specs
+      );
+      if (descriptionHtml) {
+        await updateShopifyProduct(client, session, existingBundle.shopifyBundleId, { descriptionHtml });
+      }
+    }
+
     // 5. Update bundle in database
     const updateFields = {};
 
@@ -1807,9 +1984,25 @@ async function updateBundle(req, res) {
     if (internalName) updateFields.internalName = internalName;
     if (bundlePriority !== undefined) updateFields.priority = bundlePriority;
     if (priority !== undefined) updateFields.priority = priority;
-    if (widgetAppearance) updateFields.widgetAppearance = widgetAppearance;
+    if (widgetAppearance) {
+      updateFields.widgetAppearance = withCountdownTarget(
+        widgetAppearance,
+        endDate || existingBundle.endDate
+      );
+    }
     if (startDate) updateFields.startDate = startDate;
     if (endDate) updateFields.endDate = endDate;
+    if (description !== undefined) updateFields.description = description;
+    if (specs !== undefined) updateFields.specs = specs;
+    if (secondaryMessage !== undefined) updateFields.secondaryMessage = secondaryMessage;
+    if (primaryMessage !== undefined) updateFields.primaryMessage = primaryMessage;
+    if (selectedEmoji !== undefined) updateFields.selectedEmoji = selectedEmoji;
+    if (emojiPosition !== undefined) updateFields.emojiPosition = emojiPosition;
+    if (countdownLabel !== undefined) updateFields.countdownLabel = countdownLabel;
+    if (addToCartText !== undefined) updateFields.addToCartText = addToCartText;
+    if (skipOfferText !== undefined) updateFields.skipOfferText = skipOfferText;
+    if (showSkipButton !== undefined) updateFields.showSkipButton = showSkipButton;
+    if (timezone !== undefined) updateFields.timezone = timezone;
 
     // Handle products update based on type
     if (type === "Buy One Get One" && productsX && productsY) {
@@ -1893,18 +2086,20 @@ async function updateBundle(req, res) {
 // Helper function to update Shopify product basic info
 async function updateShopifyProduct(client, session, productId, updateData) {
   try {
-    let inputFields = [];
-
+    // Only title/descriptionHtml are actually valid on Shopify's ProductInput
+    // type - build the input explicitly instead of spreading whatever keys
+    // the caller happened to pass, and check for that same set of keys when
+    // deciding whether there's anything to send.
+    const input = { id: productId };
     if (updateData.title) {
-      inputFields.push(`title: "${updateData.title.replace(/"/g, '\\"')}"`);
+      input.title = updateData.title;
+    }
+    if (updateData.descriptionHtml !== undefined) {
+      input.descriptionHtml = updateData.descriptionHtml;
     }
 
-    if (updateData.description) {
-      inputFields.push(`descriptionHtml: "${updateData.description.replace(/"/g, '\\"')}"`);
-    }
-
-    if (inputFields.length === 0) {
-      return null; // Nothing to update
+    if (Object.keys(input).length === 1) {
+      return null; // Nothing to update besides id
     }
 
     const mutation = `
@@ -1922,12 +2117,7 @@ async function updateShopifyProduct(client, session, productId, updateData) {
       }
     `;
 
-    const variables = {
-      input: {
-        id: productId,
-        ...updateData,
-      },
-    };
+    const variables = { input };
 
     const result = await client.request(mutation, { session, variables });
 
@@ -1948,9 +2138,12 @@ export {
   createProductBundleV2,
   getActiveBundles,
   getShopBundles,
+  getBundleById,
   createMixAndMatchBundle,
   updateBundle,
   deleteBundle,
   updateMixAndMatchBundle,
   validateBundlePayload,
+  buildDescriptionHtml,
+  updateShopifyProduct,
 };

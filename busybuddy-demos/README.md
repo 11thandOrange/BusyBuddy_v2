@@ -9,13 +9,19 @@ uploaded as CI artifacts.
 
 ```
 busybuddy-demos/
-  scripts/                  one independently-runnable spec per journey
-    announcement-bar/
+  scripts/
+    announcement-bar/         demo-video journeys (recorded, one per marketing clip)
     bundle-discounts/
     buy-one-get-one/
     volume-discounts/
     mix-and-match/
     inactive-tab-message/
+    announcement-bar-e2e/     comprehensive E2E suites, one dir per app (see below)
+    bundle-discounts-e2e/
+    buy-one-get-one-e2e/
+    volume-discounts-e2e/
+    mix-and-match-e2e/
+    inactive-tab-message-e2e/
   fixtures/app.js           shared auth/navigation/selector helpers
   fixtures/organize-reporter.js   renames raw Playwright output into videos/traces/screenshots
   playwright.config.js
@@ -26,6 +32,34 @@ busybuddy-demos/
 
 Each recording is named `<app>-<journey>.webm` (matching its trace/screenshot),
 e.g. `announcement-bar-create-bar.webm`.
+
+### Comprehensive E2E suites (`*-e2e/`)
+
+Each `*-e2e/` directory is a from-scratch Playwright suite for one app,
+tracking its own GitHub ticket rather than a marketing journey:
+
+| Directory                     | Ticket |
+|--------------------------------|--------|
+| `bundle-discounts-e2e/`        | #306   |
+| `buy-one-get-one-e2e/`         | #307   |
+| `mix-and-match-e2e/`           | #308   |
+| `volume-discounts-e2e/`        | #309   |
+| `announcement-bar-e2e/`        | #310   |
+| `inactive-tab-message-e2e/`    | #311   |
+
+Files are numbered per app (`01-create-and-customize.spec.js`,
+`02-discounts-page.spec.js`, `03-settings.spec.js`, etc.) and depend on
+running in that order within their own directory - `playwright.config.js`
+sets `workers: 1` / `fullyParallel: false` so file order is preserved.
+`01-*` in the 5 bundle-type/bar apps also exercises each app's app-wide
+Active/Inactive switch (`components/ToggelSwitch.jsx`, via the shared
+`toggleAppWideSwitchAndRestore` fixture helper) before creating anything -
+that switch lives on the app's own "Manage" page, separate from any
+per-item Active/Inactive status covered later in the same suite.
+`inactive-tab-message-e2e/` has no popup editor at all (see its own
+Settings form), so its 2 files instead cover settings configuration and
+tab navigation. (A third file covering the storefront `visibilitychange`
+behavior was removed - see git history if reviving it.)
 
 ## Prerequisites
 
@@ -69,9 +103,41 @@ cd busybuddy-demos
 npm install
 npx playwright install --with-deps chromium
 npx playwright codegen --save-storage=auth.json https://admin.shopify.com
-SHOPIFY_STORE_DOMAIN=daisys-electronics-9kihd5yl.myshopify.com \
-BUSYBUDDY_ADMIN_URL=https://admin.shopify.com/store/daisys-electronics-9kihd5yl/apps/<app-handle> \
+```
+
+Every run needs the same two env vars set (shown once here, omitted from
+the examples below for brevity):
+
+```
+export SHOPIFY_STORE_DOMAIN=daisys-electronics-9kihd5yl.myshopify.com
+export BUSYBUDDY_ADMIN_URL=https://admin.shopify.com/store/daisys-electronics-9kihd5yl/apps/<app-handle>
+```
+
+**All tests** (every demo journey and every `*-e2e/` suite):
+```
 npx playwright test
+```
+
+**A single suite** (one app's whole `*-e2e/` directory, e.g. Bundle Discount's #306):
+```
+npx playwright test scripts/bundle-discounts-e2e
+```
+To run all 6 comprehensive `*-e2e/` suites and nothing else:
+```
+npx playwright test scripts/bundle-discounts-e2e scripts/buy-one-get-one-e2e scripts/mix-and-match-e2e scripts/volume-discounts-e2e scripts/announcement-bar-e2e scripts/inactive-tab-message-e2e
+```
+
+**A single test file** (e.g. just Suite 1/2 of Bundle Discount):
+```
+npx playwright test scripts/bundle-discounts-e2e/01-create-and-customize.spec.js
+```
+
+**A single `test()` block** by its title (`-g` is a regex match against the
+`test(...)` name, e.g. this app's `01-create-and-customize.spec.js` defines
+exactly one test titled `Bundle Discount: create + customize full editor
+workflow`):
+```
+npx playwright test scripts/bundle-discounts-e2e/01-create-and-customize.spec.js -g "create \+ customize"
 ```
 
 ## Notes
@@ -83,3 +149,7 @@ npx playwright test
   run — re-run just the failing spec file with `npx playwright test <path>`.
 - The storefront-only journeys (`*-storefront-live.spec.js`) don't need
   `auth.json` or `admin_url` — they hit the public storefront directly.
+- The `*-e2e/` suites are hand-written against the real components (not
+  copied from the `scripts/<app>/` demo journeys, which were built for
+  video recording and have different assumptions) - do not merge or dedupe
+  the two sets of specs.

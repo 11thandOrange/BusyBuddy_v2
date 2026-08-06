@@ -1,4 +1,7 @@
 import { test as base, expect } from '@playwright/test';
+import { installDemoCursor, demoPause, RECORD } from './demoCursor.js';
+
+export { demoPause, RECORD };
 
 /**
  * BUSYBUDDY_ADMIN_URL must point at the BusyBuddy app's embedded admin
@@ -91,6 +94,10 @@ export const test = base.extend({
     if (!ADMIN_URL) {
       throw new Error('BUSYBUDDY_ADMIN_URL is not set - see busybuddy-demos/README.md');
     }
+    // Registered before goto() so it's present in the top-level document and
+    // (per Playwright's addInitScript semantics) every child frame, i.e. the
+    // embedded admin iframe resolveAppScope polls for below.
+    await installDemoCursor(page);
     const subscriptionResponsePromise = page
       .waitForResponse((res) => res.url().includes('/api/subscription/getUserSubscription'), { timeout: 20_000 })
       .catch(() => null);
@@ -105,7 +112,11 @@ export { expect };
 
 /** Clicks a top-level tab rendered by DiscountList/BundelDiscountList (react-bootstrap ToggleButton labels). */
 export async function gotoTab(app, tabName) {
-  await app.getByText(tabName, { exact: true }).click();
+  // Scoped to the tab bar's role="group" (react-bootstrap ButtonGroup): a
+  // bare getByText can collide with unrelated page text using the exact
+  // same string - confirmed for "Announcement Bars", which also appears as
+  // a heading elsewhere on the page, not just the tab label itself.
+  await app.getByRole('group').getByText(tabName, { exact: true }).click();
 }
 
 /**
@@ -138,6 +149,10 @@ export function dashboardTile(app, widgetTitle) {
  */
 export async function openEditorPopup(page, trigger) {
   const [popup] = await Promise.all([page.waitForEvent('popup'), trigger()]);
+  // openEditorTab.js opens a blank window synchronously and only navigates
+  // it to /editor.html once an async signature fetch resolves, so the
+  // init script is still registered well before that real navigation.
+  await installDemoCursor(popup);
   await popup.waitForLoadState();
   return popup;
 }
@@ -171,14 +186,21 @@ export async function gotoStorefrontProduct(page, handle) {
 }
 
 /**
- * Editor sidepane items (components/Editor/EditorSidepane.jsx) open a
- * config panel by label. The same label text can also appear in the
- * config panel's own heading once selected, so .first() (the sidepane nav
- * item, which renders above the panel) disambiguates the strict-mode
- * violation rather than picking an arbitrary match.
+ * Editor sidepane items (components/Editor/EditorSettingsPane.jsx) open a
+ * config panel by label. Scoped to the actual clickable `.settings-item`
+ * row rather than a bare text match: EditorSettingsPane renders each
+ * group's `.settings-group-title` (plain text, no onClick) immediately
+ * before its `.settings-item`s, and for groups whose title matches their
+ * single item's label verbatim (e.g. "Product Info"), a bare
+ * `getByText(label, {exact:true}).first()` picks that inert title div
+ * instead - a silent no-op click that leaves the panel on whatever was
+ * previously active. The config panel's own heading can also repeat the
+ * label once selected, but scoping to `.settings-item` avoids that
+ * collision too, since headings render in `.config-header`, not as a
+ * `.settings-item`.
  */
 export async function clickSidepaneItem(popup, label) {
-  await popup.getByText(label, { exact: true }).first().click();
+  await popup.locator('.settings-item').filter({ hasText: label }).first().click();
 }
 
 /** Fills the first visible text input/textarea in the current config panel. */
@@ -205,6 +227,27 @@ export async function addProductViaPicker(popup, productName) {
 }
 
 /**
+ * Same picker as addProductViaPicker, but for a partial search term that
+ * matches more than one product (e.g. "cam" matching both "Polaroid
+ * Instant Camera" and "MiniDV Camcorder") - clicks "+ Add" on the specific
+ * row identified by its full title rather than blindly taking the first
+ * result.
+ */
+export async function addProductViaPickerSearch(popup, searchTerm, productTitleToAdd) {
+  const addProductsButton = popup.getByRole('button', { name: '+ Add Products' });
+  if (await addProductsButton.isVisible().catch(() => false)) {
+    await addProductsButton.click();
+  }
+  await popup.getByPlaceholder('Search by product name...').fill(searchTerm);
+  await popup
+    .locator('div, li')
+    .filter({ hasText: productTitleToAdd })
+    .getByRole('button', { name: '+ Add', exact: true })
+    .first()
+    .click();
+}
+
+/**
  * BOGO's BuyXGetYEditor.jsx renders its X/Y product pools as directly
  * clickable rows (onClick={() => addProductToX(product)}) with an inline
  * "Search products..." field - no separate "+ Add Products" toggle.
@@ -212,6 +255,18 @@ export async function addProductViaPicker(popup, productName) {
 export async function addProductToPool(popup, productName) {
   await popup.getByPlaceholder('Search products...').fill(productName);
   await popup.getByText(productName, { exact: false }).first().click();
+}
+
+/**
+ * Same pool as addProductToPool, but for a partial search term that
+ * matches more than one product (e.g. "cam" matching both "Polaroid
+ * Instant Camera" and "MiniDV Camcorder") - searches one term, clicks the
+ * row identified by its full title rather than blindly taking the first
+ * text match, which could otherwise land on the wrong product's row.
+ */
+export async function addProductToPoolBySearch(popup, searchTerm, productTitleToAdd) {
+  await popup.getByPlaceholder('Search products...').fill(searchTerm);
+  await popup.getByText(productTitleToAdd, { exact: false }).first().click();
 }
 
 /**
@@ -223,12 +278,32 @@ export async function addProductToPool(popup, productName) {
  * addProductViaPicker's button locator can never match here.
  */
 export async function addProductViaPickerRow(popup, productName) {
-  const addProductsButton = popup.getByRole('button', { name: '+ Add Products' });
+  // Regex substring match, not exact: VolumeDiscountEditor.jsx's own toggle
+  // button reads "+ Add Product" (singular) once nothing is selected, or
+  // "↻ Change Product" once something is - neither is the plural
+  // "+ Add Products" this previously matched literally, which never found
+  // the button and silently skipped opening the picker at all.
+  const addProductsButton = popup.getByRole('button', { name: /Add Product|Change Product/i });
   if (await addProductsButton.isVisible().catch(() => false)) {
     await addProductsButton.click();
   }
   await popup.getByPlaceholder('Search by product name...').fill(productName);
   await popup.getByText(productName, { exact: false }).first().click();
+}
+
+/**
+ * Same picker as addProductViaPickerRow, but for a partial search term that
+ * matches more than one product - searches one term, clicks the row
+ * identified by its full title rather than assuming the search result is
+ * unambiguous.
+ */
+export async function addProductViaPickerRowBySearch(popup, searchTerm, productTitleToAdd) {
+  const addProductsButton = popup.getByRole('button', { name: /Add Product|Change Product/i });
+  if (await addProductsButton.isVisible().catch(() => false)) {
+    await addProductsButton.click();
+  }
+  await popup.getByPlaceholder('Search by product name...').fill(searchTerm);
+  await popup.getByText(productTitleToAdd, { exact: false }).first().click();
 }
 
 /**
@@ -258,4 +333,239 @@ export async function fillConfigInput(popup, groupLabel, value) {
     .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
     .locator('input')
     .fill(value);
+}
+
+/**
+ * Sets a color field by its ConfigFormGroup label. Every color field
+ * (see StandardBundleEditor.jsx's "Primary Text Color", "Button Color",
+ * etc.) renders a paired native `<input type="color">` swatch and a plain
+ * `<input type="text">` showing the hex value - `fillConfigInput`'s bare
+ * `input` locator would hit both and throw a strict-mode violation, and
+ * the color swatch itself isn't fillable (it needs a real OS color
+ * picker). Scoping to `input[type="text"]` targets only the fillable one,
+ * whose onChange drives the same state as the swatch.
+ */
+export async function fillColorInput(popup, groupLabel, hexValue) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
+    .locator('input[type="text"]')
+    .fill(hexValue);
+}
+
+/**
+ * Clicks the switch inside a ConfigToggleRow (EditorConfigPanel.jsx) by its
+ * visible label, e.g. "Show Countdown Timer". Targets `.toggle-slider`, not
+ * the checkbox itself - `.toggle-switch input` is `width: 0; height: 0;
+ * opacity: 0` (EditorLayout.css), a zero-size element Playwright's
+ * actionability check will never consider clickable/visible.
+ */
+export async function toggleConfigRow(popup, label) {
+  await popup
+    .locator('.toggle-row')
+    .filter({ has: popup.locator('.toggle-label', { hasText: label }) })
+    .locator('.toggle-slider')
+    .click();
+}
+
+/** Sets the editable title in the editor header (EditorHeader.jsx's input.editable-title). */
+export async function setEditorTitle(popup, title) {
+  const titleInput = popup.locator('input.editable-title');
+  await titleInput.fill('');
+  await titleInput.fill(title);
+}
+
+/**
+ * Clicks the enable/disable switch in the editor header (EditorHeader.jsx's
+ * label.header-toggle). Targets `.toggle-slider`, not the checkbox itself -
+ * `.header-toggle input` is `width: 0; height: 0; opacity: 0`
+ * (EditorLayout.css), a zero-size element Playwright's actionability check
+ * will never consider clickable/visible.
+ */
+export async function toggleEditorEnabled(popup) {
+  await popup.locator('label.header-toggle .toggle-slider').click();
+}
+
+/**
+ * Switches the live preview panel between Desktop and Mobile
+ * (EditorPreviewPanel.jsx's .device-btn buttons). Not an exact-name match:
+ * each button's accessible name includes its icon span's emoji text too
+ * (e.g. "📱 Mobile"), so `{ name: device, exact: true }` never matches -
+ * a substring match on the label is enough since "Desktop"/"Mobile" each
+ * appear on exactly one button.
+ */
+export async function selectDeviceView(popup, device) {
+  await popup.getByRole('button', { name: device }).click();
+}
+
+/**
+ * Picks a countdown timer theme by its 1-based position in the visual
+ * grid (CountdownTimerThemes.jsx's CountdownThemePicker renders each
+ * theme as an unlabeled <button> in DOM order, so "4th theme" means
+ * nth(3)). Scoped to the "Timer Theme" form group so it doesn't collide
+ * with any other button grid on the Countdown Timer panel.
+ */
+export async function selectCountdownThemeByPosition(popup, position) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: 'Timer Theme' }) })
+    .locator('button')
+    .nth(position - 1)
+    .click();
+}
+
+/**
+ * Adds one product specification row (StandardBundleEditor.jsx's Product
+ * Info panel, "+ Add Spec" button) and fills its Label/Value inputs. The
+ * newly appended row is always last, so `.last()` on each placeholder
+ * disambiguates it from any specs already present.
+ */
+export async function addProductSpec(popup, label, value) {
+  await popup.getByRole('button', { name: '+ Add Spec' }).click();
+  await popup.getByPlaceholder('Label (e.g. Material)').last().fill(label);
+  await popup.getByPlaceholder('Value (e.g. Cotton)').last().fill(value);
+}
+
+/** Appends text to the Product Info description textarea without clobbering what's already there. */
+export async function appendToDescription(popup, suffix) {
+  const description = popup.locator('.config-panel textarea').first();
+  const current = await description.inputValue();
+  await description.fill(`${current}${suffix}`);
+}
+
+/**
+ * Locates a single row in the Discounts list (BundelDiscountList.jsx's
+ * shared markup, used by Bundle Discount, BOGO, Volume Discount, and
+ * Mix & Match) by its visible title, then walks up to the row container
+ * that also holds the Preview/Edit/Active controls - same walk-up
+ * `03-edit-bundle.spec.js` uses to reach the pencil-edit button.
+ * `.first()` guards against duplicate titles accumulated across reruns.
+ */
+export function discountRowByTitle(app, titleText) {
+  return app.locator('.bundlebox').filter({ hasText: titleText }).first().locator('..').locator('..');
+}
+
+/** Clicks "Preview" on a discount list row (BundelDiscountList.jsx's .previewbtn). */
+export async function clickPreviewOnRow(row) {
+  await row.locator('.previewbtn').click();
+}
+
+/**
+ * Clicks the pencil Edit button on a discount list row and returns the
+ * new editor tab it opens. The pencil button (<Button text={<Pencil/>}/>)
+ * is the row's only real <button> element - Priority is a plain input and
+ * Preview/Active are non-button elements - but the empty-text filter from
+ * `03-edit-bundle.spec.js` is kept for consistency with that established
+ * pattern.
+ */
+export async function editRowInNewTab(page, row) {
+  return openEditorPopup(page, () => row.getByRole('button').filter({ hasText: '' }).first().click());
+}
+
+/** Clicks the Active/Inactive switch on a discount list row (BundelDiscountList.jsx's Form.Check type="switch"). */
+export async function toggleRowActive(row) {
+  await row.locator('input[type="checkbox"]').click();
+}
+
+/**
+ * Picks a theme by its 1-based position in a visual button grid rendered
+ * inside a named ConfigFormGroup (CountdownTimerThemes.jsx's
+ * CountdownThemePicker and AnnouncementBarBackgroundThemes.jsx's
+ * AnnouncementBarThemePicker both render each theme as an unlabeled
+ * <button> in DOM order with no other identifying text).
+ */
+export async function selectThemeByPosition(popup, groupLabel, position) {
+  await popup
+    .locator('.form-group')
+    .filter({ has: popup.locator('.form-label', { hasText: groupLabel }) })
+    .locator('button')
+    .nth(position - 1)
+    .click();
+}
+
+/**
+ * Announcement Bar's list (apps/announcement-bar/DiscountList.jsx) renders
+ * each row as its own react-bootstrap <Card>, not the shared .bundlebox
+ * markup the other 4 apps' BundelDiscountList.jsx uses - so it needs its
+ * own row/edit/activate helpers rather than discountRowByTitle/
+ * editRowInNewTab/toggleRowActive above. Rows show bar.message (not
+ * bar.title), so that's what identifies a row here.
+ */
+export function announcementBarRowByMessage(app, message) {
+  return app.locator('.card').filter({ hasText: message }).first();
+}
+
+/**
+ * The Edit (pencil) button is the first of two real <button>s in the row
+ * (Edit then Delete, in that DOM order) - no walk-up needed, unlike the
+ * bundle-type apps' row, since Edit/Delete are direct children here.
+ */
+export async function editAnnouncementBarRow(page, row) {
+  return openEditorPopup(page, () => row.getByRole('button').first().click());
+}
+
+/**
+ * Locates the app-wide Active/Inactive switch (components/ToggelSwitch.jsx),
+ * rendered once per app on that app's own page (reached via the dashboard
+ * tile's "Manage" button) next to that page's own "Create New ..." button -
+ * a completely different control from any per-item Active/Inactive status
+ * inside BundelDiscountList.jsx/DiscountList.jsx's list rows, which also use
+ * the words "Active"/"Inactive". The outer div's `title` attribute ("Click
+ * to disable"/"Click to enable") is unique to this component across every
+ * app's page, so it's used to scope the locator instead of that shared
+ * text.
+ */
+export function appWideToggle(app) {
+  return app.locator('[title^="Click to "]').first();
+}
+
+/**
+ * Clicks the app-wide switch, confirms the visible "Active"/"Inactive"
+ * label actually flips, then clicks it again to restore the original
+ * state. Unlike a per-item Active/Inactive status, this switch controls
+ * whether the app's real storefront behavior runs at all
+ * (POST /api/subscription/toggle-app) - leaving it flipped would affect
+ * every other test using the same live store, not just this assertion.
+ */
+export async function toggleAppWideSwitchAndRestore(app) {
+  const toggle = appWideToggle(app);
+  await expect(toggle).toBeVisible({ timeout: 15_000 });
+  const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
+
+  if (wasActive) {
+    await toggle.click();
+    await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
+    await toggle.click();
+    await expect(toggle.getByText('Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+    return;
+  }
+
+  // ToggelSwitch.jsx fetches /api/subscription/getUserSubscription exactly
+  // once on mount; checkCanEnable() reports "No subscription info" (shown
+  // in the switch's own error banner) until that resolves, and every
+  // enable click no-ops until it does. Confirmed directly from a captured
+  // failure's page snapshot - the banner read "No subscription info" while
+  // the page's own "Loading announcement bars..." text was still visible,
+  // i.e. the whole page was still settling, not a permanently failed
+  // fetch. Retry patiently rather than giving up after a few quick clicks.
+  let flipped = false;
+  for (let attempt = 0; attempt < 8 && !flipped; attempt++) {
+    await toggle.click();
+    // locator.isVisible({timeout}) does NOT poll/wait despite the option
+    // name - it returns the current state almost immediately, which
+    // silently turned this into 8 back-to-back clicks with no real delay
+    // between them at all. expect(...).toBeVisible({timeout}) is the one
+    // that actually retries until the timeout elapses.
+    flipped = await expect(toggle.getByText('Active', { exact: true }))
+      .toBeVisible({ timeout: 3_000 })
+      .then(() => true)
+      .catch(() => false);
+  }
+  if (!flipped) {
+    throw new Error(
+      'App-wide toggle never flipped to Active after 8 attempts (~24s) - ToggelSwitch.jsx kept reporting "No subscription info" (checkCanEnable), meaning /api/subscription/getUserSubscription itself never resolved, not just a brief mount race.'
+    );
+  }
+  await toggle.click();
+  await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
 }

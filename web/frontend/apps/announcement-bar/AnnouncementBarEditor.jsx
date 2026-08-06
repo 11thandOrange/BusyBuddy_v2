@@ -13,9 +13,14 @@ import {
   EditorPreviewPanel,
   StorePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  CountdownThemePicker,
+  CountdownTimerDisplay,
+  AnnouncementBarThemePicker,
+  getBackgroundThemeCss
 } from '../../components/Editor';
 import { useEditorNavigation } from '../../hooks';
+import EmojiPicker from 'emoji-picker-react';
 import { editorFetch } from '../../utils/editorAuth';
 
 // Announcement Bar specific settings configuration
@@ -104,6 +109,16 @@ const BAR_TYPE_OPTIONS = [
   { value: 'Email', label: 'Email Subscription' },
 ];
 
+// Reverse of the backend's BAR_TYPE_TO_SCHEMA_TYPE map (controller/announcementBars/index.js)
+// - the schema's `type` enum uses different casing/wording than barType.
+const SCHEMA_TYPE_TO_BAR_TYPE = {
+  'Text': 'text',
+  'Countdown Timer': 'countdown',
+  'Free Shipping': 'freeshipping',
+  'Orders Counter': 'orders',
+  'Email': 'Email',
+};
+
 const POSITION_OPTIONS = [
   { value: 'top', label: 'Top' },
   { value: 'top-fixed', label: 'Top (Fixed)' },
@@ -126,12 +141,17 @@ const FONT_WEIGHT_OPTIONS = [
   { value: '700', label: 'Bold' },
 ];
 
-const THEME_OPTIONS = [
+const BACKGROUND_TYPE_OPTIONS = [
   { value: 'solid', label: 'Solid Color' },
   { value: 'gradient', label: 'Gradient' },
-  { value: 'sunshine', label: 'Sunshine' },
-  { value: 'watercolor', label: 'Watercolor' },
-  { value: 'abstract', label: 'Abstract' },
+  { value: 'theme', label: 'Theme' },
+];
+
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
 ];
 
 /**
@@ -144,7 +164,7 @@ const THEME_OPTIONS = [
 export const AnnouncementBarEditor = () => {
   // Get bar ID from URL params (if editing existing bar)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('announcement-bar');
   
   // Loading state for fetching bar data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -152,6 +172,7 @@ export const AnnouncementBarEditor = () => {
   
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Warn user before closing tab with unsaved changes
   useEffect(() => {
@@ -174,6 +195,21 @@ export const AnnouncementBarEditor = () => {
     }
   };
 
+  // Fetch the connected email provider's lists/templates so the Email tab
+  // can offer real list/template dropdowns instead of free-typed IDs.
+  useEffect(() => {
+    editorFetch('/api/email-provider')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.data) {
+          setEmailProviderConnected(data.data.isConnected || false);
+          setEmailProviderLists(data.data.lists || []);
+          setEmailProviderTemplates(data.data.templates || []);
+        }
+      })
+      .catch((err) => console.error('Error fetching email provider:', err));
+  }, []);
+
   // Tab and setting navigation state
   const [activeTab, setActiveTab] = useState('content');
   const [activeSetting, setActiveSetting] = useState('message');
@@ -191,14 +227,15 @@ export const AnnouncementBarEditor = () => {
   const [showMessage, setShowMessage] = useState(true);
   
   // Emoji
-  const [selectedEmoji, setSelectedEmoji] = useState('🔥');
-  const [emojiPosition, setEmojiPosition] = useState('start');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   
   // Timer
   const [showTimer, setShowTimer] = useState(false);
   const [timerEndDate, setTimerEndDate] = useState('');
   const [timerEndTime, setTimerEndTime] = useState('');
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [countdownTheme, setCountdownTheme] = useState('classic');
+  const [timerBgColor, setTimerBgColor] = useState('#1a1a1a');
   
   // Shop Now Button
   const [showShopNowButton, setShowShopNowButton] = useState(false);
@@ -215,10 +252,13 @@ export const AnnouncementBarEditor = () => {
 
   // Email Subscription Settings
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailProviderConnected, setEmailProviderConnected] = useState(false);
+  const [emailProviderLists, setEmailProviderLists] = useState([]);
+  const [emailProviderTemplates, setEmailProviderTemplates] = useState([]);
   const [emailSettings, setEmailSettings] = useState({
     placeholderText: 'Enter your email',
     buttonText: 'Subscribe',
-    successMessage: 'Thank you for subscribing!',
+    emailSuccessMessage: 'Thank you for subscribing!',
     listId: '',
     templateId: '',
     inputStyles: {
@@ -244,6 +284,7 @@ export const AnnouncementBarEditor = () => {
   const [backgroundType, setBackgroundType] = useState('gradient');
   const [backgroundColor, setBackgroundColor] = useState('#667eea');
   const [gradientEndColor, setGradientEndColor] = useState('#764ba2');
+  const [backgroundTheme, setBackgroundTheme] = useState('sunshine');
   
   // Text Color
   const [textColor, setTextColor] = useState('#ffffff');
@@ -268,6 +309,7 @@ export const AnnouncementBarEditor = () => {
   // === SCHEDULE SETTINGS ===
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
 
   // Fetch bar data if editing (id from URL params)
   useEffect(() => {
@@ -285,29 +327,47 @@ export const AnnouncementBarEditor = () => {
         
         if (bar) {
           setEditingBar(bar);
-          // Populate form state from fetched data
+          // Populate form state from fetched data. The backend stores most
+          // visual settings under nested sub-documents (colorSettings,
+          // messageDesktopFontSettings, saveBoxSettings, ...) that the
+          // storefront extension reads directly - this reads back from those
+          // same nested paths so a reopened bar shows what was actually saved
+          // instead of resetting to defaults.
           setBarEnabled(bar.status === 'active');
-          setBarType(bar.barType || 'text');
+          setBarType(SCHEMA_TYPE_TO_BAR_TYPE[bar.type] || 'text');
           setInternalName(bar.name || 'Summer Sale Banner');
           setTitle(bar.name || 'Summer Sale Banner');
           setMessage(bar.message || '🔥 Summer Sale - Up to 50% OFF!');
-          setBackgroundColor(bar.backgroundColor || '#667eea');
+          setBackgroundColor(bar.generalColorSettings?.['Background Color'] || bar.colorSettings?.['Background Color'] || '#667eea');
           setGradientEndColor(bar.gradientEndColor || '#764ba2');
           setBackgroundType(bar.backgroundType || 'gradient');
-          setTextColor(bar.textColor || '#ffffff');
-          setFontSize(bar.fontSize || '16');
-          setFontFamily(bar.fontFamily || 'Inter');
-          setFontWeight(bar.fontWeight || '600');
+          setBackgroundTheme(bar.backgroundTheme || 'sunshine');
+          setTextColor(bar.generalColorSettings?.['Message Font Color'] || '#ffffff');
+          setFontSize(parseInt(bar.messageDesktopFontSettings?.fontSize) || 16);
+          setFontFamily(bar.messageDesktopFontSettings?.fontFamily || 'Inter');
+          setFontWeight(bar.messageDesktopFontSettings?.fontWeight || '600');
           setBarHeight(bar.barHeight || 50);
           setBarPadding(bar.barPadding || 12);
           setBarPosition(bar.barPosition || 'top');
           setShowTimer(bar.showTimer || false);
+          setTimerEndDate(bar.targetDate || '');
+          setTimerEndTime(bar.targetTime || '');
+          setCountdownTheme(bar.countdownTheme || 'classic');
+          setTimerBgColor(bar.timerColorSettings?.['Timer Block Background Color'] || '#1a1a1a');
+          setAnimationSpeed(bar.messageAnimationSpeed || 20);
           setShowShopNowButton(bar.showShopNowButton || false);
           setShopNowButtonText(bar.shopNowButtonText || 'Shop Now');
           setShopNowButtonUrl(bar.shopNowButtonUrl || '');
+          setShopNowButtonColor(bar.shopNowButtonSettings?.fontColor || '#ffffff');
+          setShopNowButtonBgColor(bar.shopNowButtonSettings?.backgroundColor || '#000000');
           setShowSaveBox(bar.showSaveBox || false);
           setSaveBoxText(bar.saveBoxText || 'SAVE 30%');
-          
+          setSaveBoxBgColor(bar.saveBoxSettings?.backgroundColor || '#ff4444');
+          setSaveBoxTextColor(bar.saveBoxSettings?.fontColor || '#ffffff');
+          setStartDate(bar.startDate ? new Date(bar.startDate).toISOString().slice(0, 16) : '');
+          setEndDate(bar.endDate ? new Date(bar.endDate).toISOString().slice(0, 16) : '');
+          setTimezone(bar.timezone || 'GMT');
+
           // Load email form settings
           setShowEmailForm(bar.showEmailForm || false);
           if (bar.emailSettings) {
@@ -317,10 +377,6 @@ export const AnnouncementBarEditor = () => {
               inputStyles: { ...emailSettings.inputStyles, ...(bar.emailSettings.inputStyles || {}) },
               buttonStyles: { ...emailSettings.buttonStyles, ...(bar.emailSettings.buttonStyles || {}) },
             });
-          }
-          // Set bar type to Email if type is Email
-          if (bar.type === 'Email') {
-            setBarType('Email');
           }
         }
       } catch (err) {
@@ -372,6 +428,8 @@ export const AnnouncementBarEditor = () => {
 
   // Handle save
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     const data = {
       name: internalName,
       status: barEnabled ? 'active' : 'inactive',
@@ -381,6 +439,7 @@ export const AnnouncementBarEditor = () => {
       backgroundColor,
       gradientEndColor,
       backgroundType,
+      backgroundTheme,
       textColor,
       fontSize,
       fontFamily,
@@ -393,6 +452,8 @@ export const AnnouncementBarEditor = () => {
       showTimer,
       timerEndDate,
       timerEndTime,
+      countdownTheme,
+      timerBgColor,
       showShopNowButton,
       shopNowButtonText,
       shopNowButtonUrl,
@@ -404,7 +465,7 @@ export const AnnouncementBarEditor = () => {
       saveBoxTextColor,
       startDate,
       endDate,
-      type: barType === 'Email' ? 'Email' : barType,
+      timezone,
       showEmailForm,
       emailSettings: showEmailForm ? emailSettings : undefined,
     };
@@ -420,13 +481,18 @@ export const AnnouncementBarEditor = () => {
       });
 
       if (!response.ok) throw new Error('Save failed');
-      
-      // Clear unsaved changes flag and close editor
+
+      // Clear unsaved changes flag and close editor - delayed slightly so
+      // the beforeunload listener has re-subscribed with the new
+      // hasUnsavedChanges value before window.close() fires (otherwise the
+      // still-attached stale listener sees the old "true" and Chrome shows
+      // a "leave site?" prompt on every save).
       setHasUnsavedChanges(false);
-      closeEditor();
+      setTimeout(() => closeEditor(), 600);
     } catch (err) {
       console.error('Save error:', err);
       alert('Failed to save announcement bar');
+      setIsSaving(false);
     }
   };
 
@@ -434,6 +500,9 @@ export const AnnouncementBarEditor = () => {
   const getBackgroundStyle = () => {
     if (backgroundType === 'gradient') {
       return `linear-gradient(135deg, ${backgroundColor}, ${gradientEndColor})`;
+    }
+    if (backgroundType === 'theme') {
+      return getBackgroundThemeCss(backgroundTheme);
     }
     return backgroundColor;
   };
@@ -504,24 +573,37 @@ export const AnnouncementBarEditor = () => {
             title="Emoji & Icons"
             description="Add emojis to your announcement"
           >
-            <ConfigFormGroup label="Quick Emojis">
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['🔥', '⭐', '🎉', '💥', '🚀', '💰', '🎁', '⚡', '❤️', '✨'].map((emoji) => (
-                  <button
-                    key={emoji}
-                    onClick={() => { setMessage(prev => prev + emoji); markAsChanged(); }}
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '20px',
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+            <ConfigFormGroup label="Emoji" hint="Choose any emoji to insert into your message">
+              <div style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '22px' }}>😀</span>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                </button>
+                {showEmojiPickerPopup && (
+                  <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setMessage((prev) => prev + emojiData.emoji);
+                        markAsChanged();
+                        setShowEmojiPickerPopup(false);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
@@ -548,13 +630,29 @@ export const AnnouncementBarEditor = () => {
                     onChange={(e) => setTimerEndDate(e.target.value)}
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="End Time">
                   <ConfigInput
                     type="time"
                     value={timerEndTime}
                     onChange={(e) => setTimerEndTime(e.target.value)}
                   />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={timerBgColor}
+                    textColor={textColor}
+                  />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Timer Background Color">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={timerBgColor} onChange={(e) => setTimerBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={timerBgColor} onChange={(e) => setTimerBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -593,19 +691,17 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
 
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={shopNowButtonColor}
-                    onChange={(e) => setShopNowButtonColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={shopNowButtonColor} onChange={(e) => setShopNowButtonColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={shopNowButtonColor} onChange={(e) => setShopNowButtonColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Background Color">
-                  <ConfigInput
-                    type="color"
-                    value={shopNowButtonBgColor}
-                    onChange={(e) => setShopNowButtonBgColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={shopNowButtonBgColor} onChange={(e) => setShopNowButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={shopNowButtonBgColor} onChange={(e) => setShopNowButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -635,19 +731,17 @@ export const AnnouncementBarEditor = () => {
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Badge Color">
-                  <ConfigInput
-                    type="color"
-                    value={saveBoxBgColor}
-                    onChange={(e) => setSaveBoxBgColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={saveBoxBgColor} onChange={(e) => setSaveBoxBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={saveBoxBgColor} onChange={(e) => setSaveBoxBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={saveBoxTextColor}
-                    onChange={(e) => setSaveBoxTextColor(e.target.value)}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={saveBoxTextColor} onChange={(e) => setSaveBoxTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={saveBoxTextColor} onChange={(e) => setSaveBoxTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -666,8 +760,42 @@ export const AnnouncementBarEditor = () => {
               onChange={setShowEmailForm}
             />
 
+            {showEmailForm && !emailProviderConnected && (
+              <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)', borderRadius: '8px', color: 'rgba(255,255,255,0.85)', fontSize: '12px' }}>
+                ⚠️ No email provider connected. Connect Mailchimp or Klaviyo in the app's Settings tab so subscribers can actually be added to a list.
+              </div>
+            )}
+
             {showEmailForm && (
               <>
+                <ConfigFormGroup label="Email List" hint="Subscribers will be added to this list">
+                  <ConfigSelect
+                    value={emailSettings.listId}
+                    onChange={(e) => {
+                      const selected = emailProviderLists.find((l) => l.listId === e.target.value);
+                      setEmailSettings({ ...emailSettings, listId: e.target.value, listName: selected ? selected.listName : '' });
+                    }}
+                    options={[
+                      { value: '', label: emailProviderConnected ? 'Select an email list' : 'Connect a provider first' },
+                      ...emailProviderLists.map((list) => ({ value: list.listId, label: list.listName })),
+                    ]}
+                  />
+                </ConfigFormGroup>
+
+                <ConfigFormGroup label="Email Template (Optional)" hint="Sent by your provider's automation when a customer subscribes">
+                  <ConfigSelect
+                    value={emailSettings.templateId}
+                    onChange={(e) => {
+                      const selected = emailProviderTemplates.find((t) => t.templateId === e.target.value);
+                      setEmailSettings({ ...emailSettings, templateId: e.target.value, templateName: selected ? selected.templateName : '' });
+                    }}
+                    options={[
+                      { value: '', label: 'No automated email' },
+                      ...emailProviderTemplates.map((template) => ({ value: template.templateId, label: template.templateName })),
+                    ]}
+                  />
+                </ConfigFormGroup>
+
                 <ConfigFormGroup label="Input Placeholder">
                   <ConfigInput
                     value={emailSettings.placeholderText}
@@ -675,7 +803,7 @@ export const AnnouncementBarEditor = () => {
                     placeholder="Enter your email"
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="Button Text">
                   <ConfigInput
                     value={emailSettings.buttonText}
@@ -683,11 +811,11 @@ export const AnnouncementBarEditor = () => {
                     placeholder="Subscribe"
                   />
                 </ConfigFormGroup>
-                
+
                 <ConfigFormGroup label="Success Message">
                   <ConfigInput
-                    value={emailSettings.successMessage}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, successMessage: e.target.value })}
+                    value={emailSettings.emailSuccessMessage}
+                    onChange={(e) => setEmailSettings({ ...emailSettings, emailSuccessMessage: e.target.value })}
                     placeholder="Thank you for subscribing!"
                   />
                 </ConfigFormGroup>
@@ -697,36 +825,42 @@ export const AnnouncementBarEditor = () => {
                 </div>
                 
                 <ConfigFormGroup label="Input Background">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.backgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, backgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Input Border Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.borderColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.borderColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.borderColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, borderColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Input Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.inputStyles.fontColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.inputStyles.fontColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.inputStyles.fontColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      inputStyles: { ...emailSettings.inputStyles, fontColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
 
                 <div style={{ marginTop: '16px', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -734,36 +868,42 @@ export const AnnouncementBarEditor = () => {
                 </div>
                 
                 <ConfigFormGroup label="Button Background">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.backgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.backgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, backgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Button Text Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.fontColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.fontColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.fontColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, fontColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
                 
                 <ConfigFormGroup label="Button Hover Color">
-                  <ConfigInput
-                    type="color"
-                    value={emailSettings.buttonStyles.hoverBackgroundColor}
-                    onChange={(e) => setEmailSettings({ 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={emailSettings.buttonStyles.hoverBackgroundColor} onChange={(e) => setEmailSettings({ 
                       ...emailSettings, 
                       buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
-                    })}
-                  />
+                    })} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={emailSettings.buttonStyles.hoverBackgroundColor} onChange={(e) => setEmailSettings({ 
+                      ...emailSettings, 
+                      buttonStyles: { ...emailSettings.buttonStyles, hoverBackgroundColor: e.target.value }
+                    })} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -781,25 +921,39 @@ export const AnnouncementBarEditor = () => {
               <ConfigSelect
                 value={backgroundType}
                 onChange={(e) => setBackgroundType(e.target.value)}
-                options={THEME_OPTIONS}
+                options={BACKGROUND_TYPE_OPTIONS}
               />
             </ConfigFormGroup>
-            
-            <ConfigFormGroup label="Primary Color">
-              <ConfigInput
-                type="color"
-                value={backgroundColor}
-                onChange={(e) => setBackgroundColor(e.target.value)}
-              />
-            </ConfigFormGroup>
-            
+
+            {backgroundType === 'solid' && (
+              <ConfigFormGroup label="Color">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                  <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+                </div>
+              </ConfigFormGroup>
+            )}
+
             {backgroundType === 'gradient' && (
-              <ConfigFormGroup label="Gradient End Color">
-                <ConfigInput
-                  type="color"
-                  value={gradientEndColor}
-                  onChange={(e) => setGradientEndColor(e.target.value)}
-                />
+              <>
+                <ConfigFormGroup label="Gradient Start Color">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                    <ConfigInput type="text" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Gradient End Color">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input type="color" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                    <ConfigInput type="text" value={gradientEndColor} onChange={(e) => setGradientEndColor(e.target.value)} />
+                  </div>
+                </ConfigFormGroup>
+              </>
+            )}
+
+            {backgroundType === 'theme' && (
+              <ConfigFormGroup label="Pick a Theme">
+                <AnnouncementBarThemePicker value={backgroundTheme} onChange={setBackgroundTheme} />
               </ConfigFormGroup>
             )}
           </EditorConfigPanel>
@@ -812,11 +966,10 @@ export const AnnouncementBarEditor = () => {
             description="Customize the text color"
           >
             <ConfigFormGroup label="Message Text Color">
-              <ConfigInput
-                type="color"
-                value={textColor}
-                onChange={(e) => setTextColor(e.target.value)}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -903,40 +1056,23 @@ export const AnnouncementBarEditor = () => {
       // === SCHEDULE TAB ===
       case 'start-date':
         return (
-          <EditorConfigPanel
-            title="Start Date"
-            description="When should the bar start showing?"
-          >
-            <ConfigFormGroup label="Date">
-              <ConfigInput
-                type="date"
-                value={startDate.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = startDate.split('T')[1] || '00:00';
-                  setStartDate(e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-              />
+          <EditorConfigPanel title="Start Date" description="When should the bar start showing?">
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
-            <ConfigFormGroup label="Time">
-              <ConfigInput
-                type="time"
-                value={startDate.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = startDate.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setStartDate(`${date}T${e.target.value}`);
-                }}
-              />
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
             </ConfigFormGroup>
             {startDate && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '10px', 
-                background: 'rgba(52, 199, 89, 0.1)', 
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
                 borderRadius: '8px',
                 color: 'rgba(255,255,255,0.8)',
                 fontSize: '13px'
               }}>
-                📅 Starts: {new Date(startDate).toLocaleString()}
+                🚀 Starts: {new Date(startDate).toLocaleString()}
               </div>
             )}
           </EditorConfigPanel>
@@ -944,40 +1080,23 @@ export const AnnouncementBarEditor = () => {
 
       case 'end-date':
         return (
-          <EditorConfigPanel
-            title="End Date"
-            description="When should the bar stop showing?"
-          >
-            <ConfigFormGroup label="Date">
-              <ConfigInput
-                type="date"
-                value={endDate.split('T')[0] || ''}
-                onChange={(e) => {
-                  const time = endDate.split('T')[1] || '23:59';
-                  setEndDate(e.target.value ? `${e.target.value}T${time}` : '');
-                }}
-              />
+          <EditorConfigPanel title="End Date" description="When should the bar stop showing?">
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
-            <ConfigFormGroup label="Time">
-              <ConfigInput
-                type="time"
-                value={endDate.split('T')[1] || ''}
-                onChange={(e) => {
-                  const date = endDate.split('T')[0] || new Date().toISOString().split('T')[0];
-                  setEndDate(`${date}T${e.target.value}`);
-                }}
-              />
-            </ConfigFormGroup>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bars that run indefinitely
+            </div>
             {endDate && (
-              <div style={{ 
-                marginTop: '12px', 
-                padding: '10px', 
-                background: 'rgba(255, 59, 48, 0.1)', 
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
                 borderRadius: '8px',
                 color: 'rgba(255,255,255,0.8)',
                 fontSize: '13px'
               }}>
-                🏁 Ends: {new Date(endDate).toLocaleString()}
+                🚀 Ends: {new Date(endDate).toLocaleString()}
               </div>
             )}
           </EditorConfigPanel>
@@ -1000,36 +1119,19 @@ export const AnnouncementBarEditor = () => {
   // Render timer display
   const renderTimer = () => {
     if (!showTimer) return null;
-    
+
     return (
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        marginLeft: '12px',
-      }}>
-        {[
-          { value: countdown.days, label: 'D' },
-          { value: countdown.hours, label: 'H' },
-          { value: countdown.minutes, label: 'M' },
-          { value: countdown.seconds, label: 'S' },
-        ].map((item, idx) => (
-          <div key={idx} style={{
-            background: 'rgba(0,0,0,0.2)',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            textAlign: 'center',
-            minWidth: '36px',
-          }}>
-            <div style={{ fontSize: '14px', fontWeight: '700', color: textColor }}>
-              {String(item.value).padStart(2, '0')}
-            </div>
-            <div style={{ fontSize: '9px', color: textColor, opacity: 0.8 }}>
-              {item.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      <CountdownTimerDisplay
+        theme={countdownTheme}
+        bgColor={timerBgColor}
+        textColor={textColor}
+        days={countdown.days}
+        hours={countdown.hours}
+        minutes={countdown.minutes}
+        seconds={countdown.seconds}
+        label=""
+        style={{ marginLeft: '12px' }}
+      />
     );
   };
 
@@ -1211,6 +1313,7 @@ export const AnnouncementBarEditor = () => {
           enabled={barEnabled}
           onEnabledChange={(value) => { setBarEnabled(value); markAsChanged(); }}
           onSave={handleSave}
+          isLoading={isSaving}
         />
         
         <EditorPreviewPanel

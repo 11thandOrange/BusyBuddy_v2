@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
 import {
@@ -14,10 +14,16 @@ import {
   EditorPreviewPanel,
   ProductPagePreview,
   EditorHeader,
-  EditorRightContent
+  EditorRightContent,
+  EditorToast,
+  CountdownThemePicker,
+  CountdownTimerDisplay,
+  ProductImageCarousel
 } from '../../components/Editor';
-import { useEditorNavigation } from '../../hooks';
-import { editorFetch } from '../../utils/editorAuth';
+import { useEditorNavigation, useSimpleToast } from '../../hooks';
+import { editorFetch, safeParseJson } from '../../utils/editorAuth';
+import { transformProductNode, metafieldsToSpecs, buildAutoDescription, enrichProductsWithLiveData } from '../../utils/productEnrichment';
+import EmojiPicker from 'emoji-picker-react';
 import tshirt from "./tshirt.png";
 
 // Buy X Get Y specific settings configuration
@@ -64,6 +70,12 @@ const BXGY_SETTINGS = {
         { id: 'skip-offer-button', icon: '⏭️', label: 'Skip Offer Button', iconClass: 'icon-skip' },
       ],
     },
+    {
+      title: 'Product Info',
+      items: [
+        { id: 'product-info', icon: '📝', label: 'Product Info', iconClass: 'icon-info' },
+      ],
+    },
   ],
   appearance: [
     {
@@ -106,6 +118,13 @@ const DISCOUNT_TYPE_OPTIONS = [
   { value: 'Free Gift', label: 'Free Gift (100% Off)' },
 ];
 
+const TIMEZONE_OPTIONS = [
+  { value: 'GMT', label: 'GMT' },
+  { value: 'EST', label: 'EST' },
+  { value: 'PST', label: 'PST' },
+  { value: 'UTC', label: 'UTC' },
+];
+
 /**
  * BuyXGetYEditor - Editor for Buy X Get Y app
  * Uses reusable Editor components with app-specific configuration
@@ -116,13 +135,11 @@ const DISCOUNT_TYPE_OPTIONS = [
 export const BuyXGetYEditor = () => {
   // Get bundle ID from URL params (if editing existing bundle)
   const { id } = useParams();
-  const { closeEditor } = useEditorNavigation();
+  const { closeEditor } = useEditorNavigation('buy-one-get-one');
   // No App Bridge in the standalone editor (see useEditorNavigation.js), so
-  // there's no toast host to show one on. Declaring shopify as undefined
-  // (rather than leaving it unreferenced) makes every `shopify?.toast?.show`
-  // call below a safe no-op instead of a ReferenceError that aborts
-  // handleSave before it can reach closeEditor().
-  const shopify = undefined;
+  // there's no host toast to show one on - useSimpleToast renders a real,
+  // visible banner instead.
+  const [toast, showToast] = useSimpleToast();
 
   // Loading state for fetching bundle data
   const [isLoading, setIsLoading] = useState(!!id);
@@ -132,7 +149,8 @@ export const BuyXGetYEditor = () => {
   // Active states
   const [activeTab, setActiveTab] = useState('bundle');
   const [activeSettingId, setActiveSettingId] = useState('customer-buys');
-  
+  const [device, setDevice] = useState('desktop');
+
   // Track unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -153,7 +171,7 @@ export const BuyXGetYEditor = () => {
   };
   
   // Bundle data states
-  const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More! 🎁');
+  const [bundleTitle, setBundleTitle] = useState('Buy X Get Y - Save More!');
   const [bundleInternalName, setBundleInternalName] = useState('');
   const [secondaryMessage, setSecondaryMessage] = useState('Get this bundle and save on your purchase');
   const [bundleEnabled, setBundleEnabled] = useState(true);
@@ -187,13 +205,18 @@ export const BuyXGetYEditor = () => {
   
   // Display settings
   const [showCountdown, setShowCountdown] = useState(false);
+  const [countdownTheme, setCountdownTheme] = useState('classic');
   const [showEmoji, setShowEmoji] = useState(true);
+  const [selectedEmoji, setSelectedEmoji] = useState('🎁');
+  const [emojiPosition, setEmojiPosition] = useState('end');
+  const [showEmojiPickerPopup, setShowEmojiPickerPopup] = useState(false);
   const [margins, setMargins] = useState({ top: 20, bottom: 20 });
   const [cornerRadius, setCornerRadius] = useState(20);
   
   // Schedule states
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [timezone, setTimezone] = useState('GMT');
   
   // Button settings
   const [addToCartText, setAddToCartText] = useState('Add Bundle to Cart');
@@ -203,6 +226,49 @@ export const BuyXGetYEditor = () => {
   const [skipButtonText, setSkipButtonText] = useState('Skip Offer');
   const [skipButtonBgColor, setSkipButtonBgColor] = useState('#f5f5f5');
   const [skipButtonTextColor, setSkipButtonTextColor] = useState('#666666');
+
+  // Product Info - persisted to the real bundle product's descriptionHtml
+  const [productDescription, setProductDescription] = useState('');
+  const [productSpecs, setProductSpecs] = useState([]);
+  // Tracks the last auto-generated description this effect itself wrote, so
+  // it can tell "still what we generated" (keep syncing) apart from "the
+  // merchant edited it" (stop touching it) without a separate dirty flag.
+  const lastAutoDescriptionRef = useRef('');
+
+  // Editing an existing pre-filled value "claims" that row so the sync
+  // below never quietly reverts what the merchant just typed.
+  const handleSpecChange = (index, field, value) => {
+    setProductSpecs((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value, source: 'custom' } : s)));
+  };
+  const handleAddSpec = () => {
+    setProductSpecs((prev) => [...prev, { label: '', value: '', source: 'custom' }]);
+  };
+  const handleRemoveSpec = (index) => {
+    setProductSpecs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Pre-fills description/specs from the bundle's own selected products
+  // (X and Y combined) - re-runs every time either list changes. Specs
+  // pulled from a product's metafields are always kept in sync with the
+  // current product list; anything the merchant typed themselves
+  // (source: 'custom') is never touched. The description is a single
+  // freeform field, not a list, so it can only be auto-synced while it
+  // still matches what this effect itself last generated - the moment the
+  // merchant edits it, it's ignored.
+  useEffect(() => {
+    const allProducts = [...selectedXProducts, ...selectedYProducts];
+    const autoSpecs = allProducts.flatMap(metafieldsToSpecs);
+    setProductSpecs((prev) => [...prev.filter((s) => s.source !== 'product'), ...autoSpecs]);
+
+    const autoDescription = buildAutoDescription(allProducts);
+    setProductDescription((prev) => {
+      if (prev === '' || prev === lastAutoDescriptionRef.current) {
+        lastAutoDescriptionRef.current = autoDescription;
+        return autoDescription;
+      }
+      return prev;
+    });
+  }, [selectedXProducts, selectedYProducts]);
 
   // Product picker modals
   const [showXProductPicker, setShowXProductPicker] = useState(false);
@@ -236,12 +302,21 @@ export const BuyXGetYEditor = () => {
           setDiscountType(bundle.discountType || '');
           setDiscountValue(bundle.discountValue?.toString() || '');
           
-          // Set X and Y products
+          // Set X and Y products - then refresh both with live Shopify
+          // data (images, description, metafields) rather than relying on
+          // the stored snapshot, which may be stale or (for older bundles)
+          // never had images captured at all.
           if (bundle.productsX) {
             setSelectedXProducts(bundle.productsX);
+            if (bundle.productsX.length) {
+              enrichProductsWithLiveData(bundle.productsX).then(setSelectedXProducts);
+            }
           }
           if (bundle.productsY) {
             setSelectedYProducts(bundle.productsY);
+            if (bundle.productsY.length) {
+              enrichProductsWithLiveData(bundle.productsY).then(setSelectedYProducts);
+            }
           }
           
           // Set widget appearance
@@ -259,7 +334,10 @@ export const BuyXGetYEditor = () => {
               getYBannerTextColor: bundle.widgetAppearance.getYBannerTextColor || '#FFFFFF',
             });
             setShowCountdown(bundle.widgetAppearance.isShowCountDownTimer || false);
+            setCountdownTheme(bundle.widgetAppearance.offerTagTheme || 'classic');
             setShowEmoji(bundle.widgetAppearance.addEmoji ?? true);
+            setSelectedEmoji(bundle.selectedEmoji || '🎁');
+            setEmojiPosition(bundle.emojiPosition || 'end');
             setMargins({
               top: bundle.widgetAppearance.topMargin || 20,
               bottom: bundle.widgetAppearance.bottomMargin || 20,
@@ -275,18 +353,25 @@ export const BuyXGetYEditor = () => {
             setSkipButtonBgColor(bundle.widgetAppearance.skipButtonBgColor || '#f5f5f5');
             setSkipButtonTextColor(bundle.widgetAppearance.skipButtonTextColor || '#666666');
           }
-          
+          setProductDescription(bundle.description || '');
+          // Specs saved before source-tagging existed, and any the
+          // merchant typed in themselves, are indistinguishable from here -
+          // treat them as custom so the live product-data sync below never
+          // silently overwrites them.
+          setProductSpecs((bundle.specs || []).map((s) => ({ ...s, source: s.source || 'custom' })));
+
           // Set dates
           if (bundle.startDate) {
-            setStartDate(new Date(bundle.startDate).toISOString().split('T')[0]);
+            setStartDate(new Date(bundle.startDate).toISOString().slice(0, 16));
           }
           if (bundle.endDate) {
-            setEndDate(new Date(bundle.endDate).toISOString().split('T')[0]);
+            setEndDate(new Date(bundle.endDate).toISOString().slice(0, 16));
           }
+          setTimezone(bundle.timezone || 'GMT');
         }
       } catch (err) {
         console.error('Error fetching bundle:', err);
-        shopify?.toast?.show('Failed to load bundle data', { duration: 3000 });
+        showToast('Failed to load bundle data', { duration: 3000 });
       } finally {
         setIsLoading(false);
       }
@@ -318,25 +403,31 @@ export const BuyXGetYEditor = () => {
     
     const calculateTimeLeft = () => {
       const now = new Date();
-      const endOfDay = new Date();
-      endOfDay.setHours(23, 59, 59, 999);
-      const difference = endOfDay - now;
-      
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / (1000 * 60)) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-      
+      // Counts down to the bundle's actual schedule end date, matching what
+      // the real storefront widget counts down to - not an arbitrary
+      // end-of-today target unrelated to the Schedule tab.
+      let target = endDate ? new Date(endDate) : null;
+      if (!target || isNaN(target.getTime())) {
+        target = new Date();
+        target.setHours(23, 59, 59, 999);
+      }
+      const difference = target - now;
+
+      const hours = Math.max(0, Math.floor((difference / (1000 * 60 * 60)) % 24));
+      const minutes = Math.max(0, Math.floor((difference / (1000 * 60)) % 60));
+      const seconds = Math.max(0, Math.floor((difference / 1000) % 60));
+
       return {
         hours: hours.toString().padStart(2, '0'),
         minutes: minutes.toString().padStart(2, '0'),
         seconds: seconds.toString().padStart(2, '0'),
       };
     };
-    
+
     setTimeLeft(calculateTimeLeft());
     const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
     return () => clearInterval(timer);
-  }, [showCountdown]);
+  }, [showCountdown, endDate]);
 
   const fetchStoreProducts = async (search = '') => {
     setProductsLoading(true);
@@ -345,37 +436,15 @@ export const BuyXGetYEditor = () => {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
-      if (!response.ok) throw new Error("Failed to fetch products");
-      
-      const data = await response.json();
+      const data = await safeParseJson(response);
+      if (!response.ok) throw new Error(data?.message || "Failed to fetch products");
+
       const edges = data.data?.edges || [];
-      
-      // Transform products to match production bundle format
-      const transformedProducts = edges.map(edge => {
-        const product = edge.node;
-        const optionSelections = product.options?.map(opt => ({
-          componentOptionId: opt.id,
-          name: opt.name,
-          uniqueName: `${product.title} ${opt.name}`,
-          values: opt.values
-        })) || [];
-        
-        return {
-          id: product.id,
-          productId: product.id,
-          title: product.title,
-          price: product.variants?.edges?.[0]?.node?.price || product.variants?.nodes?.[0]?.price || '0.00',
-          media: product.images?.edges?.[0]?.node?.url || product.featuredMedia?.image?.url || tshirt,
-          handle: product.handle,
-          quantity: 1,
-          variants: product.variants?.edges?.map(v => v.node) || product.variants?.nodes || [],
-          optionSelections: optionSelections
-        };
-      });
+      const transformedProducts = edges.map(edge => transformProductNode(edge.node));
       setStoreProducts(transformedProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
-      shopify?.toast?.show("Failed to load products", { duration: 3000 });
+      showToast(error.message || "Failed to load products", { duration: 3000 });
     } finally {
       setProductsLoading(false);
     }
@@ -453,49 +522,78 @@ export const BuyXGetYEditor = () => {
     return price.toFixed(2);
   };
 
+  // Same total/original-total math the widget preview's own "Total" row
+  // computes inline - pulled out so the live-preview product-page mockup
+  // (rendered as a sibling, not a child, of the widget preview) can show
+  // the same real numbers instead of a hardcoded price.
+  const calculateBXGYPricing = () => {
+    const xTotal = selectedXProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const yOriginal = selectedYProducts.reduce((sum, p) => sum + (parseFloat(p.price) || 0), 0);
+    const yDiscounted = selectedYProducts.reduce((sum, p) => sum + parseFloat(calculateDiscountedPrice(p.price)), 0);
+    return { total: xTotal + yDiscounted, originalTotal: xTotal + yOriginal };
+  };
+
   // Save bundle to database
   const handleSave = async () => {
     // Validation
     if (!bundleTitle.trim()) {
-      shopify?.toast?.show("Please enter a bundle title", { duration: 3000 });
+      showToast("Please enter a bundle title", { duration: 3000 });
       return;
     }
     if (selectedXProducts.length === 0) {
-      shopify?.toast?.show("Please select at least one product for 'Customer Buys (X)'", { duration: 3000 });
+      showToast("Please select at least one product for 'Customer Buys (X)'", { duration: 3000 });
       return;
     }
     if (selectedYProducts.length === 0) {
-      shopify?.toast?.show("Please select at least one product for 'Customer Gets (Y)'", { duration: 3000 });
+      showToast("Please select at least one product for 'Customer Gets (Y)'", { duration: 3000 });
       return;
     }
     if (!discountType) {
-      shopify?.toast?.show("Please select a discount type", { duration: 3000 });
+      showToast("Please select a discount type", { duration: 3000 });
       return;
     }
     if (discountType !== 'Free Gift' && (!discountValue || parseFloat(discountValue) <= 0)) {
-      shopify?.toast?.show("Please enter a valid discount value", { duration: 3000 });
+      showToast("Please enter a valid discount value", { duration: 3000 });
       return;
     }
     if (discountType === 'Percentage' && parseFloat(discountValue) > 100) {
-      shopify?.toast?.show("Percentage discount cannot exceed 100", { duration: 3000 });
+      showToast("Percentage discount cannot exceed 100", { duration: 3000 });
       return;
     }
     if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
-      shopify?.toast?.show("End date must be after start date", { duration: 3000 });
+      showToast("End date must be after start date", { duration: 3000 });
       return;
     }
+
+    // The backend can only apply the BOGO discount if it knows each
+    // component's real per-variant price (calculateBogoVariantPrices in
+    // web/backend/controller/bundles/index.js) - without this, it silently
+    // falls back to saving the bundle at full price with no discount at
+    // all, even though this editor's own preview shows one applied.
+    const originalVariantPrices = [...selectedXProducts, ...selectedYProducts].flatMap((p) =>
+      (p.variants || []).map((v) => ({
+        productId: p.productId,
+        title: v.title,
+        price: parseFloat(v.price) || 0,
+      }))
+    );
 
     const bundleData = {
       title: bundleTitle,
       secondaryMessage: secondaryMessage,
       productsX: selectedXProducts,
       productsY: selectedYProducts,
+      originalVariantPrices,
       discountType: discountType,
       discountValue: discountType === 'Free Gift' ? 100 : parseFloat(discountValue) || 0,
       status: bundleEnabled,
       internalName: bundleInternalName && bundleInternalName.trim() !== '' ? bundleInternalName.trim() : bundleTitle.trim(),
       type: "Buy One Get One",
       bundlePriority: parseInt(bundlePriority) || 0,
+      description: productDescription,
+      specs: productSpecs,
+      selectedEmoji: selectedEmoji,
+      emojiPosition: emojiPosition,
       widgetAppearance: {
         primaryTextColor: colorSettings.primaryTextColor,
         secondaryTextColor: colorSettings.secondaryTextColor,
@@ -505,6 +603,7 @@ export const BuyXGetYEditor = () => {
         buttonColor: colorSettings.buttonColor,
         offerTagBackgroundColor: colorSettings.countdownBgColor,
         offerTagTextColor: colorSettings.countdownTextColor,
+        offerTagTheme: countdownTheme,
         getYBannerColor: colorSettings.getYBannerColor,
         getYBannerTextColor: colorSettings.getYBannerTextColor,
         isShowCountDownTimer: showCountdown,
@@ -523,6 +622,7 @@ export const BuyXGetYEditor = () => {
       },
       startDate: startDate || new Date().toISOString(),
       endDate: endDate || new Date(Date.now() + 10 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: timezone,
     };
 
     setIsSaving(true);
@@ -541,18 +641,19 @@ export const BuyXGetYEditor = () => {
       if (response.ok) {
         const data = await response.json();
         console.log("Bundle " + (isEditing ? "updated" : "created") + " successfully:", data);
-        shopify?.toast?.show(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000 });
-        // Clear unsaved changes flag and close editor
+        showToast(`Bundle ${isEditing ? "updated" : "created"} successfully!`, { duration: 5000, tone: "success" });
+        // Clear unsaved changes flag and close editor - delayed slightly so
+        // the success toast is actually visible before the tab closes.
         setHasUnsavedChanges(false);
-        closeEditor();
+        setTimeout(() => closeEditor(), 600);
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Error saving bundle:", errorData);
-        shopify?.toast?.show(errorData.message || "Failed to save bundle", { duration: 5000 });
+        showToast(errorData.error || errorData.message || "Failed to save bundle", { duration: 5000 });
       }
     } catch (error) {
       console.error("Error saving bundle:", error);
-      shopify?.toast?.show("An error occurred while saving the bundle", { duration: 5000 });
+      showToast("An error occurred while saving the bundle", { duration: 5000 });
     } finally {
       setIsSaving(false);
     }
@@ -564,7 +665,7 @@ export const BuyXGetYEditor = () => {
       case 'customer-buys':
         return (
           <div className="config-section">
-            <ConfigFormGroup label="Customer Buys (X)" helpText="Products that customer must purchase">
+            <ConfigFormGroup label="Customer Buys (X)" helpText="Products that customer must purchase - select at least 1">
               <div style={{ marginBottom: '15px' }}>
                 <ConfigInput
                   placeholder="Search products..."
@@ -577,40 +678,45 @@ export const BuyXGetYEditor = () => {
               {selectedXProducts.length > 0 && (
                 <div style={{ marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '13px' }}>Selected ({selectedXProducts.length})</span>
-                    <button onClick={clearAllXProducts} style={{ color: '#C4290E', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>Selected ({selectedXProducts.length})</span>
+                    <button onClick={clearAllXProducts} style={{ color: '#ff3b30', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
                       Clear All
                     </button>
                   </div>
                   {selectedXProducts.map(product => (
                     <div key={product.productId || product.id} style={{
-                      display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
-                      background: '#f5f5f5', borderRadius: '8px', gap: '10px'
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', marginBottom: '8px',
+                      background: 'rgba(81, 105, 221, 0.1)', borderRadius: '8px', border: '1px solid rgba(81, 105, 221, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
-                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
-                      <button onClick={() => removeProductFromX(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeProductFromX(product.productId || product.id)} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
               )}
-              
+
               {/* Available Products */}
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {productsLoading ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>Loading products...</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading products...</p>
                 ) : getFilteredProducts().length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666', fontSize: '13px' }}>No products available</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>No products available</p>
                 ) : (
                   getFilteredProducts().map(product => (
                     <div key={product.id} onClick={() => addProductToX(product)} style={{
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
-                      background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
+                      background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', gap: '10px'
                     }}>
                       <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
-                        <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
+                        <div style={{ fontWeight: 500, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>{product.title}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>${product.price}</div>
                       </div>
                       <span style={{ color: '#5169DD', fontSize: '20px' }}>+</span>
                     </div>
@@ -624,7 +730,7 @@ export const BuyXGetYEditor = () => {
       case 'customer-gets':
         return (
           <div className="config-section">
-            <ConfigFormGroup label="Customer Gets (Y)" helpText="Products customer receives at a discount">
+            <ConfigFormGroup label="Customer Gets (Y)" helpText="Products customer receives at a discount - select at least 1">
               <div style={{ marginBottom: '15px' }}>
                 <ConfigInput
                   placeholder="Search products..."
@@ -637,40 +743,45 @@ export const BuyXGetYEditor = () => {
               {selectedYProducts.length > 0 && (
                 <div style={{ marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 600, fontSize: '13px' }}>Selected ({selectedYProducts.length})</span>
-                    <button onClick={clearAllYProducts} style={{ color: '#C4290E', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
+                    <span style={{ fontWeight: 600, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>Selected ({selectedYProducts.length})</span>
+                    <button onClick={clearAllYProducts} style={{ color: '#ff3b30', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px' }}>
                       Clear All
                     </button>
                   </div>
                   {selectedYProducts.map(product => (
                     <div key={product.productId || product.id} style={{
-                      display: 'flex', alignItems: 'center', padding: '8px', marginBottom: '8px',
-                      background: '#E8F5E9', borderRadius: '8px', gap: '10px'
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', marginBottom: '8px',
+                      background: 'rgba(76, 175, 80, 0.1)', borderRadius: '8px', border: '1px solid rgba(76, 175, 80, 0.3)',
                     }}>
-                      <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
-                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 500 }}>{product.title}</span>
-                      <button onClick={() => removeProductFromY(product.productId || product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '18px' }}>×</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <img src={product.media || tshirt} alt={product.title} style={{ width: 40, height: 40, borderRadius: '6px', objectFit: 'cover' }} />
+                        <div>
+                          <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '13px' }}>{product.title}</div>
+                          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>${product.price}</div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeProductFromY(product.productId || product.id)} style={{ background: 'rgba(255,59,48,0.2)', border: 'none', borderRadius: '4px', color: '#ff3b30', padding: '4px 8px', cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
               )}
-              
+
               {/* Available Products */}
               <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                 {productsLoading ? (
-                  <p style={{ textAlign: 'center', color: '#666' }}>Loading products...</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Loading products...</p>
                 ) : getFilteredProducts().length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#666', fontSize: '13px' }}>No products available</p>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>No products available</p>
                 ) : (
                   getFilteredProducts().map(product => (
                     <div key={product.id} onClick={() => addProductToY(product)} style={{
                       display: 'flex', alignItems: 'center', padding: '10px', marginBottom: '8px',
-                      background: '#fff', borderRadius: '8px', border: '1px solid #e0e0e0', cursor: 'pointer', gap: '10px'
+                      background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', gap: '10px'
                     }}>
                       <img src={product.media || tshirt} alt={product.title} style={{ width: 50, height: 50, borderRadius: '8px', objectFit: 'cover' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, fontSize: '13px' }}>{product.title}</div>
-                        <div style={{ color: '#666', fontSize: '12px' }}>${product.price}</div>
+                        <div style={{ fontWeight: 500, fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>{product.title}</div>
+                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>${product.price}</div>
                       </div>
                       <span style={{ color: '#4CAF50', fontSize: '20px' }}>+</span>
                     </div>
@@ -764,8 +875,55 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Emoji in Title"
               checked={showEmoji}
-              onChange={(e) => setShowEmoji(e.target.checked)}
+              onChange={setShowEmoji}
             />
+            {showEmoji && (
+              <>
+                <ConfigFormGroup label="Emoji">
+                  <div style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPickerPopup((prev) => !prev)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{ fontSize: '22px' }}>{selectedEmoji}</span>
+                      <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Choose Emoji</span>
+                    </button>
+                    {showEmojiPickerPopup && (
+                      <div style={{ position: 'absolute', top: '48px', left: 0, zIndex: 100 }}>
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) => {
+                            setSelectedEmoji(emojiData.emoji);
+                            setShowEmojiPickerPopup(false);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </ConfigFormGroup>
+                <ConfigFormGroup label="Emoji Position">
+                  <ConfigSelect
+                    value={emojiPosition}
+                    onChange={(e) => setEmojiPosition(e.target.value)}
+                    options={[
+                      { value: 'start', label: 'Left' },
+                      { value: 'end', label: 'Right' },
+                      { value: 'both', label: 'Both Sides' },
+                    ]}
+                  />
+                </ConfigFormGroup>
+              </>
+            )}
           </div>
         );
 
@@ -775,25 +933,29 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Countdown Timer"
               checked={showCountdown}
-              onChange={(e) => setShowCountdown(e.target.checked)}
+              onChange={setShowCountdown}
             />
             {showCountdown && (
               <>
-                <ConfigFormGroup label="Timer Background">
-                  <input
-                    type="color"
-                    value={colorSettings.countdownBgColor}
-                    onChange={(e) => handleColorChange('countdownBgColor', e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                <ConfigFormGroup label="Timer Theme" hint="Pick a visual style - colors below still apply to any theme">
+                  <CountdownThemePicker
+                    value={countdownTheme}
+                    onChange={setCountdownTheme}
+                    bgColor={colorSettings.countdownBgColor}
+                    textColor={colorSettings.countdownTextColor}
                   />
                 </ConfigFormGroup>
+                <ConfigFormGroup label="Timer Background">
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownBgColor} onChange={(e) => handleColorChange('countdownBgColor', e.target.value)} />
+              </div>
+                </ConfigFormGroup>
                 <ConfigFormGroup label="Timer Text Color">
-                  <input
-                    type="color"
-                    value={colorSettings.countdownTextColor}
-                    onChange={(e) => handleColorChange('countdownTextColor', e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.countdownTextColor} onChange={(e) => handleColorChange('countdownTextColor', e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
@@ -811,20 +973,16 @@ export const BuyXGetYEditor = () => {
               />
             </ConfigFormGroup>
             <ConfigFormGroup label="Background Color">
-              <input
-                type="color"
-                value={addToCartBgColor}
-                onChange={(e) => setAddToCartBgColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartBgColor} onChange={(e) => setAddToCartBgColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Text Color">
-              <input
-                type="color"
-                value={addToCartTextColor}
-                onChange={(e) => setAddToCartTextColor(e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={addToCartTextColor} onChange={(e) => setAddToCartTextColor(e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </EditorConfigPanel>
         );
@@ -835,7 +993,7 @@ export const BuyXGetYEditor = () => {
             <ConfigToggleRow
               label="Show Skip Button"
               checked={showSkipButton}
-              onChange={(e) => setShowSkipButton(e.target.checked)}
+              onChange={setShowSkipButton}
             />
             {showSkipButton && (
               <>
@@ -847,23 +1005,60 @@ export const BuyXGetYEditor = () => {
                   />
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Background Color">
-                  <input
-                    type="color"
-                    value={skipButtonBgColor}
-                    onChange={(e) => setSkipButtonBgColor(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonBgColor} onChange={(e) => setSkipButtonBgColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
                 <ConfigFormGroup label="Text Color">
-                  <input
-                    type="color"
-                    value={skipButtonTextColor}
-                    onChange={(e) => setSkipButtonTextColor(e.target.value)}
-                    style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={skipButtonTextColor} onChange={(e) => setSkipButtonTextColor(e.target.value)} />
+              </div>
                 </ConfigFormGroup>
               </>
             )}
+          </EditorConfigPanel>
+        );
+
+      case 'product-info':
+        return (
+          <EditorConfigPanel title="Product Info" description="Description and specs for the bundle product created in your store">
+            <ConfigFormGroup label="Description">
+              <ConfigTextarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder="Describe this bundle..."
+                rows={4}
+              />
+            </ConfigFormGroup>
+
+            <ConfigFormGroup label="Specs">
+              {productSpecs.map((spec, index) => (
+                <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <ConfigInput
+                    type="text"
+                    value={spec.label}
+                    onChange={(e) => handleSpecChange(index, 'label', e.target.value)}
+                    placeholder="Label (e.g. Material)"
+                  />
+                  <ConfigInput
+                    type="text"
+                    value={spec.value}
+                    onChange={(e) => handleSpecChange(index, 'value', e.target.value)}
+                    placeholder="Value (e.g. Cotton)"
+                  />
+                  <button
+                    onClick={() => handleRemoveSpec(index)}
+                    style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '14px' }}
+                  >✕</button>
+                </div>
+              ))}
+              <button
+                onClick={handleAddSpec}
+                style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.05)', border: '1px dashed #ccc', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', color: '#fff' }}
+              >+ Add Spec</button>
+            </ConfigFormGroup>
           </EditorConfigPanel>
         );
 
@@ -871,28 +1066,22 @@ export const BuyXGetYEditor = () => {
         return (
           <div className="config-section">
             <ConfigFormGroup label="Primary Text Color">
-              <input
-                type="color"
-                value={colorSettings.primaryTextColor}
-                onChange={(e) => handleColorChange('primaryTextColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryTextColor} onChange={(e) => handleColorChange('primaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Primary Background">
-              <input
-                type="color"
-                value={colorSettings.primaryBackgroundColor}
-                onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.primaryBackgroundColor} onChange={(e) => handleColorChange('primaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Get Y Banner Color">
-              <input
-                type="color"
-                value={colorSettings.getYBannerColor}
-                onChange={(e) => handleColorChange('getYBannerColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.getYBannerColor} onChange={(e) => handleColorChange('getYBannerColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.getYBannerColor} onChange={(e) => handleColorChange('getYBannerColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </div>
         );
@@ -901,28 +1090,22 @@ export const BuyXGetYEditor = () => {
         return (
           <div className="config-section">
             <ConfigFormGroup label="Secondary Text Color">
-              <input
-                type="color"
-                value={colorSettings.secondaryTextColor}
-                onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryTextColor} onChange={(e) => handleColorChange('secondaryTextColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Secondary Background">
-              <input
-                type="color"
-                value={colorSettings.secondaryBackgroundColor}
-                onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.secondaryBackgroundColor} onChange={(e) => handleColorChange('secondaryBackgroundColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
             <ConfigFormGroup label="Border Color">
-              <input
-                type="color"
-                value={colorSettings.borderColor}
-                onChange={(e) => handleColorChange('borderColor', e.target.value)}
-                style={{ width: '100%', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-              />
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <input type="color" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} style={{ width: '40px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer', flexShrink: 0 }} />
+                <ConfigInput type="text" value={colorSettings.borderColor} onChange={(e) => handleColorChange('borderColor', e.target.value)} />
+              </div>
             </ConfigFormGroup>
           </div>
         );
@@ -966,28 +1149,43 @@ export const BuyXGetYEditor = () => {
 
       case 'start-date':
         return (
-          <div className="config-section">
-            <ConfigFormGroup label="Start Date">
-              <ConfigInput
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+          <EditorConfigPanel title="Start Date" description="When should this offer start?">
+            <ConfigFormGroup label="Start Date & Time">
+              <ConfigInput type="datetime-local" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </ConfigFormGroup>
-          </div>
+            <ConfigFormGroup label="Timezone">
+              <ConfigSelect value={timezone} onChange={(e) => setTimezone(e.target.value)} options={TIMEZONE_OPTIONS} />
+            </ConfigFormGroup>
+            {startDate && (
+              <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(52, 199, 89, 0.1)', borderRadius: '8px', color: 'rgba(255,255,255,0.8)', fontSize: '13px' }}>
+                🚀 Starts: {new Date(startDate).toLocaleString()}
+              </div>
+            )}
+          </EditorConfigPanel>
         );
 
       case 'end-date':
         return (
-          <div className="config-section">
-            <ConfigFormGroup label="End Date">
-              <ConfigInput
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+          <EditorConfigPanel title="End Date" description="When to stop showing">
+            <ConfigFormGroup label="End Date & Time">
+              <ConfigInput type="datetime-local" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </ConfigFormGroup>
-          </div>
+            <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+              💡 Leave empty for evergreen bundles that run indefinitely
+            </div>
+            {endDate && (
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                background: 'rgba(52, 199, 89, 0.1)',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '13px'
+              }}>
+                🚀 Ends: {new Date(endDate).toLocaleString()}
+              </div>
+            )}
+          </EditorConfigPanel>
         );
 
       default:
@@ -1008,7 +1206,8 @@ export const BuyXGetYEditor = () => {
         marginTop: `${margins.top}px`,
         marginBottom: `${margins.bottom}px`,
       }}>
-        {/* Title */}
+        {/* Title - the emoji toggle affects this widget heading only, not
+            the real product title saved for the bundle. */}
         <h3 style={{
           color: colorSettings.primaryTextColor,
           fontSize: '16px',
@@ -1016,7 +1215,13 @@ export const BuyXGetYEditor = () => {
           marginBottom: '4px',
           paddingRight: showCountdown ? '150px' : '0',
         }}>
-          {bundleTitle || 'Buy X Get Y - Save More! 🎁'}
+          {(() => {
+            const titleText = bundleTitle || 'Buy X Get Y - Save More!';
+            if (!showEmoji) return titleText;
+            if (emojiPosition === 'start') return `${selectedEmoji} ${titleText}`;
+            if (emojiPosition === 'both') return `${selectedEmoji} ${titleText} ${selectedEmoji}`;
+            return `${titleText} ${selectedEmoji}`;
+          })()}
         </h3>
         {secondaryMessage && (
           <p style={{
@@ -1031,19 +1236,16 @@ export const BuyXGetYEditor = () => {
 
         {/* Countdown Timer */}
         {showCountdown && (
-          <div style={{
-            position: 'absolute',
-            top: '15px',
-            right: '15px',
-            background: colorSettings.countdownBgColor,
-            color: colorSettings.countdownTextColor,
-            padding: '6px 10px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 500,
-          }}>
-            {showEmoji && '🔥 '}Ends In {timeLeft.hours}:{timeLeft.minutes}:{timeLeft.seconds}
-          </div>
+          <CountdownTimerDisplay
+            theme={countdownTheme}
+            bgColor={colorSettings.countdownBgColor}
+            textColor={colorSettings.countdownTextColor}
+            hours={timeLeft.hours}
+            minutes={timeLeft.minutes}
+            seconds={timeLeft.seconds}
+            label="Ends In"
+            style={{ position: 'absolute', top: '15px', right: '15px' }}
+          />
         )}
 
         {!hasProducts ? (
@@ -1070,10 +1272,13 @@ export const BuyXGetYEditor = () => {
                 border: `1px solid ${colorSettings.borderColor}`,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <img
-                    src={product.media || tshirt}
+                  <ProductImageCarousel
+                    images={product.images}
+                    fallback={product.media || tshirt}
                     alt={product.title}
-                    style={{ width: 70, height: 70, borderRadius: '8px', objectFit: 'cover' }}
+                    width={70}
+                    height={70}
+                    borderRadius="8px"
                   />
                   <div style={{ flex: 1 }}>
                     <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px', color: colorSettings.primaryTextColor }}>
@@ -1149,10 +1354,13 @@ export const BuyXGetYEditor = () => {
                       backgroundColor: 'rgba(255,255,255,0.9)',
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img
-                          src={product.media || tshirt}
+                        <ProductImageCarousel
+                          images={product.images}
+                          fallback={product.media || tshirt}
                           alt={product.title}
-                          style={{ width: 70, height: 70, borderRadius: '8px', objectFit: 'cover' }}
+                          width={70}
+                          height={70}
+                          borderRadius="8px"
                         />
                         <div style={{ flex: 1 }}>
                           <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px', color: colorSettings.primaryTextColor }}>
@@ -1251,6 +1459,7 @@ export const BuyXGetYEditor = () => {
 
   return (
     <EditorLayout>
+      <EditorToast toast={toast} />
       <EditorSidepane tabs={TABS} activeTab={activeTab} onTabChange={handleTabChange}>
         <EditorSettingsPane 
           groups={currentSettings} 
@@ -1271,10 +1480,37 @@ export const BuyXGetYEditor = () => {
           onSave={handleSave}
           isLoading={isSaving}
         />
-        <EditorPreviewPanel device="desktop" onDeviceChange={() => {}}>
-          <ProductPagePreview widgetLabel="BOGO Deal">
-            {renderBXGYPreview()}
-          </ProductPagePreview>
+        <EditorPreviewPanel device={device} onDeviceChange={setDevice}>
+          {activeTab === 'content' && activeSettingId === 'product-info' ? (
+            // The bundle's own real product page, as a customer would see it
+            // after landing on the newly created bundle product directly.
+            <ProductPagePreview
+              widgetLabel="BOGO Deal"
+              device={device}
+              images={[...selectedXProducts, ...selectedYProducts].flatMap(p => p.images || [])}
+              title={bundleTitle}
+              price={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().total : undefined}
+              compareAtPrice={(selectedXProducts.length || selectedYProducts.length) ? calculateBXGYPricing().originalTotal : undefined}
+              description={productDescription}
+              specs={productSpecs}
+              hasProduct={selectedXProducts.length > 0 || selectedYProducts.length > 0}
+            />
+          ) : (
+            // Every other tab: the widget as it actually appears in
+            // production - embedded on the first selected product's own
+            // real page, not the bundle's.
+            <ProductPagePreview
+              widgetLabel="BOGO Deal"
+              device={device}
+              images={(selectedXProducts[0] || selectedYProducts[0])?.images || []}
+              title={(selectedXProducts[0] || selectedYProducts[0])?.title || bundleTitle}
+              price={(selectedXProducts[0] || selectedYProducts[0])?.price}
+              description={productDescription}
+              hasProduct={selectedXProducts.length > 0 || selectedYProducts.length > 0}
+            >
+              {renderBXGYPreview()}
+            </ProductPagePreview>
+          )}
         </EditorPreviewPanel>
       </EditorRightContent>
     </EditorLayout>

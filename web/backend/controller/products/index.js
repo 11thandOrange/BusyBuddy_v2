@@ -5,10 +5,10 @@ async function getProducts(req, res) {
   const session = res.locals.shopify.session;
   const client = new shopify.api.clients.Graphql({
     session,
-    apiVersion: "2025-10",
+    apiVersion: "2025-07",
   });
 
-  const { cursor, search } = req.query;
+  const { cursor, search, ids } = req.query;
   console.log("Cursor received in getProducts:", cursor);
   const query = `
     query getProducts($cursor: String, $searchQuery: String!) {
@@ -17,10 +17,16 @@ async function getProducts(req, res) {
           node {
             id
             title
+            descriptionHtml
             featuredMedia {
               ... on MediaImage {
                 id
                 image { url }
+              }
+            }
+            images(first: 10) {
+              edges {
+                node { url }
               }
             }
             options(first: 100) {
@@ -32,6 +38,14 @@ async function getProducts(req, res) {
               nodes {
                 price
                 title
+              }
+            }
+            metafields(first: 20) {
+              nodes {
+                namespace
+                key
+                value
+                type
               }
             }
           }
@@ -49,8 +63,24 @@ async function getProducts(req, res) {
   // so quotes/backslashes are escaped to keep the term from breaking out of
   // the title:*...* clause.
   const baseFilter = "bundles:false AND tag_not:busybuddybundles";
-  const escapedSearch = typeof search === "string" ? search.trim().replace(/["\\]/g, "\\$&") : "";
-  const searchQuery = escapedSearch ? `${baseFilter} AND title:*${escapedSearch}*` : baseFilter;
+  let searchQuery;
+  if (typeof ids === "string" && ids.trim()) {
+    // Editing an existing bundle, or refreshing already-selected products,
+    // needs specific products back rather than a title search - match them
+    // by id instead. IDs are the bare numeric Shopify product id (the same
+    // convention already used in controller/frontStore/index.js), never
+    // user-typed text, so no escaping is needed here.
+    const idFilter = ids
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .map((id) => `id:${id}`)
+      .join(" OR ");
+    searchQuery = idFilter ? `${baseFilter} AND (${idFilter})` : baseFilter;
+  } else {
+    const escapedSearch = typeof search === "string" ? search.trim().replace(/["\\]/g, "\\$&") : "";
+    searchQuery = escapedSearch ? `${baseFilter} AND title:*${escapedSearch}*` : baseFilter;
+  }
 
   try {
     const response = await client.request(query, {
@@ -72,7 +102,7 @@ async function getCollections(_, res) {
   const session = res.locals.shopify.session;
   const client = new shopify.api.clients.Graphql({
     session: session,
-    apiVersion: "2025-10",
+    apiVersion: "2025-07",
   });
 
   const data = await client.request(GET_COLLECTIONS);

@@ -137,4 +137,48 @@ describe('validateBundlePayload', () => {
       expect(validateBundlePayload({ title: '' }, updateOptions)).toMatch(/title cannot be empty/i);
     });
   });
+
+  describe('per-type product count rules', () => {
+    const updateOptions = { requireProducts: false, requireTitle: false };
+
+    it('rejects a Bundle Discount with only 1 product - you cannot bundle a single item', () => {
+      const payload = { ...validCreatePayload, type: 'Bundle Discount', products: [{ productId: 'p1' }] };
+      expect(validateBundlePayload(payload)).toMatch(/at least 2 products/i);
+    });
+
+    it('accepts a Bundle Discount with 2+ products', () => {
+      const payload = {
+        ...validCreatePayload,
+        type: 'Bundle Discount',
+        products: [{ productId: 'p1' }, { productId: 'p2' }],
+      };
+      expect(validateBundlePayload(payload)).toBeNull();
+    });
+
+    it('rejects a Volume Discount with more than 1 product', () => {
+      const payload = {
+        ...validCreatePayload,
+        type: 'Volume Discount',
+        products: [{ productId: 'p1' }, { productId: 'p2' }],
+      };
+      expect(validateBundlePayload(payload)).toMatch(/exactly 1 product/i);
+    });
+
+    it('accepts a Volume Discount with exactly 1 product', () => {
+      const payload = { ...validCreatePayload, type: 'Volume Discount', products: [{ productId: 'p1' }] };
+      expect(validateBundlePayload(payload)).toBeNull();
+    });
+
+    it('does not apply the Bundle Discount minimum to other types', () => {
+      const payload = { ...validCreatePayload, type: 'Buy One Get One', products: [{ productId: 'p1' }] };
+      expect(validateBundlePayload(payload)).toBeNull();
+    });
+
+    it('only checks the per-type rule when "products" is actually present on an update', () => {
+      // An update that only touches e.g. discountValue shouldn't be blocked
+      // by a type-based product rule it never sent a products field for.
+      const payload = { type: 'Bundle Discount', discountValue: 15 };
+      expect(validateBundlePayload(payload, updateOptions)).toBeNull();
+    });
+  });
 });

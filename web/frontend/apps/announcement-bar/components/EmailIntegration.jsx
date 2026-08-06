@@ -348,13 +348,16 @@ export default function EmailIntegration() {
                 Select Email Provider
               </Form.Label>
               <div className="d-flex gap-3 flex-wrap">
-                {EMAIL_PROVIDERS.map((p) => (
+                {EMAIL_PROVIDERS.map((p) => {
+                  const isSelected = provider === p.id;
+                  return (
                   <Card
                     key={p.id}
-                    className={`border cursor-pointer ${provider === p.id ? 'border-primary' : 'border-light'}`}
-                    style={{ 
+                    className="cursor-pointer"
+                    style={{
                       cursor: 'pointer',
-                      background: provider === p.id ? 'rgba(81, 105, 221, 0.1)' : '#fff',
+                      background: isSelected ? 'rgba(81, 105, 221, 0.1)' : '#fff',
+                      border: isSelected ? '2px solid #5169DD' : '1px solid rgba(34, 34, 34, 0.15)',
                       transition: 'all 0.2s',
                     }}
                     onClick={() => setProvider(p.id)}
@@ -363,7 +366,8 @@ export default function EmailIntegration() {
                       <Form.Check
                         type="radio"
                         name="provider"
-                        checked={provider === p.id}
+                        id={`provider-${p.id}`}
+                        checked={isSelected}
                         onChange={() => setProvider(p.id)}
                       />
                       <div>
@@ -374,7 +378,8 @@ export default function EmailIntegration() {
                       </div>
                     </Card.Body>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             </Form.Group>
 
