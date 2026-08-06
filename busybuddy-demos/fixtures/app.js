@@ -350,9 +350,16 @@ export async function toggleEditorEnabled(popup) {
   await popup.locator('label.header-toggle .toggle-slider').click();
 }
 
-/** Switches the live preview panel between Desktop and Mobile (EditorPreviewPanel.jsx's .device-btn buttons). */
+/**
+ * Switches the live preview panel between Desktop and Mobile
+ * (EditorPreviewPanel.jsx's .device-btn buttons). Not an exact-name match:
+ * each button's accessible name includes its icon span's emoji text too
+ * (e.g. "📱 Mobile"), so `{ name: device, exact: true }` never matches -
+ * a substring match on the label is enough since "Desktop"/"Mobile" each
+ * appear on exactly one button.
+ */
 export async function selectDeviceView(popup, device) {
-  await popup.getByRole('button', { name: device, exact: true }).click();
+  await popup.getByRole('button', { name: device }).click();
 }
 
 /**
