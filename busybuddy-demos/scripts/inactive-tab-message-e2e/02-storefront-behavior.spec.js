@@ -41,6 +41,20 @@ test('Inactive Tab Message: swaps and restores the browser tab title on visibili
   await storefrontPage.goto(`https://${STORE_DOMAIN}`);
   const originalTitle = await storefrontPage.title();
 
+  // InactiveTabManager's constructor calls this.init() without awaiting it,
+  // so window.InactiveTabManager exists immediately, but init() itself
+  // still has to await loadSettings() (a fetch) before setupEventListeners()
+  // ever runs - dispatching visibilitychange before that resolves is a
+  // no-op with no error, since the listener simply isn't attached yet.
+  // isActive is set true only after setupEventListeners() has run, so it's
+  // the real, code-confirmed signal to wait on rather than guessing a fixed
+  // delay. If this never becomes true, the theme's app embed for Inactive
+  // Tab Message may not be enabled on this store at all (a merchant-side
+  // theme setting, not something this test can fix).
+  await expect
+    .poll(() => storefrontPage.evaluate(() => window.InactiveTabManager?.isActive === true), { timeout: 15_000 })
+    .toBe(true);
+
   // document.hidden is a read-only getter on the real Document prototype -
   // overriding it here is what lets a single-page headless browser context
   // simulate "tab switched away" without a second real tab.
