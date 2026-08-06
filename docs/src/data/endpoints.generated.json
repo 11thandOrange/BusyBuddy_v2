@@ -449,7 +449,7 @@
         "description": "Handled by subscribeToPlan() in web/backend/controller/subscription/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "ca7e503cd5288b5f1fd9be474fd9e1ca8259e225",
+        "_sourceHash": "0aa1602e59a1654c3963d9e140e8c8157e78d584",
         "params": [
           {
             "name": "appId",
@@ -506,7 +506,7 @@
         "description": "Handled by getThemeEditorUrl() in web/backend/controller/subscription/index.js.",
         "auth": "session",
         "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
-        "_sourceHash": "b5f76cf4b967008e7b2912b27c337db9a5465bed",
+        "_sourceHash": "922949d59e0903d13f8b9c48271212b344b7c134",
         "params": [],
         "responseExample": "{ }",
         "liveTestable": false,
@@ -558,6 +558,28 @@
             "description": "",
             "in": "path"
           },
+          {
+            "name": "appId",
+            "type": "string",
+            "required": false,
+            "description": "",
+            "in": "query"
+          }
+        ],
+        "responseExample": "{ }",
+        "liveTestable": false,
+        "sourceFile": "web/backend/routes/subscription/index.js"
+      },
+      {
+        "slug": "get-extension-status",
+        "method": "GET",
+        "path": "/api/subscription/extension-status",
+        "title": "ExtensionStatus",
+        "description": "Handled by getExtensionStatus() in web/backend/controller/subscription/index.js.",
+        "auth": "session",
+        "authNote": "Requires an authenticated session. Supply a bearer/session token in the sandbox before sending.",
+        "_sourceHash": "c2e4f297f5f82576e060ddb3ab7900452d17b41d",
+        "params": [
           {
             "name": "appId",
             "type": "string",
