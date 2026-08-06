@@ -39,7 +39,11 @@ test('Bundle Discount: preview, edit-in-new-tab, and activate from the Discounts
 
   // The modal overlay sits on top of the row, so its Edit pencil can't be
   // reached until Preview is dismissed.
-  await app.getByRole('button', { name: 'Close', exact: true }).click();
+  // .last(): Modal.Header's own built-in "x" close icon (closeButton prop)
+  // also has accessible name "Close" (aria-label="Close"), same as the
+  // Footer's text button (DiscountPreviewModal.jsx) - the Footer button
+  // renders last in DOM order.
+  await app.getByRole('button', { name: 'Close', exact: true }).last().click();
   await demoPause(app);
 
   const editorPopup = await editRowInNewTab(page, row);
