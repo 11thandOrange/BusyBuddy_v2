@@ -533,7 +533,19 @@ export async function toggleAppWideSwitchAndRestore(app) {
   const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
 
   await toggle.click();
-  await expect(toggle.getByText(wasActive ? 'Inactive' : 'Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+  try {
+    await expect(toggle.getByText(wasActive ? 'Inactive' : 'Active', { exact: true })).toBeVisible({ timeout: 15_000 });
+  } catch (err) {
+    if (wasActive) throw err; // disabling has no plan-limit check (ToggelSwitch.jsx) - an unexpected failure here is a real bug, not capacity.
+    // Enabling checks the store's actual enabledAppsCount server-side
+    // (controller/subscription/index.js's toggleApp) even when the
+    // client's own stale subscriptionInfo thought there was room - on
+    // rejection the switch silently stays Inactive with no visible error,
+    // which otherwise just looks like a plain timeout here.
+    throw new Error(
+      `App-wide toggle never flipped to Active - the store's current plan likely already has its max apps enabled. Disable another app's switch (always allowed regardless of plan limits) to free a slot, then rerun. Original error: ${err.message}`
+    );
+  }
 
   await toggle.click();
   await expect(toggle.getByText(wasActive ? 'Active' : 'Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
