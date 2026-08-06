@@ -540,20 +540,23 @@ export async function toggleAppWideSwitchAndRestore(app) {
     return;
   }
 
-  // ToggelSwitch.jsx fetches /api/subscription/getUserSubscription on
-  // mount, and checkCanEnable() silently no-ops the click (setError, no
-  // state change) if that hasn't resolved yet - the toggle itself renders
-  // and becomes clickable well before that async fetch settles, so a
-  // single immediate click can race it. Retry a few times with a short
-  // pause between attempts rather than treating this mount-timing race as
-  // a hard failure.
+  // ToggelSwitch.jsx fetches /api/subscription/getUserSubscription exactly
+  // once on mount; checkCanEnable() reports "No subscription info" (shown
+  // in the switch's own error banner) until that resolves, and every
+  // enable click no-ops until it does. Confirmed directly from a captured
+  // failure's page snapshot - the banner read "No subscription info" while
+  // the page's own "Loading announcement bars..." text was still visible,
+  // i.e. the whole page was still settling, not a permanently failed
+  // fetch. Retry patiently rather than giving up after a few quick clicks.
   let flipped = false;
-  for (let attempt = 0; attempt < 4 && !flipped; attempt++) {
+  for (let attempt = 0; attempt < 8 && !flipped; attempt++) {
     await toggle.click();
-    flipped = await toggle.getByText('Active', { exact: true }).isVisible({ timeout: 4_000 }).catch(() => false);
+    flipped = await toggle.getByText('Active', { exact: true }).isVisible({ timeout: 3_000 }).catch(() => false);
   }
   if (!flipped) {
-    throw new Error('App-wide toggle never flipped to Active after 4 attempts.');
+    throw new Error(
+      'App-wide toggle never flipped to Active after 8 attempts (~24s) - ToggelSwitch.jsx kept reporting "No subscription info" (checkCanEnable), meaning /api/subscription/getUserSubscription itself never resolved, not just a brief mount race.'
+    );
   }
   await toggle.click();
   await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
