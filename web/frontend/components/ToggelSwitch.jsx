@@ -7,16 +7,47 @@ const ToggleSwitch = ({ appId }) => {
   const [hasAppAccess, setHasAppAccess] = useState(true);
   const [subscriptionInfo, setSubscriptionInfo] = useState(null);
   const [isDisabledButton, setIsDisabledButton] = useState(false);
+  // null = still loading the theme-extension check; only known false blocks
+  // enabling, so we never flash "disabled" before the check has resolved.
+  const [extensionEnabled, setExtensionEnabled] = useState(null);
+  // Distinguishes *why* the toggle is disabled so the tooltip tells the
+  // merchant the right thing instead of always blaming their plan.
+  const [disabledReason, setDisabledReason] = useState(null);
 
   useEffect(() => {
     fetchInitialStatus();
     fetchSubscriptionInfo();
+    fetchExtensionStatus();
     isDisabled();
   }, [appId]);
 
   useEffect(() => {
     isDisabled();
-  }, [subscriptionInfo, active, loading, hasAppAccess]);
+  }, [subscriptionInfo, active, loading, hasAppAccess, extensionEnabled]);
+
+  // Shopify has no webhook for a merchant toggling a theme block/embed, so
+  // the only way to notice they came back from the theme editor and enabled
+  // it is to recheck when this tab regains focus.
+  useEffect(() => {
+    const onFocus = () => fetchExtensionStatus();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [appId]);
+
+  const fetchExtensionStatus = async () => {
+    try {
+      const response = await fetch(`/api/subscription/extension-status?appId=${appId}`);
+      const data = await response.json();
+      if (data.status === "SUCCESS") {
+        setExtensionEnabled(data.data.extensionEnabled);
+      } else {
+        setExtensionEnabled(true); // default to enabled if the check itself fails
+      }
+    } catch (error) {
+      console.error("Error checking extension status:", error);
+      setExtensionEnabled(true);
+    }
+  };
 
   const fetchInitialStatus = async () => {
     try {
@@ -77,6 +108,13 @@ const ToggleSwitch = ({ appId }) => {
   };
 
   const checkCanEnable = () => {
+    if (extensionEnabled === false) {
+      return {
+        canEnable: false,
+        reason: "This app won't be enabled until its extension is turned on in your theme editor.",
+      };
+    }
+
     if (!subscriptionInfo) return { canEnable: false, reason: "No subscription info" };
 
     const { planName, enabledAppsCount } = subscriptionInfo;
@@ -158,11 +196,21 @@ const ToggleSwitch = ({ appId }) => {
     // always block if loading or no access
     if (loading || !hasAppAccess) {
       setIsDisabledButton(true);
+      setDisabledReason(null);
+      return;
+    }
+
+    // Extension gate only ever blocks turning the app ON - disabling should
+    // always stay available regardless of theme state.
+    if (!active && extensionEnabled === false) {
+      setIsDisabledButton(true);
+      setDisabledReason("extension");
       return;
     }
 
     if (!subscriptionInfo) {
       setIsDisabledButton(false);
+      setDisabledReason(null);
       return;
     }
 
@@ -172,13 +220,19 @@ const ToggleSwitch = ({ appId }) => {
     // Only check limits when trying to enable (active === false)
     if (!active && enabledAppsCount >= maxApps[planName]) {
       setIsDisabledButton(true); // prevent enabling
+      setDisabledReason("plan-limit");
     } else {
       setIsDisabledButton(false); // allow disabling or enabling within limit
+      setDisabledReason(null);
     }
   };
 
   const getToggleTitle = () => {
     if (!hasAppAccess) return "Feature not available in your current plan";
+    if (disabledReason === "extension") {
+      return "This app won't be enabled until its extension is turned on in your theme editor.";
+    }
+    if (disabledReason === "plan-limit") return "Upgrade your plan to enable more apps";
     if (loading) return "Processing...";
     if (active) return "Click to disable";
     return "Click to enable";
@@ -189,7 +243,7 @@ const ToggleSwitch = ({ appId }) => {
       className="d-flex align-items-center"
       style={{ cursor: isDisabledButton ? "not-allowed" : "pointer" }}
       onClick={isDisabledButton && !active ? undefined : toggleSwitch}
-      title={isDisabledButton && !active ? "Upgrade your plan to enable more apps" : getToggleTitle()}
+      title={getToggleTitle()}
     >
       {error && (
         <div

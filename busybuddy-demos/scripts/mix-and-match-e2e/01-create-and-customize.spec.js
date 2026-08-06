@@ -66,18 +66,21 @@ test('Mix & Match: create + customize full editor workflow', async ({ page, app 
   await toggleEditorEnabled(popup);
   await demoPause(popup);
 
+  // Polaroid/MiniDV/Flip Video Camera/CRT Television are all used by the
+  // other 3 bundle-type e2e suites (and products get permanently tagged
+  // busybuddybundles - excluded from every bundle-type picker across every
+  // app - once used in any bundle-type discount, per the non-e2e
+  // volume-discounts/mix-and-match suites' own comments), so this uses 4
+  // disjoint, otherwise-untouched catalog products instead.
   await clickSidepaneItem(popup, 'Select Products');
-  await addProductViaPicker(popup, 'Polaroid Instant Camera');
+  await addProductViaPicker(popup, 'Vintage Macintosh Laptop');
   await demoPause(popup);
-  await addProductViaPicker(popup, 'MiniDV Camcorder');
+  await addProductViaPicker(popup, 'iMac G3');
   await demoPause(popup);
-  await addProductViaPicker(popup, 'Flip Video Camera');
+  await addProductViaPicker(popup, 'Nokia 3310');
   await demoPause(popup);
-  // "tele" matches only "CRT Television" in the seeded catalog - the
-  // ticket's original "tv" wording doesn't match anything (the real
-  // product search is a literal title-substring match), same correction
-  // already applied to this ticket's "tele" search elsewhere.
-  await addProductViaPickerSearch(popup, 'tele', 'CRT Television');
+  // "motorola" matches only "Motorola Razr" in the seeded catalog.
+  await addProductViaPickerSearch(popup, 'motorola', 'Motorola Razr');
   await demoPause(popup);
 
   await clickSidepaneItem(popup, 'Discount Settings');

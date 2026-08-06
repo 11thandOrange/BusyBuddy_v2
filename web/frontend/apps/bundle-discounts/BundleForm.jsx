@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import ThemeExtensionBanner from "../../components/ThemeExtensionBanner";
 import { openEditorTab } from "../../utils/openEditorTab";
 
 export default function BundleForm() {
@@ -43,6 +44,7 @@ export default function BundleForm() {
   return (
     <div>
       <Container fluid style={{ margin: "0 auto" }}>
+        <ThemeExtensionBanner appId="bundle_discount" />
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
             {fromDiscountPage ? (

@@ -59,16 +59,21 @@ test('BOGO: create + customize full editor workflow', async ({ page, app }) => {
   await toggleEditorEnabled(popup);
   await demoPause(popup);
 
+  // Polaroid Instant Camera/MiniDV Camcorder are used by bundle-discounts-e2e
+  // (and products get permanently tagged busybuddybundles - excluded from
+  // every bundle-type picker across every app - once used in any bundle-type
+  // discount, per the non-e2e volume-discounts/mix-and-match suites' own
+  // comments), so this uses disjoint, otherwise-untouched catalog products
+  // instead of overlapping with that test's pair.
   await clickSidepaneItem(popup, 'Customer Buys (X)');
-  await addProductToPool(popup, 'Polaroid Instant Camera');
+  await addProductToPool(popup, 'Original iPod');
   await demoPause(popup);
 
   await clickSidepaneItem(popup, 'Customer Gets (Y)');
-  // "cam" matches both "Polaroid Instant Camera" and "MiniDV Camcorder", but
-  // Polaroid is already selected for X and excluded from Y's available pool -
-  // still search "cam" as the ticket specifies and click MiniDV Camcorder
-  // by its full title rather than assuming the filtered pool is unambiguous.
-  await addProductToPoolBySearch(popup, 'cam', 'MiniDV Camcorder');
+  // "ipod" matches iPod Mini/Classic/Nano in Y's available pool (Original
+  // iPod is already selected for X and excluded from it) - search it and
+  // click iPod Mini specifically rather than assuming the pool is unambiguous.
+  await addProductToPoolBySearch(popup, 'ipod', 'iPod Mini');
   await demoPause(popup);
 
   await clickSidepaneItem(popup, 'Discount Settings');

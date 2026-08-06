@@ -24,6 +24,10 @@ vi.mock('../../components/ToggelSwitch', () => ({
   default: ({ appId }) => <div data-testid="toggle-switch" data-app-id={appId} />,
 }));
 
+vi.mock('../../components/ThemeExtensionBanner', () => ({
+  default: () => null,
+}));
+
 const renderWithRouter = (component) => {
   return render(
     <BrowserRouter>

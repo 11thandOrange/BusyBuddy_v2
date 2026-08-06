@@ -2,8 +2,73 @@ import subscriptionModel from "../../models/subscription.model.js";
 import shopify from "../../../shopify.js";
 import { billingConfig, cancelSubscriptionPlan, getAppSubscription, isTestPaymentMode } from "../../../billing.js";
 import { subscriptionUpdate } from "../../services/subscription.js";
-import { subscriptionConfig, appMapping } from "../../configs/subscriptionConfig.js";
+import { subscriptionConfig, appMapping, themeBlockConfig } from "../../configs/subscriptionConfig.js";
 import { merchantEventService } from "../../services/merchantEventService.js";
+
+// Short-lived per-shop/per-app cache for theme-extension status so the
+// Admin Assets API isn't hit on every homepage load and every toggle
+// attempt - Shopify has no webhook for app block/embed toggle changes, so
+// this can only ever be "eventually correct" until the caller refetches.
+const EXTENSION_STATUS_TTL_MS = 30_000;
+const extensionStatusCache = new Map();
+
+function findEnabledBlock(node, blockHandle, depth = 0) {
+  if (!node || typeof node !== "object" || depth > 6) return false;
+  if (typeof node.type === "string" && node.type.includes(`/blocks/${blockHandle}/`) && node.disabled !== true) {
+    return true;
+  }
+  for (const key of Object.keys(node)) {
+    if (findEnabledBlock(node[key], blockHandle, depth + 1)) return true;
+  }
+  return false;
+}
+
+async function isBlockPresentInAsset(client, themeId, assetKey, blockHandle) {
+  try {
+    const assets = await client.get({
+      path: `themes/${themeId}/assets`,
+      query: { "asset[key]": assetKey },
+    });
+    const data = JSON.parse(assets.body.asset.value);
+    return findEnabledBlock(data, blockHandle);
+  } catch (error) {
+    // Asset doesn't exist on this theme, or isn't valid JSON - treat as "not configured" rather than erroring the whole check.
+    return false;
+  }
+}
+
+// Checks whether the given appId's theme block/embed is actually enabled on
+// the shop's live theme. Body-target blocks (app embeds) are a single global
+// toggle stored in config/settings_data.json; section-target blocks have no
+// canonical location, so we scan the template(s) each app is expected on.
+async function checkExtensionStatus(session, appId) {
+  const config = themeBlockConfig[appId];
+  if (!config) return false;
+
+  const cacheKey = `${session.shop}:${appId}`;
+  const cached = extensionStatusCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.enabled;
+
+  const client = new shopify.api.clients.Rest({ session });
+  const themes = await client.get({ path: "themes" });
+  const mainTheme = themes.body.themes.find((theme) => theme.role === "main");
+  if (!mainTheme) return false;
+
+  let enabled = false;
+  if (config.target === "body") {
+    enabled = await isBlockPresentInAsset(client, mainTheme.id, "config/settings_data.json", config.handle);
+  } else {
+    for (const assetKey of config.scanAssets) {
+      if (await isBlockPresentInAsset(client, mainTheme.id, assetKey, config.handle)) {
+        enabled = true;
+        break;
+      }
+    }
+  }
+
+  extensionStatusCache.set(cacheKey, { enabled, expiresAt: Date.now() + EXTENSION_STATUS_TTL_MS });
+  return enabled;
+}
 async function getUsersubscription(_req, res) {
   try {
     const session = res.locals.shopify.session;
@@ -299,103 +364,59 @@ async function cancelSubscribe(_req, res) {
   }
 }
 
-async function checkBusyBuddyEnabled(_req, res) {
+async function getExtensionStatus(req, res) {
   const session = res.locals.shopify.session;
+  const { appId } = req.query;
+
+  if (!appId || !themeBlockConfig[appId]) {
+    return res.status(400).json({
+      status: "ERROR",
+      error: "A valid appId query param is required",
+    });
+  }
 
   try {
-    // Create a Shopify API client
-    const client = new shopify.api.clients.Rest({ session });
-
-    // Get the current theme
-    const themes = await client.get({
-      path: "themes",
-    });
-
-    // Find the main/currently active theme
-    const mainTheme = themes.body.themes.find((theme) => theme.role === "main");
-    if (!mainTheme) {
-      return res.status(404).json({
-        status: "ERROR",
-        error: "No active theme found",
-      });
-    }
-
-    const assets = await client.get({
-      path: `themes/${mainTheme.id}/assets`,
-      query: { "asset[key]": "sections/header-group.json" },
-    });
-
-    // Parse the header sections data
-    const headerData = JSON.parse(assets.body.asset.value);
-
-    // Check if BusyBuddy is enabled in the header sections
-    let isEnabled = false;
-
-    if (headerData.sections) {
-      for (const sectionId in headerData.sections) {
-        const section = headerData.sections[sectionId];
-        // Also check individual blocks for app patterns
-        let extensionName = process.env.EXTENSION_APP_NAME || "busy_budy_dev";
-        if (section?.blocks) {
-          for (const blockId in section.blocks) {
-            const block = section.blocks[blockId];
-
-            // Check for app block pattern (busy_budy_dev)
-            if (blockId.includes(extensionName) || (block.type && block.type.includes(extensionName))) {
-              isEnabled = true;
-              break;
-            }
-          }
-        }
-        if (isEnabled) break;
-      }
-    }
-
+    const enabled = await checkExtensionStatus(session, appId);
     return res.json({
       status: "SUCCESS",
-      data: {
-        enabled: !!isEnabled,
-      },
+      data: { appId, extensionEnabled: enabled },
     });
   } catch (error) {
-    console.error("Error checking BusyBuddy status in header-group:", error);
+    console.error("Error checking extension status:", error);
     return res.status(500).json({
       status: "ERROR",
-      error: "Could not determine BusyBuddy status - complete API failure",
+      error: "Could not determine extension status",
       details: error.message,
     });
   }
 }
-async function getThemeEditorUrl(_req, res) {
+
+async function getThemeEditorUrl(req, res) {
   const session = res.locals.shopify.session;
+  const appId = req.query.appId || "announcement_bar";
+  const config = themeBlockConfig[appId];
+
+  if (!config) {
+    return res.status(400).json({
+      status: "ERROR",
+      error: `Unknown appId: ${appId}`,
+    });
+  }
 
   try {
-    // Create a Shopify API client
-    const client = new shopify.api.clients.Rest({ session });
+    const uid = process.env.EXTENSION_APP_ID;
+    let themeEditorUrl;
 
-    // Get the current theme
-    const themes = await client.get({
-      path: "themes",
-    });
-
-    // Find the main/currently active theme
-    const mainTheme = themes.body.themes.find((theme) => theme.role === "main");
-
-    if (!mainTheme) {
-      return res.status(404).json({
-        status: "ERROR",
-        error: "No active theme found",
-      });
+    if (config.target === "body") {
+      // App embeds are a single global toggle - no template needed.
+      themeEditorUrl = `https://${session.shop}/admin/themes/current/editor?context=apps&activateAppId=${uid}/${config.handle}`;
+    } else {
+      themeEditorUrl = `https://${session.shop}/admin/themes/current/editor?template=${config.editorTemplate}&addAppBlockId=${uid}/${config.handle}&target=${config.editorSectionTarget}`;
     }
 
-    let appId = process.env.EXTENSION_APP_ID;
-
-    let themeEditorUrl = `https://${session.shop}/admin/themes/current/editor?template=index&addAppBlockId=${appId}/announcement_bar&target=sectionGroup:header`;
     return res.json({
       status: "SUCCESS",
-      data: {
-        url: themeEditorUrl,
-      },
+      data: { appId, url: themeEditorUrl },
     });
   } catch (error) {
     console.error("Error getting theme editor URL:", error);
@@ -570,7 +591,7 @@ export {
   getUsersubscription,
   subscribeToPlan,
   cancelSubscribe,
-  checkBusyBuddyEnabled,
+  getExtensionStatus,
   getThemeEditorUrl,
   toggleApp,
   getAppStatus,

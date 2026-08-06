@@ -5,6 +5,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import DiscountList from "../../components/BundelDiscountList";
 import Button from "../../components/Button";
 import ToggleSwitch from "../../components/ToggelSwitch";
+import ThemeExtensionBanner from "../../components/ThemeExtensionBanner";
 import { openEditorTab } from "../../utils/openEditorTab";
 
 export default function BuyonegetoneForm() {
@@ -41,6 +42,7 @@ export default function BuyonegetoneForm() {
   return (
     <div>
       <Container fluid style={{ maxWidth: "1500px", margin: "0 auto" }}>
+        <ThemeExtensionBanner appId="buy_one_get_one" />
         <Row className="mb-4 align-items-start">
           <Col xs="auto">
             {fromDiscountPage ? (
