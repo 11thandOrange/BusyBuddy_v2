@@ -532,33 +532,28 @@ export async function toggleAppWideSwitchAndRestore(app) {
   await expect(toggle).toBeVisible({ timeout: 15_000 });
   const wasActive = (await toggle.getAttribute('title')) === 'Click to disable';
 
-  await toggle.click();
-
   if (wasActive) {
-    // Disabling has no plan-limit check (ToggelSwitch.jsx) - a failure
-    // here is a real bug, not store capacity, so it's fine to hard-fail.
+    await toggle.click();
     await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
     await toggle.click();
     await expect(toggle.getByText('Active', { exact: true })).toBeVisible({ timeout: 15_000 });
     return;
   }
 
-  // Enabling checks the store's actual enabledAppsCount server-side
-  // (controller/subscription/index.js's toggleApp) even when the client's
-  // own stale subscriptionInfo thought there was room - on rejection the
-  // switch silently stays Inactive with no visible error. There's no
-  // reliable client-side signal to tell "blocked by the store's shared
-  // plan capacity" apart from "actually broken", and that capacity is
-  // outside any single test's control (other apps may legitimately need
-  // to stay enabled for demos/screenshots) - so this skips the rest of the
-  // check instead of failing the whole test over it. Nothing is left
-  // changed either way.
-  const flipped = await toggle.getByText('Active', { exact: true }).isVisible({ timeout: 8_000 }).catch(() => false);
+  // ToggelSwitch.jsx fetches /api/subscription/getUserSubscription on
+  // mount, and checkCanEnable() silently no-ops the click (setError, no
+  // state change) if that hasn't resolved yet - the toggle itself renders
+  // and becomes clickable well before that async fetch settles, so a
+  // single immediate click can race it. Retry a few times with a short
+  // pause between attempts rather than treating this mount-timing race as
+  // a hard failure.
+  let flipped = false;
+  for (let attempt = 0; attempt < 4 && !flipped; attempt++) {
+    await toggle.click();
+    flipped = await toggle.getByText('Active', { exact: true }).isVisible({ timeout: 4_000 }).catch(() => false);
+  }
   if (!flipped) {
-    console.warn(
-      "[toggleAppWideSwitchAndRestore] App-wide toggle did not flip to Active (likely the store's plan app-limit) - skipping this check rather than failing the test."
-    );
-    return;
+    throw new Error('App-wide toggle never flipped to Active after 4 attempts.');
   }
   await toggle.click();
   await expect(toggle.getByText('Inactive', { exact: true })).toBeVisible({ timeout: 15_000 });
