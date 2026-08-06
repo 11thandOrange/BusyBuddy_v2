@@ -112,7 +112,11 @@ export { expect };
 
 /** Clicks a top-level tab rendered by DiscountList/BundelDiscountList (react-bootstrap ToggleButton labels). */
 export async function gotoTab(app, tabName) {
-  await app.getByText(tabName, { exact: true }).click();
+  // Scoped to the tab bar's role="group" (react-bootstrap ButtonGroup): a
+  // bare getByText can collide with unrelated page text using the exact
+  // same string - confirmed for "Announcement Bars", which also appears as
+  // a heading elsewhere on the page, not just the tab label itself.
+  await app.getByRole('group').getByText(tabName, { exact: true }).click();
 }
 
 /**

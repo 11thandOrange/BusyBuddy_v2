@@ -10,7 +10,12 @@ test('Announcement Bar: toggle close button, then check Analytics', async ({ pag
   await demoPause(app);
 
   await expect(app.getByText(/enable close button/i)).toBeVisible({ timeout: 15_000 });
-  await app.getByText(/enable close button/i).locator('..').getByRole('checkbox').click();
+  // react-bootstrap's Form.Check (DiscountList.jsx) renders the label and
+  // checkbox input as siblings under a shared .form-check div, not nested -
+  // .locator('..') from the label text lands one level short of where the
+  // checkbox actually is. Scoping to the shared .form-check ancestor first
+  // reaches both.
+  await app.locator('.form-check').filter({ hasText: /enable close button/i }).getByRole('checkbox').click();
   await expect(app.getByText(/email integration/i)).toBeVisible();
   await demoPause(app);
 
