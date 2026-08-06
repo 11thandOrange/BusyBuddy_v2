@@ -42,17 +42,31 @@ jobs:
         # what actually failed the one time this was run manually: it
         # deployed to an unrelated test app instead of production.
         #
+        # `shopify app deploy` requires an actual shopify.app.toml file to
+        # exist on disk - --client-id only overrides the client_id *inside*
+        # whatever toml it finds, it's not a substitute for having one at
+        # all. shopify.app.toml is gitignored (per-developer local state),
+        # so a fresh checkout here has none - write one from a secret
+        # first, so CI deploys the exact same config a human would deploy
+        # from, rather than guessing at one.
+        #
         # Required repo secrets (Settings > Secrets and variables > Actions):
         #   SHOPIFY_CLI_PARTNERS_TOKEN - a Partners API token so this runs
         #     non-interactively (see Shopify's CLI CI docs for how to mint one)
         #   SHOPIFY_PROD_APP_CLIENT_ID - the real production app's Client ID
         #     (Partner Dashboard > the correct "BusyBuddy" app > Client
         #     credentials) - NOT any "tester"/dev app's id.
+        #   SHOPIFY_APP_TOML - the full contents of a working
+        #     shopify.app.toml for that same production app (generate one
+        #     locally via `shopify app config link --client-id=<id>`, then
+        #     paste the resulting file's contents in as this secret).
         env:
           SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+          SHOPIFY_APP_TOML: ${{ secrets.SHOPIFY_APP_TOML }}
         run: |
           set -euo pipefail
           cd /home/bitnami/BusyBuddy_v2
+          printf '%s\n' "$SHOPIFY_APP_TOML" > shopify.app.toml
           npm install
           npm run deploy -- --force --no-color --client-id="${{ secrets.SHOPIFY_PROD_APP_CLIENT_ID }}"
 
