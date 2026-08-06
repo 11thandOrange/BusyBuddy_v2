@@ -28,6 +28,34 @@ jobs:
           pm2 restart BusyBuddy_v2 --update-env
           pm2 save
 
+      - name: Deploy theme app extension / functions to Shopify
+        # This step only existed as a manual local `shopify app deploy`
+        # before - the web app half above was auto-deployed on every push,
+        # but the theme extension (extensions/bogo-shopify-app) and the
+        # cart-transformer function were not, so extension-only changes
+        # (like a renamed block) never actually reached Shopify's registry
+        # here even though the code was "deployed."
+        #
+        # --client-id is passed explicitly rather than relying on whatever
+        # shopify.app.*.toml happens to be locally "linked" (those files are
+        # gitignored and don't exist in a fresh checkout anyway) - this is
+        # what actually failed the one time this was run manually: it
+        # deployed to an unrelated test app instead of production.
+        #
+        # Required repo secrets (Settings > Secrets and variables > Actions):
+        #   SHOPIFY_CLI_PARTNERS_TOKEN - a Partners API token so this runs
+        #     non-interactively (see Shopify's CLI CI docs for how to mint one)
+        #   SHOPIFY_PROD_APP_CLIENT_ID - the real production app's Client ID
+        #     (Partner Dashboard > the correct "BusyBuddy" app > Client
+        #     credentials) - NOT any "tester"/dev app's id.
+        env:
+          SHOPIFY_CLI_PARTNERS_TOKEN: ${{ secrets.SHOPIFY_CLI_PARTNERS_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd /home/bitnami/BusyBuddy_v2
+          npm install
+          npm run deploy -- --force --no-color --client-id="${{ secrets.SHOPIFY_PROD_APP_CLIENT_ID }}"
+
       - name: Report deployed commit
         run: |
           cd /home/bitnami/BusyBuddy_v2

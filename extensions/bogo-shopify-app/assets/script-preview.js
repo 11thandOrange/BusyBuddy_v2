@@ -57,7 +57,14 @@ function renderProductImageStrip(images, fallbackImage, altText, size, borderRad
 }
 
 class BOGOBundle {
-  constructor() {
+  // A specific container element must be passed in when a template has
+  // more than one "BusyBuddy Bundles" block - each block loads its own
+  // copy of this script, and this.container used to always resolve to a
+  // bare document.querySelector(".bogo-bundle-container"), which only ever
+  // returns the FIRST such element in the DOM regardless of which block's
+  // script tag ran it. Every instance ended up fighting over that same one
+  // element instead of owning its own.
+  constructor(container) {
     this.currentProduct = null;
     this.bundleProducts = [];
     this.prioritizedBundleProducts = [];
@@ -65,7 +72,7 @@ class BOGOBundle {
     this.bundleType = "bundle_discount";
     this.bundleConfig = {};
     this.bundleExists = false;
-    this.container = null;
+    this.container = container || null;
     this.allBundles = [];
     this.productHandleCache = new Map(); // Cache for product handles (ID -> handle)
     this.selectedQuantityBreakIndex = 0;
@@ -78,7 +85,9 @@ class BOGOBundle {
   }
 
   async init() {
-    this.container = document.querySelector(".bogo-bundle-container");
+    if (!this.container) {
+      this.container = document.querySelector(".bogo-bundle-container");
+    }
     if (!this.container) {
       console.error(
         "BOGO Bundle container not found. Ensure the Liquid section is rendered."
@@ -2810,5 +2819,20 @@ class BOGOBundle {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  new BOGOBundle();
+  // Every "BusyBuddy Bundles" block on the page loads its own copy of this
+  // script tag, so DOMContentLoaded fires this listener once per block
+  // instance. Without the guard below, N blocks would each independently
+  // enumerate every .bogo-bundle-container on the page and instantiate a
+  // BOGOBundle for each one - producing N instances per container instead
+  // of exactly one, all fighting over the same DOM (this is what caused
+  // widgets to render inconsistently/empty when more than one block was
+  // present). Only the first execution actually does anything; it already
+  // covers every container present, since deferred scripts only run after
+  // the full DOM (including every block's markup) has been parsed.
+  if (window.__busyBuddyBundlePreviewInitialized) return;
+  window.__busyBuddyBundlePreviewInitialized = true;
+
+  document.querySelectorAll(".bogo-bundle-container").forEach((container) => {
+    new BOGOBundle(container);
+  });
 });

@@ -147,4 +147,18 @@ describe('shopData install middleware', () => {
     expect(shop.findOneAndUpdate).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
   });
+
+  it('still calls next() and does not throw when the Admin API call itself fails', async () => {
+    // Previously unguarded - a transient failure fetching shop data from
+    // Shopify would throw straight past this middleware, breaking the
+    // install redirect AND permanently skipping Shop creation for that
+    // shop (nothing else ever retries it). Must degrade gracefully instead.
+    shopify.api.rest.Shop.all.mockRejectedValue(new Error('Shopify API unavailable'));
+    const { req, res, next } = createReqRes();
+
+    await expect(shopDataMiddleware.shopData(req, res, next)).resolves.not.toThrow();
+
+    expect(shop.create).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
 });
