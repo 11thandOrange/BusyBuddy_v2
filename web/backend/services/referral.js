@@ -116,7 +116,7 @@ export async function getReferralAnalytics(code) {
         myshopify_domain: shop.myshopify_domain,
       });
       const activeSub = subscription?.activeSubscriptions?.find(
-        (sub) => sub.status === "active"
+        (sub) => sub.status?.toLowerCase() === "active"
       );
       return {
         shop_domain: shop.shopDomain,
@@ -254,7 +254,7 @@ export async function calculateMRR(code) {
 
     if (subscription) {
       const activeSub = subscription.activeSubscriptions?.find(
-        (sub) => sub.status === "active"
+        (sub) => sub.status?.toLowerCase() === "active"
       );
 
       if (activeSub && activeSub.name !== "Free") {

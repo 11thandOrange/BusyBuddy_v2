@@ -221,14 +221,14 @@ export default {
         if (!currentSubscription) return;
 
         const activeSub = currentSubscription.activeSubscriptions.find(
-          (sub) => sub.status === "active" && sub.name === planName
+          (sub) => sub.status?.toLowerCase() === "active" && sub.name === planName
         );
         // Already reconciled (e.g. the merchant cancelled through our own
         // flow first) - nothing to do.
         if (!activeSub) return;
 
         const updatedSubscriptions = currentSubscription.activeSubscriptions.map((sub) => {
-          if (sub.status === "active" && sub.name === planName) {
+          if (sub.status?.toLowerCase() === "active" && sub.name === planName) {
             return { ...sub, status: "cancelled", cancelledAt: new Date() };
           }
           return sub;

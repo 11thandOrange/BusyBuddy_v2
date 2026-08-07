@@ -70,6 +70,26 @@ describe('checkSubscriptionAccess - app-level enable/disable gating', () => {
     expect(result.reason).toBe('Feature not available in Free plan');
   });
 
+  it('grants access when Shopify synced the subscription with its own uppercase status enum (ACTIVE, not active)', async () => {
+    // Regression: Shopify's GraphQL API returns AppSubscription.status as an
+    // uppercase enum ("ACTIVE") and subscriptionUpdate() (fired from the real
+    // billing-confirmation redirect) used to store that value verbatim. Every
+    // check here was hardcoded to lowercase "active", so a real paying
+    // shop's subscription silently stopped counting as active the moment it
+    // synced from Shopify's own data, blanking every gated endpoint
+    // (getActiveBundle included) regardless of plan or toggle state.
+    subscriptionModel.findOne.mockResolvedValue({
+      activeSubscriptions: [{ name: 'Advanced', status: 'ACTIVE' }],
+      enabledAppsCount: 1,
+      enabledApps: [{ appId: 'bundle_discount', appName: 'Bundle Discount', enabled: true }],
+    });
+
+    const result = await checkSubscriptionAccess('test-shop.myshopify.com', 'Bundle Discount');
+
+    expect(result.shouldReturnBlank).toBe(false);
+    expect(result.hasAccess).toBe(true);
+  });
+
   it('returns shouldReturnBlank: true when no subscription document exists at all', async () => {
     subscriptionModel.findOne.mockResolvedValue(null);
 

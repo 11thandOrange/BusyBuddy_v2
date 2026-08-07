@@ -73,10 +73,10 @@ const SubscriptionSchema = mongoose.Schema(
 );
 // Method to check if app can be enabled
 SubscriptionSchema.methods.canEnableApp = function (appId) {
-  const planConfig =
-    subscriptionConfig[
-      this.activeSubscriptions.find((s) => s.status === "active").name
-    ];
+  // Shopify's API returns status as an uppercase enum ("ACTIVE") - compare
+  // case-insensitively so a real paid shop's synced record still matches.
+  const activeSub = this.activeSubscriptions.find((s) => s.status?.toLowerCase() === "active");
+  const planConfig = subscriptionConfig[activeSub ? activeSub.name : "Free"];
 
   // Check if app is allowed in current plan
   if (!planConfig.allowedApps.includes(appId)) {
