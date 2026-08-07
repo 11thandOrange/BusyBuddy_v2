@@ -10,15 +10,20 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
-import { Play, ArrowRight } from "react-bootstrap-icons";
 import AnnouncementBarActions from "./inactiveTabMessageActions";
 import tshirt from "./tshirt.png";
 import "./inactiveTabMessageStyles.css";
 import Button from "../../components/Button";
 import { X, Trash, Upload } from "react-bootstrap-icons";
-import view from "../../assets/view.png";
-import videoimg from "../../assets/videoimg.png";
 import EmojiPicker from "emoji-picker-react";
+import OverviewTab from "../../components/OverviewTab";
+
+// Overview tab tutorial videos, matching the OVERVIEW_ITEMS pattern used by
+// the other apps' OverviewTab.jsx-based Overview tabs.
+const OVERVIEW_ITEMS = [
+  { id: "create", title: "Create An Inactive Tab Message", description: "Set up an inactive tab message from scratch, including the copy, image, and display timing.", youtubeId: "8n2Xyh-o0Z8" },
+  { id: "manage", title: "Manage Message Settings", description: "Fine-tune the schedule, favicon, and display settings for your inactive tab message.", youtubeId: "QlMdMe6SssI" },
+];
 
 export default function DiscountList({ onMakeBundleClick }) {
   const tabs = ["Overview", "Settings"];
@@ -334,232 +339,9 @@ export default function DiscountList({ onMakeBundleClick }) {
         }}
       >
         {selectedTab === "Overview" && (
-          <>
-            {/* Video Display */}
-            <Col
-              lg={6}
-              md={12}
-              style={{
-                padding: "50px",
-              }}
-            >
-              <Card
-                className="border-0 h-100 "
-                style={{ background: "transparent !important" }}
-              >
-                <Card.Body
-                  className="p-0 "
-                  style={{ background: "transparent !important" }}
-                >
-                  <div className="position-relative h-100">
-                    <video
-                      controls
-                      poster={videoimg}
-                      style={{
-                        width: "100%",
-                        height: "auto",
-                        borderRadius: "15px",
-                        padding: "4px",
-                      }}
-                    >
-                      <source
-                        src="/videos/marshall-promo.mp4"
-                        type="video/mp4"
-                      />
-                      Your browser does not support the video tag.
-                    </video>
-                    <div className="position-absolute top-50 start-50 translate-middle">
-                      <Button
-                        text={<Play size={24} />}
-                        onClick={() => console.log("Discard")}
-                        variant="light"
-                        className="rounded-circle p-3 opacity-75"
-                      />
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            {/* Side Features */}
-            <Col
-              lg={6}
-              md={12}
-              style={{
-                padding: "50px 0",
-              }}
-            >
-              <div
-                className="d-flex justify-content-between flex-column linrrowleft"
-                style={{ height: "100%" }}
-              >
-                <div>
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path>
-                        <polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Customizable
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Message, Display timing & Images.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-3 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <rect
-                          x="2"
-                          y="3"
-                          width="20"
-                          height="14"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Responsive
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Looks great on any device.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="d-flex mb-5 gap-2 flex-column">
-                    <div
-                      className="bg-dark rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ height: "50px", width: "50px" }}
-                    >
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2"
-                      >
-                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                        <path d="M13 2v7h7"></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <h5
-                        className="mb-1"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: "16px",
-                          letterSpacing: "0",
-                        }}
-                      >
-                        Attention grabbing
-                      </h5>
-                      <p
-                        className="text-secondary mb-0"
-                        style={{
-                          fontWeight: 500,
-                          fontSize: "14px",
-                          letterSpacing: "0",
-                          color: "#616161",
-                        }}
-                      >
-                        Keep your customers informed without disrupting their
-                        shopping.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex align-items-start flex-column">
-                  <div>
-                    <span
-                      className="text-secondary"
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        letterSpacing: "0",
-                        textAlign: "center",
-                      }}
-                    >
-                      Learn More about{" "}
-                    </span>
-                    <a
-                      href="#"
-                      className="text-primary"
-                      style={{
-                        fontWeight: 600,
-                        fontSize: "14px",
-                        letterSpacing: "0",
-                        textAlign: "center",
-                        color: "#5169DD",
-                      }}
-                    >
-                      How to create inactive tab messages?
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </Col>
-          </>
+          <Col lg={12}>
+            <OverviewTab items={OVERVIEW_ITEMS} />
+          </Col>
         )}
 
         {selectedTab === "Settings" && (

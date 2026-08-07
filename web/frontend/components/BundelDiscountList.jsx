@@ -35,10 +35,10 @@ const OVERVIEW_ITEMS = {
     { id: "view-all", title: "View Your BOGO Discounts", description: "See how to review and manage all of your BOGO discounts in one place.", youtubeId: "iABu5dfKzPw" },
   ],
   "Volume Discount": [
-    { id: "intro", title: "Introduction to Volume Discounts", description: "Learn the basics", videoSrc: "/assets/volume_discount.mp4" },
-    { id: "tiers", title: "Setting Up Tiers", description: "Create quantity tiers", videoSrc: "/assets/volume_discount.mp4" },
-    { id: "pricing", title: "Tier Pricing", description: "Configure discounts", videoSrc: "/assets/volume_discount.mp4" },
-    { id: "display", title: "Display Options", description: "Customize appearance", videoSrc: "/assets/volume_discount.mp4" },
+    { id: "create", title: "Create A Volume Discount", description: "Set up a volume discount from scratch, choosing the products and quantity-based price breaks.", youtubeId: "0HTFYGZxm24" },
+    { id: "manage", title: "Manage Your Volume Discounts", description: "See how to review, manage, and track all of your active volume discounts in one place.", youtubeId: "-wWCw73Pm68" },
+    { id: "settings", title: "Edit Volume Discount Settings", description: "Fine-tune the rules and display settings on an existing volume discount.", youtubeId: "KxkRWsjymXM" },
+    { id: "customize", title: "Customize Volume Discounts", description: "Style your volume discount widget's look and feel to match your storefront.", youtubeId: "R7TAYD3PRSw" },
   ],
   "Mix and Match": [
     { id: "create", title: "Create A Mix & Match Discount", description: "Build a Mix & Match offer by choosing eligible products and setting your quantity tiers.", youtubeId: "p_pNA7W-ha8" },
