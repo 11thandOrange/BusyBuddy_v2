@@ -82,7 +82,9 @@ async function getUsersubscription(_req, res) {
     let enabledApps = [];
 
     if (subscriptionData && subscriptionData.activeSubscriptions.length > 0) {
-      const activeSub = subscriptionData.activeSubscriptions.find((sub) => sub.status === "active");
+      // Shopify's API returns status as an uppercase enum ("ACTIVE") - compare
+      // case-insensitively so a real paid shop's synced record still matches.
+      const activeSub = subscriptionData.activeSubscriptions.find((sub) => sub.status?.toLowerCase() === "active");
 
       if (activeSub) {
         planName = activeSub.name;
@@ -121,7 +123,7 @@ async function subscribeToPlan(_req, res) {
       myshopify_domain: session.shop,
     });
 
-    const currentActiveSub = currentSubscription?.activeSubscriptions.find((sub) => sub.status === "active");
+    const currentActiveSub = currentSubscription?.activeSubscriptions.find((sub) => sub.status?.toLowerCase() === "active");
     const currentPlan = currentActiveSub?.name || "Free";
 
     // Get configuration for the new plan
@@ -141,7 +143,7 @@ async function subscribeToPlan(_req, res) {
 
       // Update database to Free plan - mark current as cancelled and add Free
       const updatedSubscriptions = currentSubscription.activeSubscriptions.map((sub) => {
-        if (sub.status === "active") {
+        if (sub.status?.toLowerCase() === "active") {
           return { ...sub, status: "cancelled", cancelledAt: new Date() };
         }
         return sub;
@@ -251,7 +253,7 @@ async function subscribeToPlan(_req, res) {
         // Already subscribed to this exact plan, just sync our database
         const updatedSubscriptions =
           currentSubscription?.activeSubscriptions.map((sub) => {
-            if (sub.status === "active") {
+            if (sub.status?.toLowerCase() === "active") {
               return { ...sub, status: "cancelled", cancelledAt: new Date() };
             }
             return sub;
@@ -325,7 +327,7 @@ async function cancelSubscribe(_req, res) {
     });
     if (currentSubscription) {
       const updatedSubscriptions = currentSubscription.activeSubscriptions.map((sub) => {
-        if (sub.name === planName && sub.status === "active") {
+        if (sub.name === planName && sub.status?.toLowerCase() === "active") {
           return { ...sub, status: "cancelled", cancelledAt: new Date() };
         }
         return sub;
@@ -461,7 +463,7 @@ async function toggleApp(req, res) {
       subscriptionData = await subscriptionModel.create(subscriptionData);
     }
 
-    const activeSub = subscriptionData.activeSubscriptions?.find((sub) => sub.status === "active");
+    const activeSub = subscriptionData.activeSubscriptions?.find((sub) => sub.status?.toLowerCase() === "active");
 
     // If no active subscription, assume free plan
     if (!activeSub) {

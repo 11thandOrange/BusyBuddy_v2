@@ -116,7 +116,7 @@ class MerchantEventService {
       return null;
     }
 
-    const activeSub = subscription?.activeSubscriptions?.find((s) => s.status === "active");
+    const activeSub = subscription?.activeSubscriptions?.find((s) => s.status?.toLowerCase() === "active");
 
     return {
       shopId: shop.shopId,

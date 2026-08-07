@@ -20,8 +20,12 @@ export async function checkSubscriptionAccess(shopDomain, featureName) {
     let hasActiveSubscription = false;
 
     if (subscriptionData && subscriptionData.activeSubscriptions.length > 0) {
+      // Shopify's GraphQL API returns status as an uppercase enum ("ACTIVE"),
+      // but subscriptions synced locally via subscribeToPlan use lowercase
+      // "active" - compare case-insensitively so a real paid shop's status
+      // (however it last got synced) is never mistaken for "no subscription".
       const activeSub = subscriptionData.activeSubscriptions.find(
-        (sub) => sub.status === "active"
+        (sub) => sub.status?.toLowerCase() === "active"
       );
 
       if (activeSub) {
