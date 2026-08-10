@@ -1,0 +1,68 @@
+# Thin caller for the shared Agent Ops email pipeline.
+#
+# BusyBuddy sends email through the org-wide reusable workflow rather than
+# owning any provider-specific logic here. The reusable workflow
+# (11thandOrange/agent-ops/.github/workflows/email-reusable.yml) forwards the
+# request to the shared orchestrator, which fans out to Gmail or Mailchimp and
+# supports either direct content (text/html) or a named template with vars,
+# for one or many recipients.
+#
+# REQUIRED SECRETS (must exist as org- or repo-level secrets in this repo, and
+# are passed straight through via `secrets: inherit`):
+#   - ORCHESTRATOR_URL            base URL of the shared orchestrator
+#   - ORCHESTRATOR_SHARED_SECRET  shared secret the orchestrator authenticates on
+#
+# PREREQUISITE: the reusable workflow must be merged to agent-ops `main` first
+# (Epic 6 / agent-ops #63) before this caller can resolve
+# `...email-reusable.yml@main`.
+
+name: email
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: "Email provider to send through"
+        required: true
+        type: choice
+        options:
+          - gmail
+          - mailchimp
+        default: gmail
+      to:
+        description: "Recipient(s) - single address or comma-separated list"
+        required: true
+        type: string
+      subject:
+        description: "Email subject (ignored when a template supplies its own)"
+        required: false
+        type: string
+      text:
+        description: "Plain-text body (direct content mode)"
+        required: false
+        type: string
+      html:
+        description: "HTML body (direct content mode)"
+        required: false
+        type: string
+      template:
+        description: "Named template to render instead of direct text/html"
+        required: false
+        type: string
+      template_vars:
+        description: "JSON object of variables for the template"
+        required: false
+        type: string
+
+jobs:
+  email:
+    uses: 11thandOrange/agent-ops/.github/workflows/email-reusable.yml@main
+    with:
+      provider: ${{ inputs.provider }}
+      to: ${{ inputs.to }}
+      subject: ${{ inputs.subject }}
+      text: ${{ inputs.text }}
+      html: ${{ inputs.html }}
+      template: ${{ inputs.template }}
+      template_vars: ${{ inputs.template_vars }}
+    secrets: inherit
