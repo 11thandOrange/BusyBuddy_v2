@@ -80,8 +80,10 @@ Since this is a Shopify app that requires the Shopify development environment:
 ## OpenHands Cloud Automation (LEGACY — retired)
 
 > ⚠️ This entire section is retired. BusyBuddy_v2 now uses a GitHub Actions +
-> Claude Code pipeline orchestrated from `HeyItsChloe/agent-ops` — see
-> `.github/workflows/dev-pipeline.yml`. Trigger it by labeling an issue
+> Claude Code pipeline that calls the reusable workflow in
+> `HeyItsChloe/pipeline-orchestrator` (dev skills sourced from
+> `11thandOrange/agent-ops`) — see `.github/workflows/dev-pipeline.yml`.
+> Trigger it by labeling an issue
 > `approach-ready` (plan) or `approved` (implement), or commenting
 > `@dev-agent plan` / `@dev-agent implement`. Everything below describes the
 > old, retired pipeline and is kept for historical reference only.

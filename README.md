@@ -86,8 +86,9 @@ cd web/frontend && CI=true npm run build
 ## AI Agent Automation
 
 > ⚠️ **The OpenHands-based pipeline described below is retired.** BusyBuddy_v2
-> now uses a GitHub Actions + Claude Code pipeline orchestrated from
-> `HeyItsChloe/agent-ops` — see `.github/workflows/dev-pipeline.yml`. Label
+> now uses a GitHub Actions + Claude Code pipeline that calls the reusable
+> workflow in `HeyItsChloe/pipeline-orchestrator` (with dev skills sourced
+> from `11thandOrange/agent-ops`) — see `.github/workflows/dev-pipeline.yml`. Label
 > an issue `approach-ready` (plan) or `approved` (implement), or comment
 > `@dev-agent plan` / `@dev-agent implement`, to trigger it. The section
 > below is kept for historical reference only.
