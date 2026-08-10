@@ -7,7 +7,7 @@ command, and creates a Shopify tunnel automatically.
 ## Prerequisites
 
 - `env-setup` skill has been run (web/.env exists with valid secrets)
-- OpenHands secrets registered: `DB_CONNECTION`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_CLI_PARTNERS_TOKEN`
+- Pipeline environment secrets available: `DB_CONNECTION`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_CLI_PARTNERS_TOKEN`
 
 ## Full Startup Sequence
 
