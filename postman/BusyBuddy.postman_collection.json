@@ -95,7 +95,7 @@
     },
     {
       "name": "Email (shared pipeline)",
-      "description": "Calls the shared Agent Ops orchestrator directly: `POST {{orchestratorUrl}}/email`. Auth is the orchestrator shared secret, sent as the `X-Shared-Secret` header (value `{{sharedSecret}}`). This is the same pipeline BusyBuddy reaches from CI through `.github/workflows/email.yml` -> agent-ops `email-reusable.yml`. Supports Gmail or Mailchimp, single or many recipients, and either direct `text`/`html` content or a named `template` with `template_vars`.",
+      "description": "Calls the shared Agent Ops orchestrator directly: `POST {{orchestratorUrl}}/email`. Auth is the orchestrator shared secret, sent as the `x-orchestrator-secret` header (value `{{sharedSecret}}`). This is the same pipeline BusyBuddy reaches from CI through `.github/workflows/email.yml` -> agent-ops `email-reusable.yml`. Supports Gmail or Mailchimp, single or many recipients, and either direct `text`/`html` content or a named `template` with `template_vars`.",
       "item": [
         {
           "name": "Gmail - single recipient",
@@ -103,7 +103,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -123,7 +123,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -143,7 +143,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -163,7 +163,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -183,7 +183,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -203,7 +203,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "{{sharedSecret}}" }
+              { "key": "x-orchestrator-secret", "value": "{{sharedSecret}}" }
             ],
             "body": {
               "mode": "raw",
@@ -223,7 +223,7 @@
             "method": "POST",
             "header": [
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Shared-Secret", "value": "WRONG_OR_MISSING_SECRET" }
+              { "key": "x-orchestrator-secret", "value": "WRONG_OR_MISSING_SECRET" }
             ],
             "body": {
               "mode": "raw",
@@ -234,7 +234,7 @@
               "host": ["{{orchestratorUrl}}"],
               "path": ["email"]
             },
-            "description": "Wrong/missing `X-Shared-Secret`. Expected: `401` unauthorized. The body is otherwise valid, isolating the auth failure."
+            "description": "Wrong/missing `x-orchestrator-secret`. Expected: `401` unauthorized. The body is otherwise valid, isolating the auth failure."
           }
         }
       ]

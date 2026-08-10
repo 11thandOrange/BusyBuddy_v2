@@ -62,7 +62,7 @@ Endpoints (all `GET` except subscribe; all behind `requireSubscriptionAccess`):
 ### Email (shared pipeline) (`{{orchestratorUrl}}/email`)
 
 Calls the shared Agent Ops orchestrator directly. Auth is the orchestrator
-shared secret, sent as the **`X-Shared-Secret`** header with value
+shared secret, sent as the **`x-orchestrator-secret`** header with value
 `{{sharedSecret}}`. This is the same pipeline BusyBuddy reaches from CI via
 `.github/workflows/email.yml` -> agent-ops `email-reusable.yml`.
 
