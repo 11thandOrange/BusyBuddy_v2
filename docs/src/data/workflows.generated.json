@@ -39,10 +39,6 @@
             "detail": "run: npm ci"
           },
           {
-            "name": "Install docs dependencies",
-            "detail": "run: npm ci"
-          },
-          {
             "name": "Run backend tests",
             "detail": "run: npx vitest run"
           },
@@ -63,24 +59,20 @@
             "detail": "run: npm run build"
           },
           {
-            "name": "Build docs site",
-            "detail": "run: npm run build"
-          },
-          {
             "name": "Upload test results",
             "detail": "uses: actions/upload-artifact@v4"
           }
         ]
       }
     ],
-    "_sourceHash": "35aec33a7dc28bdbb6021df43c28f6b90429a935"
+    "_sourceHash": "c586634c9cc70bdb141ca48b4692439eeb238172"
   },
   {
     "slug": "deploy",
     "title": "Deploy to Production",
     "file": ".github/workflows/deploy.yml",
     "trigger": "push (branches: [main])  ·  workflow_dispatch",
-    "description": "This step only existed as a manual local `shopify app deploy`\nbefore - the web app half above was auto-deployed on every push,\nbut the theme extension (extensions/bogo-shopify-app) and the\ncart-transformer function were not, so extension-only changes\n(like a renamed block) never actually reached Shopify's registry\nhere even though the code was \"deployed.\"\n\n--client-id is passed explicitly rather than relying on whatever\nshopify.app.*.toml happens to be locally \"linked\" (those files are\ngitignored and don't exist in a fresh checkout anyway) - this is\nwhat actually failed the one time this was run manually: it\ndeployed to an unrelated test app instead of production.\n\n`shopify app deploy` requires an actual shopify.app.toml file to\nexist on disk - --client-id only overrides the client_id *inside*\nwhatever toml it finds, it's not a substitute for having one at\nall. shopify.app.toml is gitignored (per-developer local state),\nso a fresh checkout here has none - write one from a secret\nfirst, so CI deploys the exact same config a human would deploy\nfrom, rather than guessing at one.\n\nRequired repo secrets (Settings > Secrets and variables > Actions):\n  SHOPIFY_CLI_PARTNERS_TOKEN - a Partners API token so this runs\n    non-interactively (see Shopify's CLI CI docs for how to mint one)\n  SHOPIFY_PROD_APP_CLIENT_ID - the real production app's Client ID\n    (Partner Dashboard > the correct \"BusyBuddy\" app > Client\n    credentials) - NOT any \"tester\"/dev app's id.\n  SHOPIFY_APP_TOML - the full contents of a working\n    shopify.app.toml for that same production app (generate one\n    locally via `shopify app config link --client-id=<id>`, then\n    paste the resulting file's contents in as this secret).",
+    "description": "The self-hosted runner tags every process it spawns with\nRUNNER_TRACKING_ID and SIGKILLs anything still carrying that tag\nduring \"Cleaning up orphan processes\" at the end of the job.\n`pm2 restart --update-env` copies THIS shell's environment onto the\nrestarted app, so the freshly-started production process inherited\nthe tag and the runner killed it seconds later - on every deploy.\nRun #73 shows it exactly: pm2 reports pid 1674637 online at\n21:46:45, then \"Terminate orphan process: pid (1674637)\" at\n21:46:46. Run #80 killed the whole tree (npm run serve -> sh ->\nnode). Pinning the value to 0 doesn't match the job's tracking id,\nso cleanup leaves the app - and pm2's daemon - alone.",
     "jobs": [
       {
         "name": "deploy",
@@ -88,6 +80,10 @@
         "steps": [
           {
             "name": "Pull latest main and rebuild",
+            "detail": "run: set -euo pipefail"
+          },
+          {
+            "name": "Verify the app came back online",
             "detail": "run: set -euo pipefail"
           },
           {
@@ -101,7 +97,7 @@
         ]
       }
     ],
-    "_sourceHash": "a6592e77a0573cf2d82b6f9e4c0fc7606b7e35be"
+    "_sourceHash": "7dbd3c4a3c53a10c497ed89c17320d5d3d3aac47"
   },
   {
     "slug": "dev-pipeline",
