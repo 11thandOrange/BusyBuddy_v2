@@ -10,6 +10,19 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Pull latest main and rebuild
+        # The self-hosted runner tags every process it spawns with
+        # RUNNER_TRACKING_ID and SIGKILLs anything still carrying that tag
+        # during "Cleaning up orphan processes" at the end of the job.
+        # `pm2 restart --update-env` copies THIS shell's environment onto the
+        # restarted app, so the freshly-started production process inherited
+        # the tag and the runner killed it seconds later - on every deploy.
+        # Run #73 shows it exactly: pm2 reports pid 1674637 online at
+        # 21:46:45, then "Terminate orphan process: pid (1674637)" at
+        # 21:46:46. Run #80 killed the whole tree (npm run serve -> sh ->
+        # node). Pinning the value to 0 doesn't match the job's tracking id,
+        # so cleanup leaves the app - and pm2's daemon - alone.
+        env:
+          RUNNER_TRACKING_ID: 0
         run: |
           set -euo pipefail
           cd /home/bitnami/BusyBuddy_v2
@@ -25,8 +38,62 @@ jobs:
           npm run build
 
           cd /home/bitnami/BusyBuddy_v2
-          pm2 restart BusyBuddy_v2 --update-env
+
+          # `pm2 restart` alone assumes a daemon is already running with
+          # BusyBuddy_v2 registered. That assumption broke on 2026-08-07: the
+          # orphan cleanup above killed the God daemon along with the app, so
+          # the next deploy spawned a brand-new daemon with an empty process
+          # list and died on "Process or Namespace BusyBuddy_v2 not found" -
+          # turning a momentary blip into an eight-day 502, because the step
+          # that was supposed to restore the app was the one erroring out.
+          #
+          # Recover from the dump pm2 save wrote instead of assuming state.
+          # resurrect restores the app exactly as it was registered (script,
+          # cwd, interpreter, env), which an explicit `pm2 start` here would
+          # only be guessing at - that guess is the last resort.
+          if ! pm2 describe BusyBuddy_v2 > /dev/null 2>&1; then
+            echo "BusyBuddy_v2 not registered with pm2 - restoring from dump"
+            pm2 resurrect || true
+          fi
+
+          if pm2 describe BusyBuddy_v2 > /dev/null 2>&1; then
+            pm2 restart BusyBuddy_v2 --update-env
+          else
+            echo "No usable dump - starting BusyBuddy_v2 from scratch"
+            pm2 start npm --name BusyBuddy_v2 --cwd /home/bitnami/BusyBuddy_v2/web -- run serve
+          fi
+
           pm2 save
+
+      - name: Verify the app came back online
+        env:
+          RUNNER_TRACKING_ID: 0
+        # A deploy that leaves nothing listening is the whole failure being
+        # fixed here, so assert it rather than trusting the restart's exit
+        # code. pm2 reports "online" the instant it forks, before the app has
+        # had a chance to crash on boot, hence the settle time and the check
+        # that it did not restart again while we waited.
+        run: |
+          set -euo pipefail
+          sleep 10
+          node -e '
+            const { execSync } = require("child_process");
+            const app = JSON.parse(execSync("pm2 jlist").toString())
+              .find((p) => p.name === "BusyBuddy_v2");
+            if (!app) throw new Error("BusyBuddy_v2 is not registered with pm2");
+            const { status, restart_time, pm_uptime } = app.pm2_env;
+            const uptime = Date.now() - pm_uptime;
+            if (status !== "online") {
+              throw new Error(`BusyBuddy_v2 is ${status}, not online`);
+            }
+            if (uptime < 5000) {
+              throw new Error(
+                `BusyBuddy_v2 restarted ${restart_time} times and has only been up ` +
+                `${uptime}ms - it is crash-looping, check pm2 logs BusyBuddy_v2`
+              );
+            }
+            console.log(`BusyBuddy_v2 online, pid ${app.pid}, up ${uptime}ms`);
+          '
 
       - name: Deploy theme app extension / functions to Shopify
         # This step only existed as a manual local `shopify app deploy`
