@@ -19,7 +19,6 @@ jobs:
             package-lock.json
             extensions/cart-transformer/package-lock.json
             extensions/bogo-shopify-app/package-lock.json
-            docs/frontend/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -39,10 +38,6 @@ jobs:
       - name: Install bogo-shopify-app dependencies
         run: npm ci
         working-directory: extensions/bogo-shopify-app
-
-      - name: Install docs dependencies
-        run: npm ci
-        working-directory: docs/frontend
 
       - name: Run backend tests
         run: npx vitest run
@@ -65,10 +60,6 @@ jobs:
         working-directory: web/frontend
         env:
           CI: true
-
-      - name: Build docs site
-        run: npm run build
-        working-directory: docs/frontend
 
       - name: Upload test results
         if: always()
