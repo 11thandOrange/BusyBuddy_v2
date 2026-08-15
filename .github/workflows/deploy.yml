@@ -10,6 +10,19 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Pull latest main and rebuild
+        # The self-hosted runner tags every process it spawns with
+        # RUNNER_TRACKING_ID and SIGKILLs anything still carrying that tag
+        # during "Cleaning up orphan processes" at the end of the job.
+        # `pm2 restart --update-env` copies THIS shell's environment onto the
+        # restarted app, so the freshly-started production process inherited
+        # the tag and the runner killed it seconds later - on every deploy.
+        # Run #73 shows it exactly: pm2 reports pid 1674637 online at
+        # 21:46:45, then "Terminate orphan process: pid (1674637)" at
+        # 21:46:46. Run #80 killed the whole tree (npm run serve -> sh ->
+        # node). Pinning the value to 0 doesn't match the job's tracking id,
+        # so cleanup leaves the app - and pm2's daemon - alone.
+        env:
+          RUNNER_TRACKING_ID: 0
         run: |
           set -euo pipefail
           cd /home/bitnami/BusyBuddy_v2
