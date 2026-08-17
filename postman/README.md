@@ -1,153 +1,79 @@
-# OpenHands Cloud - Postman Collection
+# BusyBuddy - Postman Collection
 
-Postman collection and environment for managing OpenHands Cloud automations.
+Postman collection and environment for BusyBuddy_v2: the storefront-facing
+Front Store API and the shared Agent Ops email pipeline.
 
 ## Files
 
-- `OpenHands_Automations.postman_collection.json` - API requests for all automation operations
-- `OpenHands_Cloud.postman_environment.json` - Environment variables (API key, automation IDs)
+- `BusyBuddy.postman_collection.json` - the collection (two folders, see below)
+- `BusyBuddy.postman_environment.json` - environment variables
 
-## Repositories Covered
+> The older `OpenHands_*.postman_*.json` files in this folder belong to a
+> separate, unrelated OpenHands automations collection and are being retired
+> on their own branch (#325). This BusyBuddy collection is independent of them.
 
-- `11thandOrange/BusyBuddy_v2`
-- `11thandOrange/OrderMate`
-- `HeyItsChloe/mates4ever` (Orbit)
-- `openhands/openhands`
+## Import
 
-## Setup
+1. Open Postman -> **Import**.
+2. Select both `BusyBuddy.postman_collection.json` and
+   `BusyBuddy.postman_environment.json`.
+3. In the top-right environment selector, choose **BusyBuddy**.
 
-### 1. Import into Postman
+## Variables
 
-1. Open Postman
-2. Click **Import** → Select both JSON files
-3. The collection and environment will be added
+Set these on the **BusyBuddy** environment (Environments -> BusyBuddy):
 
-### 2. Configure Environment
+| Variable          | Example                                   | Used by            | Notes                                                        |
+|-------------------|-------------------------------------------|--------------------|--------------------------------------------------------------|
+| `baseUrl`         | `https://your-busybuddy-host.example.com` | Front Store API    | Root of the deployed BusyBuddy app (no trailing slash).      |
+| `shop`            | `your-store.myshopify.com`                | Front Store API    | The myshopify domain the request is for.                     |
+| `orchestratorUrl` | `https://your-orchestrator.example.com`   | Email pipeline     | Base URL of the shared Agent Ops orchestrator (no `/email`). |
+| `sharedSecret`    | *(empty - paste your secret)*             | Email pipeline     | Orchestrator shared secret. Marked **secret**; never commit. |
 
-1. Select the **OpenHands Cloud** environment
-2. Set your API key:
-   - Go to https://app.all-hands.dev/settings/api-keys
-   - Copy your API key
-   - Paste into the `OPENHANDS_API_KEY` variable (mark as "Secret")
+No secrets are hardcoded in the collection or environment - `sharedSecret`
+ships empty and must be filled in locally.
 
-## How to Specify an Issue (Option 3)
+## Auth per folder
 
-**You can specify which GitHub issue to process via a message sent after triggering!**
+### Front Store API (`{{baseUrl}}/api/frontStore/*`)
 
-### Step-by-Step Workflow
+These endpoints are served to storefront visitors through a **Shopify App
+Proxy**. Shopify appends `shop`, `signature`, `timestamp`, and related params
+to every request and signs them; the app verifies the request with
+HMAC-SHA256 over all sorted `key=value` query params (excluding `signature`),
+keyed by `SHOPIFY_API_SECRET` (`web/middleware/verify-signature.js`).
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  1. SET ENVIRONMENT VARIABLES                                     │
-│     • ISSUE_NUMBER = 42 (your issue number)                      │
-│     • REPO = 11thandOrange/BusyBuddy_v2                         │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  2. TRIGGER AUTOMATION                                           │
-│     Navigate to repo folder → Pipeline → "Trigger with Issue"     │
-│     → Click Send                                                  │
-│     → Copy the run_id from response                              │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  3. POLL FOR STATUS                                              │
-│     Core Operations → Poll Run Status                            │
-│     → Use the run_id from step 2                                 │
-│     → Click Send repeatedly until status=RUNNING                 │
-│     → Copy the conversation_id                                   │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  4. SEND ISSUE CONTEXT MESSAGE ★                                  │
-│     Core Operations → Send Issue Context Message                  │
-│     → conversation_id is auto-filled                             │
-│     → ISSUE_NUMBER and REPO are used in the message              │
-│     → This tells the agent WHICH issue to process!               │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  5. VIEW LOGS                                                    │
-│     Core Operations → Get Conversation Messages                  │
-│     → Click Send to see agent progress                            │
-│     → Keep polling to watch the agent work                       │
-└──────────────────────────────────────────────────────────────────┘
-```
+Postman cannot mint a valid Shopify App Proxy signature, so the `signature`
+query param in each request is a placeholder. Against a live server these
+requests return `401 { message: "Invalid request signature..." }` unless you
+paste in a real `shop`/`signature` pair captured from an actual proxied
+request. They are included as accurate documentation of method, path, params,
+and body shape.
 
-### The Message Payload
+Endpoints (all `GET` except subscribe; all behind `requireSubscriptionAccess`):
 
-When you use "Send Issue Context Message", it sends:
+| Method | Path                                  | Purpose                                             |
+|--------|---------------------------------------|-----------------------------------------------------|
+| GET    | `/api/frontStore/getActiveBundle`     | Active bundle for a `product_id`, enriched.         |
+| GET    | `/api/frontStore/getInactiveTab`      | Inactive browser-tab message content.               |
+| GET    | `/api/frontStore/getAnnouncementBar`  | Active announcement bar for the shop.               |
+| POST   | `/api/frontStore/subscribe`           | Capture a visitor email to the shop's email list.   |
 
-```json
-{
-  "role": "user",
-  "content": "Please process GitHub issue #42 in repository 11thandOrange/BusyBuddy_v2.\n\nFetch the issue details, implement the requested changes, create tests, and open a pull request.\n\nIssue URL: https://github.com/11thandOrange/BusyBuddy_v2/issues/42"
-}
-```
+### Email (shared pipeline) (`{{orchestratorUrl}}/email`)
 
-The agent will:
-1. Fetch the issue from GitHub
-2. Understand the requirements
-3. Implement the changes
-4. Create tests
-5. Open a pull request
+Calls the shared Agent Ops orchestrator directly. Auth is the orchestrator
+shared secret, sent as the **`x-orchestrator-secret`** header with value
+`{{sharedSecret}}`. This is the same pipeline BusyBuddy reaches from CI via
+`.github/workflows/email.yml` -> agent-ops `email-reusable.yml`.
 
-## Automations Available
+`POST {{orchestratorUrl}}/email` body fields:
 
-| Repository | Pipeline | Automation ID |
-|------------|----------|--------------|
-| BusyBuddy_v2 | Autonomous Dev | `dcef1629-3d1d-460e-aabc-df497b3a1780` |
-| BusyBuddy_v2 | Complex Logic | `a90b4b0a-4e2c-442b-8900-2fc9404621f7` |
-| OrderMate | Autonomous Dev | `a2160444-1cd6-4b58-867c-f80bf244c288` |
-| OrderMate | Complex Logic | `4b407b72-551f-4f99-8950-d168759be2b7` |
-| mates4ever (Orbit) | Autonomous Dev | `c14e1769-8b86-4554-8c4b-f9f4d25400aa` |
-| mates4ever (Orbit) | Complex Logic | `d4e8824f-cb8d-4176-a902-ee4821e348a4` |
-| openhands/openhands | Dev Pipeline | `c0bcb429-57fb-4f9b-af84-90adfec5e01a` |
+- `provider` - `gmail` | `mailchimp`
+- `to` - single address or an array / comma-separated list
+- `subject` - subject line (omit when a template supplies its own)
+- `text` and/or `html` - direct content mode
+- `template` + `template_vars` - named-template mode (instead of text/html)
 
-## API Endpoints Used
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/automation/v1/{id}/dispatch` | Trigger automation |
-| GET | `/automation/v1/{id}/runs/{run_id}` | Poll run status |
-| POST | `/conversation/{id}/messages` | Send issue context |
-| GET | `/conversation/{id}/messages` | View logs |
-
-## Postman Collection Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `baseUrl` | `https://app.all-hands.dev/api` | API base URL |
-| `OPENHANDS_API_KEY` | (empty) | Your API key |
-| `ISSUE_NUMBER` | `42` | GitHub issue to process |
-| `REPO` | `11thandOrange/BusyBuddy_v2` | Repository |
-| `AUTOMATION_ID` | (set by trigger) | Current automation |
-| `run_id` | (set by trigger) | Current run |
-| `conversation_id` | (set by poll) | For logs |
-
-## Troubleshooting
-
-### "401 Unauthorized"
-- Check that `OPENHANDS_API_KEY` is set correctly
-- Make sure it's marked as a "Secret" type in Postman
-
-### No `conversation_id` in response
-- Poll the run status endpoint every 5-10 seconds
-- Status lifecycle: `PENDING` → `RUNNING` → `COMPLETED/FAILED`
-
-### View in Browser
-For real-time log viewing, open:
-```
-https://app.all-hands.dev/conversations/{conversation_id}
-```
-
-## Important Notes
-
-- **NO NEW AUTOMATIONS ARE CREATED** in this repository
-- **NO BRANCHES OR ISSUES** are created in `openhands/openhands`
-- The workflow lets you specify ANY issue via the message payload
-- You can re-use the same automation for different issues by changing `ISSUE_NUMBER` and `REPO`
+Example cases in the folder: Gmail single, Gmail multi, Mailchimp single,
+Mailchimp template, direct body (text+html), invalid request (`400`), and
+auth failure (`401`).
