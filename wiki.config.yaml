@@ -46,8 +46,6 @@ extractors:
     enabled: true
     glob:
       - ".github/workflows/*.yml"
-    exclude:
-      - "openhands.yml.legacy"
 
   automation:
     enabled: true
@@ -122,15 +120,6 @@ extractors:
         notes:
           - kind: warning
             body: "author_content is currently off in the wiki-generate caller because this gateway was returning intermittent 500/503s; feature prose is committed directly instead."
-      - slug: openhands-cloud
-        name: "OpenHands Cloud"
-        kind: service
-        summary: "Autonomous-dev and complex-logic automations that pick up GitHub issues for this repo and open pull requests. Driven from the Postman collection."
-        auth: "API key (OPENHANDS_API_KEY)"
-        url: "https://app.all-hands.dev/"
-        notes:
-          - kind: note
-            body: "See postman/README.md for the trigger -> poll -> send-issue-context workflow."
       - slug: pipeline-orchestrator
         name: "Pipeline Orchestrator (agent-ops)"
         kind: service

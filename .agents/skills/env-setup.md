@@ -1,11 +1,11 @@
 # Env Setup Skill — BusyBuddy_v2
 
-Writes `web/.env` from OpenHands secrets before running or testing the app.
+Writes `web/.env` from the dev pipeline's environment secrets before running or testing the app.
 Run this before `dev-server` or any command that needs a live database connection.
 
 ## Required Secrets
 
-Register these in OpenHands → Settings → Secrets:
+These are provided by the dev pipeline environment (GitHub Actions secrets):
 
 | Secret | Description |
 |--------|-------------|
