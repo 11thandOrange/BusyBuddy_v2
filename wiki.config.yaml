@@ -72,12 +72,31 @@ extractors:
     sources:
       - glob: "CHANGELOG.md"
         navSection: "Changelog"
+      # Narrative architecture docs authored against this repo's real tree
+      # (web/backend and web/frontend). Grounded in the actual code, not
+      # derived - read verbatim by the markdown extractor.
+      - glob: "docs/backend-architecture.md"
+        navSection: "Backend"
+      - glob: "docs/data-models.md"
+        navSection: "Backend"
+      - glob: "docs/services.md"
+        navSection: "Backend"
+      - glob: "docs/webhooks-and-jobs.md"
+        navSection: "Backend"
+      - glob: "docs/frontend-architecture.md"
+        navSection: "Frontend"
 
   appList:
     enabled: true
     sourceFile: "web/frontend/pages/DashboardHome.jsx"
     widgetConfigExport: "widgetConfig"
-    planFeaturesExport: "planFeatures"
+    # planFeaturesExport dropped: DashboardHome.jsx exports only widgetConfig -
+    # there is no `planFeatures` export in this file (the only `planFeatures`
+    # in the repo is a local const inside web/backend/configs/subscriptionUtils.js,
+    # not this source file). Pointing the extractor at a missing export made plan
+    # tags silently empty; removing it is the lower-risk fix (vs. adding a
+    # frontend export the app doesn't otherwise use). Per-app entitlement lives in
+    # the Subscription model's appLimits (see docs/data-models.md).
 
   # Repo-local skills (SKILL.md with name/description/applies_to frontmatter).
   # These are the same files the dev-ticket pipeline reads from skills/ in this
@@ -87,6 +106,17 @@ extractors:
     enabled: true
     roots:
       - "skills"
+
+  # Package manifests present in this repo's tree. Enabled so the
+  # Dependencies & Integrations page also lists real npm dependencies
+  # (previously only the authored integrations below were shown).
+  dependencies:
+    enabled: true
+    manifests:
+      - "package.json"
+      - "web/package.json"
+      - "docs/package.json"
+      - "extensions/bogo-shopify-app/package.json"
 
   # Third parties that live in no package.json - authored here (approach A)
   # and rendered on the Dependencies & Integrations page. Every field is a
