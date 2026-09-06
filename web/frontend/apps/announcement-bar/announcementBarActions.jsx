@@ -28,6 +28,13 @@ import { SketchPicker } from "react-color";
 import AnnouncementBarActions from "./announcementBarActions";
 import "./announcementBarStyles.css";
 import dropdown from "../../assets/Vector.png";
+import sunshineTheme from "../../assets/sunshine.svg";
+import watercolorTheme from "../../assets/watercolor.svg";
+import abstractTheme from "../../assets/abstract.svg";
+import christmasTheme from "../../assets/christmas.svg";
+import circlesTheme from "../../assets/circles.svg";
+import holidaysTheme from "../../assets/holidays.svg";
+import squaresTheme from "../../assets/squares.svg";
 import EmailBarSettings from "./components/EmailBarSettings";
 
 // export default function BundleDiscountActions({ onMakeBundleClick, editingBar ,onSuccess}) {
@@ -57,37 +64,37 @@ const BundleDiscountActions = React.forwardRef(
       {
         name: "Sunshine",
         value: "sunshine",
-        image: "https://getbusybuddy.com/assets/Sunshine-BrfoRMEz.svg",
+        image: sunshineTheme,
       },
       {
         name: "Watercolor",
         value: "watercolor",
-        image: "https://getbusybuddy.com/assets/Watercolor-2HbVdo2j.svg",
+        image: watercolorTheme,
       },
       {
         name: "Abstract",
         value: "abstract",
-        image: "https://getbusybuddy.com/assets/Abstract-CSBeGGwo.svg",
+        image: abstractTheme,
       },
       {
         name: "Christmas",
         value: "christmas",
-        image: "https://getbusybuddy.com/assets/Christmas-D4wXR0LX.svg",
+        image: christmasTheme,
       },
       {
         name: "Circles",
         value: "circles",
-        image: "https://getbusybuddy.com/assets/Circles-uk8TMdjp.svg",
+        image: circlesTheme,
       },
       {
         name: "Holidays",
         value: "holidays",
-        image: "https://getbusybuddy.com/assets/Holidays-Dd-XSFt_.svg",
+        image: holidaysTheme,
       },
       {
         name: "Squares",
         value: "squares",
-        image: "https://getbusybuddy.com/assets/Squares-Db9SlI8F.svg",
+        image: squaresTheme,
       },
       { name: "Upload Image", value: "image-upload", icon: "➕" },
     ];
