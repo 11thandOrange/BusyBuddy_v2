@@ -4,7 +4,7 @@ import shopModel from "../models/shop.model.js";
 import subscriptionModel from "../models/subscription.model.js";
 import { subscriptionConfig } from "../configs/subscriptionConfig.js";
 
-const BASE_URL = process.env.HOST || "https://busybuddy.app";
+const BASE_URL = process.env.HOST || "https://busybuddy.tech";
 const SHOPIFY_APP_HANDLE = process.env.SHOPIFY_APP_HANDLE || "busybuddy";
 
 /**
