@@ -4,7 +4,23 @@ import shopModel from "../models/shop.model.js";
 import subscriptionModel from "../models/subscription.model.js";
 import { subscriptionConfig } from "../configs/subscriptionConfig.js";
 
-const BASE_URL = process.env.HOST || "https://busybuddy.app";
+/**
+ * The app cannot boot without HOST - @shopify/shopify-app-express throws
+ * synchronously when hostName is missing - so a hardcoded fallback domain
+ * here is unreachable in production and can only mask a misconfiguration by
+ * silently minting referral links to a domain we do not control
+ * ("https://busybuddy.app", which this replaces). Read HOST at call time so a
+ * domain change needs no code change, and fail loudly if it is missing.
+ */
+function baseUrl() {
+  const host = process.env.HOST;
+  if (!host) {
+    throw new Error(
+      "HOST is not set - cannot build a referral link. Set HOST in web/.env to the app's public URL."
+    );
+  }
+  return host.replace(/\/+$/, "");
+}
 const SHOPIFY_APP_HANDLE = process.env.SHOPIFY_APP_HANDLE || "busybuddy";
 
 /**
@@ -38,7 +54,7 @@ export function generateReferralUrl(referral) {
   });
   
   // URL to referral landing/redirect endpoint
-  return `${BASE_URL}/api/referrals/${referral.code}/redirect?${params.toString()}`;
+  return `${baseUrl()}/api/referrals/${referral.code}/redirect?${params.toString()}`;
 }
 
 /**
