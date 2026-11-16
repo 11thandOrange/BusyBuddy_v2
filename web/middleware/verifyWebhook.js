@@ -1,13 +1,27 @@
 import crypto from 'crypto';
 
 /**
- * Middleware to verify Shopify webhook HMAC signature
- * For testing, set SKIP_WEBHOOK_VERIFICATION=true in .env
+ * Middleware to verify Shopify webhook HMAC signature.
+ *
+ * This guards the mandatory compliance webhooks (customers/data_request,
+ * customers/redact, shop/redact) as well as app/uninstalled, so it has to
+ * reject anything unsigned or mis-signed with a 401 - that behaviour is
+ * checked during App Store review.
  */
 export function verifyShopifyWebhook(req, res, next) {
-  // Skip verification in development/testing if needed
+  // SKIP_WEBHOOK_VERIFICATION is a local-testing affordance. It used to be
+  // honoured unconditionally, which meant a single env var on the production
+  // host would accept unsigned payloads on every webhook route, compliance
+  // topics included. It is now ignored in production rather than trusted to
+  // stay unset, and says so loudly if something sets it there.
   if (process.env.SKIP_WEBHOOK_VERIFICATION === 'true') {
-    return next();
+    if (process.env.NODE_ENV === 'production') {
+      console.error(
+        'SKIP_WEBHOOK_VERIFICATION is set in production - ignoring it and verifying signatures as normal'
+      );
+    } else {
+      return next();
+    }
   }
 
   const hmac = req.get('X-Shopify-Hmac-Sha256');
@@ -30,10 +44,18 @@ export function verifyShopifyWebhook(req, res, next) {
     .update(body, 'utf8')
     .digest('base64');
 
-  if (hash === hmac) {
+  // Constant-time comparison: `===` on strings short-circuits at the first
+  // differing character, which leaks how much of a forged signature was
+  // correct. timingSafeEqual throws when the buffers differ in length, so the
+  // length check has to come first - and a malformed base64 signature decodes
+  // to a different length, which fails here rather than throwing.
+  const expected = Buffer.from(hash, 'base64');
+  const provided = Buffer.from(hmac, 'base64');
+
+  if (expected.length === provided.length && crypto.timingSafeEqual(expected, provided)) {
     return next();
   }
-  
+
   console.error('Webhook HMAC verification failed');
   return res.status(401).json({ error: 'Unauthorized - Invalid webhook signature' });
 }
