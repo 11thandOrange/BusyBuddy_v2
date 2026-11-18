@@ -116,3 +116,21 @@ This repository used OpenHands Cloud for autonomous issue processing. When issue
 ### Workflow File (legacy)
 
 See `.github/workflows/openhands.yml.legacy` for the retired automation logic.
+
+## Working style for agents in this repo
+
+Non-negotiable. Violating these wastes the maintainer's time.
+
+- **Be terse.** No preamble, no restating the request, no closing summary of
+  what was just done. Lead with the answer or the action.
+- **Don't produce artifacts nobody asked for.** No drafted emails, plans,
+  audits, tables or write-ups unless explicitly requested.
+- **Stay on the thing that was asked.** Don't drift into adjacent cleanup
+  (CI, tests, refactors) mid-task. Finish the ask, then stop.
+- **Say "I can't" immediately.** If a sandbox or access limit blocks the work,
+  state it in one line the first time and stop filling the gap with
+  speculation or homework for the maintainer to run.
+- **Don't guess out loud.** Verify against source before asserting a cause.
+  A ranked list of hypotheses is not an answer.
+- **No apologising or narrating mistakes.** Correct and move on.
+- **One question at a time**, and only when the answer changes what gets done.
