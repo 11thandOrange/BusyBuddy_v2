@@ -218,6 +218,37 @@ const serveFrontendHtml = (_req, res) => {
 // so the editor was always broken outside of a production build.
 app.use(serveStatic(STATIC_PATH, { index: false }));
 
+// Shopify's application-URL verifier, uptime probes, and anyone who simply
+// types the bare domain all request `/` with no query string. Those used to
+// fall through to ensureInstalledOnShop() below, which rejects them with a
+// 400 ("ensureInstalledOnShop did not receive a shop query argument") - that
+// one message is essentially the entire production log - and an automated
+// checker reads a 400 on the application URL as the URL not being servable.
+// Answer the bare root with a plain 200 instead. Anything carrying a `shop`
+// (every embedded admin load, and the post-OAuth redirect) falls through to
+// the normal install check untouched.
+app.get("/", (req, res, next) => {
+  if (req.query.shop) {
+    return next();
+  }
+  return res
+    .status(200)
+    .set("Content-Type", "text/html")
+    .send(
+      [
+        "<!doctype html>",
+        '<html lang="en"><head><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        "<title>BusyBuddy</title></head>",
+        '<body style="font-family:system-ui,sans-serif;max-width:34rem;margin:4rem auto;padding:0 1rem;line-height:1.5">',
+        "<h1>BusyBuddy</h1>",
+        "<p>Bundle discounts, volume discounts and announcement bars for Shopify stores.</p>",
+        "<p>This is the application endpoint. Install BusyBuddy from the Shopify App Store, then open it from your store&rsquo;s admin.</p>",
+        "</body></html>",
+      ].join("")
+    );
+});
+
 app.use("/*", shopify.ensureInstalledOnShop(), serveFrontendHtml);
 
 // Centralized error handler - must be registered last and take 4 args for
